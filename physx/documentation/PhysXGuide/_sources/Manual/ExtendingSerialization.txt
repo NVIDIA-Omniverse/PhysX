@@ -1,0 +1,340 @@
+.. _extendedSerialization:
+
+-------------------------
+Extending Serialization
+-------------------------
+
+====================================================
+Introduction
+====================================================
+
+The PhysX serialization system (:ref:`Serialization`) is extendable to custom types.  If an application were to require a new joint type, for example, the serialization system could be extended to add support for serialization of that new joint type.
+
+The following document contains some recipes and example code that show how PhysX serialization may be extended to custom types. It doesn't cover all aspects of the extension mechanisms. It is therefore advisable to look into the following implementation example for more details:
+
+* PhysXVehicle library (PhysXVehicle/src)
+
+====================================================
+Overview
+====================================================
+
+Both binary and RepX serialization can be extended for custom types.  To prepare the custom type for serialization it must first inherit from *PxBase*.  This allows instances of the custom type to be added to a *PxCollection*, which is a pre-requisite for serialization.  The core serialization functionality needs to be provided by implementing the *PxSerializer* interface.  The template *PxSerializerDefaultAdapter* provides a default implementation and can be specialized for the custom type as required.  In order to support RepX serialization an additional *PxRepXSerializer* interface needs to be implemented. RepX serialization relies on automatic code generation using clang. Scripts to run the code generation for the examples can be found in (Tools/PhysXMetaDataGenerator).
+
+.. _BinarySerializationOfCustomClasses:
+
+====================================================
+Binary Serialization of Custom Classes
+====================================================
+
+Serialization and deserialization of a custom class can be achieved with the following steps:
+
+1. Define a *PxConcreteType* and type info for the custom class. Make sure its type value is unique.
+
+2. The custom class needs to inherit from *PxBase* and implement its interface.
+
+3. Instance PxSerializerDefaultAdapter<T> and implement specialized methods where necessary.
+
+4. If retargeting to other platforms is needed, implement *getBinaryMetaData()*.
+
+5. Register the adapter and metadata, see *PX_NEW_SERIALIZER_ADAPTER* , *PxSerializationRegistry::registerSerializer* and *PxSerializationRegistry::registerBinaryMetaDataCallback*. Note that serializers also need to be unregistered before *PxSerializationRegistry::release* is called. The application is responsible for custom type serializer allocation and deallocation.
+
+For pointer members the following needs to be done (Note that reference members are currently not supported):
+
+6. Implement *PxSerializer::requires*. It should enumerate *PxBase* objects on which the object depends for deserialization. See :ref:`Requires`.
+
+7. For a member pointer to another *PxBase* object, register the reference in the implementation of *PxSerializer::registerReferences*. The implementation of *PxSerializer::requires* may be used to help with this.
+
+8. Resolve references in the implementation of *PxSerializer::createObject* using *PxDeserializationContext::resolveReference, translatePxBase*.
+
+9. Make sure that *PxSerializer::isSubordinate* returns whether the object can only be serialized along with an owner object. See :ref:`Subordinate`.
+
+10. Export non *PxBase* data by implementing *PxSerializer::exportExtraData* using *PxSerializationContext::writeData, alignData*.
+
+11. Import non *PxBase* data in the implementation of *PxSerializer::createObject* using *PxDeserializationContext::readExtraData, alignExtraData*.
+
+.. note:: In checked builds (PX_CHECKED defined as 1) metadata definitions are verified against serialized data. If metadata definitions are missing warnings are output on the error stream during re-targeting (*PxBinaryConverter::convert*). To avoid false warnings, all unused memory in custom serialized class instances should be marked with a 0xcd pattern. This can be done with *Cm::markSerializedMem* from CmUtils.h.
+
+.. note:: The memory of a deserialized class instance should not be deallocated. The memory is embedded in the memory buffer containing the serialized data. The flag PxBaseFlag::eOWNS_MEMORY can used to decide whether the object memory needs be deallocated or not.
+
+Example for a custom class::
+
+    #include "extensions/PxSerialization.h"
+    #include "common/PxTypeInfo.h"
+    #include "common/PxMetaData.h"
+    #include "common/PxSerializer.h"
+    #include "common/PxSerialFramework.h
+
+    using namespace physx;
+
+    const PxType customClassType = PxConcreteType::eFIRST_USER_EXTENSION;
+    PX_DEFINE_TYPEINFO(CustomClass, customClassType);
+
+    class CustomClass : public PxBase
+    {
+        friend class PxSerializerDefaultAdapter<CustomClass>;
+    public:
+
+        // constructor setting up PxBase object
+        CustomClass()
+        : PxBase(customClassType, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE)
+        {}
+
+        // constructor called on deserialization
+        CustomClass(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
+
+        virtual ~CustomClass() {}
+
+
+        //PxBase
+        virtual const char* getConcreteTypeName() const { return "CustomClass"; }
+
+        virtual bool isKindOf(const char* name) const
+        {
+            return !strcmp("CustomClass", name) || PxBase::isKindOf(name);
+        }
+        //~PxBase
+
+        //PxSerializationRegistry::registerBinaryMetaDataCallback
+        static void getBinaryMetaData(PxOutputStream& stream)
+        {
+            PX_DEF_BIN_METADATA_VCLASS(stream, CustomClass)
+            PX_DEF_BIN_METADATA_BASE_CLASS(stream, CustomClass, PxBase)
+
+            PX_DEF_BIN_METADATA_ITEM(stream, CustomClass, PxRigidDynamic, mActor,
+                PxMetaDataFlag::ePTR)
+            PX_DEF_BIN_METADATA_ITEM(stream, CustomClass, char, mBuf, PxMetaDataFlag::ePTR)
+            PX_DEF_BIN_METADATA_ITEM(stream, CustomClass, PxU32, mSize, 0)
+
+            PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, CustomClass, char, mBuf, mSize, 0, 0)
+        }
+        //~PxSerializationRegistry::registerBinaryMetaDataCallback
+
+    private:
+        PxRigidDynamic* mActor;    //add in requires
+        char* mBuf;                //extra data
+        PxU32 mSize;               //size of mBuf
+    };
+
+    //PxSerializerDefaultAdapter
+    template<>
+    void PxSerializerDefaultAdapter<CustomClass>::requires(PxBase& obj,
+                                                           PxProcessPxBaseCallback& c) const
+    {
+        CustomClass* custom = obj.is<CustomClass>();
+        PX_ASSERT(custom);
+        c.process(*custom->mActor);
+    }
+
+    template<>
+    void PxSerializerDefaultAdapter<CustomClass>::registerReferences(PxBase& obj,
+                                                                     PxSerializationContext& s) const
+    {
+        CustomClass* custom = obj.is<CustomClass>();
+        PX_ASSERT(custom);
+
+        s.registerReference(obj, PX_SERIAL_REF_KIND_PXBASE, size_t(&obj));
+        s.registerReference(*custom->mActor, PX_SERIAL_REF_KIND_PXBASE, size_t(custom->mActor));
+    }
+
+    template<>
+    void PxSerializerDefaultAdapter<CustomClass>::exportExtraData(PxBase& obj,
+                                                                  PxSerializationContext& s) const
+    {
+        CustomClass* custom = obj.is<CustomClass>();
+        PX_ASSERT(custom);
+        s.alignData(PX_SERIAL_ALIGN);
+        s.writeData(custom->mBuf, custom->mSize);
+    }
+
+    template<>
+    PxBase* PxSerializerDefaultAdapter<CustomClass>::createObject(PxU8*& address,
+                                                                  PxDeserializationContext& context)
+                                                                  const
+    {
+        CustomClass* custom = new (address) CustomClass(PxBaseFlag::eIS_RELEASABLE);
+        address += sizeof(CustomClass);
+
+        // resolve references
+        context.translatePtr(custom->mActor);
+
+        // import extra data
+        custom->mBuf = context.readExtraData<char*, PX_SERIAL_ALIGN>();
+
+        // return deserialized object
+        return custom;
+    }
+    //~PxSerializerDefaultAdapter
+
+    void registerCustomClassBinarySerializer(PxSerializationRegistry& registry)
+    {
+        registry.registerSerializer(customClassType, PX_NEW_SERIALIZER_ADAPTER(CustomClass));
+        registry.registerBinaryMetaDataCallback(CustomClass::getBinaryMetaData);
+    }
+
+    void unregisterCustomClassBinarySerializer(PxSerializationRegistry& registry)
+    {
+        PX_DELETE_SERIALIZER_ADAPTER(registry.unregisterSerializer(customClassType));
+    }
+
+====================================================
+RepX Serialization of Custom Classes
+====================================================
+
+Serialization and deserialization of a custom class can be achieved with the following steps:
+
+1. Perform the first three steps from :ref:`BinarySerializationOfCustomClasses`. Methods in *PxSerializer* and *PxSerializerDefaultAdapter<T>* required exclusively for binary serialization may be left empty.
+
+2. Create a custom RepX serializer that implements the *PxRepXSerializer* interface. *PxRepXSerializer* is used to create an object from the xml file and write an object to the xml file. The class *RepXSerializerImpl* can be used to inherit default implementations of some methods.
+
+3. Register the general serializer adapter and the RepX serializer. Note that custom type serializers also need to be unregistered and deallocated.
+
+4. RepX supports automatic reading and writing of class properties. To achieve this, clang has to be used to generate corresponding metadata: :ref:`physxmetadata`.
+
+Example for a custom class::
+
+
+    #include "SnRepXSerializerImpl.h"
+
+    const PxType customClassType = PxConcreteType::eFIRST_USER_EXTENSION;
+    PX_DEFINE_TYPEINFO(CustomClass, customClassType);
+
+    struct CustomClassRepXSerializer : public RepXSerializerImpl<CustomClass>
+    {
+        CustomClassRepXSerializer(PxAllocatorCallback& inCallback)
+        : RepXSerializerImpl<CustomClass>(inCallback)
+        {}
+
+        virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator,
+            PxRepXInstantiationArgs& inArgs, PxCollection* inCollection)
+        {
+            // factory for CustomClass instance provided by application
+            CustomClass* object = createCustomClass();
+
+            // when using the PhysX API metadata system readAllProperties(...) can be used to read
+            // all properties automatically
+            readAllProperties(inArgs, inReader, object, inAllocator, *inCollection);
+
+            return PxCreateRepXObject(object);
+        }
+
+        virtual void objectToFileImpl(const CustomClass* obj, PxCollection* inCollection,
+                                      XmlWriter& inWriter, MemoryBuffer& inTempBuffer,
+                                      PxRepXInstantiationArgs&)
+        {
+            // when using the PhysX API metadata system writeAllProperties(...) can be used to save
+            // all properties automatically
+            writeAllProperties(obj, inWriter, inTempBuffer, *inCollection);
+        }
+
+        // this can return NULL if fileToObject(...) is overwritten with a custom implementation.
+        virtual CustomClass* allocateObject(PxRepXInstantiationArgs&) { return NULL; }
+    };
+
+    void registerCustomClassRepXSerializer(PxSerializationRegistry& registry)
+    {
+        registry.registerSerializer(customClassType,
+                                    PX_NEW_SERIALIZER_ADAPTER(CustomClass));
+
+        registry.registerRepXSerializer(customClassType,
+                                        PX_NEW_REPX_SERIALIZER<CustomClassRepXSerializer>));
+    }
+
+    void unregisterCustomClassRepXSerializer(PxSerializationRegistry& registry)
+    {
+        PX_DELETE_SERIALIZER_ADAPTER(registry.unregisterSerializer(customClassType));
+        PX_DELETE_REPX_SERIALIZER(registry.unregisterRepXSerializer(customClassType));
+    }
+
+.. note:: Implementing a PxRepXSerializer is currently not practical without including the internal PhysXExtension header "SnRepXSerializerImpl.h".
+
+.. _physxmetadata:
+
+..............................................................................
+PhysX API Metadata System
+..............................................................................
+
+This system produces a set of objects that are analogues of the interfaces and of descriptors in the PhysX system, all based on the public interface. The generator heuristically finds functions that start with get/set and, through a series of cascading rules, combines those into several types of properties.
+
+Currently the generator supports the following property types:
+
+* Basic property
+
+  * {ptype} get{pname}() const;
+
+  * void set{pname}( const ptype& prop ); //plus variations
+
+  * read-only, write-only variants of above.
+
+* Range property
+
+  * void get{pname}( {ptype}& lowEnd, {ptype}& highEnd );
+
+  * void set{pname}( {ptype} lowEnd, {ptype} highEnd );
+
+* Indexed property
+
+  * {ptype} get{pname}( enumType idx );
+
+  * void set{pname}( enumType idx, const {ptype}& prop );
+
+* Dual indexed property (like above, but with two enumeration indexes).
+
+* Collection
+
+  * PxU32 getNb() const;
+
+  * PxU32 get( {ptype}* buffer, PxU32 count );
+
+  * void set({ptype}* buffer, PxU32 count);
+
+In order to make use of the generator the following files need to be created with the following recipe:
+
+* CustomTypeExtensionAPI.h
+
+  * Add all the types that should be exported to gUserPhysXTypes to this file.
+
+  * Add the unnecessary types to gAvoidedPhysXTypes. It will not generate metadata information for these types.
+
+  * Be sure to append the included files for these types.
+
+* tools/physxmetadatagenerator/generateMetaData.[bat|sh] (see tools/physxmetadatagenerator/readme.txt)
+
+  * Set definition folder for these autogenerated files and set the source file in here.
+
+  * Specify the filename of autogenerated files. Then it will generate the following files::
+
+	include/CustomTypeAutoGeneratedMetaDataObjectNames.h
+	include/CustomTypeAutoGeneratedMetaDataObjects.h
+	src/CustomTypeAutoGeneratedMetaDataObjects.cpp
+
+
+* CustomTypeMetaDataObjects.h
+
+  * CustomTypePropertyInfoName has to be defined and CustomTypeAutoGeneratedMetaDataObjects.h has to be included in this file. The file will then export the properties of the custom class and can be included for implementing the custom RepX serializer.
+
+* CustomTypeMetaDataObjects.cpp
+
+  * This file is optional. It is only required when custom properties are needed.
+
+PxVehicle serialization is a useful example.  With Source/PhysXVehicle as the root folder the structure of the files is as follows::
+
+   src/PhysXMetaData/include/PxVehicleMetaDataObjects.h
+   src/PhysXMetaData/src/PxVehicleMetaDataObjects.cpp
+   ../../Tools/PhysXMetaDataGenerator/PxVehicleExtensionAPI.h
+   ../../Tools/PhysXMetaDataGenerator/generateMetaData.py
+
+Running the script will auto-generate the following files::
+
+   src/PhysXMetaData/include/PxVehicleAutoGeneratedMetaDataObjectNames.h
+   src/PhysXMetaData/include/PxVehicleAutoGeneratedMetaDataObjects.h
+   src/PhysXMetaData/src/PxVehicleAutoGeneratedMetaDataObjects.cpp
+
+1. PxVehicleExtensionAPI.h: The type DisabledPropertyEntry is used to mark properties which do not require export. CustomProperty is for properties that need to be customized and gUserPhysXTypes is for general properties that need to be exported.
+
+2. tools/physxmetadatagenerator/generateMetaData.[bat|sh]: The target directory is set to src/PhysXMetaData, and the target name is PxVehicle.
+
+3. PxVehicleMetaDataObjects.h: It defines the custom properties and includes PxVehicleAutoGeneratedMetaDataObjects.h
+
+4. PxVehicleMetaDataObjects.cpp: It implements the custom properties.
+
+.. note:: The properties defined in PxVehicleAutoGeneratedMetaDataObjects.h are written to the RepX file automatically if PxVehicleMetaDataObjects.h is included for the custom RepX serializer.

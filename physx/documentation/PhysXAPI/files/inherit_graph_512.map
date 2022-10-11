@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classPxVehicleDriveSimData.html" title="Data structure describing non&#45;wheel configuration data of a vehicle that has engine, gears, clutch, and auto&#45;box. " alt="" coords="5,31,164,57"/>
+<area shape="rect" id="node2" href="$classPxVehicleDriveSimData4W.html" title="Data structure describing the drive model components of a vehicle with up to 4 driven wheels and up t..." alt="" coords="213,5,392,32"/>
+<area shape="rect" id="node3" href="$classPxVehicleDriveSimDataNW.html" title="Data structure describing configuration data of a vehicle with up to PX_MAX_NB_WHEELS driven equally ..." alt="" coords="212,56,393,83"/>
+</map>

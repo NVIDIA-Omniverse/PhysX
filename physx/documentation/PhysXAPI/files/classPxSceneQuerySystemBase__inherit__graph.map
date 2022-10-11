@@ -1,0 +1,6 @@
+<map id="PxSceneQuerySystemBase" name="PxSceneQuerySystemBase">
+<area shape="rect" id="node2" href="$classPxSceneQuerySystem.html" title="Scene&#45;queries external sub&#45;system for PxScene&#45;based objects. " alt="" coords="28,80,183,107"/>
+<area shape="rect" id="node4" href="$classPxSceneSQSystem.html" title="Traditional SQ system for PxScene. " alt="" coords="207,80,345,107"/>
+<area shape="rect" id="node3" href="$classPxCustomSceneQuerySystem.html" title="A custom scene query system. " alt="" coords="5,155,205,181"/>
+<area shape="rect" id="node5" href="$classPxScene.html" title="A scene is a collection of bodies and constraints which can interact. " alt="" coords="239,155,313,181"/>
+</map>

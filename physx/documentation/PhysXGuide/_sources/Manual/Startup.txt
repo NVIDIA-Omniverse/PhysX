@@ -1,0 +1,177 @@
+.. _Startup:
+
+-----------------------
+Startup and Shutdown
+-----------------------
+
+===============================
+Introduction
+===============================
+
+The first step in using the PhysX SDK in a program is the initialization of some global objects.  These objects can be released when PhysX is no longer needed to free resources.  This chapter describes how to do this.
+
+===============================
+Foundation and Physics
+===============================
+
+First, in some startup code, create a *PxFoundation* object::
+
+    static PxDefaultErrorCallback gDefaultErrorCallback;
+    static PxDefaultAllocator gDefaultAllocatorCallback;
+
+    mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, 
+        gDefaultErrorCallback);
+    if(!mFoundation)
+        fatalError("PxCreateFoundation failed!");
+
+Every PhysX module requires a PxFoundation instance to be available. The required parameters are a version ID, an allocator callback and an error callback. *PX_PHYSICS_VERSION*, is a macro predefined in our headers to enable PhysX to check for a version mismatch between the headers and the corresponding SDK DLLs. 
+
+Usually, the allocator callback and error callback are specific to the application, but PhysX provides default implementations that make it easy to get started. See :ref:`MemoryManagement` and :ref:`ErrorReporting` for more details of these callbacks. (The actual sample code supports an advanced memory allocator that tracks allocations instead of the default, but we have omitted that detail here.)
+
+Now create the top-level *PxPhysics* object::
+
+    bool recordMemoryAllocations = true;
+
+    mPvd = PxCreatePvd(*gFoundation);
+    PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
+    mPvd->connect(*transport,PxPvdInstrumentationFlag::eALL);
+    
+    
+    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, 
+        PxTolerancesScale(), recordMemoryAllocations, mPvd);
+    if(!mPhysics)
+        fatalError("PxCreatePhysics failed!");
+
+Again, the version ID has to be passed in. The PxTolerancesScale parameter makes it easier to author content at different scales and still have PhysX work as expected, but to get started simply pass a default object of this type. The recordMemoryAllocations parameter specifies whether to perform memory profiling. The optional PVD instance enables the debugging and profiling with the PhysX Visual Debugger. 
+
+===============================
+Cooking 
+===============================
+
+The PhysX cooking library provides utilities for creating, converting, and serializing bulk data. Depending on your application, you may wish to link to the cooking library in order to process such data at runtime. Alternatively you may be able to process all such data in advance and just load it into memory as required. Initialize the cooking library as follows::
+      
+    mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, PxCookingParams(scale));
+    if (!mCooking)
+        fatalError("PxCreateCooking failed!");
+
+The PxCookingParams struct configures the cooking library to target different platforms, use non-default tolerances or produce optional outputs. It is important to use consistent PxTolerancesScale values everywhere in your application (see :ref:`PxToleranceScale` for more details).
+
+The cooking library generates data through a streaming interface. In the samples, implementations of streams are provided in the PxToolkit library to read and write from files and memory buffers. Heightfield or Trianglemesh cooked meshes can be directly inserted into PxPhysics without serialization using the PxPhysicsInsertionCallback. The default callback must be used and can be obtained using the PxPhysics::getPhysicsInsertionCallback().
+
+===============================
+Extensions
+===============================
+
+The extensions library  contains many functions that may be useful to a large class of users, but which some users may prefer to omit from their application either for code size reasons or to avoid use of certain subsystems, such as those pertaining to networking. Initializing the extensions library requires the PxPhysics object::
+
+    if (!PxInitExtensions(*mPhysics, mPvd))
+        fatalError("PxInitExtensions failed!");
+
+.. _optionalSDKComponents:
+        
+===============================
+Optional SDK Components
+===============================
+
+
+When linking PhysX as a static library on memory constrained platforms, it is possible to avoid linking the code of some PhysX features that are not always used in order to save memory.  Currently the optional features are:
+
+    * Articulations
+    * Height Fields
+
+If your application requires a subset of this functionality, it is recommended that you call PxCreateBasePhysics as opposed to PxCreatePhysics and then manually register the components you require.  Below is an example that registers some of the options::
+
+    physx::PxPhysics* customCreatePhysics(physx::PxU32 version,
+        physx::PxFoundation& foundation,
+        const physx::PxTolerancesScale& scale,
+        bool trackOutstandingAllocations
+        physx::PxPvd* pvd)
+    {
+        physx::PxPhysics* physics = PxCreateBasePhysics(version, foundation, scale, 
+            trackOutstandingAllocations, pvd);
+            
+        if(!physics)
+            return NULL;
+
+        PxRegisterArticulations(*physics);
+        PxRegisterHeightFields(*physics);
+        
+        return physics;
+    }
+                                            
+Note that this will only save memory when linking PhysX as a static library, as we rely on the linker to strip out the unused code.
+
+===============================
+Delay-Loading DLLs
+===============================
+
+The PhysXCommon DLL and PhysXFoundation DLL are marked as delay-loaded inside of the PhysX, PhysXCooking and PhysXCommon projects. So it is possible to have delay-loaded PhysXFoundation, PhysXCommon, PhysX and PhysXCooking DLLs. 
+
++++++++++++++++++++++++++++++++++++++++++++++++++++
+PhysXCommon DLL and PhysXFoundation DLL load
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+ * If delay load hook is specified the PhysXCommon name or PhysXFoundation name provided by user is used
+ * If delay load hook is not specified, the corresponding PhysXCommon DLL or PhysXFoundation DLL is used
+ 
+
++++++++++++++++++++++++++++++++
+PxDelayLoadHook
++++++++++++++++++++++++++++++++
+
+The PxDelayLoadHook class supports loading of the PhysXCommon, PhysXFoundation DLLs with different names and paths. This can be achieved by providing different DLL paths to the PhysX SDK through a custom subclass of PxDelayLoadHook, see the following example::
+
+    class SnippetDelayLoadHook: public PxDelayLoadHook
+    {    
+        virtual const char* getPhysXCommonDllName() const 
+            { return "customPath\\PhysXCommon_x64_Renamed.dll"; }
+
+        virtual const char* getPhysXFoundationDllName() const 
+            { return "customPath\\PhysXFoundation_x64_Renamed.dll"; }
+    } gDelayLoadHook;
+
+Now the hook must be set for PhysX, PhysXCooking, PhysXCommon::
+
+    PxSetPhysXDelayLoadHook(&gDelayLoadHook);
+    PxSetPhysXCookingDelayLoadHook(&gDelayLoadHook);
+    PxSetPhysXCommonDelayLoadHook(&gDelayLoadHook);
+
+For more information please see the SnippetDelayLoadHook.    
+
++++++++++++++++++++++++++++++++
+PxGpuLoadHook
++++++++++++++++++++++++++++++++  
+
+The PxGpuLoadHook class supports loading of the PhysXGpu DLL with a different name or path. This can be achieved by providing a different DLL path to the PhysX SDK through a custom subclass of PxGpuLoadHook, see the following example::
+
+    class SnippetGpuLoadHook: public PxGpuLoadHook
+    {    
+        virtual const char* getPhysXGpuDllName() const 
+            { return "customPath\\PhysXGpu_x64_Renamed.dll"; }
+    } gGpuLoadHook;
+
+Now the hook must be set for PhysX::
+
+    PxSetPhysXGpuLoadHook(&gGpuLoadHook);
+    
+For more information please see the SnippetDelayLoadHook.
+
++++++++++++++++++++++++++++++++
+PhysXCommon Secure Load
++++++++++++++++++++++++++++++++
+
+All PhysX DLLs distributed by NVIDIA are signed. The PhysXCommon DLL signature is checked, when it is loaded by PhysX or PhysXCooking. If signature test fails the application is terminated.
+
+===============================
+Shutting Down
+===============================
+
+To dispose of any PhysX object, call its release() method.  This will destroy the object, and all contained objects.  The precise behavior depends on the object type being released, so refer to the reference guide for details.  To shut down the extensions library, call the function *PxCloseExtensions()*. To shut down physics, call release() on the PxPhysics object, and this will clean up all of the physics objects::
+
+    mPhysics->release();
+    
+Do not forget to release the foundation object as well, but only after all other PhysX modules have been released::
+
+    mFoundation->release();
+

@@ -1,0 +1,58 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="5,351,73,377"/>
+<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="195,56,264,83"/>
+<area shape="rect" id="node11" href="$classPxAggregate.html" title="Class to aggregate actors into a single broad&#45;phase entry. " alt="" coords="181,107,278,133"/>
+<area shape="rect" id="node12" href="$classPxArticulationJointReducedCoordinate.html" title="A joint between two links in an articulation. " alt="" coords="139,158,320,199"/>
+<area shape="rect" id="node13" href="$classPxArticulationReducedCoordinate.html" title="A tree structure of bodies connected by joints that is treated as a unit by the dynamics solver..." alt="" coords="121,224,337,251"/>
+<area shape="rect" id="node14" href="$classPxArticulationSensor.html" title="A force sensor that can be attached to articulation links to measure spatial force. " alt="" coords="157,275,301,301"/>
+<area shape="rect" id="node15" href="$classPxArticulationTendon.html" title="Common base class shared by PxArticulationSpatialTendon and PxArticulationFixedTendon. " alt="" coords="157,325,302,352"/>
+<area shape="rect" id="node18" href="$classPxBVH.html" title="Class representing a bounding volume hierarchy. " alt="" coords="197,376,262,403"/>
+<area shape="rect" id="node19" href="$classPxConstraint.html" title="A plugin class for implementing constraints. " alt="" coords="181,427,278,453"/>
+<area shape="rect" id="node20" href="$classPxJoint.html" title="a base interface providing common functionality for PhysX joints " alt="" coords="197,477,262,504"/>
+<area shape="rect" id="node30" href="$classPxPruningStructure.html" title="A precomputed pruning structure to accelerate scene queries against newly added actors. " alt="" coords="162,528,297,555"/>
+<area shape="rect" id="node31" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="177,883,282,909"/>
+<area shape="rect" id="node51" href="$classPxVehicleWheels.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with just wheels..." alt="" coords="167,1161,292,1188"/>
+<area shape="rect" id="node3" href="$classPxParticleSystem.html" title="The shared base class for all particle systems. " alt="" coords="415,5,541,32"/>
+<area shape="rect" id="node5" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="429,56,527,83"/>
+<area shape="rect" id="node10" href="$classPxSoftBody.html" title="Represents a FEM softbody including everything to calculate its definition like geometry and material..." alt="" coords="433,107,523,133"/>
+<area shape="rect" id="node4" href="$classPxPBDParticleSystem.html" title="A particle system that uses the position based dynamics solver. " alt="" coords="619,5,774,32"/>
+<area shape="rect" id="node6" href="$classPxRigidBody.html" title="PxRigidBody is a base class shared between dynamic rigid body objects. " alt="" coords="648,56,745,83"/>
+<area shape="rect" id="node9" href="$classPxRigidStatic.html" title="PxRigidStatic represents a static rigid body simulation object in the physics SDK. " alt="" coords="646,107,747,133"/>
+<area shape="rect" id="node7" href="$classPxArticulationLink.html" title="A component of an articulation that represents a rigid body. " alt="" coords="842,31,969,57"/>
+<area shape="rect" id="node8" href="$classPxRigidDynamic.html" title="PxRigidDynamic represents a dynamic rigid simulation object in the physics SDK. " alt="" coords="846,81,965,108"/>
+<area shape="rect" id="node16" href="$classPxArticulationFixedTendon.html" title="A fixed tendon that can be used to link multiple degrees of freedom of multiple articulation joints v..." alt="" coords="389,173,567,200"/>
+<area shape="rect" id="node17" href="$classPxArticulationSpatialTendon.html" title="A spatial tendon that attaches to an articulation. " alt="" coords="385,224,571,251"/>
+<area shape="rect" id="node21" href="$classPxContactJoint.html" title="a joint that maintains an upper or lower bound (or both) on the distance between two points on differ..." alt="" coords="423,275,533,301"/>
+<area shape="rect" id="node22" href="$classPxD6Joint.html" title="A D6 joint is a general constraint between two actors. " alt="" coords="437,325,519,352"/>
+<area shape="rect" id="node23" href="$classPxDistanceJoint.html" title="a joint that maintains an upper or lower bound (or both) on the distance between two points on differ..." alt="" coords="420,376,536,403"/>
+<area shape="rect" id="node24" href="$classPxFixedJoint.html" title="A fixed joint permits no relative movement between two bodies. ie the bodies are glued together..." alt="" coords="429,427,527,453"/>
+<area shape="rect" id="node25" href="$classPxGearJoint.html" title="A joint that connects two existing revolute joints and constrains their relative angular velocity and..." alt="" coords="431,477,525,504"/>
+<area shape="rect" id="node26" href="$classPxPrismaticJoint.html" title="A prismatic joint permits relative translational movement between two bodies along an axis..." alt="" coords="418,528,538,555"/>
+<area shape="rect" id="node27" href="$classPxRackAndPinionJoint.html" title="A joint that connects an existing revolute joint to an existing prismatic joint, and constrains their..." alt="" coords="401,579,555,605"/>
+<area shape="rect" id="node28" href="$classPxRevoluteJoint.html" title="A joint which behaves in a similar way to a hinge or axle. " alt="" coords="421,629,535,656"/>
+<area shape="rect" id="node29" href="$classPxSphericalJoint.html" title="A joint which behaves in a similar way to a ball and socket. " alt="" coords="419,680,537,707"/>
+<area shape="rect" id="node32" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="421,731,535,757"/>
+<area shape="rect" id="node42" href="$classPxConvexMesh.html" title="A convex mesh. " alt="" coords="422,781,534,808"/>
+<area shape="rect" id="node43" href="$classPxHeightField.html" title="A height field class. " alt="" coords="427,832,529,859"/>
+<area shape="rect" id="node44" href="$classPxShape.html" title="Abstract class for collision shapes. " alt="" coords="441,883,515,909"/>
+<area shape="rect" id="node45" href="$classPxSoftBodyAuxData.html" title="A data container providing mass, rest pose and other information required for softbody simulation..." alt="" coords="407,933,549,960"/>
+<area shape="rect" id="node46" href="$classPxSoftBodyMesh.html" title="A softbody mesh, containing structures to store collision shape, simulation shape and deformation sta..." alt="" coords="417,984,539,1011"/>
+<area shape="rect" id="node47" href="$classPxTetrahedronMesh.html" title="A tetramedron mesh, also called a &#39;tetrahedron soup&#39;. " alt="" coords="409,1035,547,1061"/>
+<area shape="rect" id="node48" href="$classPxTriangleMesh.html" title="A triangle mesh, also called a &#39;polygon soup&#39;. " alt="" coords="421,1085,535,1112"/>
+<area shape="rect" id="node33" href="$classPxFEMMaterial.html" title="Material class to represent a set of FEM material properties. " alt="" coords="641,680,753,707"/>
+<area shape="rect" id="node36" href="$classPxMaterial.html" title="Material class to represent a set of surface properties. " alt="" coords="655,731,739,757"/>
+<area shape="rect" id="node37" href="$classPxParticleMaterial.html" title="Material class to represent a set of particle material properties. " alt="" coords="633,781,761,808"/>
+<area shape="rect" id="node34" href="$classPxFEMClothMaterial.html" title="Material class to represent a set of FEM material properties. " alt="" coords="834,629,977,656"/>
+<area shape="rect" id="node35" href="$classPxFEMSoftBodyMaterial.html" title="Material class to represent a set of softbody FEM material properties. " alt="" coords="823,680,988,707"/>
+<area shape="rect" id="node38" href="$classPxCustomMaterial.html" title="PxCustomMaterial" alt="" coords="841,731,970,757"/>
+<area shape="rect" id="node39" href="$classPxFLIPMaterial.html" title="Material class to represent a set of FLIP particle material properties. " alt="" coords="850,781,961,808"/>
+<area shape="rect" id="node40" href="$classPxMPMMaterial.html" title="Material class to represent a set of MPM particle material properties. " alt="" coords="848,832,963,859"/>
+<area shape="rect" id="node41" href="$classPxPBDMaterial.html" title="Material class to represent a set of PBD particle material properties. " alt="" coords="850,883,961,909"/>
+<area shape="rect" id="node49" href="$classPxBVH33TriangleMesh.html" title="A triangle mesh containing the PxMeshMidPhase::eBVH33 structure. " alt="" coords="619,1035,775,1061"/>
+<area shape="rect" id="node50" href="$classPxBVH34TriangleMesh.html" title="A triangle mesh containing the PxMeshMidPhase::eBVH34 structure. " alt="" coords="619,1085,775,1112"/>
+<area shape="rect" id="node52" href="$classPxVehicleDrive.html" title="A complete vehicle with instance dynamics data and configuration data for wheels and engine..." alt="" coords="423,1161,533,1188"/>
+<area shape="rect" id="node56" href="$classPxVehicleNoDrive.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with no drive model..." alt="" coords="415,1212,541,1239"/>
+<area shape="rect" id="node53" href="$classPxVehicleDrive4W.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with up to 4 driven w..." alt="" coords="632,1136,761,1163"/>
+<area shape="rect" id="node54" href="$classPxVehicleDriveNW.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with up to PX_MAX_NB_..." alt="" coords="631,1187,762,1213"/>
+<area shape="rect" id="node55" href="$classPxVehicleDriveTank.html" title="Data structure with instanced dynamics data and configuration data of a tank. " alt="" coords="628,1237,765,1264"/>
+</map>

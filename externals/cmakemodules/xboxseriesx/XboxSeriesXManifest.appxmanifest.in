@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:mx="http://schemas.microsoft.com/appx/2013/xbox/manifest" IgnorableNamespaces="mx">
+  <Identity Name="${APPX_MANIFEST_NAME}"
+            Publisher="CN=NVIDIA Corporation, O=NVIDIA Corporation, L=Santa Clara, S=California, C=US"
+            Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>${APPX_MANIFEST_NAME}</DisplayName>
+    <PublisherDisplayName>NVIDIA Corporation</PublisherDisplayName>
+    <Logo>StoreLogo.png</Logo>
+    <Description>Description</Description>
+  </Properties>
+  <Prerequisites>
+    <OSMinVersion>6.2</OSMinVersion>
+    <OSMaxVersionTested>6.2</OSMaxVersionTested>
+  </Prerequisites>
+  <Resources>
+    <Resource Language="en-us"/>
+  </Resources>
+  <Applications>
+    <Application Id="App" 
+        Executable="$targetnametoken$.exe" 
+        EntryPoint="${APPX_MANIFEST_NAME}.App">
+        <VisualElements 
+            DisplayName="${APPX_MANIFEST_NAME}"
+            Logo="Logo.png"
+            SmallLogo="SmallLogo.png"
+            Description="Description"
+            ForegroundText="dark"
+            BackgroundColor="#222222">
+			   <DefaultTile ShortName="${APPX_MANIFEST_NAME}" ShowName="allLogos" />
+            <SplashScreen Image="SplashScreen.png" />
+        </VisualElements>
+        <Extensions>
+          <mx:Extension Category="windows.xbox.networking">
+             <mx:XboxNetworkingManifest>
+              <mx:SocketDescriptions>
+                <mx:SocketDescription Name="SocketTcp" SecureIpProtocol="Tcp" BoundPort="12345">
+                  <mx:AllowedUsages>
+                    <mx:SecureDeviceSocketUsage Type="Initiate" />
+                    <mx:SecureDeviceSocketUsage Type="Accept" />
+                    <mx:SecureDeviceSocketUsage Type="SendGameData" />
+                    <mx:SecureDeviceSocketUsage Type="ReceiveGameData" />
+                  </mx:AllowedUsages>
+                </mx:SocketDescription>
+              </mx:SocketDescriptions>
+              <mx:SecureDeviceAssociationTemplates>
+                <mx:SecureDeviceAssociationTemplate Name="Tcp" InitiatorSocketDescription="SocketTcp" AcceptorSocketDescription="SocketTcp" MultiplayerSessionRequirement="Required">
+                  <mx:AllowedUsages>
+                    <mx:SecureDeviceAssociationUsage Type="InitiateFromMicrosoftConsole" />
+                    <mx:SecureDeviceAssociationUsage Type="AcceptOnMicrosoftConsole" />
+                  </mx:AllowedUsages>
+                </mx:SecureDeviceAssociationTemplate>
+              </mx:SecureDeviceAssociationTemplates>
+            </mx:XboxNetworkingManifest>
+          </mx:Extension>
+        </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClientServer" />
+  </Capabilities>
+</Package>

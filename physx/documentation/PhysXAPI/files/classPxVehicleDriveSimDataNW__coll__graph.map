@@ -1,0 +1,9 @@
+<map id="PxVehicleDriveSimDataNW" name="PxVehicleDriveSimDataNW">
+<area shape="rect" id="node2" href="$classPxVehicleDriveSimData.html" title="Data structure describing non&#45;wheel configuration data of a vehicle that has engine, gears, clutch, and auto&#45;box. " alt="" coords="229,213,388,240"/>
+<area shape="rect" id="node3" href="$classPxVehicleGearsData.html" title="PxVehicleGearsData" alt="" coords="5,124,148,151"/>
+<area shape="rect" id="node4" href="$classPxVehicleClutchData.html" title="PxVehicleClutchData" alt="" coords="172,124,317,151"/>
+<area shape="rect" id="node5" href="$classPxVehicleEngineData.html" title="PxVehicleEngineData" alt="" coords="341,124,489,151"/>
+<area shape="rect" id="node6" href="$classPxFixedSizeLookupTable.html" title="PxFixedSizeLookupTable\l\&lt; eMAX_NB_ENGINE_TORQUE\l_CURVE_ENTRIES \&gt;" alt="" coords="310,5,521,61"/>
+<area shape="rect" id="node7" href="$classPxVehicleAutoBoxData.html" title="PxVehicleAutoBoxData" alt="" coords="513,124,672,151"/>
+<area shape="rect" id="node8" href="$classPxVehicleDifferentialNWData.html" title="PxVehicleDifferentialNWData" alt="" coords="412,213,603,240"/>
+</map>

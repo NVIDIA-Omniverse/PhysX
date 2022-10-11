@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structPxControllerHit.html" title="Describes a generic CCT hit. " alt="" coords="5,56,115,83"/>
+<area shape="rect" id="node2" href="$structPxControllerObstacleHit.html" title="Describes a hit between a CCT and a user&#45;defined obstacle. Passed to onObstacleHit(). " alt="" coords="163,5,324,32"/>
+<area shape="rect" id="node3" href="$structPxControllerShapeHit.html" title="Describes a hit between a CCT and a shape. Passed to onShapeHit() " alt="" coords="170,56,317,83"/>
+<area shape="rect" id="node4" href="$structPxControllersHit.html" title="Describes a hit between a CCT and another CCT. Passed to onControllerHit(). " alt="" coords="185,107,301,133"/>
+</map>

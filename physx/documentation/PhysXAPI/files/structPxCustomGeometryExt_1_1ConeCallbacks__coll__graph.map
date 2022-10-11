@@ -1,0 +1,5 @@
+<map id="PxCustomGeometryExt::ConeCallbacks" name="PxCustomGeometryExt::ConeCallbacks">
+<area shape="rect" id="node2" href="$structPxCustomGeometryExt_1_1BaseConvexCallbacks.html" title="Base class for convex geometries callbacks. " alt="" coords="128,80,288,121"/>
+<area shape="rect" id="node3" href="$structPxCustomGeometry_1_1Callbacks.html" title="Custom geometry callbacks structure. User should inherit this and implement all pure virtual function..." alt="" coords="5,5,211,32"/>
+<area shape="rect" id="node4" href="$structPxGjkQuery_1_1Support.html" title="Abstract interface for a user defined shape GJK mapping support. A user defined shape consists of a c..." alt="" coords="235,5,381,32"/>
+</map>

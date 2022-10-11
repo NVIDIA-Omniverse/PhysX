@@ -1,0 +1,5 @@
+<map id="PxInputData" name="PxInputData">
+<area shape="rect" id="node3" href="$classPxDefaultFileInputData.html" title="default implementation of a file read stream " alt="" coords="5,155,160,181"/>
+<area shape="rect" id="node4" href="$classPxDefaultMemoryInputData.html" title="default implementation of a memory read stream " alt="" coords="185,155,365,181"/>
+<area shape="rect" id="node2" href="$classPxInputStream.html" title="Input stream class for I/O. " alt="" coords="125,5,233,32"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="PxControllerDesc" name="PxControllerDesc">
+<area shape="rect" id="node2" href="$classPxBoxControllerDesc.html" title="Descriptor for a box character controller. " alt="" coords="5,80,152,107"/>
+<area shape="rect" id="node3" href="$classPxCapsuleControllerDesc.html" title="A descriptor for a capsule character controller. " alt="" coords="176,80,347,107"/>
+</map>

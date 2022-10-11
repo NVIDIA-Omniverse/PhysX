@@ -1,0 +1,5 @@
+<map id="PxRigidStatic" name="PxRigidStatic">
+<area shape="rect" id="node2" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="7,155,105,181"/>
+<area shape="rect" id="node3" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="21,80,91,107"/>
+<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="22,5,90,32"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="PxQueryHit" name="PxQueryHit">
+<area shape="rect" id="node2" href="$structPxGeomOverlapHit.html" title="Stores results of overlap queries. " alt="" coords="5,80,137,107"/>
+<area shape="rect" id="node4" href="$structPxLocationHit.html" title="Scene query hit information for raycasts and sweeps returning hit position and normal information..." alt="" coords="161,80,264,107"/>
+<area shape="rect" id="node3" href="$structPxOverlapHit.html" title="PxOverlapHit" alt="" coords="23,155,120,181"/>
+<area shape="rect" id="node5" href="$structPxGeomRaycastHit.html" title="Stores results of raycast queries. " alt="" coords="144,155,281,181"/>
+<area shape="rect" id="node7" href="$structPxGeomSweepHit.html" title="Stores results of sweep queries. " alt="" coords="306,155,434,181"/>
+<area shape="rect" id="node6" href="$structPxRaycastHit.html" title="PxRaycastHit" alt="" coords="161,229,264,256"/>
+<area shape="rect" id="node8" href="$structPxSweepHit.html" title="PxSweepHit" alt="" coords="323,229,417,256"/>
+</map>

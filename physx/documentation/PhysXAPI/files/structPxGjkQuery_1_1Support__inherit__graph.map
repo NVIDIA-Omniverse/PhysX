@@ -1,0 +1,10 @@
+<map id="PxGjkQuery::Support" name="PxGjkQuery::Support">
+<area shape="rect" id="node2" href="$structPxCustomGeometryExt_1_1BaseConvexCallbacks.html" title="Base class for convex geometries callbacks. " alt="" coords="227,37,387,79"/>
+<area shape="rect" id="node5" href="$structPxGjkQueryExt_1_1BoxSupport.html" title="Pre&#45;made support mapping for a box. " alt="" coords="212,103,401,130"/>
+<area shape="rect" id="node6" href="$structPxGjkQueryExt_1_1CapsuleSupport.html" title="Pre&#45;made support mapping for a capsule. " alt="" coords="200,154,413,181"/>
+<area shape="rect" id="node7" href="$structPxGjkQueryExt_1_1ConvexGeomSupport.html" title="Pre&#45;made support mapping for any PhysX&#39;s convex geometry (sphere, capsule, box, convex mesh) ..." alt="" coords="207,205,406,247"/>
+<area shape="rect" id="node8" href="$structPxGjkQueryExt_1_1ConvexMeshSupport.html" title="Pre&#45;made support mapping for a convex mesh. " alt="" coords="209,271,404,312"/>
+<area shape="rect" id="node9" href="$structPxGjkQueryExt_1_1SphereSupport.html" title="Pre&#45;made support mapping for a sphere. " alt="" coords="203,337,410,363"/>
+<area shape="rect" id="node3" href="$structPxCustomGeometryExt_1_1ConeCallbacks.html" title="Cone geometry callbacks. " alt="" coords="461,5,621,47"/>
+<area shape="rect" id="node4" href="$structPxCustomGeometryExt_1_1CylinderCallbacks.html" title="Cylinder geometry callbacks. " alt="" coords="461,71,621,112"/>
+</map>

@@ -1,0 +1,141 @@
+.. _GPURigidBodies:
+
+--------------------------------
+GPU Rigid Bodies
+--------------------------------
+
+=================================
+Introduction
+=================================
+
+PhysX rigid body simulation can be configured to take advantage of CUDA capable GPUs under Linux or Windows. This provides a performance benefit proportional to the arithmetic complexity of a scene.  GPU acceleration extensions are provided as an optional binary DLL.  It supports the entire rigid body pipeline feature-set but currently does not support articulations. The state of GPU-accelerated rigid bodies can be modified and queried using the exact same API as used to modify and query CPU rigid bodies. GPU rigid bodies can easily be used in conjunction with character controllers (CCTs) and vehicles.
+
+=================================
+Using GPU Rigid Bodies
+=================================
+
+GPU rigid bodies are no more difficult to use than CPU rigid bodies. GPU rigid bodies use the exact same API and same classes as CPU rigid bodies. GPU rigid body acceleration is enabled on a per-scene basis. If enabled, all rigid bodies occupying the scene will be processed by the GPU. This feature is implemented in CUDA and requires SM3.0 (Kepler) or later compatible GPU. If no compatible device is found, simulation will fall back onto the CPU and corresponding error messages will be provided. 
+
+This feature is split into two components: rigid body dynamics and broad phase. These are enabled using PxSceneFlag::eENABLE_GPU_DYNAMICS and by setting PxSceneDesc::broadphaseType to PxBroadPhaseType::eGPU respectively.  These properties are immutable properties of the scene. In addition, you must initialize the CUDA context manager and set it on the PxSceneDesc. A snippet demonstrating how to enable GPU rigid body simulation is provided in SnippetHelloGRB. The code example below serves as a brief reference::
+
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+
+	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
+
+	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
+	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
+	gDispatcher = PxDefaultCpuDispatcherCreate(4);	
+	sceneDesc.cpuDispatcher	= gDispatcher;
+	sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
+	sceneDesc.cudaContextManager = gCudaContextManager;
+
+	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+	sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
+
+	gScene = gPhysics->createScene(sceneDesc);
+
+	
+Enabling GPU rigid body dynamics turns on GPU-accelerated contact generation, shape/body management and the GPU-accelerated constraint solver. This accelerates the majority of the discrete rigid body pipeline. 
+
+Turning on GPU broad phase replaces the CPU broad phase with a GPU-accelerated broad phase. 
+
+Each can be enabled independently so, for example, you may enable GPU broad phase with CPU rigid body dynamics , CPU broad phase (SAP, MBP or ABP) with GPU rigid body dynamics or combine GPU broad phase with GPU rigid body dynamics.
+
+
+
+=================================
+What is GPU accelerated?
+=================================
+
+The GPU rigid body feature provides GPU-accelerated implementations of:
+
+* Broad Phase
+* Contact generation
+* Shape and body management
+* Constraint solver
+
+All other features are performed on the CPU.
+
+There are several caveats to GPU contact generation. These are as follows:
+
+* GPU contact generation supports only boxes, convex hulls, triangle meshes and heightfields. Any spheres, capsules or planes will have contact generation involving those shapes processed on the CPU, rather than GPU.
+* Convex hulls require PxCookingParam::buildGPUData to be set to true to build data required to perform contact generation on the GPU. If a hull with more than 64 vertices or more than 32 vertices per-face is used, it will be processed on the CPU. If the PxConvexFlag::eGPU_COMPATIBLE flag is used when the convex hull is created the limits are applied to ensure the resulting hull can be used on GPU.
+* Triangle meshes require PxCookingParam::buildGPUData to be set to true to build data required to process the mesh on the GPU. If this flag is not set during cooking, the GPU data for the mesh will be absent and any contact generation involving this mesh will be processed on CPU.
+* Any pairs requesting contact modification will be processed on the CPU.
+* PxSceneFlag::eENABLE_PCM must be enabled for GPU contact generation to be performed. This is the only form of contact generation implemented on the GPU. If eENABLE_PCM is not raised, contact generation will be processed on CPU for all pairs using the non distance-based legacy contact generation.
+
+Irrespective of whether contact generation for a given pair is processed on CPU or GPU, the GPU solver will process all pairs with contacts that request collision response in their filter shader.
+
+As mentioned above, GPU rigid bodies currently do not support articulations. If eENABLE_GPU_DYNAMICS is enabled on the scene, any attempts to add an articulation to the scene will result in an error message being displayed and the articulation will not be added to the scene.
+
+The GPU rigid body solver provides full support for joints and contacts. However, best performance is achieved using D6 joints because D6 joints are natively supported on the GPU, i.e. the full solver pipeline from prep to solve is implemented on the GPU. Other joint types are supported by the GPU solver but their joint shaders are run on the CPU. This will incur some additional host-side performance overhead compared to D6 joints.
+
+============================
+Tuning
+============================
+
+Unlike CPU PhysX, the GPU rigid bodies feature is not able to dynamically grow all buffers. Therefore, it is necessary to provide some fixed buffer sizes for the GPU rigid body feature. If insufficient memory is available, the system will issue warnings and discard contacts/constraints/pairs, which means that behavior may be adversely affected. The following buffers are adjustable in PxSceneDesc::gpuDynamicsConfig::
+
+	struct PxgDynamicsMemoryConfig
+	{
+		PxU32 constraintBufferCapacity; //!< Capacity of constraint buffer allocated in GPU global memory
+		PxU32 contactBufferCapacity;    //!< Capacity of contact buffer allocated in GPU global memory
+		PxU32 tempBufferCapacity;       //!< Capacity of temp buffer allocated in pinned host memory.
+		PxU32 contactStreamCapacity;    //!< Capacity of contact stream buffer allocated in pinned host memory. This is double-buffered so total allocation size = 2* contactStreamCapacity.
+		PxU32 patchStreamCapacity;      //!< Capacity of the contact patch stream buffer allocated in pinned host memory. This is double-buffered so total allocation size = 2 * patchStreamCapacity.
+		PxU32 forceStreamCapacity;      //!< Capacity of force buffer allocated in pinned host memory.
+		PxU32 heapCapacity;             //!< Initial capacity of the GPU and pinned host memory heaps. Additional memory will be allocated if more memory is required.
+		PxU32 foundLostPairsCapacity;   //!< Capacity of found and lost buffers allocated in GPU global memory. This is used for the found/lost pair reports in the BP. 
+
+
+		PxgDynamicsMemoryConfig() :
+			constraintBufferCapacity(32 * 1024 * 1024),
+			contactBufferCapacity(24 * 1024 * 1024),
+			tempBufferCapacity(16 * 1024 * 1024),
+			contactStreamCapacity(6 * 1024 * 1024),
+			patchStreamCapacity(5 * 1024 * 1024),
+			forceStreamCapacity(1 * 1024 * 1024),
+			heapCapacity(64 * 1024 * 1024),
+			foundLostPairsCapacity(256 * 1024)
+		{
+		}
+	};
+
+The default values are generally sufficient for scenes simulating approximately 10,000 rigid bodies.
+
+* constraintBufferCapacity defines the total amount of memory that can be occupied by constraints in the solver. If more memory is required, a warning is issued and no further constraints will be created.
+* contactBufferCapacity defines the size of a temporary contact buffer used in the constraint solver. If more memory is required, a warning is issued and contacts will be dropped.
+* tempBufferCapacity defines the size of a buffer used for miscellaneous transient memory allocations used in the constraint solver.
+* contactStreamCapacity defines the size of a buffer used to store contacts in the contact stream. This data is allocated in pinned host memory and is double-buffered. If insufficient memory is allocated, a warning will be issued and contacts will be dropped.
+* patchStreamCapacity defines the size of a buffer used to store contact patches in the contact stream. This data is allocated in pinned host memory and is double-buffered. If insufficient memory is allocated, a warning will be issued and contacts will be dropped.
+* forceStreamCapacity defines the size of a buffer used to report applied contact forces to the user. This data is allocated in pinned host memory. If insufficient memory is allocated, a warning will be issued and contacts will be dropped.
+* heapCapacity defines the initial size of the GPU and pinned host memory heaps. Additional memory will be allocated if more memory is required. The cost of physically allocating memory can be relatively high so a custom heap allocator is used to reduce these costs.
+* foundLostPairsCapacity defines the maximum number of found or lost pairs that the GPU broad phase can produce in a single frame. This does not limit the total number of pairs but only limits the number of new or lost pairs that can be detected in a single frame. If more pairs are detected or lost in a frame, an error is emitted and pairs will be dropped by the broad phase.
+
+==============================
+Performance Considerations
+==============================
+
+GPU rigid bodies can provide extremely large performance advantages over CPU rigid bodies in scenes with several thousand active rigid bodies. However, there are some performance considerations to be taken into account. 
+
+GPU rigid bodies currently only accelerate contact generation involving convex hulls and boxes (against convex hulls, boxes, triangle meshes and heighfields). If you make heavy use of other shapes, e.g. capsules or spheres, contact generation involving these shapes will only be processed on CPU.
+
+D6 joints will provide best performance when used with GPU rigid bodies. Other joint types will be partially GPU-accelerated but the performance advantages will be less than the performance advantage exhibited by D6 joints.
+
+Convex hulls with more than 64 vertices or with more than 32 vertices per-face will have their contacts processed by the CPU rather than the GPU, so, if possible, keep vertex counts within these limits. Vertex limits can be defined in cooking to ensure that cooked convex hulls do not exceed these limits.
+
+If your application makes heavy use of contact modification, this may limit the number of pairs that have contact generation performed on the GPU.
+
+Modifying the state of actors forces data to be re-synced to the GPU, e.g. transforms for actors must be updated if the application adjusts global pose, velocities must be updated if the application modifies the bodies' velocities etc.. The associated cost of re-syncing data to the GPU is relatively low but it should be taken into consideration.
+
+Features such as joint projection, CCD and triggers are not GPU accelerated and are still processed on the CPU.
+
+ 
+
+
+
+
+
+
+
+

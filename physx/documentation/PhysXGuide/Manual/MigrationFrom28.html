@@ -1,0 +1,704 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Migrating From PhysX SDK 2.x to 3.x &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Migrating From PhysX SDK 3.2 to 3.3" href="MigrationTo33.html" />
+    <link rel="prev" title="Best Practices Guide" href="BestPractices.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Migrating From PhysX SDK 2.x to 3.x</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#removed-features">Removed Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compartments">Compartments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deformables">Deformables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nxutillib">NxUtilLib</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#anisotropic-friction">Anisotropic Friction</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#basics">Basics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sdk-header">SDK Header</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sdk-redistribution">SDK Redistribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#api-conventions">API Conventions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#callback-classes">Callback Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#memory-management">Memory Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#debug-rendering">Debug Rendering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#error-reporting">Error Reporting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#type-casting">Type Casting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#multithreading">Multithreading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#startup-and-shutdown">Startup and Shutdown</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#extensions">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heightfields">Heightfields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cooking">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#serialization">Serialization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#api-design-changes">API Design Changes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#changed-actor-hierarchy">Changed Actor Hierarchy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#actor-creation">Actor Creation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#material-indexes">Material Indexes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#continuous-collision-detection">Continuous Collision Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pose-description">Pose Description</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shape-description">Shape Description</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#skin-width">Skin Width</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#joints">Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#time-stepping">Time Stepping</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#simulation-parameters">Simulation Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#collision-filtering">Collision Filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scene-queries">Scene Queries</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#raycasts">Raycasts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#overlaps">Overlaps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sweep-tests">Sweep Tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Migrating From PhysX SDK 2.x to 3.x</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="migrating-from-physx-sdk-2-x-to-3-x">
+<span id="migration"></span><h1>Migrating From PhysX SDK 2.x to 3.x<a class="headerlink" href="#migrating-from-physx-sdk-2-x-to-3-x" title="Permalink to this headline">¶</a></h1>
+<p>This guide describes how to upgrade applications that have an integration of PhysX 2.x to using PhysX 3.x.  As the changes are numerous and significant, the level of work involved in upgrading to PhysX 3 should be carefully assessed before starting to adapt an application's integration code.</p>
+<div class="section" id="removed-features">
+<h2>Removed Features<a class="headerlink" href="#removed-features" title="Permalink to this headline">¶</a></h2>
+<p>This section lists features of PhysX 2 that do not have a PhysX 3 equivalent.  Applications that rely on these features may need fundamental changes, or should stay with using PhysX 2.</p>
+<div class="section" id="compartments">
+<h3>Compartments<a class="headerlink" href="#compartments" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 scenes supported scene compartments. A separate compartment could be assigned to simulating rigid bodies, deformables or fluids.
+The compartments could be simulated in parallel and the scene code contained some extra logic for interaction between compartments.
+Compartments were added as an afterthought to an SDK that was not originally designed to support interaction between multiple simulation technologies.
+This design deficiency was addressed from the ground up in PhysX 3 and comparments were no longer needed.</p>
+<p>One missing detail is separate time steps are no longer directly supported in 3. A possible workaround is to create multiple PxScenes and step them
+at different rates. In this scenario the force exchange implementation would be entirely up to the user. Another possible approach is to simulate
+the entire scene using the minimum timestep formerly required for any of the compartments.</p>
+</div>
+<div class="section" id="deformables">
+<h3>Deformables<a class="headerlink" href="#deformables" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 supported a wide range of deformable mesh simulation features such as environmental cloth, soft bodies, inflatable balloons and plastic
+deformation of rigid metal. For performance and code quality reasons, 3.3 temporarily stopped supporting many of 2.8 deformable features in favor
+of a much simpler and higher performance cloth simulation engine. In PhysX 3 dot releases, we will be incrementally adding back features such
+as environmental simulation. For the time being there is no substitute for many applications of PhysX 2 deformables.</p>
+</div>
+<div class="section" id="nxutillib">
+<h3>NxUtilLib<a class="headerlink" href="#nxutillib" title="Permalink to this headline">¶</a></h3>
+<p>The assorted utility functions that were in this library was either moved elsewhere or deleted.  Sweep, overlap and ray tests are available in PxGeometryQuery.  Inertial tensor diagonalization is in PxDiagonalize().  Density computation from mass is gone.  Floating point unit manipulation routines are gone.  Geometrical helpers are in general gone.</p>
+</div>
+<div class="section" id="anisotropic-friction">
+<h3>Anisotropic Friction<a class="headerlink" href="#anisotropic-friction" title="Permalink to this headline">¶</a></h3>
+<p>Friction on a surface in PhysX 2 could be configured to be stronger in one direction than in another.  This is no longer supported in PhysX 3, and there is no known workaround that will give comparable behavior.</p>
+</div>
+</div>
+<div class="section" id="basics">
+<h2>Basics<a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sdk-header">
+<h3>SDK Header<a class="headerlink" href="#sdk-header" title="Permalink to this headline">¶</a></h3>
+<p>In PhysX 2, the symbols of the SDK could be included in the user's relevant source files through the following header:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="cp">#include &quot;NxPhysics.h&quot;</span>
+</pre></div>
+</div>
+<p>In PhysX 3, this should be replaced with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="cp">#include &quot;PxPhysicsAPI.h&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sdk-redistribution">
+<h3>SDK Redistribution<a class="headerlink" href="#sdk-redistribution" title="Permalink to this headline">¶</a></h3>
+<p>Unlike versions of PhysX prior to 2.8.4, PhysX 3 no longer needs a 'system software' installation on Windows.</p>
+</div>
+<div class="section" id="api-conventions">
+<h3>API Conventions<a class="headerlink" href="#api-conventions" title="Permalink to this headline">¶</a></h3>
+<p>The Nx prefix of API classes has changed to a Px prefix.  Descriptors for many classes were removed and replaced with creation parameters inline in the creation function.</p>
+<p>For example, a capsule was created with PhysX 2 like this:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">NxCapsuleShapeDesc</span> <span class="n">capsuleDesc</span><span class="p">;</span>
+<span class="n">capsuleDesc</span><span class="p">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span><span class="p">;</span>
+<span class="n">capsuleDesc</span><span class="p">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span><span class="p">;</span>
+<span class="n">capsuleDesc</span><span class="p">.</span><span class="n">materialIndex</span><span class="o">=</span> <span class="n">myMaterial</span><span class="o">-&gt;</span><span class="n">getMaterialIndex</span><span class="p">();</span>
+<span class="n">NxShape</span><span class="o">*</span> <span class="n">aCapsuleShape</span> <span class="o">=</span> <span class="n">aCapsuleActor</span><span class="o">-&gt;</span><span class="n">createShape</span><span class="p">(</span><span class="n">capsuleDesc</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In PhysX 3 it is created more succinctly like this:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxShape</span><span class="o">*</span> <span class="n">aCapsuleShape</span> <span class="o">=</span> <span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">aCapsuleActor</span><span class="p">,</span>
+    <span class="n">PxCapsuleGeometry</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">halfHeight</span><span class="p">),</span> <span class="n">myMaterial</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="callback-classes">
+<h3>Callback Classes<a class="headerlink" href="#callback-classes" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 callback classes are listed below, followed by the corresponding PhysX 3 class, if there is one:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>NxUserAllocator</td>
+<td>PxAllocatorCallback</td>
+</tr>
+<tr class="row-even"><td>NxUserOutputStream</td>
+<td>PxErrorCallback</td>
+</tr>
+<tr class="row-odd"><td>NxUserContactReport</td>
+<td>PxSimulationEventCallback</td>
+</tr>
+<tr class="row-even"><td>NxUserNotify</td>
+<td>PxSimulationEventCallback</td>
+</tr>
+<tr class="row-odd"><td>NxUserTriggerReport</td>
+<td>PxSimulationEventCallback</td>
+</tr>
+</tbody>
+</table>
+<p>The following PhysX 2 callback classes have no PhysX 3 direct equivalent:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="82%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>NxUserRaycastReport</td>
+<td>Ray casting Results.  Results are now passed to the user using a PxHitBuffer object.</td>
+</tr>
+<tr class="row-even"><td>NxUserEntityReport</td>
+<td>Sweep and Overlap results.  Results are now passed to the user using a PxHitBuffer object.</td>
+</tr>
+<tr class="row-odd"><td>NxStream</td>
+<td>Data serialization.  Serialized data is now written directly to binary buffers.</td>
+</tr>
+</tbody>
+</table>
+<p>Below is a list of new callback classes that offer functionality that did not exist in PhysX 2 yet:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="32%" />
+<col width="68%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>PxBroadPhaseCallback</td>
+<td>Broad-phase related events.</td>
+</tr>
+<tr class="row-even"><td>PxSimulationFilterCallback</td>
+<td>Contact filtering.</td>
+</tr>
+<tr class="row-odd"><td>PxUserControllerHitReport</td>
+<td>Reports character controller events.</td>
+</tr>
+<tr class="row-even"><td>PxControllerBehaviorCallback</td>
+<td>Customizes behavior of character controller collisions.</td>
+</tr>
+<tr class="row-odd"><td>PxContactModifyCallback</td>
+<td>Modification of contact constraints.</td>
+</tr>
+<tr class="row-even"><td>PxCCDContactModifyCallback</td>
+<td>Modification of CCD contact constraints.</td>
+</tr>
+<tr class="row-odd"><td>PxConstraintConnector</td>
+<td>Custom constraints.</td>
+</tr>
+<tr class="row-even"><td>PxProcessPxBaseCallback</td>
+<td>Serialization.</td>
+</tr>
+<tr class="row-odd"><td>PxQueryFilterCallback</td>
+<td>Scene query filtering.</td>
+</tr>
+<tr class="row-even"><td>PxSpatialLocationCallback</td>
+<td>Scene Queries against PxSpatialIndex.</td>
+</tr>
+<tr class="row-odd"><td>PxSpatialOverlapCallback</td>
+<td>Scene Queries against PxSpatialIndex.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="memory-management">
+<h3>Memory Management<a class="headerlink" href="#memory-management" title="Permalink to this headline">¶</a></h3>
+<p>NxUserAllocator is renamed to PxAllocatorCallback.  An important change since PhysX 2: The SDK now requires that the memory that is returned be 16-byte aligned. On many platforms malloc() returns memory that is 16-byte aligned, but on Windows the system function _aligned_malloc() provides this capability.</p>
+</div>
+<div class="section" id="debug-rendering">
+<h3>Debug Rendering<a class="headerlink" href="#debug-rendering" title="Permalink to this headline">¶</a></h3>
+<p>Debug visualization formerly provided by NxScene::getDebugRenderable() is now handled by PxScene::getRenderBuffer() and related functions.</p>
+</div>
+<div class="section" id="error-reporting">
+<h3>Error Reporting<a class="headerlink" href="#error-reporting" title="Permalink to this headline">¶</a></h3>
+<p>NxUserOutputStream is now called PxErrorCallback, but works the same way.  There is no separate reportAssertViolation() function.  Asserts are only contained in the debug build which only ships with the source release and go directly to platform hooks.</p>
+</div>
+<div class="section" id="type-casting">
+<h3>Type Casting<a class="headerlink" href="#type-casting" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 style downcasting:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">NxSphereShape</span> <span class="o">*</span> <span class="n">sphere</span> <span class="o">=</span> <span class="n">shape</span><span class="o">-&gt;</span><span class="n">isSphere</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>is replaced by the following template syntax:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxRigidDynamic</span><span class="o">*</span> <span class="n">myActor</span> <span class="o">=</span> <span class="n">actor</span><span class="o">-&gt;</span><span class="n">is</span><span class="o">&lt;</span><span class="n">PxRigidDynamic</span><span class="o">&gt;</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="multithreading">
+<h3>Multithreading<a class="headerlink" href="#multithreading" title="Permalink to this headline">¶</a></h3>
+<p>Compared to PhysX 2, there are now more situations where it is legal to call the SDK from multiple threads.  See the section on Multithreading for details.</p>
+<p>While PhysX 2 simulation threads were managed internally by the SDK, and the user could simply specify the number to use, PhysX 3 allows the application to take over all of the simulation's thread scheduling.  It is also possible for the application to define its own tasks and submit them to the SDK's default scheduler.  See the section on TaskManagement for details.</p>
+</div>
+<div class="section" id="startup-and-shutdown">
+<h3>Startup and Shutdown<a class="headerlink" href="#startup-and-shutdown" title="Permalink to this headline">¶</a></h3>
+<p>PxCreatePhysicsSDK() has been renamed PxCreatePhysics(), and the parameters have slightly changed. A foundation instance must first be created explicitly using PxCreateFoundation().</p>
+</div>
+<div class="section" id="extensions">
+<h3>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
+<p>A lot of non-essential utility code has been moved to the extensions library.  For example, NxActor::addForceAtPos() is now exposed as PxRigidBodyExt::addForceAtPos().  If a former function appears to be missing, look there.  It is available after calling PxInitExtensions().</p>
+</div>
+<div class="section" id="heightfields">
+<h3>Heightfields<a class="headerlink" href="#heightfields" title="Permalink to this headline">¶</a></h3>
+<p>Heightfields now need to be pre-cooked like convexes and meshes.  PhysX 3 heightfields can be set to use the same internal collision logic as meshes so they have uniform behavior.</p>
+</div>
+<div class="section" id="cooking">
+<h3>Cooking<a class="headerlink" href="#cooking" title="Permalink to this headline">¶</a></h3>
+<p>The PhysX 2 cooking library was created by calling:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">NxCookingInterface</span> <span class="o">*</span><span class="n">gCooking</span> <span class="o">=</span> <span class="n">NxGetCookingLib</span><span class="p">(</span><span class="n">NX_PHYSICS_SDK_VERSION</span><span class="p">);</span>
+<span class="n">gCooking</span><span class="o">-&gt;</span><span class="n">NxInitCooking</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>It can now be accessed through a single PxCreateCooking() call.  Cooking function names are slightly changed, e.g. NxCookTriangleMesh() is now invoked as cooking.cookTriangleMesh().</p>
+</div>
+<div class="section" id="serialization">
+<h3>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 3 has two serialization systems: 'RepX' based on XML, and a separate system for fast binary data.  Neither approach is similar to PhysX 2's save-to-desc and load-from-desc based serialization code, though the PhysX 3 'RepX' serialization is similar to PhysX 2's NxUStream.</p>
+</div>
+</div>
+<div class="section" id="api-design-changes">
+<h2>API Design Changes<a class="headerlink" href="#api-design-changes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="changed-actor-hierarchy">
+<h3>Changed Actor Hierarchy<a class="headerlink" href="#changed-actor-hierarchy" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 only had a single actor class, and it was possible to call any method on any instance of this class even if it wasn't applicable to the kind of actor object in question.  For example, isSleeping() could be called on static actors which did not have any sleep logic.  In PhysX 3, we decoupled actor into a hierarchy of specialized sub-classes.  For example, PxCloth and PxParticleSystem are now subclasses of PxActor.</p>
+</div>
+<div class="section" id="actor-creation">
+<h3>Actor Creation<a class="headerlink" href="#actor-creation" title="Permalink to this headline">¶</a></h3>
+<p>In PhysX 2, the objects inside each scene were created by the scene class itself.  In PhysX 3, objects are created by PxPhysics, and need to be added to a scene as a separate subsequent step by calling:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="material-indexes">
+<h2>Material Indexes<a class="headerlink" href="#material-indexes" title="Permalink to this headline">¶</a></h2>
+<p>PhysX 2 uses so-called material indexes for stored materials. Material indices are supported in PhysX 3 only to specify per-triangle materials in meshes and heightfields. In other cases the material object is referenced directly.</p>
+</div>
+<div class="section" id="continuous-collision-detection">
+<h2>Continuous Collision Detection<a class="headerlink" href="#continuous-collision-detection" title="Permalink to this headline">¶</a></h2>
+<p>PhysX 2 uses CCD skeleton meshes for CCD. PhysX 3 no longer needs this data so all skeleton related code can simply be removed.</p>
+</div>
+<div class="section" id="pose-description">
+<h2>Pose Description<a class="headerlink" href="#pose-description" title="Permalink to this headline">¶</a></h2>
+<p>In PhysX 2 pose is specified using a matrix. In PhysX 3, pose is specified using a PxTransform type that consists of a PxVec3 for translation and a PxQuat for rotation.
+Constructors are provided to convert 4x4 matrices to PxTransform objects and 3x3 matrices from quaternions, as well as conversely.</p>
+</div>
+<div class="section" id="shape-description">
+<h2>Shape Description<a class="headerlink" href="#shape-description" title="Permalink to this headline">¶</a></h2>
+<p>PhysX 2 has multiple subclasses of NxShape, one for each type of geometry, with corresponding NxShapeDesc classes. PhysX 3 has only a single PxShape class, to which a PxGeometry
+object is passed on creation.  To determine the geometry type of a shape, call PxShape::getGeometryType(). To extract a PxGeometry object from a shape of unknown type, use
+PxShape::getGeometry().</p>
+<div class="section" id="skin-width">
+<h3>Skin Width<a class="headerlink" href="#skin-width" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2's NX_SKIN_WIDTH and NxShapeDesc::skinWidth was replaced with PxShape::setContactOffset() and setRestOffset().  See <a class="reference internal" href="AdvancedCollisionDetection.html#shapecollisiontuning"><em>Tuning Shape Collision Behavior</em></a>.</p>
+</div>
+</div>
+<div class="section" id="joints">
+<h2>Joints<a class="headerlink" href="#joints" title="Permalink to this headline">¶</a></h2>
+<p>The D6 driveType in PhysX 2 no longer exists in PhysX 3.  Now drive for D6 is
+always spring-like: if you want position drive you set the 'spring' value non-zero, if you want velocity
+drive you set the damping field non-zero, and if you set both you get a damped spring.
+Some specialized joints like NxJointDriveDesc, NxJointLimitSoftDesc (PhysX 2 names) now were
+moved to Extensions (see the extensions folder inside PhysX 3 include directory).</p>
+<p>If you have used the deleted NxSpringAndDamperEffector, you should now use a joint with a spring property.</p>
+<p>All special axes for a joint (rotation axis for revolute, translation axis for prismatic, twist axis for D6) now use the x-axis.</p>
+<p>Joint limits now require a contact offset, which determines the distance from the limit at which it becomes active. It functions similarly to the
+contactOffset parameter for collision detection.</p>
+</div>
+<div class="section" id="time-stepping">
+<h2>Time Stepping<a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h2>
+<p>PhysX 2 had two different time stepping modes: NX_TIMESTEP_FIXED (SDK subdivided into fixes steps) and NX_TIMESTEP_VARIABLE (user specified steps).  This was passed to the setTiming() function.  This controlled SDK-internal substepping code that computed the proper size of the next time step, and called an internal simulate function with this elapsed time.</p>
+<p>PhysX 3 discards with the substepping code altogether, and exposes only the internal simulate function directly:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">simulate</span><span class="p">(</span><span class="n">mStepSize</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In PhysX 2 it was legal to call simulate with a timestep of zero to force the execution of various side-effects of simulation.  PhysX 3 neither requires nor supports this.</p>
+<p>The fetchResults function stayed the same, however there is no more flag to specify which simulation to fetch, as there is now only a single simulation.</p>
+<div class="section" id="simulation-parameters">
+<h3>Simulation Parameters<a class="headerlink" href="#simulation-parameters" title="Permalink to this headline">¶</a></h3>
+<p>The global speeds below which objects go to sleep, NX_DEFAULT_SLEEP_LIN_VEL_SQUARED and NX_DEFAULT_SLEEP_ANG_VEL_SQUARED are gone.  PhysX 3 instead features per-body function PxRigidDynamic::setSleepThreshold() which is an energy based setting, more similar to the PhysX 2 NX_DEFAULT_SLEEP_ENERGY.</p>
+<p>The global NX_BOUNCE_THRESHOLD is replaced by PxSceneDesc::bounceThresholdVelocity.</p>
+<p>The NX_DYN_FRICT_SCALING, NX_STA_FRICT_SCALING scaling factors have been removed.  These values should now be pre-baked into friction coefficients.</p>
+<p>The NX_MAX_ANGULAR_VELOCITY value has been removed.</p>
+<p>NX_ADAPTIVE_FORCE has been renamed PxScenFlag.ADAPTIVE_FORCE.</p>
+</div>
+</div>
+<div class="section" id="collision-filtering">
+<h2>Collision Filtering<a class="headerlink" href="#collision-filtering" title="Permalink to this headline">¶</a></h2>
+<p>PhysX 2 supported multiple fixed function mechanisms for filtering pairwise shape collisions such as collision groups.
+In PhysX 2 multiple group tags could be created, specified as collidable with each other and assigned to shapes.</p>
+<p>PhysX 3, supports user callbacks for collision filtering with a restriction that arbitrary memory cannot be accessed by filtering code
+so that it can be executed on PS3 SPUs or on GPUs with optimal performance. If performance is not a priority, similar functionality can be achieved
+via conventional callbacks (PxSimulationFilterCallback).</p>
+<p>When migrating PhysX 2 code, note that we provide the class PxDefaultSimulationFilterShader in PhysX 3, which emulates a portion of PhysX 2 filtering behavior.  Start by checking if this class is sufficient.  As this is an extension class, the source code is available and may be extended or customized.</p>
+<p>To migrate your fixed function PhysX 2 filtering code on your own, you need to be aware of its exact behavior and implement it as a callback or shader.  Let us look at the precise 2.8 mechanisms and make some recommendations for porting:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">virtual</span> <span class="kt">void</span> <span class="n">NxScene</span><span class="o">::</span><span class="n">setShapePairFlags</span><span class="p">(</span><span class="n">NxShape</span><span class="o">&amp;</span> <span class="n">shapeA</span><span class="p">,</span>
+    <span class="n">NxShape</span><span class="o">&amp;</span> <span class="n">shapeB</span><span class="p">,</span>
+    <span class="n">NxU32</span>  <span class="n">nxContactPairFlag</span>     <span class="c1">//0 or NX_IGNORE_PAIR</span>
+<span class="p">)</span>
+
+<span class="k">virtual</span> <span class="kt">void</span> <span class="n">NxScene</span><span class="o">::</span><span class="n">setActorPairFlags</span><span class="p">(</span><span class="n">NxActor</span><span class="o">&amp;</span> <span class="n">actorA</span><span class="p">,</span>
+    <span class="n">NxActor</span><span class="o">&amp;</span> <span class="n">actorB</span><span class="p">,</span>
+    <span class="n">NxU32</span> <span class="n">nxContactPairFlag</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The first function stored explicit shape pairs in a hash, and a lookup returned the bit indicating to filter or not.  The second did the same for actor pairs.  Because of the arbitrary size of the pair hash, implementing this mechanism as a shader with fixed memory is difficult in practice, but implementing as a callback should be trivial using a data structure such as the STL hash_map where Key is a struct holding the two pointers and Data is the bit flag.</p>
+<p>Another scheme provided by PhysX 2 were collision groups:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">virtual</span> <span class="kt">void</span>  <span class="n">NxShape</span><span class="o">::</span><span class="n">setGroup</span><span class="p">(</span><span class="n">NxCollisionGroup</span> <span class="n">collisionGroup</span><span class="p">)</span>
+<span class="k">virtual</span> <span class="kt">void</span> <span class="n">NxScene</span><span class="o">::</span><span class="n">setGroupCollisionFlag</span><span class="p">(</span><span class="n">NxCollisionGroup</span> <span class="n">group1</span><span class="p">,</span>
+    <span class="n">NxCollisionGroup</span> <span class="n">group2</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">enable</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This approach let the user assign shapes to one of 32 collision groups, and then let each pair of groups be assigned a boolean pair flag.  This approach lends itself better to a shader based implementation.  To do this, you should reserve a word of each shape's filterData (say word0) to hold the group index,
+and assign this as before. Next, define a matrix to hold the group pair bits, and a function to set it:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">NxU32</span> <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+
+<span class="c1">//init all group pairs to true:</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">)</span>
+    <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xffffffff</span><span class="p">;</span>
+
+
+<span class="kt">void</span> <span class="nf">setU32CollisionFlag</span><span class="p">(</span><span class="n">NxU32</span> <span class="n">groups1</span><span class="p">,</span> <span class="n">NxU32</span> <span class="n">groups2</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">enable</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">NX_ASSERT</span><span class="p">(</span><span class="n">groups1</span> <span class="o">&lt;</span> <span class="mi">32</span> <span class="o">&amp;&amp;</span> <span class="n">groups2</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">enable</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">//be symmetric:</span>
+        <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">groups1</span><span class="p">]</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">groups2</span><span class="p">);</span>
+        <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">groups2</span><span class="p">]</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">groups1</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">groups1</span><span class="p">]</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">groups2</span><span class="p">);</span>
+        <span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">groups2</span><span class="p">]</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">groups1</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Unfortunately it is not possible to change this state after the scene is created. This is because if the matrix could change during simulation, it would force an arbitrary amount of existing contact pairs to be refiltered. In a large simulation, this could be an unacceptable amount of computation. Therefore the matrix must be initialized to its final state before the scene is created, like this:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxSceneDesc</span> <span class="n">desc</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="n">desc</span><span class="p">.</span><span class="n">filterShaderData</span> <span class="o">=</span> <span class="n">groupCollisionFlags</span><span class="p">;</span>
+<span class="n">desc</span><span class="p">.</span><span class="n">filterShaderDataSize</span> <span class="o">=</span> <span class="mi">32</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">);</span>
+<span class="n">scene</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="n">createScene</span><span class="p">(</span><span class="n">desc</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Finally, you need to code the filter shader to access this data:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxFilterFlags</span> <span class="nf">FilterShader</span><span class="p">(</span>
+    <span class="n">PxFilterObjectAttributes</span> <span class="n">attributes0</span><span class="p">,</span> <span class="n">PxFilterData</span> <span class="n">filterData0</span><span class="p">,</span>
+    <span class="n">PxFilterObjectAttributes</span> <span class="n">attributes1</span><span class="p">,</span> <span class="n">PxFilterData</span> <span class="n">filterData1</span><span class="p">,</span>
+    <span class="n">PxPairFlags</span><span class="o">&amp;</span> <span class="n">pairFlags</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span><span class="o">*</span> <span class="n">constantBlock</span><span class="p">,</span> <span class="n">PxU32</span> <span class="n">constantBlockSize</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// let triggers through, and do any other prefiltering you need.</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes0</span><span class="p">)</span> <span class="o">||</span> <span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes1</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="n">pairFlags</span> <span class="o">=</span> <span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eTRIGGER_DEFAULT</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// generate contacts for all that were not filtered above</span>
+    <span class="n">pairFlags</span> <span class="o">=</span> <span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eCONTACT_DEFAULT</span><span class="p">;</span>
+
+    <span class="n">PxU32</span> <span class="n">ShapeGroup0</span> <span class="o">=</span> <span class="n">filterData0</span><span class="p">.</span><span class="n">word0</span> <span class="o">&amp;</span> <span class="mi">31</span><span class="p">;</span>
+    <span class="n">PxU32</span> <span class="n">ShapeGroup1</span> <span class="o">=</span> <span class="n">filterData1</span><span class="p">.</span><span class="n">word0</span> <span class="o">&amp;</span> <span class="mi">31</span><span class="p">;</span>
+    <span class="n">PxU32</span><span class="o">*</span> <span class="n">groupCollisionFlags</span> <span class="o">=</span> <span class="p">(</span><span class="n">PxU32</span><span class="o">*</span><span class="p">)</span><span class="n">constantBlock</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="n">groupCollisionFlags</span><span class="p">[</span><span class="n">ShapeGroup0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">ShapeGroup1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eSUPPRESS</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="k">return</span> <span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="scene-queries">
+<h2>Scene Queries<a class="headerlink" href="#scene-queries" title="Permalink to this headline">¶</a></h2>
+<p>The API for scene query functions that return multiple intersections (e.g. PxScene::raycast(...)) has changed.
+In PhysX 3, raycast/overlap/sweep functions expect a pre-allocated buffer or a callback class as a parameter in order to return multiple intersections.
+If you do not know the maximum number of intersections in advance you can inherit from PxHitCallback and override processTouches virtual function
+to receive an arbitrary number of intersections via multiple callbacks using only a fixed size buffer.
+Please refer to the Scene Query section of the guide for more details and examples.</p>
+<div class="section" id="raycasts">
+<h3>Raycasts<a class="headerlink" href="#raycasts" title="Permalink to this headline">¶</a></h3>
+<p>The interface for making raycasts was changed in PhysX 3. Now you should pass an origin (PxVec3) and
+a direction (PxVec3) instead of a NxRay that combined these fields in PhysX 2.</p>
+</div>
+<div class="section" id="overlaps">
+<h3>Overlaps<a class="headerlink" href="#overlaps" title="Permalink to this headline">¶</a></h3>
+<p>Routines like overlapSphereShapes, overlapAABBShapes, overlapOBBShapes, overlapCapsuleShapes are
+now all covered with PxScene::overlap (passing in a PxSphereGeometry, PxBoxGeometry or
+PxCapsuleGeometry as a first parameter).</p>
+</div>
+<div class="section" id="sweep-tests">
+<h3>Sweep Tests<a class="headerlink" href="#sweep-tests" title="Permalink to this headline">¶</a></h3>
+<p>PhysX 2 provides a linearCapsuleSweep that takes two points to define the capsule's two spherical ends.
+In PhysX 3 we have a general sweep() routine that takes a PxGeometry and an initial PxTransform position.
+Capsules were defined in PhysX 2 as two points.  They should be converted to an initial transformation (PxTransform) that consists of
+PxVec3 for position and PxQuat for rotation. PxCapsuleGeometry's length is along the x axis in local space.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="MigrationTo33.html" class="btn btn-neutral float-right" title="Migrating From PhysX SDK 3.2 to 3.3" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="BestPractices.html" class="btn btn-neutral" title="Best Practices Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

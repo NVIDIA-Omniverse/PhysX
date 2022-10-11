@@ -1,0 +1,8 @@
+<map id="PxRigidActor" name="PxRigidActor">
+<area shape="rect" id="node4" href="$classPxRigidBody.html" title="PxRigidBody is a base class shared between dynamic rigid body objects. " alt="" coords="93,229,191,256"/>
+<area shape="rect" id="node7" href="$classPxRigidStatic.html" title="PxRigidStatic represents a static rigid body simulation object in the physics SDK. " alt="" coords="215,229,317,256"/>
+<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="169,80,238,107"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="169,5,237,32"/>
+<area shape="rect" id="node5" href="$classPxArticulationLink.html" title="A component of an articulation that represents a rigid body. " alt="" coords="5,304,132,331"/>
+<area shape="rect" id="node6" href="$classPxRigidDynamic.html" title="PxRigidDynamic represents a dynamic rigid simulation object in the physics SDK. " alt="" coords="156,304,275,331"/>
+</map>

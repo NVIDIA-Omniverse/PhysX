@@ -1,0 +1,49 @@
+.. _CustomGeometry:
+
+---------------
+Custom Geometry
+---------------
+
+============
+Introduction
+============
+This section discusses the PhysX custom geometry class - PxCustomGeometry. Custom geometry is used to implement non-standard collision shapes.
+
+===============
+Custom Geometry
+===============
+PxCustomGeometry constructor takes a reference to PxCustomGeometry::Callbacks virtual interface. User should inherit this interface and implement all its virtual functions. Custom geometry stores the reference to the callback object. User is responsible for allocating/deallocating the callback object memory.
+
++++++++++++++++++++++++++
+Custom Geometry Callbacks
++++++++++++++++++++++++++
+PxCustomGeometry::Callbacks virtual interface has six virtual functions: getCustomType, getLocalBounds, generateContacts, raycast, overlap, sweep.
+
+Custom Type
+-----------
+Function getCustomType is expected to return a unique ID for every custom geometry type. It's purpose is for the user to differentiate custom geometries. Not used by PhysX.
+
+Local Bounds
+------------
+Function getLocalBounds is expected to return the custom geometry's local bounding box - the farthest extents along six directions: -X, -Y, -Z, +X, +Y, +Z, in the geometry's local space. Used by PhysX Broadphase.
+
+Contacts Generation
+-------------------
+Function generateContacts is expected to do the collision detection between this and the other given geometry. It's the user responsibility to implement collision detection for all necessary geometry types pairs. User can use auxiliary API functions provided by PhysX, like Immediate Mode Contact Generation or Geometry Queries.
+
+Queries
+-------
+Function raycast, overlap and sweep should implement the specified queries. User can use Geometry Queries API functions here.
+
+++++++++++++++++++++++++++
+Custom Geometry Extensions
+++++++++++++++++++++++++++
+There are two pre-made custom geometry callbacks objects in PxCustomGeometryExt to create Cylinder and Cone custom geometries.
+
+Cylinder
+--------
+Allocate CylinderCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cylinder geometry. Note that PxCustomGeometry won't deallocate the callback object when destroyed. It's the user's responsibility.
+
+Cone
+----
+Allocate ConeCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cone geometry. Note that PxCustomGeometry won't deallocate the callback object when destroyed. It's the user's responsibility.

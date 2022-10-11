@@ -1,0 +1,5 @@
+<map id="PxContactPairExtraDataItem" name="PxContactPairExtraDataItem">
+<area shape="rect" id="node2" href="$structPxContactPairIndex.html" title="Marker for the beginning of a new item set in the extra data stream. " alt="" coords="5,80,143,107"/>
+<area shape="rect" id="node3" href="$structPxContactPairPose.html" title="World space actor poses of the contact pair rigid bodies. " alt="" coords="167,80,303,107"/>
+<area shape="rect" id="node4" href="$structPxContactPairVelocity.html" title="Velocities of the contact pair rigid bodies. " alt="" coords="328,80,481,107"/>
+</map>

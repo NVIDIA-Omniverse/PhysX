@@ -1,0 +1,589 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Extending Serialization &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Best Practices Guide" href="BestPractices.html" />
+    <link rel="prev" title="Serialization" href="Serialization.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Extending Serialization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#binary-serialization-of-custom-classes">Binary Serialization of Custom Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#repx-serialization-of-custom-classes">RepX Serialization of Custom Classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#physx-api-metadata-system">PhysX API Metadata System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Extending Serialization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extending-serialization">
+<span id="extendedserialization"></span><h1>Extending Serialization<a class="headerlink" href="#extending-serialization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The PhysX serialization system (<a class="reference internal" href="Serialization.html#serialization"><em>Serialization</em></a>) is extendable to custom types.  If an application were to require a new joint type, for example, the serialization system could be extended to add support for serialization of that new joint type.</p>
+<p>The following document contains some recipes and example code that show how PhysX serialization may be extended to custom types. It doesn't cover all aspects of the extension mechanisms. It is therefore advisable to look into the following implementation example for more details:</p>
+<ul class="simple">
+<li>PhysXVehicle library (PhysXVehicle/src)</li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Both binary and RepX serialization can be extended for custom types.  To prepare the custom type for serialization it must first inherit from <em>PxBase</em>.  This allows instances of the custom type to be added to a <em>PxCollection</em>, which is a pre-requisite for serialization.  The core serialization functionality needs to be provided by implementing the <em>PxSerializer</em> interface.  The template <em>PxSerializerDefaultAdapter</em> provides a default implementation and can be specialized for the custom type as required.  In order to support RepX serialization an additional <em>PxRepXSerializer</em> interface needs to be implemented. RepX serialization relies on automatic code generation using clang. Scripts to run the code generation for the examples can be found in (Tools/PhysXMetaDataGenerator).</p>
+</div>
+<div class="section" id="binary-serialization-of-custom-classes">
+<span id="binaryserializationofcustomclasses"></span><h2>Binary Serialization of Custom Classes<a class="headerlink" href="#binary-serialization-of-custom-classes" title="Permalink to this headline">¶</a></h2>
+<p>Serialization and deserialization of a custom class can be achieved with the following steps:</p>
+<ol class="arabic simple">
+<li>Define a <em>PxConcreteType</em> and type info for the custom class. Make sure its type value is unique.</li>
+<li>The custom class needs to inherit from <em>PxBase</em> and implement its interface.</li>
+<li>Instance PxSerializerDefaultAdapter&lt;T&gt; and implement specialized methods where necessary.</li>
+<li>If retargeting to other platforms is needed, implement <em>getBinaryMetaData()</em>.</li>
+<li>Register the adapter and metadata, see <em>PX_NEW_SERIALIZER_ADAPTER</em> , <em>PxSerializationRegistry::registerSerializer</em> and <em>PxSerializationRegistry::registerBinaryMetaDataCallback</em>. Note that serializers also need to be unregistered before <em>PxSerializationRegistry::release</em> is called. The application is responsible for custom type serializer allocation and deallocation.</li>
+</ol>
+<p>For pointer members the following needs to be done (Note that reference members are currently not supported):</p>
+<ol class="arabic simple" start="6">
+<li>Implement <em>PxSerializer::requires</em>. It should enumerate <em>PxBase</em> objects on which the object depends for deserialization. See <a class="reference internal" href="Serialization.html#requires"><em>Requires</em></a>.</li>
+<li>For a member pointer to another <em>PxBase</em> object, register the reference in the implementation of <em>PxSerializer::registerReferences</em>. The implementation of <em>PxSerializer::requires</em> may be used to help with this.</li>
+<li>Resolve references in the implementation of <em>PxSerializer::createObject</em> using <em>PxDeserializationContext::resolveReference, translatePxBase</em>.</li>
+<li>Make sure that <em>PxSerializer::isSubordinate</em> returns whether the object can only be serialized along with an owner object. See <a class="reference internal" href="Serialization.html#subordinate"><em>Subordinate</em></a>.</li>
+<li>Export non <em>PxBase</em> data by implementing <em>PxSerializer::exportExtraData</em> using <em>PxSerializationContext::writeData, alignData</em>.</li>
+<li>Import non <em>PxBase</em> data in the implementation of <em>PxSerializer::createObject</em> using <em>PxDeserializationContext::readExtraData, alignExtraData</em>.</li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In checked builds (PX_CHECKED defined as 1) metadata definitions are verified against serialized data. If metadata definitions are missing warnings are output on the error stream during re-targeting (<em>PxBinaryConverter::convert</em>). To avoid false warnings, all unused memory in custom serialized class instances should be marked with a 0xcd pattern. This can be done with <em>Cm::markSerializedMem</em> from CmUtils.h.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The memory of a deserialized class instance should not be deallocated. The memory is embedded in the memory buffer containing the serialized data. The flag PxBaseFlag::eOWNS_MEMORY can used to decide whether the object memory needs be deallocated or not.</p>
+</div>
+<p>Example for a custom class:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="cp">#include &quot;extensions/PxSerialization.h&quot;</span>
+<span class="cp">#include &quot;common/PxTypeInfo.h&quot;</span>
+<span class="cp">#include &quot;common/PxMetaData.h&quot;</span>
+<span class="cp">#include &quot;common/PxSerializer.h&quot;</span>
+<span class="cp">#include &quot;common/PxSerialFramework.h</span>
+
+<span class="k">using</span> <span class="k">namespace</span> <span class="n">physx</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="n">PxType</span> <span class="n">customClassType</span> <span class="o">=</span> <span class="n">PxConcreteType</span><span class="o">::</span><span class="n">eFIRST_USER_EXTENSION</span><span class="p">;</span>
+<span class="n">PX_DEFINE_TYPEINFO</span><span class="p">(</span><span class="n">CustomClass</span><span class="p">,</span> <span class="n">customClassType</span><span class="p">);</span>
+
+<span class="k">class</span> <span class="nc">CustomClass</span> <span class="o">:</span> <span class="k">public</span> <span class="n">PxBase</span>
+<span class="p">{</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">PxSerializerDefaultAdapter</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="nl">public:</span>
+
+    <span class="c1">// constructor setting up PxBase object</span>
+    <span class="n">CustomClass</span><span class="p">()</span>
+    <span class="o">:</span> <span class="n">PxBase</span><span class="p">(</span><span class="n">customClassType</span><span class="p">,</span> <span class="n">PxBaseFlag</span><span class="o">::</span><span class="n">eOWNS_MEMORY</span> <span class="o">|</span> <span class="n">PxBaseFlag</span><span class="o">::</span><span class="n">eIS_RELEASABLE</span><span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="c1">// constructor called on deserialization</span>
+    <span class="n">CustomClass</span><span class="p">(</span><span class="n">PxBaseFlags</span> <span class="n">baseFlags</span><span class="p">)</span> <span class="o">:</span> <span class="n">PxBase</span><span class="p">(</span><span class="n">baseFlags</span><span class="p">)</span> <span class="p">{}</span>
+
+    <span class="k">virtual</span> <span class="o">~</span><span class="n">CustomClass</span><span class="p">()</span> <span class="p">{}</span>
+
+
+    <span class="c1">//PxBase</span>
+    <span class="k">virtual</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">getConcreteTypeName</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="s">&quot;CustomClass&quot;</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">virtual</span> <span class="kt">bool</span> <span class="n">isKindOf</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">name</span><span class="p">)</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="s">&quot;CustomClass&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">||</span> <span class="n">PxBase</span><span class="o">::</span><span class="n">isKindOf</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="c1">//~PxBase</span>
+
+    <span class="c1">//PxSerializationRegistry::registerBinaryMetaDataCallback</span>
+    <span class="k">static</span> <span class="kt">void</span> <span class="n">getBinaryMetaData</span><span class="p">(</span><span class="n">PxOutputStream</span><span class="o">&amp;</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">PX_DEF_BIN_METADATA_VCLASS</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">)</span>
+        <span class="n">PX_DEF_BIN_METADATA_BASE_CLASS</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">,</span> <span class="n">PxBase</span><span class="p">)</span>
+
+        <span class="n">PX_DEF_BIN_METADATA_ITEM</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">,</span> <span class="n">PxRigidDynamic</span><span class="p">,</span> <span class="n">mActor</span><span class="p">,</span>
+            <span class="n">PxMetaDataFlag</span><span class="o">::</span><span class="n">ePTR</span><span class="p">)</span>
+        <span class="n">PX_DEF_BIN_METADATA_ITEM</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">,</span> <span class="kt">char</span><span class="p">,</span> <span class="n">mBuf</span><span class="p">,</span> <span class="n">PxMetaDataFlag</span><span class="o">::</span><span class="n">ePTR</span><span class="p">)</span>
+        <span class="n">PX_DEF_BIN_METADATA_ITEM</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">,</span> <span class="n">PxU32</span><span class="p">,</span> <span class="n">mSize</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">PX_DEF_BIN_METADATA_EXTRA_ITEMS</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">CustomClass</span><span class="p">,</span> <span class="kt">char</span><span class="p">,</span> <span class="n">mBuf</span><span class="p">,</span> <span class="n">mSize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="c1">//~PxSerializationRegistry::registerBinaryMetaDataCallback</span>
+
+<span class="nl">private:</span>
+    <span class="n">PxRigidDynamic</span><span class="o">*</span> <span class="n">mActor</span><span class="p">;</span>    <span class="c1">//add in requires</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">mBuf</span><span class="p">;</span>                <span class="c1">//extra data</span>
+    <span class="n">PxU32</span> <span class="n">mSize</span><span class="p">;</span>               <span class="c1">//size of mBuf</span>
+<span class="p">};</span>
+
+<span class="c1">//PxSerializerDefaultAdapter</span>
+<span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="kt">void</span> <span class="n">PxSerializerDefaultAdapter</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;::</span><span class="n">requires</span><span class="p">(</span><span class="n">PxBase</span><span class="o">&amp;</span> <span class="n">obj</span><span class="p">,</span>
+                                                       <span class="n">PxProcessPxBaseCallback</span><span class="o">&amp;</span> <span class="n">c</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="n">CustomClass</span><span class="o">*</span> <span class="n">custom</span> <span class="o">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">is</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span><span class="p">();</span>
+    <span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">custom</span><span class="p">);</span>
+    <span class="n">c</span><span class="p">.</span><span class="n">process</span><span class="p">(</span><span class="o">*</span><span class="n">custom</span><span class="o">-&gt;</span><span class="n">mActor</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="kt">void</span> <span class="n">PxSerializerDefaultAdapter</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;::</span><span class="n">registerReferences</span><span class="p">(</span><span class="n">PxBase</span><span class="o">&amp;</span> <span class="n">obj</span><span class="p">,</span>
+                                                                 <span class="n">PxSerializationContext</span><span class="o">&amp;</span> <span class="n">s</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="n">CustomClass</span><span class="o">*</span> <span class="n">custom</span> <span class="o">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">is</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span><span class="p">();</span>
+    <span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">custom</span><span class="p">);</span>
+
+    <span class="n">s</span><span class="p">.</span><span class="n">registerReference</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">PX_SERIAL_REF_KIND_PXBASE</span><span class="p">,</span> <span class="kt">size_t</span><span class="p">(</span><span class="o">&amp;</span><span class="n">obj</span><span class="p">));</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">registerReference</span><span class="p">(</span><span class="o">*</span><span class="n">custom</span><span class="o">-&gt;</span><span class="n">mActor</span><span class="p">,</span> <span class="n">PX_SERIAL_REF_KIND_PXBASE</span><span class="p">,</span> <span class="kt">size_t</span><span class="p">(</span><span class="n">custom</span><span class="o">-&gt;</span><span class="n">mActor</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="kt">void</span> <span class="n">PxSerializerDefaultAdapter</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;::</span><span class="n">exportExtraData</span><span class="p">(</span><span class="n">PxBase</span><span class="o">&amp;</span> <span class="n">obj</span><span class="p">,</span>
+                                                              <span class="n">PxSerializationContext</span><span class="o">&amp;</span> <span class="n">s</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+    <span class="n">CustomClass</span><span class="o">*</span> <span class="n">custom</span> <span class="o">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">is</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span><span class="p">();</span>
+    <span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">custom</span><span class="p">);</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">alignData</span><span class="p">(</span><span class="n">PX_SERIAL_ALIGN</span><span class="p">);</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">writeData</span><span class="p">(</span><span class="n">custom</span><span class="o">-&gt;</span><span class="n">mBuf</span><span class="p">,</span> <span class="n">custom</span><span class="o">-&gt;</span><span class="n">mSize</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="n">PxBase</span><span class="o">*</span> <span class="n">PxSerializerDefaultAdapter</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;::</span><span class="n">createObject</span><span class="p">(</span><span class="n">PxU8</span><span class="o">*&amp;</span> <span class="n">address</span><span class="p">,</span>
+                                                              <span class="n">PxDeserializationContext</span><span class="o">&amp;</span> <span class="n">context</span><span class="p">)</span>
+                                                              <span class="k">const</span>
+<span class="p">{</span>
+    <span class="n">CustomClass</span><span class="o">*</span> <span class="n">custom</span> <span class="o">=</span> <span class="k">new</span> <span class="p">(</span><span class="n">address</span><span class="p">)</span> <span class="n">CustomClass</span><span class="p">(</span><span class="n">PxBaseFlag</span><span class="o">::</span><span class="n">eIS_RELEASABLE</span><span class="p">);</span>
+    <span class="n">address</span> <span class="o">+=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">CustomClass</span><span class="p">);</span>
+
+    <span class="c1">// resolve references</span>
+    <span class="n">context</span><span class="p">.</span><span class="n">translatePtr</span><span class="p">(</span><span class="n">custom</span><span class="o">-&gt;</span><span class="n">mActor</span><span class="p">);</span>
+
+    <span class="c1">// import extra data</span>
+    <span class="n">custom</span><span class="o">-&gt;</span><span class="n">mBuf</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">readExtraData</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">*</span><span class="p">,</span> <span class="n">PX_SERIAL_ALIGN</span><span class="o">&gt;</span><span class="p">();</span>
+
+    <span class="c1">// return deserialized object</span>
+    <span class="k">return</span> <span class="n">custom</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">//~PxSerializerDefaultAdapter</span>
+
+<span class="kt">void</span> <span class="n">registerCustomClassBinarySerializer</span><span class="p">(</span><span class="n">PxSerializationRegistry</span><span class="o">&amp;</span> <span class="n">registry</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">registry</span><span class="p">.</span><span class="n">registerSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">,</span> <span class="n">PX_NEW_SERIALIZER_ADAPTER</span><span class="p">(</span><span class="n">CustomClass</span><span class="p">));</span>
+    <span class="n">registry</span><span class="p">.</span><span class="n">registerBinaryMetaDataCallback</span><span class="p">(</span><span class="n">CustomClass</span><span class="o">::</span><span class="n">getBinaryMetaData</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">unregisterCustomClassBinarySerializer</span><span class="p">(</span><span class="n">PxSerializationRegistry</span><span class="o">&amp;</span> <span class="n">registry</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">PX_DELETE_SERIALIZER_ADAPTER</span><span class="p">(</span><span class="n">registry</span><span class="p">.</span><span class="n">unregisterSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="repx-serialization-of-custom-classes">
+<h2>RepX Serialization of Custom Classes<a class="headerlink" href="#repx-serialization-of-custom-classes" title="Permalink to this headline">¶</a></h2>
+<p>Serialization and deserialization of a custom class can be achieved with the following steps:</p>
+<ol class="arabic simple">
+<li>Perform the first three steps from <a class="reference internal" href="#binaryserializationofcustomclasses"><em>Binary Serialization of Custom Classes</em></a>. Methods in <em>PxSerializer</em> and <em>PxSerializerDefaultAdapter&lt;T&gt;</em> required exclusively for binary serialization may be left empty.</li>
+<li>Create a custom RepX serializer that implements the <em>PxRepXSerializer</em> interface. <em>PxRepXSerializer</em> is used to create an object from the xml file and write an object to the xml file. The class <em>RepXSerializerImpl</em> can be used to inherit default implementations of some methods.</li>
+<li>Register the general serializer adapter and the RepX serializer. Note that custom type serializers also need to be unregistered and deallocated.</li>
+<li>RepX supports automatic reading and writing of class properties. To achieve this, clang has to be used to generate corresponding metadata: <a class="reference internal" href="#physxmetadata"><em>PhysX API Metadata System</em></a>.</li>
+</ol>
+<p>Example for a custom class:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="cp">#include &quot;SnRepXSerializerImpl.h&quot;</span>
+
+<span class="k">const</span> <span class="n">PxType</span> <span class="n">customClassType</span> <span class="o">=</span> <span class="n">PxConcreteType</span><span class="o">::</span><span class="n">eFIRST_USER_EXTENSION</span><span class="p">;</span>
+<span class="n">PX_DEFINE_TYPEINFO</span><span class="p">(</span><span class="n">CustomClass</span><span class="p">,</span> <span class="n">customClassType</span><span class="p">);</span>
+
+<span class="k">struct</span> <span class="n">CustomClassRepXSerializer</span> <span class="o">:</span> <span class="k">public</span> <span class="n">RepXSerializerImpl</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span>
+<span class="p">{</span>
+    <span class="n">CustomClassRepXSerializer</span><span class="p">(</span><span class="n">PxAllocatorCallback</span><span class="o">&amp;</span> <span class="n">inCallback</span><span class="p">)</span>
+    <span class="o">:</span> <span class="n">RepXSerializerImpl</span><span class="o">&lt;</span><span class="n">CustomClass</span><span class="o">&gt;</span><span class="p">(</span><span class="n">inCallback</span><span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="k">virtual</span> <span class="n">PxRepXObject</span> <span class="n">fileToObject</span><span class="p">(</span><span class="n">XmlReader</span><span class="o">&amp;</span> <span class="n">inReader</span><span class="p">,</span> <span class="n">XmlMemoryAllocator</span><span class="o">&amp;</span> <span class="n">inAllocator</span><span class="p">,</span>
+        <span class="n">PxRepXInstantiationArgs</span><span class="o">&amp;</span> <span class="n">inArgs</span><span class="p">,</span> <span class="n">PxCollection</span><span class="o">*</span> <span class="n">inCollection</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// factory for CustomClass instance provided by application</span>
+        <span class="n">CustomClass</span><span class="o">*</span> <span class="n">object</span> <span class="o">=</span> <span class="n">createCustomClass</span><span class="p">();</span>
+
+        <span class="c1">// when using the PhysX API metadata system readAllProperties(...) can be used to read</span>
+        <span class="c1">// all properties automatically</span>
+        <span class="n">readAllProperties</span><span class="p">(</span><span class="n">inArgs</span><span class="p">,</span> <span class="n">inReader</span><span class="p">,</span> <span class="n">object</span><span class="p">,</span> <span class="n">inAllocator</span><span class="p">,</span> <span class="o">*</span><span class="n">inCollection</span><span class="p">);</span>
+
+        <span class="k">return</span> <span class="nf">PxCreateRepXObject</span><span class="p">(</span><span class="n">object</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">objectToFileImpl</span><span class="p">(</span><span class="k">const</span> <span class="n">CustomClass</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">PxCollection</span><span class="o">*</span> <span class="n">inCollection</span><span class="p">,</span>
+                                  <span class="n">XmlWriter</span><span class="o">&amp;</span> <span class="n">inWriter</span><span class="p">,</span> <span class="n">MemoryBuffer</span><span class="o">&amp;</span> <span class="n">inTempBuffer</span><span class="p">,</span>
+                                  <span class="n">PxRepXInstantiationArgs</span><span class="o">&amp;</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// when using the PhysX API metadata system writeAllProperties(...) can be used to save</span>
+        <span class="c1">// all properties automatically</span>
+        <span class="n">writeAllProperties</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">inWriter</span><span class="p">,</span> <span class="n">inTempBuffer</span><span class="p">,</span> <span class="o">*</span><span class="n">inCollection</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// this can return NULL if fileToObject(...) is overwritten with a custom implementation.</span>
+    <span class="k">virtual</span> <span class="n">CustomClass</span><span class="o">*</span> <span class="n">allocateObject</span><span class="p">(</span><span class="n">PxRepXInstantiationArgs</span><span class="o">&amp;</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">registerCustomClassRepXSerializer</span><span class="p">(</span><span class="n">PxSerializationRegistry</span><span class="o">&amp;</span> <span class="n">registry</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">registry</span><span class="p">.</span><span class="n">registerSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">,</span>
+                                <span class="n">PX_NEW_SERIALIZER_ADAPTER</span><span class="p">(</span><span class="n">CustomClass</span><span class="p">));</span>
+
+    <span class="n">registry</span><span class="p">.</span><span class="n">registerRepXSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">,</span>
+                                    <span class="n">PX_NEW_REPX_SERIALIZER</span><span class="o">&lt;</span><span class="n">CustomClassRepXSerializer</span><span class="o">&gt;</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">unregisterCustomClassRepXSerializer</span><span class="p">(</span><span class="n">PxSerializationRegistry</span><span class="o">&amp;</span> <span class="n">registry</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">PX_DELETE_SERIALIZER_ADAPTER</span><span class="p">(</span><span class="n">registry</span><span class="p">.</span><span class="n">unregisterSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">));</span>
+    <span class="n">PX_DELETE_REPX_SERIALIZER</span><span class="p">(</span><span class="n">registry</span><span class="p">.</span><span class="n">unregisterRepXSerializer</span><span class="p">(</span><span class="n">customClassType</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Implementing a PxRepXSerializer is currently not practical without including the internal PhysXExtension header &quot;SnRepXSerializerImpl.h&quot;.</p>
+</div>
+<div class="section" id="physx-api-metadata-system">
+<span id="physxmetadata"></span><h3>PhysX API Metadata System<a class="headerlink" href="#physx-api-metadata-system" title="Permalink to this headline">¶</a></h3>
+<p>This system produces a set of objects that are analogues of the interfaces and of descriptors in the PhysX system, all based on the public interface. The generator heuristically finds functions that start with get/set and, through a series of cascading rules, combines those into several types of properties.</p>
+<p>Currently the generator supports the following property types:</p>
+<ul class="simple">
+<li>Basic property<ul>
+<li>{ptype} get{pname}() const;</li>
+<li>void set{pname}( const ptype&amp; prop ); //plus variations</li>
+<li>read-only, write-only variants of above.</li>
+</ul>
+</li>
+<li>Range property<ul>
+<li>void get{pname}( {ptype}&amp; lowEnd, {ptype}&amp; highEnd );</li>
+<li>void set{pname}( {ptype} lowEnd, {ptype} highEnd );</li>
+</ul>
+</li>
+<li>Indexed property<ul>
+<li>{ptype} get{pname}( enumType idx );</li>
+<li>void set{pname}( enumType idx, const {ptype}&amp; prop );</li>
+</ul>
+</li>
+<li>Dual indexed property (like above, but with two enumeration indexes).</li>
+<li>Collection<ul>
+<li>PxU32 getNb() const;</li>
+<li>PxU32 get( {ptype}* buffer, PxU32 count );</li>
+<li>void set({ptype}* buffer, PxU32 count);</li>
+</ul>
+</li>
+</ul>
+<p>In order to make use of the generator the following files need to be created with the following recipe:</p>
+<ul>
+<li><p class="first">CustomTypeExtensionAPI.h</p>
+<ul class="simple">
+<li>Add all the types that should be exported to gUserPhysXTypes to this file.</li>
+<li>Add the unnecessary types to gAvoidedPhysXTypes. It will not generate metadata information for these types.</li>
+<li>Be sure to append the included files for these types.</li>
+</ul>
+</li>
+<li><p class="first">tools/physxmetadatagenerator/generateMetaData.[bat|sh] (see tools/physxmetadatagenerator/readme.txt)</p>
+<ul>
+<li><p class="first">Set definition folder for these autogenerated files and set the source file in here.</p>
+</li>
+<li><p class="first">Specify the filename of autogenerated files. Then it will generate the following files:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">include</span><span class="o">/</span><span class="n">CustomTypeAutoGeneratedMetaDataObjectNames</span><span class="p">.</span><span class="n">h</span>
+<span class="n">include</span><span class="o">/</span><span class="n">CustomTypeAutoGeneratedMetaDataObjects</span><span class="p">.</span><span class="n">h</span>
+<span class="n">src</span><span class="o">/</span><span class="n">CustomTypeAutoGeneratedMetaDataObjects</span><span class="p">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p class="first">CustomTypeMetaDataObjects.h</p>
+<ul class="simple">
+<li>CustomTypePropertyInfoName has to be defined and CustomTypeAutoGeneratedMetaDataObjects.h has to be included in this file. The file will then export the properties of the custom class and can be included for implementing the custom RepX serializer.</li>
+</ul>
+</li>
+<li><p class="first">CustomTypeMetaDataObjects.cpp</p>
+<ul class="simple">
+<li>This file is optional. It is only required when custom properties are needed.</li>
+</ul>
+</li>
+</ul>
+<p>PxVehicle serialization is a useful example.  With Source/PhysXVehicle as the root folder the structure of the files is as follows:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">src</span><span class="o">/</span><span class="n">PhysXMetaData</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">PxVehicleMetaDataObjects</span><span class="p">.</span><span class="n">h</span>
+<span class="n">src</span><span class="o">/</span><span class="n">PhysXMetaData</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">PxVehicleMetaDataObjects</span><span class="p">.</span><span class="n">cpp</span>
+<span class="p">..</span><span class="o">/</span><span class="p">..</span><span class="o">/</span><span class="n">Tools</span><span class="o">/</span><span class="n">PhysXMetaDataGenerator</span><span class="o">/</span><span class="n">PxVehicleExtensionAPI</span><span class="p">.</span><span class="n">h</span>
+<span class="p">..</span><span class="o">/</span><span class="p">..</span><span class="o">/</span><span class="n">Tools</span><span class="o">/</span><span class="n">PhysXMetaDataGenerator</span><span class="o">/</span><span class="n">generateMetaData</span><span class="p">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Running the script will auto-generate the following files:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">src</span><span class="o">/</span><span class="n">PhysXMetaData</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">PxVehicleAutoGeneratedMetaDataObjectNames</span><span class="p">.</span><span class="n">h</span>
+<span class="n">src</span><span class="o">/</span><span class="n">PhysXMetaData</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">PxVehicleAutoGeneratedMetaDataObjects</span><span class="p">.</span><span class="n">h</span>
+<span class="n">src</span><span class="o">/</span><span class="n">PhysXMetaData</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">PxVehicleAutoGeneratedMetaDataObjects</span><span class="p">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li>PxVehicleExtensionAPI.h: The type DisabledPropertyEntry is used to mark properties which do not require export. CustomProperty is for properties that need to be customized and gUserPhysXTypes is for general properties that need to be exported.</li>
+<li>tools/physxmetadatagenerator/generateMetaData.[bat|sh]: The target directory is set to src/PhysXMetaData, and the target name is PxVehicle.</li>
+<li>PxVehicleMetaDataObjects.h: It defines the custom properties and includes PxVehicleAutoGeneratedMetaDataObjects.h</li>
+<li>PxVehicleMetaDataObjects.cpp: It implements the custom properties.</li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The properties defined in PxVehicleAutoGeneratedMetaDataObjects.h are written to the RepX file automatically if PxVehicleMetaDataObjects.h is included for the custom RepX serializer.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="BestPractices.html" class="btn btn-neutral float-right" title="Best Practices Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Serialization.html" class="btn btn-neutral" title="Serialization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

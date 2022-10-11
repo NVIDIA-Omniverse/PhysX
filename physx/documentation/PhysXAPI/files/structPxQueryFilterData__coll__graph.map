@@ -1,0 +1,4 @@
+<map id="PxQueryFilterData" name="PxQueryFilterData">
+<area shape="rect" id="node2" href="$classPxFlags.html" title="PxFlags\&lt; PxQueryFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,164,47"/>
+<area shape="rect" id="node3" href="$structPxFilterData.html" title="PxFilterData is user&#45;definable data which gets passed into the collision filtering shader and/or call..." alt="" coords="188,13,283,39"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="PxArticulationJointDataRC" name="PxArticulationJointDataRC">
+<area shape="rect" id="node2" href="$structPxArticulationDrive.html" title="Data structure for articulation joint drive configuration. " alt="" coords="5,95,136,121"/>
+<area shape="rect" id="node3" href="$structPxArticulationLimit.html" title="Data structure to set articulation joint limits. " alt="" coords="160,95,291,121"/>
+<area shape="rect" id="node4" href="$classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="315,95,466,121"/>
+<area shape="rect" id="node5" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="257,5,378,32"/>
+<area shape="rect" id="node6" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="403,5,525,32"/>
+</map>

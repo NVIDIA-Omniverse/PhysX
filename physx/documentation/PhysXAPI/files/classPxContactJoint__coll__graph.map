@@ -1,0 +1,5 @@
+<map id="PxContactJoint" name="PxContactJoint">
+<area shape="rect" id="node2" href="$classPxJoint.html" title="a base interface providing common functionality for PhysX joints " alt="" coords="49,185,115,212"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="48,109,116,136"/>
+<area shape="rect" id="node4" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,159,47"/>
+</map>

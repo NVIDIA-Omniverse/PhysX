@@ -1,0 +1,661 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Best Practices Guide &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Migrating From PhysX SDK 2.x to 3.x" href="MigrationFrom28.html" />
+    <link rel="prev" title="Extending Serialization" href="ExtendingSerialization.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Best Practices Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#use-checked-builds-and-the-error-stream">Use checked builds and the error stream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualizing-physics-data">Visualizing physics data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualizing-physics-data-2">Visualizing physics data (2)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#limiting-coordinates">Limiting coordinates</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-issues">Performance Issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#use-profile-builds-to-identify-performance-bottlenecks">Use profile builds to identify performance bottlenecks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-release-builds-for-final-performance-tests">Use release builds for final performance tests</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#disable-debug-visualization-in-final-release-builds">Disable debug visualization in final/release builds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#debug-visualization-is-very-slow">Debug visualization is very slow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#consider-using-tight-bounds-for-convex-meshes">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-scratch-buffers">Use scratch buffers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-the-proper-mid-phase-algorithm">Use the proper mid-phase algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-the-proper-narrow-phase-algorithm">Use the proper narrow-phase algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-the-proper-broad-phase-algorithm">Use the proper broad-phase algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-the-scene-query-and-simulation-flags">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tweak-the-dynamic-tree-rebuild-rate">Tweak the dynamic tree rebuild rate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tweak-the-number-of-objects-per-node">Tweak the number of objects per node</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#consider-using-the-compound-pruner">Consider using the compound pruner</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-the-insertion-callback-when-cooking-at-runtime">Use the insertion callback when cooking at runtime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#kill-kinematic-pairs-early">Kill kinematic pairs early</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#beware-of-pxscene-getactors">Beware of PxScene::getActors()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#consider-using-aggregates">Consider using aggregates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-proper-aggregate-filtering">Setup proper aggregate filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#consider-disabling-pxgeometryqueryflag-esimd-guard">Consider disabling PxGeometryQueryFlag::eSIMD_GUARD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-well-of-despair">The &quot;Well of Despair&quot;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pruner-performance-for-streamed-environments">Pruner Performance for Streamed Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#performance-implications-for-multi-threading">Performance Implications for Multi-Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#memory-allocation">Memory allocation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#character-controller-systems-using-scene-queries-and-penetration-depth-computation">Character Controller Systems using Scene Queries and Penetration Depth Computation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quantizing-heightfield-samples">Quantizing HeightField Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reducing-memory-usage">Reducing memory usage</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Use scratch buffers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flush-simulation-buffers">Flush simulation buffers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-preallocation">Use preallocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tweak-cooking-parameters">Tweak cooking parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#share-shape-and-mesh-data">Share shape and mesh data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Kill kinematic pairs early</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#behavior-issues">Behavior issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objects-do-not-spin-realistically">Objects do not spin realistically</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#overlapping-objects-explode">Overlapping objects explode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rigid-bodies-are-jittering-on-the-ground">Rigid bodies are jittering on the ground</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#piles-or-stacks-of-objects-are-not-going-to-sleep">Piles or stacks of objects are not going to sleep</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jointed-objects-are-unstable">Jointed objects are unstable</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gpu-rigid-bodies">GPU Rigid Bodies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#determinism">Determinism</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Best Practices Guide</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="best-practices-guide">
+<span id="bestpractices"></span><h1>Best Practices Guide<a class="headerlink" href="#best-practices-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>This chapter covers a number of best practices for the PhysX SDK to assist in diagnosing and fixing frequently encountered issues.</p>
+</div>
+<div class="section" id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<p>The PhysX SDK contains a few debugging helpers. They can be used to make sure the scenes are properly set up.</p>
+<div class="section" id="use-checked-builds-and-the-error-stream">
+<h3>Use checked builds and the error stream<a class="headerlink" href="#use-checked-builds-and-the-error-stream" title="Permalink to this headline">¶</a></h3>
+<p>The PhysX SDK has different build configurations: Debug, Checked, Release, Profile. To make sure that the scene is properly set up without warnings or errors, use either the Debug or Checked builds, and monitor the error callback. Please refer to the <a class="reference internal" href="API.html#errorreporting"><em>Error Reporting</em></a> chapter for details. Note that some checks can be expensive and thus they are not performed in Release or Profile builds. If the SDK silently fails or even crashes in a Release build, please switch to Debug or Checked builds to ensure this is not caused by an uncaught error.</p>
+</div>
+<div class="section" id="visualizing-physics-data">
+<h3>Visualizing physics data<a class="headerlink" href="#visualizing-physics-data" title="Permalink to this headline">¶</a></h3>
+<p>Use the PhysX Visual Debugger (PVD) to see what PhysX is seeing and make sure the physics data is what you expect it to be. Please refer to the <a class="reference internal" href="VisualDebugger.html#physxvisualdebugger"><em>PhysX Visual Debugger (PVD)</em></a> chapter for details. Note that this is only available in Debug, Checked and Profile builds.</p>
+</div>
+<div class="section" id="visualizing-physics-data-2">
+<h3>Visualizing physics data (2)<a class="headerlink" href="#visualizing-physics-data-2" title="Permalink to this headline">¶</a></h3>
+<p>An alternative to PVD is the built-in debug visualization system. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><em>Debug Visualization</em></a> chapter for details. This option is available with all build configurations.</p>
+</div>
+<div class="section" id="limiting-coordinates">
+<h3>Limiting coordinates<a class="headerlink" href="#limiting-coordinates" title="Permalink to this headline">¶</a></h3>
+<p>Bugs in applications, or issues in content creation, can sometimes result in object placement at unexpected coordinates. We recommend the use of PxSceneDesc::sanityBounds, to generate reports when objects are inserted at positions beyond what your application expects, or when application code moves them to such unexpected positions. Note that these bounds only apply to application updates of actor coordinates, not updates by the simulation engine.</p>
+</div>
+</div>
+<div class="section" id="performance-issues">
+<h2>Performance Issues<a class="headerlink" href="#performance-issues" title="Permalink to this headline">¶</a></h2>
+<p>The PhysX SDK has been optimized a lot in the past dot releases. However, there still exist various performance pitfalls that the user should be aware of.</p>
+<div class="section" id="use-profile-builds-to-identify-performance-bottlenecks">
+<h3>Use profile builds to identify performance bottlenecks<a class="headerlink" href="#use-profile-builds-to-identify-performance-bottlenecks" title="Permalink to this headline">¶</a></h3>
+<p>The PhysX SDK has different build configurations: Debug, Checked, Release, Profile. To identify performance bottlenecks, please use Profile builds and PVD. Use the <em>PxPvdInstrumentationFlag::ePROFILE</em> only, since enabling the other connection flags might negatively affect performance. Please refer to the <a class="reference internal" href="VisualDebugger.html#physxvisualdebugger"><em>PhysX Visual Debugger (PVD)</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-release-builds-for-final-performance-tests">
+<h3>Use release builds for final performance tests<a class="headerlink" href="#use-release-builds-for-final-performance-tests" title="Permalink to this headline">¶</a></h3>
+<p>The PhysX SDK has different build configurations: Debug, Checked, Release, Profile. The Release builds are the most optimal. If you encounter a performance issue while using other builds, please switch to Release builds and check if the problem is still there.</p>
+</div>
+<div class="section" id="disable-debug-visualization-in-final-release-builds">
+<h3>Disable debug visualization in final/release builds<a class="headerlink" href="#disable-debug-visualization-in-final-release-builds" title="Permalink to this headline">¶</a></h3>
+<p>Debug visualization is great for debugging but it can have a significant performance impact. Make sure it is disabled in your final/release builds. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><em>Debug Visualization</em></a> chapter for details.</p>
+</div>
+<div class="section" id="debug-visualization-is-very-slow">
+<h3>Debug visualization is very slow<a class="headerlink" href="#debug-visualization-is-very-slow" title="Permalink to this headline">¶</a></h3>
+<p>Debug visualization can  be very slow, because both the code gathering the debug data and the code rendering it is usually not optimal. Use a culling box to limit the amount of data the SDK gathers and sends to the renderer. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><em>Debug Visualization</em></a> chapter for details.</p>
+</div>
+<div class="section" id="consider-using-tight-bounds-for-convex-meshes">
+<h3>Consider using tight bounds for convex meshes<a class="headerlink" href="#consider-using-tight-bounds-for-convex-meshes" title="Permalink to this headline">¶</a></h3>
+<p>By default PhysX computes approximate (loose) bounds around convex objects. Using PxConvexMeshGeometryFlag::eTIGHT_BOUNDS enables smaller/tighter bounds, which are more expensive to compute but can result in improved simulation performance when a lot of convex objects are interacting with each other. Please refer to the <a class="reference internal" href="Geometry.html#geometry"><em>Geometry</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-scratch-buffers">
+<h3>Use scratch buffers<a class="headerlink" href="#use-scratch-buffers" title="Permalink to this headline">¶</a></h3>
+<p>The PxScene::simulate function accepts optional scratch buffers that can be used to reduce temporary allocations and improve simulation performance. Please refer to the <a class="reference internal" href="Simulation.html#simulation"><em>Simulation</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-the-proper-mid-phase-algorithm">
+<h3>Use the proper mid-phase algorithm<a class="headerlink" href="#use-the-proper-mid-phase-algorithm" title="Permalink to this headline">¶</a></h3>
+<p>PxCookingParams::midphaseDesc can be used to select the desired mid-phase structure. It is a good idea to try the different options and see which one works best for you. Generally speaking the new PxMeshMidPhase::eBVH34 introduced in PhysX 3.4 has better performance for scene queries against large triangle meshes. Please refer to the <a class="reference internal" href="Geometry.html#geometry"><em>Geometry</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-the-proper-narrow-phase-algorithm">
+<h3>Use the proper narrow-phase algorithm<a class="headerlink" href="#use-the-proper-narrow-phase-algorithm" title="Permalink to this headline">¶</a></h3>
+<p>PxSceneFlag::eENABLE_PCM enables an incremental &quot;persistent contact manifold&quot; algorithm, which is often faster than the previous implementation. PCM should be the default algorithm since PhysX 3.4, but you can also try to enable it in previous versions like 3.3.</p>
+</div>
+<div class="section" id="use-the-proper-broad-phase-algorithm">
+<h3>Use the proper broad-phase algorithm<a class="headerlink" href="#use-the-proper-broad-phase-algorithm" title="Permalink to this headline">¶</a></h3>
+<p>PhysX also supports three different broad-phase implementations, selected with PxSceneDesc::broadPhaseType. The different implementations have various performance characteristics, and it is a good idea to experiment with them and find which one works best for you. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><em>Rigid Body Collision</em></a> chapter for details about the different broad-phases.</p>
+</div>
+<div class="section" id="use-the-scene-query-and-simulation-flags">
+<h3>Use the scene-query and simulation flags<a class="headerlink" href="#use-the-scene-query-and-simulation-flags" title="Permalink to this headline">¶</a></h3>
+<p>If a shape is only used for scene-queries (raycasts, etc), disable its simulation flag. If a shape is only used for simulation (e.g. it will never be raycasted against), disable its scene-query flag. This is good for both memory usage and performance. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><em>Rigid Body Collision</em></a> chapter for details.</p>
+</div>
+<div class="section" id="tweak-the-dynamic-tree-rebuild-rate">
+<h3>Tweak the dynamic tree rebuild rate<a class="headerlink" href="#tweak-the-dynamic-tree-rebuild-rate" title="Permalink to this headline">¶</a></h3>
+<p>If the PxScene::fetchResults call takes a significant amount of time in scenes containing a lot of objects, try to increase the PxSceneDesc::dynamicTreeRebuildRateHint parameter. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><em>Scene Queries</em></a> chapter for details.</p>
+</div>
+<div class="section" id="tweak-the-number-of-objects-per-node">
+<h3>Tweak the number of objects per node<a class="headerlink" href="#tweak-the-number-of-objects-per-node" title="Permalink to this headline">¶</a></h3>
+<p>If the PxScene::fetchResults call takes a significant amount of time in scenes containing a lot of objects, try to increase the PxSceneDesc::staticNbObjectsPerNode and/or PxSceneDesc::dynamicNbObjectsPerNode parameters. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><em>Scene Queries</em></a> chapter for details.</p>
+</div>
+<div class="section" id="consider-using-the-compound-pruner">
+<h3>Consider using the compound pruner<a class="headerlink" href="#consider-using-the-compound-pruner" title="Permalink to this headline">¶</a></h3>
+<p>If the PxScene::fetchResults call takes a significant amount of time in scenes containing a lot of objects, consider using PxBVH structures when adding complex compound actors to the scene. The corresponding actor would then go to an internal 'compound pruner' structure, reducing the stress on the regular scene query structures. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><em>Scene Queries</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-the-insertion-callback-when-cooking-at-runtime">
+<h3>Use the insertion callback when cooking at runtime<a class="headerlink" href="#use-the-insertion-callback-when-cooking-at-runtime" title="Permalink to this headline">¶</a></h3>
+<p>Use PxPhysicsInsertionCallback for objects that are cooked at runtime. This is faster than first writing the data to a file or a memory buffer, and then passing the data to PhysX.</p>
+</div>
+<div class="section" id="kill-kinematic-pairs-early">
+<h3>Kill kinematic pairs early<a class="headerlink" href="#kill-kinematic-pairs-early" title="Permalink to this headline">¶</a></h3>
+<p>If you do not need them, use PxPairFilteringMode::eKILL to disable kinematic pairs earlier in the pipeline. This is especially effective with the PxBroadPhaseType::eABP broadphase. Sometimes it is not possible to disable all kinematic pairs globally because a few of them are necessary. In that case the PxRigidBodyFlag::eFORCE_KINE_KINE_NOTIFICATIONS and PxRigidBodyFlag::eFORCE_STATIC_KINE_NOTIFICATIONS flags can help.</p>
+</div>
+<div class="section" id="beware-of-pxscene-getactors">
+<h3>Beware of PxScene::getActors()<a class="headerlink" href="#beware-of-pxscene-getactors" title="Permalink to this headline">¶</a></h3>
+<p>In PhysX versions prior to 5.1, there is an implementation issue in this function that makes it run in O(n^2) time when called for one object at a time. It is fine to call it to retrieve all objects at once though. Or at least call it to retrieve a batch of objects (maybe 64 or 128) at the same time, to limit the performance problem.</p>
+</div>
+<div class="section" id="consider-using-aggregates">
+<h3>Consider using aggregates<a class="headerlink" href="#consider-using-aggregates" title="Permalink to this headline">¶</a></h3>
+<p>Consider using aggregates for actors that remain constantly spatially close to each other, like ragdolls. This reduces the load on the broadphase. Grouping spatially close static actors in aggregates can also help.</p>
+</div>
+<div class="section" id="setup-proper-aggregate-filtering">
+<h3>Setup proper aggregate filtering<a class="headerlink" href="#setup-proper-aggregate-filtering" title="Permalink to this headline">¶</a></h3>
+<p>Mark aggregates that only contain static actors with PxAggregateType::eSTATIC, and aggregates that only contain kinematic actors with PxAggregateType::eKINEMATIC.</p>
+</div>
+<div class="section" id="consider-disabling-pxgeometryqueryflag-esimd-guard">
+<h3>Consider disabling PxGeometryQueryFlag::eSIMD_GUARD<a class="headerlink" href="#consider-disabling-pxgeometryqueryflag-esimd-guard" title="Permalink to this headline">¶</a></h3>
+<p>By default all geometry queries (either at the PxScene, PxGeometryQuery or PxMeshQuery levels), i.e. operations like raycasts, overlaps, sweeps, save, set and restore the SSE control register. This can have a measurable performance hit, so the PxGeometryQueryFlag::eSIMD_GUARD flag can be used to skip these steps. You should only do this if the client code already took care of the control register. In particular exceptions should have been disabled, and the DAZ and FTZ flags should have been set (if applicable to your processor).</p>
+</div>
+<div class="section" id="the-well-of-despair">
+<h3>The &quot;Well of Despair&quot;<a class="headerlink" href="#the-well-of-despair" title="Permalink to this headline">¶</a></h3>
+<p>One common use-case for a physics engine is to simulate fixed-size time-steps independent of the frame rate that the application is rendered at. If the application is capable of being rendered at a higher frequency than the simulation frequency, the user has the option to render the same simulation state, interpolate frames etc. However, sometimes it is not possible to render the scene at a frequency higher-or-equal to the simulation frequency. At this point, the options are to either run the physics simulation with a larger time-step or to simulate multiple, smaller sub-steps. The latter is generally a preferable solution because changing the size of time-steps in a physics simulation can significantly change perceived behavior. However, when using a sub-stepping approach, one must always be aware of the potential that this has to damage performance.</p>
+<p>As an example, let's imagine a game that is running using v-sync at 60FPS. This game is simulating a large number of physics bodies and, as a result, the physics is relatively expensive. In order to meet the 60FPS requirement, the entire frame must be completed within ~16ms. As already mentioned, the physics is reasonably expensive and, in this scenario, takes 9ms to simulate 1/60th of a second. If the game was to suddenly spike, e.g. as a result of some OS activity, saving a check-point or loading a new section of the level, we may miss the deadline for 60FPS. If this happens, we must run additional sub-steps in the physics to catch up the missed time in the next frame. Assuming that the previous frame took 50ms instead of 16ms, we must now simulate 3 sub-steps to be able to simulate all the elapsed time. However, each sub-step takes ~9ms, which means that we will take ~27ms to simulate 50ms. As a result, this frame also misses our 16ms deadline for 60FPS, meaning that the frame including v-sync took 33ms (i.e. 30Hz). We must now simulate 2 sub-steps in the next frame, which takes ~18ms and also misses our 16ms deadline. As a result, we never manage to recover back to 60FPS. In this scenario, our decision to sub-step as a result of a spike has resulted in our application being stuck in a performance trough indefinitely. The application is capable of simulating and rendering at 60FPS but becomes stuck in the so-called &quot;physics well of despair&quot; as a result of substepping.</p>
+<p>Problems like this can be alleviated in several ways:</p>
+<ul class="simple">
+<li>Decouple the physics simulation from the application's update/render loop. In this case, the physics simulation becomes a scheduled event that occurs at a fixed frequency. This can make player interaction in the scene more difficult and may introduce latency so must be well-thought through. However, using multiple scenes (one synchronous for &quot;important&quot; objects, one asynchronous for &quot;unimportant&quot; objects) can help.</li>
+<li>Permit the application to &quot;drop&quot; time when faced with a short-term spike. This may introduce visible motion artifacts if spikes occur frequently.</li>
+<li>Introduce slight variations in time-step (e.g. instead of simulating at 1/60th, consider simulating a range between 1/50th and 1/60th). This can introduce non-determinism into the simulation so should be used with caution. If this is done, additional time that must be simulated can potentially be amortized over several frames by simulating slightly larger time-steps.</li>
+<li>Consider simplifying the physics scene, e.g. reducing object count, shape complexity, adjusting iteration counts etc. Provided physics simulation is a small portion of the total frame time, the application should find it easier to recover from spikes.</li>
+</ul>
+</div>
+<div class="section" id="pruner-performance-for-streamed-environments">
+<h3>Pruner Performance for Streamed Environments<a class="headerlink" href="#pruner-performance-for-streamed-environments" title="Permalink to this headline">¶</a></h3>
+<p>PhysX provides multiple types of pruners, each of which aimed at specific applications. These are:</p>
+<ul class="simple">
+<li>Static AABB tree</li>
+<li>Dynamic AABB tree</li>
+</ul>
+<p>By default, the static AABB tree is used for the static objects in the environment and the dynamics AABB tree is used for the dynamic objects in the environment. In general, this approach works well but it must be noted that creating the static AABB tree can be very expensive. As a result, adding, removing or moving any static objects in the environment will result in the static AABB tree being fully recomputed, which can introduce significant performance cost. As a result, we recommend the use of dynamics AABB trees for both static and dynamic pruners in applications which stream in the static environment. Additionaly scene query performance against newly added objects can be improved by using PxPruningStructure, which can precompute the AABB structure of inserted objects in offline.</p>
+</div>
+<div class="section" id="performance-implications-for-multi-threading">
+<h3>Performance Implications for Multi-Threading<a class="headerlink" href="#performance-implications-for-multi-threading" title="Permalink to this headline">¶</a></h3>
+<p>The PhysX engine is designed from the ground-up to take advantage of multi-core architectures to accelerate physics simulation. However, this does not mean that more threads are always better. When simulating extremely simple scenes, introducing additional worker threads can detrimentally affect performance. This is because, at its core, PhysX operates around a task queue. When a frame's simulation is started, PhysX dispatches a chain of tasks that encapsulate that frame of physics simulation. At various stages of the physics pipeline, work can be performed in parallel on multiple worker threads. However, if there is insufficient work, there will be little or no parallel execution. In this case, the use of additional worker threads may detrimentally affect performance because the various phases of the pipeline may be run by different worker threads, which may incur some additional overhead depending on the CPU architecture compared to running on just a single worker thread. As a result, developers should measure the performance of the engine with their expected physics loads with different numbers of threads to maximize their performance and make sure that they are making the most of the available processing resources for their application.</p>
+</div>
+<div class="section" id="memory-allocation">
+<h3>Memory allocation<a class="headerlink" href="#memory-allocation" title="Permalink to this headline">¶</a></h3>
+<p>Minimizing dynamic allocation is an important aspect of performance tuning, and PhysX provides several mechanisms to control memory usage.</p>
+<p>Reduce allocation used for tracking objects by presizing the capacities of scene data structures, using either PxSceneDesc::limits before creating the scene or the function PxScene::setLimits(). When resizing, the new capacities will be at least as large as required to deal with the objects currently in the scene. These values are only for preallocation and do not represent hard limits, so if you add more objects to the scene than the capacity limits you have set, PhysX will allocate more space.</p>
+<p>Much of the memory PhysX uses for simulation is held in a pool of blocks, each 16K in size. You can control the current and maximum size of the pool with the nbContactDataBlocks and maxNbContactDataBlocks members of PxSceneDesc. PhysX will never allocate more than the maximum number of blocks specified, and if there is insufficient memory it will instead simply drop contacts or joint constraints. You can find out how many blocks are currently in use with the getNbContactBlocksUsed() method, and find out the maximum number that have ever been used with the getMaxNbContactDataBlocksUsed() method.</p>
+<p>Use PxScene::flushSimulation() to reclaim unused blocks, and to shrink the size of scene data structures to the size presently required.</p>
+<p>To reduce temporary allocation performed during simulation, provide physx with a memory block in the simulate() call. The block may be reused by the application after the fetchResults() call which marks the end of simulation. The size of the block must be a multiple of 16K, and it must be 16-byte aligned.</p>
+</div>
+</div>
+<div class="section" id="character-controller-systems-using-scene-queries-and-penetration-depth-computation">
+<h2>Character Controller Systems using Scene Queries and Penetration Depth Computation<a class="headerlink" href="#character-controller-systems-using-scene-queries-and-penetration-depth-computation" title="Permalink to this headline">¶</a></h2>
+<p>Implementing a Character Controller (CCT) is a common use case for the PhysX Scene Query (SQ) system. A popular approach is to use sweeps to implement movement logic,
+and to improve robustness by using Geometry Queries (GQ) to compute and resolve any penetrations that occur due to object movement that does not account for the presence of the controller, or due to numerical precision issues.</p>
+<p><strong>Basic Algorithm:</strong></p>
+<ol class="arabic simple">
+<li>Call a SQ-Sweep from the current position of the CCT shape to its goal position.</li>
+<li>If no initial overlap is detected, move the CCT shape to the position of the first hit, and adjust the trajectory of the CCT by removing the motion relative to the contact normal of the hit.</li>
+<li>Repeat Steps 1 and 2 until the goal is reached, or until an SQ-Sweep in Step 1 detects an initial overlap.</li>
+<li>If an SQ-Sweep in Step 1 detects an initial overlap, use the GQ Penetration Depth computation function to generate a direction for depenetration. Move the CCT shape out of penetration and begin again with Step 1.</li>
+</ol>
+<p><strong>Limitations and Problems</strong></p>
+<p>Step 4 of the algorithm above can sometimes run into trouble due to implementation differences in SQ-Sweep, SQ-Overlap and and GQ-Penetration Depth queries.  Under certain initial conditions
+it is possible that the SQ system will determine that a pair of objects is initially overlapping while the GQ -Penetration Depth computation  will report them as disjoint (or vice-versa).  Penetration depth calculations involving convex hulls operate by shrinking the convex hull and performing distance calculations between a shape and the shrunken convex hull. To understand the conditions under which this occurs and how to resolve the artefacts, please refer to the diagrams and discussion below. Each diagram represents the initial conditions of two shapes, a Character Controller shape (red boxes), a convex obstacle (black boxes), at the time that Step 1 of the
+algorithm above is executed. In the diagrams, the outermost rectangular black box is the convex hull as seen by the SQ algorithms; the inner black box with a dashed line represents the shrunken convex shape
+and the black box with rounded corners is the shrunken convex shape inflated by the amount by which we shrunk. These three black boxes are used by the GQ-Penetration Depth computation. Although the example refers to convex hull obstacles, the issue is not exclusive to the convex hull shapes;
+the problem is similar for other shape types as well.</p>
+<div class="figure align-center">
+<img alt="../_images/SQAndMTDMismatched1.png" src="../_images/SQAndMTDMismatched1.png" />
+</div>
+<p><strong>Diagram 1: CCT Shape Barely Touches an Obstacle</strong></p>
+<p>In <strong>Diagram 1</strong>, the red box of the CCT is barely touching the outermost black box of the convex obstacle. In this situation the SQ-Sweep will report an initial overlap but the GQ-Penetration Depth function will report no hit, because the red box is not touching the black box with rounded corners.</p>
+<p>To resolve this, inflate the CCT shape for the GQ-Penetration Depth calculation to ensure that it detects an overlap and returns a valid normal. Note that after inflating the CCT shape, the GQ-Penetration Depth function will report that the shapes are penetrated more deeply than they actually are, so take this additional penetration into account when depenetrating in Step 4. This may result in some clipping around the corners and edges of convex objects but the CCT's motion should be acceptable. As the corners/edges become more acute, the amount of clipping will increase.</p>
+<div class="figure align-center">
+<img alt="../_images/SQAndMTDMismatched2.png" src="../_images/SQAndMTDMismatched2.png" />
+</div>
+<p><strong>Diagram 2: CCT Overlaps an Obstacle Slightly</strong></p>
+<p><strong>Diagram 2</strong> shows a case where the CCT initially overlaps the outer black box seen by the SQ system, but does not overlap the shrunken shape seen by the GQ-Penetration Depth calculator. The GQ-Penetration Depth system will return the penetration from point c to point b but not from point c to point a. Therefore the CCT may clip through the corner of the convex hull after depenetration.  This can be corrected in Step 4.</p>
+<div class="figure align-center">
+<img alt="../_images/SQAndMTDMismatched3.png" src="../_images/SQAndMTDMismatched3.png" />
+</div>
+<p><strong>Diagram 3: CCT Overlaps an Obstacle Significantly</strong></p>
+<p>As can been seen from <strong>Diagram 3</strong>, if the CCT penetrates sufficiently that it overlaps with the shrunken shape seen by GQ, the GQ-Penetration Depth calculator will return the penetration from point c to point a. In this case, the GQ-Penetration Depth value can be used without modification in Step 4. However, as this condition would be difficult to categorize without additional computational cost, it is best to inflate the shape as recommended in Step 4 and then subtract this inflation from the returned penetration depth.</p>
+<p><strong>Unified MTD Sweep</strong></p>
+<p>A recent addition to the scene query sweeps is the flag PxHitFlag::eMTD. This can be used in conjunction with default sweeps to generate the MTD (Minimum Translation Direction) when an initial overlap is detected by a sweep. This flag is guaranteed to generate an appropriate normal under all circumstances, including cases where the sweep may detect an initial overlap but calling a stand-alone MTD function may report no hits. It still may suffer from accuracy issues with penetration depths but, in the cases outlined above around corners/edges, it will report a distance of 0 and the correct contact normal. This can be used to remove components of the sweep moving into the normal direction and then re-sweeping when attempting to implement a CCT. This also generates compound MTDs for meshes/heightfields, which means that it reports an MTD that de-penetrates the shape from the entire mesh rather than just an individual triangle, if such an MTD exists.</p>
+</div>
+<div class="section" id="quantizing-heightfield-samples">
+<h2>Quantizing HeightField Samples<a class="headerlink" href="#quantizing-heightfield-samples" title="Permalink to this headline">¶</a></h2>
+<p>Heightfield samples are encoded using signed 16-bit integers for the y-height that are then converted to a float
+and multiplied by PxHeightFieldGeometry::heightScale to obtain local space scaled coordinates. Shape transform is then applied on top to obtain world space location.
+The transformation is performed as follows (in pseudo-code):</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">localScaledVertex</span> <span class="o">=</span> <span class="n">PxVec3</span><span class="p">(</span><span class="n">row</span> <span class="o">*</span> <span class="n">desc</span><span class="p">.</span><span class="n">rowScale</span><span class="p">,</span> <span class="n">PxF32</span><span class="p">(</span><span class="n">heightSample</span><span class="p">)</span> <span class="o">*</span> <span class="n">heightScale</span><span class="p">,</span>
+    <span class="n">col</span> <span class="o">*</span> <span class="n">desc</span><span class="p">.</span><span class="n">columnScale</span><span class="p">)</span>
+<span class="n">worldVertex</span> <span class="o">=</span> <span class="n">shapeTransform</span><span class="p">(</span> <span class="n">localScaledVertex</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>The following code snippet shows one possible way to build quantized unscaled local space heightfield coordinates from world space grid heights stored in terrainData.verts:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxU32</span> <span class="n">ts</span> <span class="o">=</span> <span class="p">...;</span> <span class="c1">// user heightfield dimensions (ts = terrain samples)</span>
+<span class="c1">// create the actor for heightfield</span>
+<span class="n">PxRigidStatic</span><span class="o">*</span> <span class="n">actor</span> <span class="o">=</span> <span class="n">physics</span><span class="p">.</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span>
+
+<span class="c1">// iterate over source data points and find minimum and maximum heights</span>
+<span class="n">PxReal</span> <span class="n">minHeight</span> <span class="o">=</span> <span class="n">PX_MAX_F32</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">maxHeight</span> <span class="o">=</span> <span class="o">-</span><span class="n">PX_MAX_F32</span><span class="p">;</span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">ts</span><span class="p">;</span> <span class="n">s</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">minHeight</span> <span class="o">=</span> <span class="n">PxMin</span><span class="p">(</span><span class="n">minHeight</span><span class="p">,</span> <span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[</span><span class="n">s</span><span class="p">].</span><span class="n">y</span><span class="p">);</span>
+    <span class="n">maxHeight</span> <span class="o">=</span> <span class="n">PxMax</span><span class="p">(</span><span class="n">maxHeight</span><span class="p">,</span> <span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[</span><span class="n">s</span><span class="p">].</span><span class="n">y</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// compute maximum height difference</span>
+<span class="n">PxReal</span> <span class="n">deltaHeight</span> <span class="o">=</span> <span class="n">maxHeight</span> <span class="o">-</span> <span class="n">minHeight</span><span class="p">;</span>
+
+<span class="c1">// maximum positive value that can be represented with signed 16 bit integer</span>
+<span class="n">PxReal</span> <span class="n">quantization</span> <span class="o">=</span> <span class="p">(</span><span class="n">PxReal</span><span class="p">)</span><span class="mh">0x7fff</span><span class="p">;</span>
+
+<span class="c1">// compute heightScale such that the forward transform will generate the closest point</span>
+<span class="c1">// to the source</span>
+<span class="c1">// clamp to at least PX_MIN_HEIGHTFIELD_Y_SCALE to respect the PhysX API specs</span>
+<span class="n">PxReal</span> <span class="n">heightScale</span> <span class="o">=</span> <span class="n">PxMax</span><span class="p">(</span><span class="n">deltaHeight</span> <span class="o">/</span> <span class="n">quantization</span><span class="p">,</span> <span class="n">PX_MIN_HEIGHTFIELD_Y_SCALE</span><span class="p">);</span>
+
+<span class="n">PxU32</span><span class="o">*</span> <span class="n">hfSamples</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PxU32</span><span class="p">[</span><span class="n">ts</span> <span class="o">*</span> <span class="n">ts</span><span class="p">];</span>
+
+<span class="n">PxU32</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">col</span> <span class="o">&lt;</span> <span class="n">ts</span><span class="p">;</span> <span class="n">col</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="n">ts</span><span class="p">;</span> <span class="n">row</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">PxI16</span> <span class="n">height</span><span class="p">;</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">PxI16</span><span class="p">(</span><span class="n">quantization</span> <span class="o">*</span> <span class="p">((</span><span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[(</span><span class="n">col</span><span class="o">*</span><span class="n">ts</span><span class="p">)</span> <span class="o">+</span> <span class="n">row</span><span class="p">].</span><span class="n">y</span> <span class="o">-</span> <span class="n">minHeight</span><span class="p">)</span> <span class="o">/</span>
+            <span class="n">deltaHeight</span><span class="p">));</span>
+
+        <span class="n">PxHeightFieldSample</span><span class="o">&amp;</span> <span class="n">smp</span> <span class="o">=</span> <span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="o">&amp;</span><span class="p">)(</span><span class="n">hfSamples</span><span class="p">[(</span><span class="n">row</span><span class="o">*</span><span class="n">ts</span><span class="p">)</span> <span class="o">+</span> <span class="n">col</span><span class="p">]);</span>
+        <span class="n">smp</span><span class="p">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span><span class="p">;</span>
+        <span class="n">smp</span><span class="p">.</span><span class="n">materialIndex0</span> <span class="o">=</span> <span class="n">userValue0</span><span class="p">;</span>
+        <span class="n">smp</span><span class="p">.</span><span class="n">materialIndex1</span> <span class="o">=</span> <span class="n">userValue1</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">userFlipEdge</span><span class="p">)</span>
+            <span class="n">smp</span><span class="p">.</span><span class="n">setTessFlag</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Build PxHeightFieldDesc from samples</span>
+<span class="n">PxHeightFieldDesc</span> <span class="n">terrainDesc</span><span class="p">;</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">format</span>          <span class="o">=</span> <span class="n">PxHeightFieldFormat</span><span class="o">::</span><span class="n">eS16_TM</span><span class="p">;</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">nbColumns</span>       <span class="o">=</span> <span class="n">ts</span><span class="p">;</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">nbRows</span>          <span class="o">=</span> <span class="n">ts</span><span class="p">;</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">data</span>    <span class="o">=</span> <span class="n">hfSamples</span><span class="p">;</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">stride</span>  <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">);</span> <span class="c1">// 2x 8-bit material indices + 16-bit height</span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">flags</span>           <span class="o">=</span> <span class="n">PxHeightFieldFlags</span><span class="p">();</span>
+
+<span class="n">PxHeightFieldGeometry</span> <span class="n">hfGeom</span><span class="p">;</span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">columnScale</span> <span class="o">=</span> <span class="n">terrainWidth</span> <span class="o">/</span> <span class="p">(</span><span class="n">ts</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// compute column and row scale from input terrain</span>
+                                            <span class="c1">// height grid</span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">rowScale</span>    <span class="o">=</span> <span class="n">terrainWidth</span> <span class="o">/</span> <span class="p">(</span><span class="n">ts</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">heightScale</span> <span class="o">=</span> <span class="n">deltaHeight</span><span class="o">!=</span><span class="mf">0.0f</span> <span class="o">?</span> <span class="n">heightScale</span> <span class="o">:</span> <span class="mf">1.0f</span><span class="p">;</span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">heightField</span> <span class="o">=</span> <span class="n">cooking</span><span class="p">.</span><span class="n">createHeightField</span><span class="p">(</span><span class="n">terrainDesc</span><span class="p">,</span> <span class="n">physics</span><span class="p">.</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span>
+
+<span class="k">delete</span> <span class="p">[]</span> <span class="n">hfSamples</span><span class="p">;</span>
+
+<span class="n">PxTransform</span> <span class="n">localPose</span><span class="p">;</span>
+<span class="n">localPose</span><span class="p">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PxVec3</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">terrainWidth</span> <span class="o">*</span> <span class="mf">0.5f</span><span class="p">),</span>    <span class="c1">// make it so that the center of the</span>
+    <span class="n">minHeight</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">terrainWidth</span> <span class="o">*</span> <span class="mf">0.5f</span><span class="p">));</span>         <span class="c1">// heightfield is at world (0,minHeight,0)</span>
+<span class="n">localPose</span><span class="p">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">PxQuat</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span>
+<span class="n">PxShape</span><span class="o">*</span> <span class="n">shape</span> <span class="o">=</span> <span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">actor</span><span class="p">,</span> <span class="n">hfGeom</span><span class="p">,</span> <span class="n">material</span><span class="p">,</span> <span class="n">nbMaterials</span><span class="p">);</span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">setLocalPose</span><span class="p">(</span><span class="n">localPose</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="reducing-memory-usage">
+<h2>Reducing memory usage<a class="headerlink" href="#reducing-memory-usage" title="Permalink to this headline">¶</a></h2>
+<p>The following strategies can be used to reduce PhysX's memory usage.</p>
+<div class="section" id="id1">
+<h3>Consider using tight bounds for convex meshes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>See the above chapter about Performance Issues for details. Using tight bounds for convex meshes is mainly useful for performance, but it can also reduce the amount of pairs coming out of the broad-phase, which decreases the amount of memory needed to manage these pairs.</p>
+</div>
+<div class="section" id="id2">
+<h3>Use scratch buffers<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>See the above chapter about Performance Issues for details. Scratch buffers can be shared between multiple sub-systems (e.g. physics and rendering), which can globally improve memory usage. PhysX will not use less memory per-se, but it will allocate less of it.</p>
+</div>
+<div class="section" id="flush-simulation-buffers">
+<h3>Flush simulation buffers<a class="headerlink" href="#flush-simulation-buffers" title="Permalink to this headline">¶</a></h3>
+<p>Call the PxScene::flushSimulation function to free internal buffers used for temporary computations. But be aware that these buffers are usually allocated once and reused in subsequent frames, so releasing the memory might trigger new re-allocations during the next simulate call, which can decrease performance. Please refer to the <a class="reference internal" href="Simulation.html#simulation-memory"><em>Simulation memory</em></a> chapter for details.</p>
+</div>
+<div class="section" id="use-preallocation">
+<h3>Use preallocation<a class="headerlink" href="#use-preallocation" title="Permalink to this headline">¶</a></h3>
+<p>Use PxSceneDesc::limits to preallocate various internal arrays. Preallocating the exact necessary size for internal buffers may use less memory overall than the usual array resizing strategy of dynamic arrays. Please refer to the <a class="reference internal" href="Simulation.html#simulation-memory"><em>Simulation memory</em></a> chapter for details.</p>
+</div>
+<div class="section" id="tweak-cooking-parameters">
+<h3>Tweak cooking parameters<a class="headerlink" href="#tweak-cooking-parameters" title="Permalink to this headline">¶</a></h3>
+<p>Some cooking parameters have a direct impact on memory usage. In particular, PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE, PxCookingParams::suppressTriangleMeshRemapTable, PxBVH33MidphaseDesc::meshCookingHint, PxBVH33MidphaseDesc::meshSizePerformanceTradeOff, PxBVH34MidphaseDesc::numTrisPerLeaf, PxCookingParams::midphaseDesc, PxCookingParams::gaussMapLimit and PxCookingParams::buildTriangleAdjacencies can be modified to choose between runtime performance, cooking performance or memory usage.</p>
+</div>
+<div class="section" id="share-shape-and-mesh-data">
+<h3>Share shape and mesh data<a class="headerlink" href="#share-shape-and-mesh-data" title="Permalink to this headline">¶</a></h3>
+<p>Share the same PxConvexMesh and PxTriangleMesh objects between multiple shape instances if possible. Use shared shapes if possible. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><em>Rigid Body Collision</em></a> chapter for details about shape sharing.</p>
+</div>
+<div class="section" id="id3">
+<h3>Use the scene-query and simulation flags<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>If a shape is only used for scene-queries (raycasts, etc), disable its simulation flag. If a shape is only used for simulation (e.g. it will never be raycasted against), disable its scene-query flag. This is good for both memory usage and performance. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><em>Rigid Body Collision</em></a> chapter for details.</p>
+</div>
+<div class="section" id="id4">
+<h3>Kill kinematic pairs early<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>If you do not need them, use PxPairFilteringMode::eKILL to disable kinematic pairs earlier in the pipeline.</p>
+</div>
+</div>
+<div class="section" id="behavior-issues">
+<h2>Behavior issues<a class="headerlink" href="#behavior-issues" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="objects-do-not-spin-realistically">
+<h3>Objects do not spin realistically<a class="headerlink" href="#objects-do-not-spin-realistically" title="Permalink to this headline">¶</a></h3>
+<p>For historical reasons the default maximum angular velocity is set to a low value (7.0). This can artificially prevent the objects from spinning quickly, which may look unrealistic and wrong in some cases. Please use PxRigidDynamic::setMaxAngularVelocity to increase the maximum allowed angular velocity. Note that this default value has been increased to 100.0 in PhysX 4.0.</p>
+</div>
+<div class="section" id="overlapping-objects-explode">
+<h3>Overlapping objects explode<a class="headerlink" href="#overlapping-objects-explode" title="Permalink to this headline">¶</a></h3>
+<p>Rigid bodies created in an initially overlapping state may explode, because the SDK tries to resolve the penetrations in a single time-step, which can lead to large velocities. Please use PxRigidBody::setMaxDepenetrationVelocity to limit the de-penetration velocity to a reasonable value (e.g. 3.0).</p>
+</div>
+<div class="section" id="rigid-bodies-are-jittering-on-the-ground">
+<h3>Rigid bodies are jittering on the ground<a class="headerlink" href="#rigid-bodies-are-jittering-on-the-ground" title="Permalink to this headline">¶</a></h3>
+<p>Visualize the contacts with the visual debugger. If the jittering is caused by contacts that appear and disappear from one frame to another, try to increase the contact offset (PxShape::setContactOffset).</p>
+</div>
+<div class="section" id="piles-or-stacks-of-objects-are-not-going-to-sleep">
+<h3>Piles or stacks of objects are not going to sleep<a class="headerlink" href="#piles-or-stacks-of-objects-are-not-going-to-sleep" title="Permalink to this headline">¶</a></h3>
+<p>PxSceneFlag::eENABLE_STABILIZATION might help here. This is not recommended for jointed objects though, so use PxRigidDynamic::setStabilizationThreshold to enable/disable this feature on a per-object basis. It should be safe to enable for objects like debris.</p>
+</div>
+<div class="section" id="jointed-objects-are-unstable">
+<h3>Jointed objects are unstable<a class="headerlink" href="#jointed-objects-are-unstable" title="Permalink to this headline">¶</a></h3>
+<p>There are multiple things to try here:</p>
+<ul class="simple">
+<li>Enable the new TGS solver in PhysX 4.0.</li>
+<li>Increase the solver iteration counts, in particular the number of position iterations. Please refer to the <a class="reference internal" href="RigidBodyDynamics.html#rigidbodydynamics"><em>Rigid Body Dynamics</em></a> chapter for details.</li>
+<li>Consider creating the same constraints multiple times. This is similar to increasing the number of solver iterations, but the performance impact is localized to the jointed object rather than the simulation island it is a part of. So it can be a better option overall. Note that the order in which constraints are created is important. Say you have 4 constraints named A, B, C, D, and you want to create them 4 times each. Creating them in the AAAABBBBCCCCDDDD order will not improve the behavior, but creating them in the ABCDABCDABCDABCD order will.</li>
+<li>Consider using joint projection. This might help for simple cases where only a few objects are connected. Please refer to the <a class="reference internal" href="Joints.html#joints"><em>Joints</em></a> chapter for details.</li>
+<li>Use smaller time steps. This can be an effective way to improve joints' behavior, although it can be an expensive solution. Instead of running 1 simulation call with a time-step dt and N solver iterations, consider trying N simulation calls with a time-step dt/N and 1 solver iteration.</li>
+<li>Consider tweaking inertia tensors. In particular, for ropes or chains of jointed objects, the PxJoint::setInvMassScale and PxJoint::setInvInertiaScale functions can be quite effective. An alternative is to compute the inertia tensor (e.g. using PxRigidBodyExt::setMassAndUpdateInertia) with an artificially increased mass, and then set the proper mass directly afterwards (using PxRigidBody::setMass).</li>
+<li>Consider adding extra distance constraints. For example in a rope, it can be effective to create an extra distance constraint between the two ends of the rope, to limit its stretching. Alternatively, one can create distance constraints between elements N and N+2 in the chain.</li>
+<li>Use spheres instead of capsules. A rope made of spheres will be more stable than a rope made of capsules. The positions of pivots can also affect stability. Placing the pivots at the spheres' centers is more stable than placing them on the spheres' surfaces.</li>
+<li>Use articulations. Perhaps not surprisingly, articulations are much better at simulating articulated objects. They can be used to model better ropes, bridges, vehicles, or ragdolls out-of-the-box, without the need for the above workarounds. Please refer to the <a class="reference internal" href="Articulations.html#articulations"><em>Articulations</em></a> chapter for details. They are more expensive than regular joints though.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="gpu-rigid-bodies">
+<h2>GPU Rigid Bodies<a class="headerlink" href="#gpu-rigid-bodies" title="Permalink to this headline">¶</a></h2>
+<p>Collision detection with PxSceneFlag::eENABLE_GPU_DYNAMICS will be executed on GPU for all convex-convex, convex-box, box-box, convex-mesh, box-mesh, convex-HF anb box-HF pairs. However, such pairs will not be processed if either the vertex count of the convex hull exceeds 64 vertices (convex desc flag PxConvexFlag::eGPU_COMPATIBLE can be used to create compatible hulls), the pair requests contact modification, the triangle mesh was not cooked with GPU data requested (PxCookingParams::buildGrbData) or if the triangle mesh makes use of per-triangle materials.</p>
+<p>Aggregates are used to lighten the load on broad phases. When running broad phase on the CPU, aggregates frequently improve performance by reducing the load on the core broad phase algorithm. However, there is some cost when aggregates overlap because these overlaps must be processed by a separate module. When using GPU broad phase, the use of aggregates generally result in performance regressions because the processing of aggregate overlaps occurs on the CPU and, while using aggregates can reduce the load on the GPU broad phase, the amount by which they improve GPU broad phase performance is frequently smaller than the cost of processing the aggregate overlaps.</p>
+</div>
+<div class="section" id="determinism">
+<h2>Determinism<a class="headerlink" href="#determinism" title="Permalink to this headline">¶</a></h2>
+<p>The PhysX SDK can be described as offering limited determinism. Results can vary between platforms due to differences in hardware maths precision and differences in how the compiler reoders instructions during optimization. This means that behavior can be different between different platforms, different compilers operating on the same platform or between optimized and unoptimized builds using the same compiler on the same platform. However, on a given platform, given the exact same sequence of events operating on the exact scene using a consistent time-stepping scheme, PhysX is expected to produce deterministic results. In order to achieve this determinism, the application must recreate the scene in the exact same order each time and insert the actors into a newly-created PxScene. There are several other factors that can affect determinism so if an inconsistent (e.g. variable) time-stepping scheme is used or if the application does not perform the same sequence of API calls on the same frames, the PhysX simulation can diverge.</p>
+<p>In addition, the PhysX simulation can produce divergent behavior if any conditions in the simulation has varied. Even the addition of a single actor that is not interacting with the existing set of actors in the scene can produce divergent results.</p>
+<p>PhysX provides a mechanism to overcome the issue of divergent behavior in existing configurations as a result of additional actors being added or actors being removed from the scene that do not interact with the other actors in the scene. This mechanism can be enabled by raising PxSceneFlag::eENABLE_ENHANCED_DETERMINISM on PxSceneDesc::flags prior to creating the scene. Enabling this mode makes some performance concessions to be able to offer an improved level of determinism. The application must still follow all the requirements to achieve deterministic behavior described previously in order for this mechanism to produce consistent results.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="MigrationFrom28.html" class="btn btn-neutral float-right" title="Migrating From PhysX SDK 2.x to 3.x" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ExtendingSerialization.html" class="btn btn-neutral" title="Extending Serialization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

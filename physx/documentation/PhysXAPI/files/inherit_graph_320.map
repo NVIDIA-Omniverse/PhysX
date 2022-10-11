@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classPxObstacle.html" title="Base class for obstacles. " alt="" coords="5,31,96,57"/>
+<area shape="rect" id="node2" href="$classPxBoxObstacle.html" title="A box obstacle. " alt="" coords="156,5,269,32"/>
+<area shape="rect" id="node3" href="$classPxCapsuleObstacle.html" title="A capsule obstacle. " alt="" coords="144,56,281,83"/>
+</map>

@@ -1,0 +1,58 @@
+.. _INTRODUCTION:
+
+.. |reg| unicode:: U+000AE .. REGISTERED SIGN
+   :ltrim:
+
+----------------
+Welcome to PhysX
+----------------
+
+Welcome to the NVIDIA |reg| PhysX |reg| SDK version 4!  Unlike the change from version 2 to 3, the upgrade to version 4 does not bring any significant API changes, and in fact most interfaces have not changed since version 3.4.  The behaviors of existing algorithms have also largely stayed the same.  Migrating to version 4 should be very easy and straightforward -- see :ref:`migrationTo40`.  Nonetheless we have decided to mark this release with a major version increment because we believe it is hard to overstate the significance of two major innovations we have added:  The TGS solver and the reduced coordinate articulations feature.  These new simulation options are taking PhysX from being a leading game engine technology to also being a highly accurate engineering simulation tool suitable for robotics R&D and reinforcement learning, while maintaining best in class performance for all application domains.  See :ref:`TemporalGaussSeidel` and :ref:`Articulations` for more information on these new features.
+
+=====================
+About this User Guide
+=====================
+
+This Guide will help the reader to understand the features of the PhysX SDK and how to make use of them. The Guide is not exhaustive on the details of the API; the reader should refer to the PhysX API Reference Documentation for this. ( See Documentation/physxapi/_build/html under the main directory where the PhysX
+SDK distro was unpacked.) Furthermore this guide does not currently go into detail about the algorithms used in PhysX. 
+
+The github PhysX 4 Issues page is a good place to ask questions and report bugs.
+
+
+
+==========================
+A brief overview of PhysX
+==========================
+
+PhysX is a library for representing three dimensional worlds made of discrete entities named actors which can in turn be composed of multiple shapes.  PhysX lets the user create and destroy such actors, and tracks their explicit or proximity based interactions.  Actors can either be static, be moved around by the user, or be moved by PhysX according to the laws of classical mechanics.  PhysX' dynamics simulation capability includes support for collision, joints and actuation using maximal and/or reduced coordinates.  Furthermore, the world may be queried by the user using a number of different tools ranging from simple ray-casts to sweep and overlap tests.  PhysX provides extensions for special purpose functionality such as vehicle simulation.
+
+PhysX is designed to be robust, high performance, scalable, portable, as well as easy to integrate and use.  These capabilities make PhysX suitable as a foundation technology for game engines and other real time simulation systems.
+
+It is important to note that PhysX does not run any code on GPUs by default.  However PhysX can be configured to take advantage of CUDA capable GPUs, which provides a performance benefit proportional to the arithmetic complexity of a scene.  GPU acceleration extensions are provided as an optional binary DLL.  See :ref:`GPURigidBodies` for details on how to enable GPU acceleration.  Even without GPU acceleration, PhysX is fully multithreaded and SIMD-accelerated to take full advantage of modern multi-core CPUs.
+
+=================
+World and Objects
+=================
+
+The basic concepts of the world within a PhysX simulation are easy to describe:
+ * The PhysX world comprises a collection of Scenes, each containing objects called Actors;
+ * Each Scene defines its own reference frame encompassing all of space and time;
+ * Actors in different Scenes do not interact with each other;
+ * Characters and vehicles are complex specialized objects made from Actors;
+ * Actors have physical state : position and orientation; velocity or momentum; energy;  etc,
+ * Actor physical state may evolve over time due to applied forces, constraints such as joints or contacts, and interactions between Actors.
+
+============================
+Rendering and Visualization
+============================
+
+3d rendering will of course be a vital technology to visualize the simulated world in almost every application.  Production quality graphics and audio are
+outside the scope of PhysX.  At the minimum the user needs to take the updated state of any moved visible actors and update them in the respective rendering representation.  Some of our example programs come with rudimentary built-in visualization, and we also provide a stand-alone debugging tool called PhysX Visual Debugger (PVD).  PVD provides a graphical view of the PhysX scene together with various tools to inspect and visualize variables of every PhysX object. Additionally it can also record and visualize memory and timing data. See :ref:`physxvisualdebugger` for details.
+
+
+
+
+
+
+
+

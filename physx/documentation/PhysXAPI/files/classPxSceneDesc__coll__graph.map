@@ -1,0 +1,17 @@
+<map id="PxSceneDesc" name="PxSceneDesc">
+<area shape="rect" id="node2" href="$classPxSceneQueryDesc.html" title="Descriptor class for scene query system. See PxSceneQuerySystem. " alt="" coords="325,15,465,42"/>
+<area shape="rect" id="node3" href="$classPxCCDContactModifyCallback.html" title="An interface class that the user can implement in order to modify CCD contact constraints. " alt="" coords="296,66,495,93"/>
+<area shape="rect" id="node4" href="$classPxSceneQuerySystem.html" title="Scene&#45;queries external sub&#45;system for PxScene&#45;based objects. " alt="" coords="318,117,473,143"/>
+<area shape="rect" id="node5" href="$classPxSceneQuerySystemBase.html" title="Base class for the scene&#45;query system. " alt="" coords="5,117,191,143"/>
+<area shape="rect" id="node6" href="$structPxgDynamicsMemoryConfig.html" title="Sizes of pre&#45;allocated buffers use for GPU dynamics. " alt="" coords="302,167,489,194"/>
+<area shape="rect" id="node7" href="$classPxSceneLimits.html" title="Class used to retrieve limits(e.g. maximum number of bodies) for a scene. The limits are used as a hi..." alt="" coords="340,218,451,245"/>
+<area shape="rect" id="node8" href="$classPxBounds3.html" title="Class representing 3D range or axis aligned bounding box. " alt="" coords="351,331,440,358"/>
+<area shape="rect" id="node9" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="37,297,159,323"/>
+<area shape="rect" id="node10" href="$classPxFlags.html" title="Container for bitfield flag variables associated with a specific enum type. " alt="" coords="324,383,467,424"/>
+<area shape="rect" id="node12" href="$classPxCpuDispatcher.html" title="A CpuDispatcher is responsible for scheduling the execution of tasks passed to it by the SDK..." alt="" coords="334,449,457,475"/>
+<area shape="rect" id="node13" href="$classPxContactModifyCallback.html" title="An interface class that the user can implement in order to modify contact constraints. " alt="" coords="310,499,481,526"/>
+<area shape="rect" id="node14" href="$classPxFlags.html" title="PxFlags\&lt; PxSceneFlag\l::Enum, PxU32 \&gt;" alt="" coords="315,551,475,592"/>
+<area shape="rect" id="node15" href="$classPxSimulationEventCallback.html" title="An interface class that the user can implement in order to receive simulation events. " alt="" coords="305,617,486,643"/>
+<area shape="rect" id="node16" href="$classPxSimulationFilterCallback.html" title="Filter callback to specify handling of collision pairs. " alt="" coords="306,667,485,694"/>
+<area shape="rect" id="node17" href="$classPxBroadPhaseCallback.html" title="Broad&#45;phase callback to receive broad&#45;phase related events. " alt="" coords="316,718,475,745"/>
+</map>

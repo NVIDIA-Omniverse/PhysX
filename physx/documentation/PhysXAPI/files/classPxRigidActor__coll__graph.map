@@ -1,0 +1,5 @@
+<map id="PxRigidActor" name="PxRigidActor">
+<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="47,185,117,212"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="48,109,116,136"/>
+<area shape="rect" id="node4" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,159,47"/>
+</map>

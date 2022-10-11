@@ -1,0 +1,4 @@
+<map id="PxSoftBody" name="PxSoftBody">
+<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="16,80,85,107"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="17,5,85,32"/>
+</map>

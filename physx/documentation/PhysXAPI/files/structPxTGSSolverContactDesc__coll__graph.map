@@ -1,0 +1,14 @@
+<map id="PxTGSSolverContactDesc" name="PxTGSSolverContactDesc">
+<area shape="rect" id="node2" href="$structPxTGSSolverConstraintPrepDescBase.html" title="PxTGSSolverConstraintPrep\lDescBase" alt="" coords="1013,261,1199,302"/>
+<area shape="rect" id="node3" href="$structPxSolverConstraintDesc.html" title="Constraint descriptor used inside the solver. " alt="" coords="672,217,835,244"/>
+<area shape="rect" id="node4" href="$structPxSolverBody.html" title="Struct that the solver uses to store velocity updates for a body. " alt="" coords="333,317,436,344"/>
+<area shape="rect" id="node5" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="5,276,128,303"/>
+<area shape="rect" id="node6" href="$structPxTGSSolverBodyVel.html" title="PxTGSSolverBodyVel" alt="" coords="311,245,459,272"/>
+<area shape="rect" id="node9" href="$classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="309,451,460,477"/>
+<area shape="rect" id="node11" href="$classPxMat33T.html" title="PxMat33T\&lt; float \&gt;" alt="" coords="320,380,449,407"/>
+<area shape="rect" id="node12" href="$structPxTGSSolverBodyData.html" title="PxTGSSolverBodyData" alt="" coords="484,156,640,183"/>
+<area shape="rect" id="node13" href="$structGu_1_1ContactPoint.html" title="Gu::ContactPoint" alt="" coords="867,107,989,133"/>
+<area shape="rect" id="node7" href="$structPxConstraintInvMassScale.html" title="Struct for specifying mass scaling for a pair of rigids. " alt="" coords="665,268,842,295"/>
+<area shape="rect" id="node8" href="$structPxTGSSolverBodyTxInertia.html" title="PxTGSSolverBodyTxInertia" alt="" coords="664,396,843,423"/>
+<area shape="rect" id="node10" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="6,471,127,497"/>
+</map>

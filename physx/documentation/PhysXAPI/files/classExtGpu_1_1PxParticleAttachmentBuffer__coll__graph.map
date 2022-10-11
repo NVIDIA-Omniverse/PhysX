@@ -1,0 +1,13 @@
+<map id="ExtGpu::PxParticleAttachmentBuffer" name="ExtGpu::PxParticleAttachmentBuffer">
+<area shape="rect" id="node2" href="$classPxUserAllocated.html" title="PxUserAllocated" alt="" coords="854,5,973,32"/>
+<area shape="rect" id="node3" href="$structPxParticleRigidAttachment.html" title="Struct to specify attachment between a particle/vertex and a rigid. " alt="" coords="824,124,1003,151"/>
+<area shape="rect" id="node4" href="$structPxParticleRigidFilterPair.html" title="Struct for storing a particle/vertex &#45; rigid filter pair with comparison operators. " alt="" coords="545,64,708,91"/>
+<area shape="rect" id="node5" href="$structPxConeLimitParams.html" title="Compressed form of cone limit parameters. " alt="" coords="556,185,697,212"/>
+<area shape="rect" id="node6" href="$classPxVec4T.html" title="PxVec4T\&lt; float \&gt;" alt="" coords="284,149,407,176"/>
+<area shape="rect" id="node7" href="$classPxHashMap.html" title="PxHashMap\&lt; PxRigidActor\l *, PxU32 \&gt;" alt="" coords="823,175,1004,217"/>
+<area shape="rect" id="node9" href="$classPxParticleSystem.html" title="The shared base class for all particle systems. " alt="" coords="850,241,977,268"/>
+<area shape="rect" id="node10" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="592,332,661,359"/>
+<area shape="rect" id="node11" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="311,332,379,359"/>
+<area shape="rect" id="node12" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,325,159,366"/>
+<area shape="rect" id="node13" href="$classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular..." alt="" coords="842,292,985,319"/>
+</map>

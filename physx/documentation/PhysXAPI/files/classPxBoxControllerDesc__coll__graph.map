@@ -1,0 +1,12 @@
+<map id="PxBoxControllerDesc" name="PxBoxControllerDesc">
+<area shape="rect" id="node2" href="$classPxControllerDesc.html" title="Descriptor class for a character controller. " alt="" coords="1061,107,1184,133"/>
+<area shape="rect" id="node3" href="$structPxExtendedVec3.html" title="PxExtendedVec3" alt="" coords="755,5,877,32"/>
+<area shape="rect" id="node4" href="$classPxMaterial.html" title="Material class to represent a set of surface properties. " alt="" coords="774,56,858,83"/>
+<area shape="rect" id="node5" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="556,56,671,83"/>
+<area shape="rect" id="node6" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="401,56,507,83"/>
+<area shape="rect" id="node7" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="284,56,352,83"/>
+<area shape="rect" id="node8" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,49,159,90"/>
+<area shape="rect" id="node9" href="$classPxControllerBehaviorCallback.html" title="User behavior callback. " alt="" coords="720,107,912,133"/>
+<area shape="rect" id="node10" href="$classPxUserControllerHitReport.html" title="User callback class for character controller events. " alt="" coords="729,157,903,184"/>
+<area shape="rect" id="node11" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="755,208,877,235"/>
+</map>

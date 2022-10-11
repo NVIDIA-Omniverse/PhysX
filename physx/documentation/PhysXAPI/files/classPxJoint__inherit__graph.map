@@ -1,0 +1,12 @@
+<map id="PxJoint" name="PxJoint">
+<area shape="rect" id="node3" href="$classPxContactJoint.html" title="a joint that maintains an upper or lower bound (or both) on the distance between two points on differ..." alt="" coords="257,5,367,32"/>
+<area shape="rect" id="node4" href="$classPxD6Joint.html" title="A D6 joint is a general constraint between two actors. " alt="" coords="271,56,353,83"/>
+<area shape="rect" id="node5" href="$classPxDistanceJoint.html" title="a joint that maintains an upper or lower bound (or both) on the distance between two points on differ..." alt="" coords="254,107,370,133"/>
+<area shape="rect" id="node6" href="$classPxFixedJoint.html" title="A fixed joint permits no relative movement between two bodies. ie the bodies are glued together..." alt="" coords="263,157,361,184"/>
+<area shape="rect" id="node7" href="$classPxGearJoint.html" title="A joint that connects two existing revolute joints and constrains their relative angular velocity and..." alt="" coords="265,208,359,235"/>
+<area shape="rect" id="node8" href="$classPxPrismaticJoint.html" title="A prismatic joint permits relative translational movement between two bodies along an axis..." alt="" coords="252,259,372,285"/>
+<area shape="rect" id="node9" href="$classPxRackAndPinionJoint.html" title="A joint that connects an existing revolute joint to an existing prismatic joint, and constrains their..." alt="" coords="235,309,389,336"/>
+<area shape="rect" id="node10" href="$classPxRevoluteJoint.html" title="A joint which behaves in a similar way to a hinge or axle. " alt="" coords="255,360,369,387"/>
+<area shape="rect" id="node11" href="$classPxSphericalJoint.html" title="A joint which behaves in a similar way to a ball and socket. " alt="" coords="253,411,371,437"/>
+<area shape="rect" id="node2" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="5,208,73,235"/>
+</map>

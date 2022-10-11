@@ -1,0 +1,138 @@
+.. _migrationTo34:
+
+----------------------------------------------------
+Migrating From PhysX SDK 3.3 to 3.4
+----------------------------------------------------
+
+* This guide highlights all significant parts of the API that have changed in the last dot release.  An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.
+
+* Functionality shared with the APEX SDK was moved into a separate "PxShared" directory outside of the "PhysX" directory. Since the PxFoundation object is part of the  PxShared library, it is versioned separately. PxCreateFoundation now takes PX_FOUNDATION_VERSION as an argument.
+
+
+===============
+Deprecated APIs
+===============
+
++++++++++++++++++++++++++
+PxRigidActor::createShape
++++++++++++++++++++++++++
+
+PxRigidActor::createShape() is deprecated, and will be removed in PhysX 3.5. PxRigidActorExt::createExclusiveShape() replaces this method.
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS is deprecated, and will be removed in PhysX 3.5. More details are mentioned under :ref:`migration_3_4_core_phsx` further below.
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+PhysX particles
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+The PhysX particle feature has been deprecated in PhysX version 3.4. The standalone library PhysX FleX is an alternative with a richer feature set.
+
+.. _migration_3_4_core_phsx:
+
+=====================================================
+Core PhysX
+=====================================================
+
+* PxCreatePhysics now requires a PxFoundation object to be passed. Optionally it receives a pointer to a PxPvd object, used for connecting PhysX with the visual debugger.
+
+* PxActor::isRigidStatic, isRigidDynamic, isParticleSystem, isParticleFluid, isArticulationLink, isCloth, isRigidActor, isRigidBody, isParticleBase have been removed. Use corresponding PxBase::is() with class template parameter for down casting.
+
+* PxContactPairFlag::eINTERNAL_HAS_FACE_INDICES is obsolete and has been removed.
+
+* Trigger shapes will no longer send notification events for interactions with other trigger shapes. For PhysX 3.4 there is the option to re-enable the reports by raising PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS but this option will no longer be available in PhysX 3.5. It is recommended to not make use of eDEPRECATED_TRIGGER_TRIGGER_REPORTS and instead use a trigger and a non-trigger shape, both with the same geometry and local pose, to emulate getting notifications for overlaps between trigger shapes.
+
+* Implementations of PxSimulationEventCallback will have to provide an (empty) implementation of the newly added method *onAdvance()* to avoid compilation errors.
+
+* The deprecated method PxPhysics::createHeightField(const PxHeightFieldDesc&) has been removed. Please use PxCooking::createHeightField(const PxHeightFieldDesc&, PxPhysicsInsertionCallback&) instead. The insertion callback can be obtained through PxPhysics::getPhysicsInsertionCallback().
+
+* The deprecated flag PxActorTypeSelectionFlag/PxActorTypeSelectionFlags has been removed. Please use PxActorTypeFlag/PxActorTypeFlags instead.
+
+* The deprecated class PxFindOverlapTriangleMeshUtil has been removed. Please use PxMeshOverlapUtil instead.
+
+* The deprecated flag PxConstraintFlag::eREPORTING has been removed. Force reports are now always generated.
+
+* The deprecated flag PxConstraintFlag::eDEPRECATED_32_COMPATIBILITY has been removed.
+
+* PxRegisterHeightFields() now registers unified heightfields. To register legacy heightfields, call PxRegisterLegacyHeightFields(). Legacy heightfield collision is deprecated and will be removed in a future PhysX release.
+
+* The following deprecated simulation event flags have been removed:
+
+    * PxContactPairHeaderFlag::eDELETED_ACTOR_0, ::eDELETED_ACTOR_1
+    
+      (use PxContactPairHeaderFlag::eREMOVED_ACTOR_0, ::eREMOVED_ACTOR_1 instead)
+	
+    * PxContactPairFlag::eDELETED_SHAPE_0, ::eDELETED_SHAPE_1
+	
+      (use PxContactPairFlag::eREMOVED_SHAPE_0, ::eREMOVED_SHAPE_1 instead)
+    
+    * PxTriggerPairFlag::eDELETED_SHAPE_TRIGGER, ::eDELETED_SHAPE_OTHER
+
+      (use PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER, ::REMOVED_SHAPE_OTHER instead)
+
+* PxContactPair now reports separate pointers for contactPatches, contactPoints and contactImpulses rather than reporting a single pointer that the PxContactStreamIterator parses. The interface for PxContactStreamIterator has been modified accordingly. See the PxContactPair::extractContacts implementation for further guidance on how to iterate over this contact data if required.
+
+
+===================
+Contact Generation
+===================
+
+* PCM contact generation is now used by default. Legacy SAT-based contact generation can be re-enabled by clearing the PxSceneFlag::eENABLE_PCM from PxSceneDesc::flags.
+* Unified heightfields are now the default heightfield collision approach. This approach mirrors the way in which mesh contact gen functions so permits meshes and heightfields to be used interchangeably with negligible behavioral difference. The legacy heightfield collision approach can be used by calling PxRegisterLegacyHeightFields().
+* When unified heightfields are in use, the bounds of heightfield shapes will not be extruded by "thickness". If legacy heightfield collision is used, the bounds will still be extruded by thickness.
+
+=============
+PhysX Cooking
+=============
+
+* The deprecated flags PxMeshPreprocessingFlag::eREMOVE_UNREFERENCED_VERTICES and ::eREMOVE_DUPLICATED_TRIANGLES have been removed. Meshes get cleaned up by default unless PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH is set.
+* PxCookingParams::meshSizePerformanceTradeOff and PxCookingParams::meshCookingHint have been moved to PxBVH33MidphaseDesc, since they only affect the BVH33.
+* The PxGaussMapLimit.h file has been removed. The PxGetGaussMapVertexLimitForPlatform function has been moved to PxCooking.h, but the function is now deprecated, along with the PxPlatform enum. Instead there is now an explicit PxCookingParams::gaussMapLimit parameter. As far as transition to PhysX 3.4 is concerned there is nothing to do other than removing includes of PxGaussMapLimit.h, and perhaps including PxCooking.h instead if needed.
+* Legacy convex hull generator (PxConvexMeshCookingType::eINFLATION_INCREMENTAL_HULL) uses inflation in all cases. To cook a convex mesh without inflation new (default) PxConvexMeshCookingType::eQUICKHULL algorithm must be used. This algorithm does not support inflation.
+
+==================
+Reference Counting
+==================
+
+* In previous releases, isReleasable() for shareable objects (shapes, triangle meshes, convex meshes, cloth fabrics, materials and heightfields) would return false once release() had been called on the object, which was only allowed once. In 3.4, reference counts can be manually incremented with acquireReference() and decremented with release(), and so the fact that release() has called once is not a reliable indicator of whether it can be called again.
+
+* As a consequence of the above, applications must ensure they own at least one counted reference to each shareable object in a collection before calling PxCollectionExt::releaseObjects. The main case in which this might be different in 3.4 is when using PxRigidActor::createShape(), since in that case only the actor has a counted reference to the shape. In this specific case, the new parameter releaseExclusiveShapes to PxCollectionExt::releaseObjects may be helpful.
+
+* Since there is no unique user release for shareable objects, they do not generate USER_RELEASE events when release() is called.
+
+=====================================================
+PhysX Visual Debugger
+=====================================================
+
+* PxVisualDebugger is deprecated, and new PxPvd has been introduced. More details are mentioned in :ref:`physxvisualdebugger`.
+
+=====================================================
+Scene queries
+=====================================================
+
+* PxPruningStructure enum has been renamed to PxPruningStructureType
+* Deprecated type PxSceneQueryHit has been removed. Please use PxQueryHit instead.
+* Deprecated type PxSceneQueryFilterData has been removed. Please use PxQueryFilterData instead.
+* Deprecated type PxSceneQueryFilterCallback has been removed. Please use PxQueryFilterCallback instead.
+* Deprecated type PxSceneQueryCache has been removed. Please use PxQueryCache instead.
+* Deprecated types PxSceneQueryFlag(s) has been removed. Please use PxHitFlag(s) instead.
+* Deprecated scene query functions have been removed (e.g. PxScene::raycastAny(), etc). To make the transition easier they are still available in PxSceneQueryExt.h, as part of PhysXExtensions. A previous PxScene::raycastAny(...) call should now either use PxSceneQueryExt::raycastAny(PxScene, ...), or PxScene::raycast(...).
+* PxHitFlag::eFACE_INDEX was introduced. In order to receive the face index in sweeps against convex geometry, the flag needs to be set.
+* PxHitFlag::eDISTANCE has been deprecated, since the distance is always needed and its computation cannot be skipped. Please simply avoid using that flag from now on. The flag has no effect and it will be removed in the next version. 
+* The "anyHit" parameter of the PxGeometryQuery::raycast() and PxShapeExt::raycast() functions has been removed. Please use PxHitFlag::eMESH_ANY instead.
+* PxMeshQuery::sweep() now respects PxHitFlag::eMESH_BOTH_SIDES. So if you previously used that flag when calling that function, it was ignored, and the upgrade to 3.4 might start generating different results compared to 3.3. If keeping the previous behaviour is important, please disable PxHitFlag::eMESH_BOTH_SIDES in your PxMeshQuery::sweep() calls.
+* Batched scene queries are marked as deprecated and will be replaced by new system in future releases.
+* Volume cache feature is marked as deprecated, it will be removed in future releases.
+* Spatial index feature is marked as deprecated, it will be removed in future releases.
+
+=====================================================
+PxExtensions
+=====================================================
+
+* The signatures for the PxComputeMeshPenetration and PxComputeHeightFieldPenetration functions have changed. The old functions are still available but they are now deprecated. It is recommended to transition to the new functions (with the same names but a different signature).
+
+

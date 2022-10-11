@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classPxInputStream.html" title="Input stream class for I/O. " alt="" coords="5,31,113,57"/>
+<area shape="rect" id="node2" href="$classPxInputData.html" title="Input data class for I/O which provides random read access. " alt="" coords="161,31,255,57"/>
+<area shape="rect" id="node3" href="$classPxDefaultFileInputData.html" title="default implementation of a file read stream " alt="" coords="315,5,470,32"/>
+<area shape="rect" id="node4" href="$classPxDefaultMemoryInputData.html" title="default implementation of a memory read stream " alt="" coords="303,56,483,83"/>
+</map>

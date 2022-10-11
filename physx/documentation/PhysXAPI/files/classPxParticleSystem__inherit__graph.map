@@ -1,0 +1,5 @@
+<map id="PxParticleSystem" name="PxParticleSystem">
+<area shape="rect" id="node4" href="$classPxPBDParticleSystem.html" title="A particle system that uses the position based dynamics solver. " alt="" coords="5,229,160,256"/>
+<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="48,80,117,107"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="49,5,117,32"/>
+</map>

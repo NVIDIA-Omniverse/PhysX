@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Custom Geometry &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Rigid Body Overview" href="RigidBodyOverview.html" />
+    <link rel="prev" title="Geometry" href="Geometry.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Custom Geometry</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Custom Geometry</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#custom-geometry-callbacks">Custom Geometry Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#custom-geometry-extensions">Custom Geometry Extensions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Custom Geometry</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="custom-geometry">
+<span id="customgeometry"></span><h1>Custom Geometry<a class="headerlink" href="#custom-geometry" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>This section discusses the PhysX custom geometry class - PxCustomGeometry. Custom geometry is used to implement non-standard collision shapes.</p>
+</div>
+<div class="section" id="id1">
+<h2>Custom Geometry<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>PxCustomGeometry constructor takes a reference to PxCustomGeometry::Callbacks virtual interface. User should inherit this interface and implement all its virtual functions. Custom geometry stores the reference to the callback object. User is responsible for allocating/deallocating the callback object memory.</p>
+<div class="section" id="custom-geometry-callbacks">
+<h3>Custom Geometry Callbacks<a class="headerlink" href="#custom-geometry-callbacks" title="Permalink to this headline">¶</a></h3>
+<p>PxCustomGeometry::Callbacks virtual interface has six virtual functions: getCustomType, getLocalBounds, generateContacts, raycast, overlap, sweep.</p>
+<div class="section" id="custom-type">
+<h4>Custom Type<a class="headerlink" href="#custom-type" title="Permalink to this headline">¶</a></h4>
+<p>Function getCustomType is expected to return a unique ID for every custom geometry type. It's purpose is for the user to differentiate custom geometries. Not used by PhysX.</p>
+</div>
+<div class="section" id="local-bounds">
+<h4>Local Bounds<a class="headerlink" href="#local-bounds" title="Permalink to this headline">¶</a></h4>
+<p>Function getLocalBounds is expected to return the custom geometry's local bounding box - the farthest extents along six directions: -X, -Y, -Z, +X, +Y, +Z, in the geometry's local space. Used by PhysX Broadphase.</p>
+</div>
+<div class="section" id="contacts-generation">
+<h4>Contacts Generation<a class="headerlink" href="#contacts-generation" title="Permalink to this headline">¶</a></h4>
+<p>Function generateContacts is expected to do the collision detection between this and the other given geometry. It's the user responsibility to implement collision detection for all necessary geometry types pairs. User can use auxiliary API functions provided by PhysX, like Immediate Mode Contact Generation or Geometry Queries.</p>
+</div>
+<div class="section" id="queries">
+<h4>Queries<a class="headerlink" href="#queries" title="Permalink to this headline">¶</a></h4>
+<p>Function raycast, overlap and sweep should implement the specified queries. User can use Geometry Queries API functions here.</p>
+</div>
+</div>
+<div class="section" id="custom-geometry-extensions">
+<h3>Custom Geometry Extensions<a class="headerlink" href="#custom-geometry-extensions" title="Permalink to this headline">¶</a></h3>
+<p>There are two pre-made custom geometry callbacks objects in PxCustomGeometryExt to create Cylinder and Cone custom geometries.</p>
+<div class="section" id="cylinder">
+<h4>Cylinder<a class="headerlink" href="#cylinder" title="Permalink to this headline">¶</a></h4>
+<p>Allocate CylinderCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cylinder geometry. Note that PxCustomGeometry won't deallocate the callback object when destroyed. It's the user's responsibility.</p>
+</div>
+<div class="section" id="cone">
+<h4>Cone<a class="headerlink" href="#cone" title="Permalink to this headline">¶</a></h4>
+<p>Allocate ConeCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cone geometry. Note that PxCustomGeometry won't deallocate the callback object when destroyed. It's the user's responsibility.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="RigidBodyOverview.html" class="btn btn-neutral float-right" title="Rigid Body Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Geometry.html" class="btn btn-neutral" title="Geometry" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

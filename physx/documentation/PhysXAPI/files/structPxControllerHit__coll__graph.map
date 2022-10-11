@@ -1,0 +1,5 @@
+<map id="PxControllerHit" name="PxControllerHit">
+<area shape="rect" id="node2" href="$structPxExtendedVec3.html" title="PxExtendedVec3" alt="" coords="5,5,128,32"/>
+<area shape="rect" id="node3" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="152,5,275,32"/>
+<area shape="rect" id="node4" href="$classPxController.html" title="Base class for character controllers. " alt="" coords="299,5,392,32"/>
+</map>

@@ -1,0 +1,87 @@
+.. _Building with PhysX:
+
+--------------------
+Building with PhysX
+--------------------
+
+===============================
+Generating projects with CMake
+===============================
+PhysX uses CMake to generate build configuration files (e.g. Microsoft Visual Studio Solutions) for all supported platforms. The PhysX distribution comes with default CMake parameter sets called **presets**.
+The build configuration files can be generated with the script **generate_projects** in the distributions "physx/" directory. This script either prompts for a preset or accepts a preset as a command line parameter. The resulting build configuration files are generated under "physx/compiler/".
+
+PhysX binaries (including static libraries) are placed into "bin/<platform>.<target>.<compiler>.<runtime>/<configuration>/" directories, for example the vc14win64 checked build puts binaries into "bin/win.x86_32.vc140.mt/checked/".
+
+===============================
+Build Configurations
+===============================
+The SDK has four build configurations available, designed for different stages of development and deployment.
+
+* the *debug* build can be useful for error analysis, but contains asserts used for SDK development which some customers may find too intrusive for daily use. Optimizations are turned off for this configuration.
+* the *checked* build contains code to detect invalid parameters, API race conditions, and other incorrect uses of the API which might otherwise cause mysterious crashes or failures in simulation.
+* the *profile* build omits the checks, but still has PVD and memory instrumentation.
+* the *release* build is built for minimal footprint and maximum speed. It omits most checks and instrumentation.
+
+Simulation works the same way in all of them, and all are compiled with high optimization levels (except debug configuration).
+
+.. note:: We strongly recommend that you use the checked build as the primary configuration for day-to-day development and QA.
+
+.. note:: PhysX libraries of different build configurations (e.g. the DEBUG version of PhysXVehicle and the CHECKED version of PhysXVisualDebuggerSDK) should never be mixed in an application because this will result a CRT conflict.
+
+
+.. _Header files:
+
+=================
+Header Files
+=================
+To build your own PhysX app, you will need to add some include paths and libraries to your project makefile or IDE.
+
+Users should specify the root "include/" and corresponding "bin/" folders in the additional include, and library directories of their build configuration respectively. There is a combined include header available as::
+
+#include "PxPhysicsAPI.h"
+
+This will include the entire PhysX API including core, extensions, vehicles, etc. It is also possible to include subsets of the SDK if preferred, for example::
+
+#include "vehicle/PxVehicleSDK.h"
+
+.. _Redistribution:
+
+=================
+Redistribution
+=================
+
+On the Windows platform, you need to redistribute some of our DLLs to end users as part of your application:
+
+* PhysXCommon_*.dll               - will always be needed.
+* PhysX_*.dll                     - will always be needed.
+* PhysXFoundation_*.dll           - will always be needed.
+* PhysXCooking_*.dll              - you only need to bundle if your application cooks geometry data on the fly.
+* PhysXGPU_*.dll                  - is only needed if your application runs some simulation on the GPU.
+
+Where * is a platform specific suffix, e.g. 32 or 64.  You will need one or the other depending on whether your application is built in 64 bit mode.
+
+===============================
+Customize CMake presets
+===============================
+It is possible to customize the CMake presets, which are stored in "physx/buildtools/presets/public/". Each XML file represents one preset, depending on the platform some CMake switches can be toggled.
+
+General switches:
+
+* PX_BUILDSNIPPETS - specify whether the PhysX Snippets should be added to the build configuration - default True
+
+Windows switches:
+
+* PX_GENERATE_STATIC_LIBRARIES - it is possible to switch the PhysX build to output static libs instead of DLLs - default False
+
+* NV_USE_STATIC_WINCRT - sets static or dynamic runtime usage - default True
+
+* NV_USE_DEBUG_WINCRT - specify whether debug CRT should be used - default True
+
+* PX_FLOAT_POINT_PRECISE_MATH - it is possible to switch to precise math rather than fast math, this is beneficial especially for robotics projects, which do require higher precision - default False
+
+
+Some switches like PX_GENERATE_STATIC_LIBRARIES may result in a need for additional defines to be set within your application. In this case you can include in your application PxConfig.h header, which is generated during generate projects.
+
+
+
+

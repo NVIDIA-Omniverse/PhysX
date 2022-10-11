@@ -1,0 +1,4 @@
+<map id="PxVehicleNoDrive" name="PxVehicleNoDrive">
+<area shape="rect" id="node2" href="$classPxVehicleWheels.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with just wheels..." alt="" coords="5,80,131,107"/>
+<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="34,5,102,32"/>
+</map>

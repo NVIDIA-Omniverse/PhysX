@@ -1,0 +1,9 @@
+<map id="PxGjkQueryExt::ConvexMeshSupport" name="PxGjkQueryExt::ConvexMeshSupport">
+<area shape="rect" id="node2" href="$structPxGjkQuery_1_1Support.html" title="Abstract interface for a user defined shape GJK mapping support. A user defined shape consists of a c..." alt="" coords="5,261,152,288"/>
+<area shape="rect" id="node3" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="177,261,298,288"/>
+<area shape="rect" id="node4" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="323,261,445,288"/>
+<area shape="rect" id="node5" href="$classPxConvexMesh.html" title="A convex mesh. " alt="" coords="469,261,581,288"/>
+<area shape="rect" id="node6" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="473,185,578,212"/>
+<area shape="rect" id="node7" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="491,109,559,136"/>
+<area shape="rect" id="node8" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="449,5,602,47"/>
+</map>

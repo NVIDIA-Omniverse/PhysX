@@ -1,0 +1,1052 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>User&#39;s Guide &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="PhysX License" href="License.html" />
+    <link rel="prev" title="NVIDIA PhysX SDK 5.1 Documentation" href="../Index.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">User's Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+      <li>User's Guide</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="user-s-guide">
+<h1>User's Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
+<img alt="../_images/PhysXLogoBlack1.png" src="../_images/PhysXLogoBlack1.png" />
+<p>Built October 11, 2022</p>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#about-this-user-guide">About this User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#a-brief-overview-of-physx">A brief overview of PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#world-and-objects">World and Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#rendering-and-visualization">Rendering and Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="HelloWorld.html">Snippets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html#what-are-physx-snippets">What are PhysX Snippets?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html#helloworld-physx-basics">HelloWorld: PhysX Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html#using-physx-visual-debugger-with-snippethelloworld">Using PhysX Visual Debugger with SnippetHelloWorld</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html#generating-projects-with-cmake">Generating projects with CMake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html#build-configurations">Build Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html#header-files">Header Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html#redistribution">Redistribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html#customize-cmake-presets">Customize CMake presets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">The PhysX API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="API.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#memory-management">Memory Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#error-reporting">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#math-classes">Math Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#connecting-physx-objects-with-user-application-objects">Connecting PhysX Objects with User Application Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#type-casting">Type Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#reference-counting">Reference Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#using-different-units">Using Different Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#assertions">Assertions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html#determinism">Determinism</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#foundation-and-physics">Foundation and Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#extensions">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#optional-sdk-components">Optional SDK Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#delay-loading-dlls">Delay-Loading DLLs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Startup.html#physxcommon-dll-and-physxfoundation-dll-load">PhysXCommon DLL and PhysXFoundation DLL load</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Startup.html#pxdelayloadhook">PxDelayLoadHook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Startup.html#pxgpuloadhook">PxGpuLoadHook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Startup.html#physxcommon-secure-load">PhysXCommon Secure Load</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html#shutting-down">Shutting Down</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html#data-access-from-multiple-threads">Data Access from Multiple Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#scene-locking">Scene Locking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#locking-semantics">Locking Semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#locking-best-practices">Locking Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html#asynchronous-simulation">Asynchronous Simulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#double-buffering">Double Buffering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html#multithreaded-simulation">Multithreaded Simulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#taskmanager">TaskManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#cpudispatcher">CpuDispatcher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#cpudispatcher-implementation-guidelines">CpuDispatcher Implementation Guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#basetask">BaseTask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#task">Task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threading.html#lightcputask">LightCpuTask</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#geometry-types">Geometry Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#spheres">Spheres</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#capsules">Capsules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#boxes">Boxes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#planes">Planes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#convex-meshes">Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#convex-mesh-cooking">Convex Mesh cooking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#triangle-meshes">Triangle Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#height-fields">Height Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#deformable-meshes">Deformable meshes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#mesh-scaling">Mesh Scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#pxgeometryholder">PxGeometryHolder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html#vertex-and-face-data">Vertex and Face Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#id2">Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#id3">Triangle Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#id4">Height Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry.html#heightfield-modification">Heightfield Modification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html#id1">Custom Geometry</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="CustomGeometry.html#custom-geometry-callbacks">Custom Geometry Callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CustomGeometry.html#custom-geometry-extensions">Custom Geometry Extensions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html#rigid-body-object-model">Rigid Body Object Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html#the-simulation-loop">The Simulation Loop</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#shapes">Shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#simulation-shapes-and-scene-query-shapes">Simulation Shapes and Scene Query Shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#kinematic-triangle-meshes-planes-heighfields">Kinematic Triangle Meshes (Planes, Heighfields)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#broad-phase-algorithms">Broad-phase Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#regions-of-interest">Regions of Interest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#broad-phase-callback">Broad-phase Callback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#collision-filtering">Collision Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#aggregates">Aggregates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#creating-an-aggregate">Creating an Aggregate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#populating-an-aggregate">Populating an Aggregate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#releasing-an-aggregate">Releasing an Aggregate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#amortizing-insertion">Amortizing Insertion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#trigger-shapes">Trigger Shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html#interactions">Interactions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#velocity">Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#mass-properties">Mass Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#applying-forces-and-torques">Applying Forces and Torques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#gravity">Gravity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#friction-and-restitution">Friction and Restitution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#sleeping">Sleeping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="RigidBodyDynamics.html#sleep-state-change-events">Sleep state change events</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#kinematic-actors">Kinematic Actors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="RigidBodyDynamics.html#kinematic-surface-velocities">Kinematic Surface Velocities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#active-actors">Active Actors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#dominance">Dominance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#solver-iterations">Solver Iterations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#immediate-mode">Immediate Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#enhanced-determinism">Enhanced Determinism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#axis-locking">Axis locking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html#temporal-gauss-seidel">Temporal Gauss-Seidel</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#callback-sequence">Callback Sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#simulation-memory">Simulation memory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Simulation.html#scene-limits">Scene Limits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Simulation.html#k-data-blocks">16K Data Blocks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Simulation.html#scratch-buffer">Scratch Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Simulation.html#in-place-serialization">In-place Serialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Simulation.html#pvd-integration">PVD Integration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#completion-tasks">Completion Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#synchronizing-with-other-threads">Synchronizing with Other Threads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#substepping">Substepping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#split-sim">Split sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html#split-fetchresults">Split fetchResults</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#tuning-shape-collision-behavior">Tuning Shape Collision Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#contact-modification">Contact Modification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#contact-reporting">Contact reporting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#contact-reports-and-ccd">Contact Reports and CCD</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#extracting-contact-information">Extracting Contact information</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#extra-contact-data">Extra Contact Data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#continuous-collision-detection">Continuous Collision Detection</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#contact-notification-and-modification">Contact Notification and Modification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#triggers">Triggers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#tuning-ccd">Tuning CCD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#performance-implications">Performance Implications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="AdvancedCollisionDetection.html#limitations">Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#raycast-ccd">Raycast CCD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#speculative-ccd">Speculative CCD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html#persistent-contact-manifold-pcm">Persistent Contact Manifold (PCM)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#joint-basics">Joint Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#visualization">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#force-reporting">Force Reporting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#breakage">Breakage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#projection">Projection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#limits">Limits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#actuation">Actuation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#mass-scaling">Mass Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#fixed-joint">Fixed Joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#spherical-joint">Spherical Joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#revolute-joint">Revolute Joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#prismatic-joint">Prismatic Joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#distance-joint">Distance Joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#d6-joint">D6 Joint</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#locking-and-unlocking-axes">Locking and Unlocking Axes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#id2">Limits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#drives">Drives</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#configuring-joints-for-best-behavior">Configuring Joints for Best Behavior</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html#custom-constraints">Custom Constraints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#defining-constraint-behavior">Defining Constraint Behavior</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#the-constraint-shader-table">The Constraint Shader Table</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Joints.html#data-management">Data Management</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#creating-an-articulation">Creating an Articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#articulation-joints">Articulation Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#driving-an-articulation">Driving an Articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#articulation-projection">Articulation Projection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#articulations-and-sleeping">Articulations and Sleeping</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#joint-positions-and-velocities">Joint Positions and Velocities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#creating-a-reduced-coordinate-articulation">Creating a Reduced Coordinate Articulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#fixed-and-floating-base-articulations">Fixed- and Floating-base Articulations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#id3">Articulation Joints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#articulation-drives">Articulation Drives</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#pxarticulationcache">PxArticulationCache</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#cache-indexing">Cache Indexing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#inverse-dynamics-jacobian-and-other-utility-computations">Inverse Dynamics, Jacobian and other Utility Computations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#preparing-the-articulation-for-inverse-dynamics-computations">Preparing the Articulation for Inverse Dynamics Computations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#converting-from-and-to-reduced-coordinate-joint-dof-coordinates">Converting From and To Reduced Coordinate Joint DOF Coordinates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#compute-generalized-gravity-force">Compute Generalized Gravity Force</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#compute-coriolis-joint-forces">Compute Coriolis Joint Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#compute-generalized-external-force">Compute Generalized External Force</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#compute-joint-accelerations">Compute Joint Accelerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#compute-joint-forces">Compute Joint Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#generalized-mass-matrix">Generalized Mass Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#loop-joints-coefficient-matrix-and-lambda-constraint-impulses">Loop Joints, Coefficient Matrix, and Lambda Constraint Impulses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Articulations.html#jacobian">Jacobian</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="OriginShift.html">Scene Origin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html#shifting-the-scene-origin">Shifting The Scene Origin</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html#using-gpu-rigid-bodies">Using GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html#what-is-gpu-accelerated">What is GPU accelerated?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html#tuning">Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#tet-maker">Tet Maker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#using-gpu-soft-bodies">Using GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#soft-body-direct-api">Soft Body direct API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#tuning">Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html#position-based-dynamics-pbd">Position-based Dynamics (PBD)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ParticleSystem.html#cloth">Cloth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ParticleSystem.html#inflatables">Inflatables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ParticleSystem.html#volumes">Volumes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html#fluid-implicit-particle-flip">Fluid-Implicit Particle (FLIP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html#material-point-method-mpm">Material Point Method (MPM)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#raycasts">Raycasts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#raycasts-against-spheres-capsules-boxes-and-convex-meshes">Raycasts against Spheres, Capsules, Boxes and Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#raycasts-against-planes">Raycasts against Planes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#raycasts-against-triangle-meshes">Raycasts against Triangle Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#raycasts-against-heightfields">Raycasts against Heightfields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#pxgeometryquery-raycast-snippet">PxGeometryQuery raycast snippet</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#overlaps">Overlaps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#penetration-depth">Penetration Depth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#sweeps">Sweeps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#initial-overlaps">Initial Overlaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#precise-sweeps">Precise Sweeps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#sweeps-against-height-fields">Sweeps against Height Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#pitfalls">Pitfalls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#additional-pxgeometryquery-functions">Additional PxGeometryQuery functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#point-distance-query">Point-distance query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#bounds-computation">Bounds computation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html#pxmeshquery">PxMeshQuery</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#mesh-overlaps">Mesh Overlaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GeometryQueries.html#sweeps-against-triangles">Sweeps against Triangles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#basic-queries">Basic queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#raycasts">Raycasts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#sweeps">Sweeps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#overlaps">Overlaps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#touching-and-blocking-hits">Touching and blocking hits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#query-modes">Query modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#closest-hit">Closest hit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#any-hit">Any hit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#multiple-hits">Multiple hits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#multiple-hits-with-blocking-hit">Multiple hits with blocking hit</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#filtering">Filtering</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxqueryflag-estatic-pxqueryflag-edynamic">PxQueryFlag::eSTATIC, PxQueryFlag::eDYNAMIC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxqueryflag-eprefilter-pxqueryflag-epostfilter">PxQueryFlag::ePREFILTER, PxQueryFlag::ePOSTFILTER</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxqueryflag-eany-hit">PxQueryFlag::eANY_HIT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxqueryflag-eno-block">PxQueryFlag::eNO_BLOCK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxfilterdata-fixed-function-filtering">PxFilterData fixed function filtering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#user-defined-hit-callbacks-for-unbounded-results">User defined hit callbacks for unbounded results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#batched-queries">Batched queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#single-object-caching">Single Object Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxpruningstructuretype">PxPruningStructureType</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#generalities">Generalities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxpruningstructuretype-enone">PxPruningStructureType::eNONE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxpruningstructuretype-estatic-aabb-tree">PxPruningStructureType::eSTATIC_AABB_TREE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxpruningstructuretype-edynamic-aabb-tree">PxPruningStructureType::eDYNAMIC_AABB_TREE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxdynamictreesecondarypruner">PxDynamicTreeSecondaryPruner</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxdynamictreesecondarypruner-enone">PxDynamicTreeSecondaryPruner::eNONE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxdynamictreesecondarypruner-ebucket">PxDynamicTreeSecondaryPruner::eBUCKET</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxdynamictreesecondarypruner-eincremental">PxDynamicTreeSecondaryPruner::eINCREMENTAL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#pxdynamictreesecondarypruner-ebvh">PxDynamicTreeSecondaryPruner::eBVH</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#bvh-build-settings">BVH build settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxscenequeryupdatemode">PxSceneQueryUpdateMode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxpruningstructure">PxPruningStructure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#merge-process">Merge process</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxbvh">PxBVH</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#how-to-create-pxbvh">How to create PxBVH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#standalone-pxbvh">Standalone PxBVH</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#pxscenequerysystem">PxSceneQuerySystem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#external-scene-query-system">External scene query system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SceneQueries.html#custom-scene-query-system">Custom scene query system</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html#low-level-query-system">Low-level query system</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html#support-mapping">Support Mapping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#margin">Margin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#local-support">Local Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html#queries">Queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#contact-generation">Contact Generation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#raycast">Raycast</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#overlap">Overlap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GjkQueries.html#sweep">Sweep</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html#pre-made-support-mappings">Pre-made Support Mappings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles2.html">Vehicles2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#mechanical-model">Mechanical Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#software-architecture">Software Architecture</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#commands">Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#states">States</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#c-functions">C Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#components">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#component-sequences">Component Sequences</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#parameter-and-state-data-layout">Parameter and State Data Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#physx-scene-integration">PhysX Scene Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclephysxactorbegincomponent-and-pxvehiclephysxendbegincomponent">PxVehiclePhysXActorBeginComponent and PxVehiclePhysXEndBeginComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclephysxconstraintcomponent">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclephysxroadgeometryscenequerycomponent">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#helper-functions">Helper Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#legacy-vehicle-types">Legacy Vehicle Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclenodrive">PxVehicleNoDrive</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicledrive4w">PxVehicleDrive4W</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#id7">PxVehicleDrive4W</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicledrivetank">PxVehicleDriveTank</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#legacy-type-implementation">Legacy Type Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#snippets">Snippets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippets-overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#vehicle-design-pattern">Vehicle Design Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2directdrive">SnippetVehicle2DirectDrive</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2fourwheeldrive">SnippetVehicle2FourWheelDrive</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2tankdrive">SnippetVehicle2TankDrive</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2multithreading">SnippetVehicle2MultiThreading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2customization">SnippetVehicle2Customization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#snippetvehicle2truck">SnippetVehicle2Truck</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#vehicle-simulation-context">Vehicle Simulation Context</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesimulationcontext">PxVehicleSimulationContext</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#id11">PxVehicleSimulationContext</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#tuning-guide">Tuning Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclebrakecommandresponseparams">PxVehicleBrakeCommandResponseParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesteercommandresponseparams">PxVehicleSteerCommandResponseParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleackermannparams">PxVehicleAckermannParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclewheelparams">PxVehicleWheelParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesuspensionparams">PxVehicleSuspensionParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesuspensionstatecalculationparams">PxVehicleSuspensionStateCalculationParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesuspensioncomplianceparams">PxVehicleSuspensionComplianceParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclesuspensionforceparams">PxVehicleSuspensionForceParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleantirollbar">PxVehicleAntiRollBar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicletireforceparams">PxVehicleTireForceParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclerigidbodyparams">PxVehicleRigidBodyParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicledirectdrivethrottlecommandresponseparams">PxVehicleDirectDriveThrottleCommandResponseParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleengineparams">PxVehicleEngineParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclegearboxparams">PxVehicleGearboxParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleautoboxparams">PxVehicleAutoboxParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleclutchcommandresponseparams">PxVehicleClutchCommandResponseParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicleclutchparams">PxVehicleClutchParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclemultiwheeldrivedifferentialparams">PxVehicleMultiWheelDriveDifferentialParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehiclefourwheeldrivedifferentialparams">PxVehicleFourWheelDriveDifferentialParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#pxvehicletankdrivedifferentialparams">PxVehicleTankDriveDifferentialParams</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#jittery-vehicles">Jittery Vehicles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-engine-rotation-refuses-to-spin-quickly">The Engine Rotation Refuses To Spin Quickly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-engine-spins-but-the-wheels-refuse-to-spin">The Engine Spins But the Wheels Refuse To Spin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-wheels-are-spinning-but-the-vehicle-does-not-move-forwards">The Wheels Are Spinning But The Vehicle Does Not Move Forwards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-does-not-steer-turn">The Vehicle Does Not Steer/Turn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-acceleration-feels-sluggish">The Acceleration Feels Sluggish</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-does-not-slow-down-when-not-accelerating">The Vehicle Does Not Slow Down When Not Accelerating</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-turns-too-quickly-too-slowly">The Vehicle Turns Too Quickly/Too Slowly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-wheels-spin-too-much-under-acceleration">The Wheels Spin Too Much Under Acceleration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-wheels-spin-too-much-when-cornering">The Wheels Spin Too Much When Cornering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-never-goes-beyond-first-gear">The Vehicle Never Goes Beyond First Gear</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-under-steers-then-over-steers">The Vehicle Under-steers Then Over-steers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-slows-down-unnaturally">The Vehicle Slows Down Unnaturally</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#the-vehicle-climbs-too-steep-slopes">The Vehicle Climbs Too Steep Slopes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html#references">References</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#anti-roll-bar">Anti-roll Bar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#tire-modeling">Tire Modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#engine-torque-curves">Engine Torque Curves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#differentials">Differentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#clutch">Clutch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#ackermann-steer-correction">Ackermann Steer Correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#tanks">Tanks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Vehicles2.html#general">General</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#kinematic-character-controller">Kinematic Character Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#creating-a-character-controller">Creating a character controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#overlap-recovery-module">Overlap Recovery Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#character-volume">Character Volume</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#volume-update">Volume Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#moving-a-character-controller">Moving a Character Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#graphics-update">Graphics Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#auto-stepping">Auto Stepping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#climbing-mode">Climbing Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#up-vector">Up Vector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#walkable-parts-invisible-walls">Walkable Parts &amp; Invisible Walls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#obstacle-objects">Obstacle Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#hit-callback">Hit Callback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#behavior-callback">Behavior Callback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#character-interactions-cct-vs-dynamic-actors">Character Interactions: CCT-vs-dynamic actors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#character-interactions-cct-vs-cct">Character Interactions: CCT-vs-CCT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#hidden-kinematic-actors">Hidden Kinematic Actors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#time-stepping">Time Stepping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#invalidating-internal-geometry-caches">Invalidating Internal Geometry Caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#runtime-tessellation">Runtime Tessellation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="CharacterControllers.html#character-goes-through-walls-in-rare-cases">Character goes through walls in rare cases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CharacterControllers.html#tessellation-performance-issue">Tessellation performance issue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CharacterControllers.html#the-capsule-controller-manages-to-climb-over-obstacles-higher-than-the-step-offset-value">The capsule controller manages to climb over obstacles higher than the step offset value</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html#pvd">PVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html#basic-setup-sdk-side">Basic Setup (SDK Side)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#network-setup">Network Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#file-setup">File Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html#advanced-setup">Advanced Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#connection-flags">Connection Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#visualizing-externals-and-extended-data">Visualizing Externals and Extended Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#visualizing-scenequery">Visualizing SceneQuery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#custom-pvdclient">Custom PvdClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#pvd-error-stream">PVD Error Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VisualDebugger.html#custom-profiling">Custom profiling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html#interface">Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#first-code">First Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#in-depth-discussion">In-depth Discussion</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#collections">Collections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#serializing-complete-collections">Serializing Complete Collections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#serializing-incomplete-collections">Serializing Incomplete Collections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#reference-counting-of-deserialized-objects">Reference Counting of Deserialized Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#reconnecting-physx-and-application-objects">Reconnecting PhysX and Application-Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#serializing-everything">Serializing Everything</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#serializability">Serializability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#binary-serialization-specifics">Binary Serialization Specifics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#api-level-serialization-repx-specifics">API-level Serialization (RepX) Specifics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#common-use-cases">Common Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#snippet-discussion">Snippet Discussion</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#snippetserialization">SnippetSerialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#snippetconvert">SnippetConvert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Serialization.html#snippetloadcollection">SnippetLoadCollection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#best-practices-troubleshooting">Best practices / Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html#pvd">PVD</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html#binary-serialization-of-custom-classes">Binary Serialization of Custom Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html#repx-serialization-of-custom-classes">RepX Serialization of Custom Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ExtendingSerialization.html#physx-api-metadata-system">PhysX API Metadata System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#debugging">Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-checked-builds-and-the-error-stream">Use checked builds and the error stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#visualizing-physics-data">Visualizing physics data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#visualizing-physics-data-2">Visualizing physics data (2)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#limiting-coordinates">Limiting coordinates</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#performance-issues">Performance Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-profile-builds-to-identify-performance-bottlenecks">Use profile builds to identify performance bottlenecks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-release-builds-for-final-performance-tests">Use release builds for final performance tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#disable-debug-visualization-in-final-release-builds">Disable debug visualization in final/release builds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#debug-visualization-is-very-slow">Debug visualization is very slow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#consider-using-tight-bounds-for-convex-meshes">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-scratch-buffers">Use scratch buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-the-proper-mid-phase-algorithm">Use the proper mid-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-the-proper-narrow-phase-algorithm">Use the proper narrow-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-the-proper-broad-phase-algorithm">Use the proper broad-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-the-scene-query-and-simulation-flags">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#tweak-the-dynamic-tree-rebuild-rate">Tweak the dynamic tree rebuild rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#tweak-the-number-of-objects-per-node">Tweak the number of objects per node</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#consider-using-the-compound-pruner">Consider using the compound pruner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-the-insertion-callback-when-cooking-at-runtime">Use the insertion callback when cooking at runtime</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#kill-kinematic-pairs-early">Kill kinematic pairs early</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#beware-of-pxscene-getactors">Beware of PxScene::getActors()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#consider-using-aggregates">Consider using aggregates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#setup-proper-aggregate-filtering">Setup proper aggregate filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#consider-disabling-pxgeometryqueryflag-esimd-guard">Consider disabling PxGeometryQueryFlag::eSIMD_GUARD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#the-well-of-despair">The &quot;Well of Despair&quot;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#pruner-performance-for-streamed-environments">Pruner Performance for Streamed Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#performance-implications-for-multi-threading">Performance Implications for Multi-Threading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#memory-allocation">Memory allocation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#character-controller-systems-using-scene-queries-and-penetration-depth-computation">Character Controller Systems using Scene Queries and Penetration Depth Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#quantizing-heightfield-samples">Quantizing HeightField Samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#reducing-memory-usage">Reducing memory usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#id1">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#id2">Use scratch buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#flush-simulation-buffers">Flush simulation buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#use-preallocation">Use preallocation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#tweak-cooking-parameters">Tweak cooking parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#share-shape-and-mesh-data">Share shape and mesh data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#id3">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#id4">Kill kinematic pairs early</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#behavior-issues">Behavior issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#objects-do-not-spin-realistically">Objects do not spin realistically</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#overlapping-objects-explode">Overlapping objects explode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#rigid-bodies-are-jittering-on-the-ground">Rigid bodies are jittering on the ground</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#piles-or-stacks-of-objects-are-not-going-to-sleep">Piles or stacks of objects are not going to sleep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="BestPractices.html#jointed-objects-are-unstable">Jointed objects are unstable</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#gpu-rigid-bodies">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html#determinism">Determinism</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#removed-features">Removed Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#compartments">Compartments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#deformables">Deformables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#nxutillib">NxUtilLib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#anisotropic-friction">Anisotropic Friction</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#basics">Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#sdk-header">SDK Header</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#sdk-redistribution">SDK Redistribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#api-conventions">API Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#callback-classes">Callback Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#memory-management">Memory Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#debug-rendering">Debug Rendering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#error-reporting">Error Reporting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#type-casting">Type Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#multithreading">Multithreading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#startup-and-shutdown">Startup and Shutdown</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#extensions">Extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#heightfields">Heightfields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#cooking">Cooking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#serialization">Serialization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#api-design-changes">API Design Changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#changed-actor-hierarchy">Changed Actor Hierarchy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#actor-creation">Actor Creation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#material-indexes">Material Indexes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#continuous-collision-detection">Continuous Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#pose-description">Pose Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#shape-description">Shape Description</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#skin-width">Skin Width</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#joints">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#time-stepping">Time Stepping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#simulation-parameters">Simulation Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#collision-filtering">Collision Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html#scene-queries">Scene Queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#raycasts">Raycasts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#overlaps">Overlaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationFrom28.html#sweep-tests">Sweep Tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#math-classes">Math Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#scene-query-api">Scene Query API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#spu-batch-queries">SPU batch queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#core-physx">Core PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-extensions">PhysX Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-character-controller">PhysX Character Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-vehicles">PhysX Vehicles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#ccd">CCD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-visual-debugger">PhysX Visual Debugger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-cloth">PhysX Cloth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#repx-serialization">RepX Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#binary-serialization">Binary Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html#physx-taskmanager">PhysX TaskManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#deprecated-apis">Deprecated APIs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo34.html#pxrigidactor-createshape">PxRigidActor::createShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo34.html#pxsceneflag-edeprecated-trigger-trigger-reports">PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo34.html#physx-particles">PhysX particles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#core-physx">Core PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#contact-generation">Contact Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#physx-cooking">PhysX Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#reference-counting">Reference Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#physx-visual-debugger">PhysX Visual Debugger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#scene-queries">Scene queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html#pxextensions">PxExtensions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#deprecated-apis">Deprecated APIs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#physx-particles">PhysX particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#physx-clothing">PhysX clothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#physx-distribution">PhysX distribution</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo40.html#cmake-build">CMake build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo40.html#pxshared">PxShared</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#core-physx">Core PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html#physx-extensions">PhysX Extensions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html#removed-apis">Removed APIs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#generic">Generic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#materials">Materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#shapes">Shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#scene-queries">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#pxbvhstructure">PxBVHStructure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#gpu-rigid-bodies">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#character-controller">Character controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html#vehicles">Vehicles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#simulation-state">Simulation State</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#behavior-changes">Behavior Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#analog-control-inputs">Analog Control Inputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#digital-control-inputs">Digital Control Inputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MigrationTo51.html#vehicle-frame-and-lengthscale">Vehicle Frame And Lengthscale</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="License.html" class="btn btn-neutral float-right" title="PhysX License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../Index.html" class="btn btn-neutral" title="NVIDIA PhysX SDK 5.1 Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

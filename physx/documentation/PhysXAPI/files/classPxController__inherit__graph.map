@@ -1,0 +1,4 @@
+<map id="PxController" name="PxController">
+<area shape="rect" id="node2" href="$classPxBoxController.html" title="Box character controller. " alt="" coords="5,80,121,107"/>
+<area shape="rect" id="node3" href="$classPxCapsuleController.html" title="A capsule character controller. " alt="" coords="145,80,285,107"/>
+</map>

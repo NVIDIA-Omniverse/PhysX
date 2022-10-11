@@ -1,0 +1,8 @@
+<map id="ExtGpu::PxParticleAndDiffuseBufferDesc" name="ExtGpu::PxParticleAndDiffuseBufferDesc">
+<area shape="rect" id="node2" href="$structExtGpu_1_1PxParticleBufferDesc.html" title="Structure to define user&#45;defined particle state when constructing a new particle system. " alt="" coords="29,347,226,373"/>
+<area shape="rect" id="node3" href="$structPxParticleVolume.html" title="Particle volume structure. Used to track the bounding volume of a user&#45;specified set of particles..." alt="" coords="5,243,132,269"/>
+<area shape="rect" id="node4" href="$classPxBounds3.html" title="Class representing 3D range or axis aligned bounding box. " alt="" coords="24,109,113,136"/>
+<area shape="rect" id="node5" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="7,5,130,32"/>
+<area shape="rect" id="node6" href="$classPxVec4T.html" title="4 Element vector class. " alt="" coords="156,243,283,269"/>
+<area shape="rect" id="node8" href="$classPxDiffuseParticleParams.html" title="Parameters to configure the behavior of diffuse particles. " alt="" coords="251,347,417,373"/>
+</map>

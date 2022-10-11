@@ -1,0 +1,11 @@
+<map id="PxTriangleMeshDesc" name="PxTriangleMeshDesc">
+<area shape="rect" id="node2" href="$classPxSimpleTriangleMesh.html" title="A structure describing a triangle mesh. " alt="" coords="91,250,245,277"/>
+<area shape="rect" id="node3" href="$classPxFlags.html" title="PxFlags\&lt; PxMeshFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,109,160,151"/>
+<area shape="rect" id="node4" href="$structPxBoundedData.html" title="PxBoundedData" alt="" coords="185,117,301,143"/>
+<area shape="rect" id="node7" href="$classPxSDFDesc.html" title="A structure describing signed distance field for mesh. " alt="" coords="311,250,406,277"/>
+<area shape="rect" id="node5" href="$structPxStridedData.html" title="PxStridedData" alt="" coords="189,5,296,32"/>
+<area shape="rect" id="node6" href="$structPxTypedStridedData.html" title="PxTypedStridedData\l\&lt; PxMaterialTableIndex \&gt;" alt="" coords="431,243,601,284"/>
+<area shape="rect" id="node8" href="$classPxBounds3.html" title="Class representing 3D range or axis aligned bounding box. " alt="" coords="506,117,595,143"/>
+<area shape="rect" id="node9" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="544,5,667,32"/>
+<area shape="rect" id="node10" href="$structPxDim3.html" title="A helper structure to define dimensions in 3D. " alt="" coords="325,117,393,143"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="PxExtendedContact" name="PxExtendedContact">
+<area shape="rect" id="node3" href="$structPxModifiableContact.html" title="A modifiable contact point. This has additional fields per&#45;contact to permit modification by user..." alt="" coords="5,155,147,181"/>
+<area shape="rect" id="node2" href="$structPxContact.html" title="Contact point data. " alt="" coords="35,5,117,32"/>
+</map>

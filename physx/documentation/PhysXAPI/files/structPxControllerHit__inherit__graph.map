@@ -1,0 +1,5 @@
+<map id="PxControllerHit" name="PxControllerHit">
+<area shape="rect" id="node2" href="$structPxControllerObstacleHit.html" title="Describes a hit between a CCT and a user&#45;defined obstacle. Passed to onObstacleHit(). " alt="" coords="5,80,167,107"/>
+<area shape="rect" id="node3" href="$structPxControllerShapeHit.html" title="Describes a hit between a CCT and a shape. Passed to onShapeHit() " alt="" coords="191,80,338,107"/>
+<area shape="rect" id="node4" href="$structPxControllersHit.html" title="Describes a hit between a CCT and another CCT. Passed to onControllerHit(). " alt="" coords="363,80,479,107"/>
+</map>

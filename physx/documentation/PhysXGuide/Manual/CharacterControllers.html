@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Character Controllers &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Debug Visualization" href="DebugVisualization.html" />
+    <link rel="prev" title="Vehicles2" href="Vehicles2.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Character Controllers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kinematic-character-controller">Kinematic Character Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-character-controller">Creating a character controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overlap-recovery-module">Overlap Recovery Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#character-volume">Character Volume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volume-update">Volume Update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#moving-a-character-controller">Moving a Character Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#graphics-update">Graphics Update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#auto-stepping">Auto Stepping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#climbing-mode">Climbing Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#up-vector">Up Vector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#walkable-parts-invisible-walls">Walkable Parts &amp; Invisible Walls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#obstacle-objects">Obstacle Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hit-callback">Hit Callback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#behavior-callback">Behavior Callback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#character-interactions-cct-vs-dynamic-actors">Character Interactions: CCT-vs-dynamic actors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#character-interactions-cct-vs-cct">Character Interactions: CCT-vs-CCT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hidden-kinematic-actors">Hidden Kinematic Actors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#time-stepping">Time Stepping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#invalidating-internal-geometry-caches">Invalidating Internal Geometry Caches</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#runtime-tessellation">Runtime Tessellation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#character-goes-through-walls-in-rare-cases">Character goes through walls in rare cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tessellation-performance-issue">Tessellation performance issue</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-capsule-controller-manages-to-climb-over-obstacles-higher-than-the-step-offset-value">The capsule controller manages to climb over obstacles higher than the step offset value</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Character Controllers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="character-controllers">
+<span id="character"></span><h1>Character Controllers<a class="headerlink" href="#character-controllers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The character controller (CCT) SDK is an external component built on top of the PhysX SDK, in a manner similar to PhysXExtensions.</p>
+<p>CCTs can be implemented in a number of ways: the PhysX implementation in the CCT module is only one of them.</p>
+<p>By nature, CCTs are often very game-specific, and they can have a number of unique features in each game. For example the character's bounding volume may be a capsule in one game, and an inverted pyramid in another. The CCT SDK does not attempt to provide a one-size-fits-all solution that would work out-of-the-box for all possible games. But it provides the basic features common to all CCTs: character control and character interactions. It is a default starting point for users, a strong base that one can build on, and later modify or customize if needed.</p>
+</div>
+<div class="section" id="kinematic-character-controller">
+<h2>Kinematic Character Controller<a class="headerlink" href="#kinematic-character-controller" title="Permalink to this headline">¶</a></h2>
+<p>The PhysX CCT is a kinematic controller. Traditionally, character controllers can be either kinematic or dynamic. A kinematic controller directly works with input displacement vectors (1st order control). A dynamic controller works with input velocities (2nd order control) or forces (3rd order control).</p>
+<p>In the past, games did not use a 'real' physics engine like the PhysX SDK. But they still used a character controller to move a player in a level. These games, such as Quake or even Doom, had a dedicated, customized piece of code to implement collision detection and response, which was often the only piece of physics in the whole game. It actually had little physics, but a lot of carefully tweaked values to provide a good feeling while controlling the player. The particular behavior it implemented is often called the 'collide and slide' algorithm, and it has been 'tweaked for more than a decade'. The PhysX CCT module is an implementation of such an algorithm, providing a robust and well-known behavior for character control.</p>
+<p>The main advantage of kinematic controllers is that they do not suffer from the following issues, which are typical for dynamic controllers:</p>
+<ul>
+<li><p class="first">(lack of) continuous collision detection: typical physics engines use discrete collision checks, leading to the notorious 'tunneling effect' that has plagued various commercial &amp; non-commercial physics packages for years. This leads to three main problems:</p>
+<blockquote>
+<div><ul class="simple">
+<li>the tunneling effect itself : if the character goes too fast it might tunnel through a wall</li>
+<li>as a consequence, the character's maximum velocity be limited (thus also limiting the game play possibilities)</li>
+<li>even if it does not tunnel, the character might jitter when pushed forward in a corner for example, because the physics engine keeps moving it back and forth to slightly different positions.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">No direct control: a rigid body is typically controlled with impulses or forces. It is usually not possible to move it directly to its final position: instead one must convert the delta position vector to impulses/forces, apply them, and hope that the character will end up at the desired position. This does not always work well, in particular when the physics engine uses an imperfect linear solver.</p>
+</li>
+<li><p class="first">Trouble with friction: when the character is standing on a ramp, it should not slide. So infinite friction is needed here. When the character is moving forward on that same ramp, it should not slow down. One does not need any friction here. Similarly, when the character is sliding against a wall, it should not slow down either. Thus, for a CCT, friction is usually either 0 or infinite. Unfortunately the friction model in a physics engine might not be perfect, and it is easy to end up with either a small amount of friction (the character slows down a tiny bit) or a very-large-but-not-infinite friction (the character slides very slowly on that ramp no matter how artificially big the friction parameters are). The conflicting requirements for ramps also mean that usually there is simply no way to perfectly model desired behavior.</p>
+</li>
+<li><p class="first">Trouble with restitution: typically, restitution should be avoided for CCTs. When the character moves fast and collides with a wall, it should not bounce away from it. When the character falls from a height and lands on the ground, flexing his legs, any bounce should be prevented. But once again, even when the restitution is exactly zero, a physics engine can nonetheless make the CCTs bounce a bit. This is not only related to the imperfect nature of the linear solver, it also has to do with how typical penetration-depth-based engines recover from overlap situations, sometimes applying excessive forces that separate the objects too much.</p>
+</li>
+<li><p class="first">Undesired jumps: characters must often stick to the ground, no matter what the physical behavior should be. For example characters in action games tend to move fast, at unrealistic speeds. When they reach the top of a ramp, the physics engine often makes them jump a bit, in the same way a fast car would jump in the streets of San Francisco. But that is often not the desired behavior: instead the character should often stick to the ground regardless of its current velocity. This is sometimes implemented using fixed joints, but this is an unnecessarily complex solution to a problem that is easily prevented with kinematic controllers.</p>
+</li>
+<li><p class="first">Undesired rotations: a typical character is always standing up and never rotating. However physics engines often have poor support for that sort of constraints, and a great deal of effort is often put into preventing a capsule around the character from falling (it should always stands up on its tip). This is often implemented using artificial joints, and the resulting system is neither very robust nor very fast.</p>
+</li>
+</ul>
+<p>To summarize, a lot of effort can be spent on tweaking and disabling the physics engine's features simply to emulate what is otherwise a much less complex piece of custom code. It is natural to instead keep using that simple piece of custom code.</p>
+</div>
+<div class="section" id="creating-a-character-controller">
+<h2>Creating a character controller<a class="headerlink" href="#creating-a-character-controller" title="Permalink to this headline">¶</a></h2>
+<p>First, create a controller manager somewhere in your application. This object keeps track of all created controllers and allows characters from the same manager to interact with each other. Create the manager using the <em>PxCreateControllerManager</em> function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxScene</span><span class="o">*</span> <span class="n">scene</span><span class="p">;</span>    <span class="c1">// Previously created scene</span>
+<span class="n">PxControllerManager</span><span class="o">*</span> <span class="n">manager</span> <span class="o">=</span> <span class="n">PxCreateControllerManager</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Then, create one controller for each character in the game. At the time of writing only boxes (<em>PxBoxController</em>) and capsules (<em>PxCapsuleController</em>) are supported. A capsule controller for example, is created this way:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxCapsuleControllerDesc</span> <span class="n">desc</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="o">&lt;</span><span class="n">fill</span> <span class="n">the</span> <span class="n">descriptor</span> <span class="n">here</span><span class="o">&gt;</span>
+<span class="p">...</span>
+<span class="n">PxController</span><span class="o">*</span> <span class="n">c</span> <span class="o">=</span> <span class="n">manager</span><span class="o">-&gt;</span><span class="n">createController</span><span class="p">(</span><span class="n">desc</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The manager class will keep track of all created controllers. They can be retrieved at any time using the following functions:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxU32</span>          <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">getNbControllers</span><span class="p">()</span>   <span class="k">const</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">PxController</span><span class="o">*</span>  <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">getController</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">index</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>To release a character controller, simply call its release function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span>    <span class="n">PxController</span><span class="o">::</span><span class="n">release</span><span class="p">()</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>To release all created character controllers at once, either release the manager object itself, or use the following function if you intend to keep using the manager:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span>    <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">purgeControllers</span><span class="p">()</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The creation of a controller manager and its subsequent controllers is illustrated in SampleBridges.</p>
+</div>
+<div class="section" id="overlap-recovery-module">
+<h2>Overlap Recovery Module<a class="headerlink" href="#overlap-recovery-module" title="Permalink to this headline">¶</a></h2>
+<p>Ideally, character should not be created in an initial overlap state, i.e. they should be created in a position where they do not overlap the surrounding geometry. The various PxScene overlap functions can be used to check the desired volume of space is empty, prior to creating the character. By default the CCT module does not check for overlaps itself, and creating a character that initially overlaps the world's static geometry can have undesired and undefined behavior - like the character going through the ground for example.</p>
+<p>However, the overlap recovery module can be used to automatically correct the character's initial position. As long as the amount of overlap is reasonable, the recovery module should be able to relocate the character to a proper, collision-free position.</p>
+<p>The overlap recovery module can be useful in several other situations. There are three main cases:</p>
+<ul class="simple">
+<li>when the CCT is directly spawned or teleported in another object</li>
+<li>when the CCT algorithm fails due to limited FPU accuracy</li>
+<li>when the &quot;up vector&quot; is modified, making the rotated CCT shape overlap surrounding objects</li>
+</ul>
+<p>When activated, the CCT module will automatically try to resolve the penetration, and move the CCT to a safe place where it does not overlap other objects anymore. This only concerns static objects, dynamic objects are ignored by this module.</p>
+<p>Enable or disable the overlap recovery module with this function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">setOverlapRecoveryModule</span><span class="p">(</span><span class="kt">bool</span> <span class="n">flag</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>By default the character controllers use precise sweep tests, whose accuracy is usually enough to avoid all penetration - provided the contact offset is not too small. Thus, in most cases the overlap recovery module is not needed. When it is used though, the sweep tests can be switched to less accurate but potentially faster versions, using the following function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">setPreciseSweeps</span><span class="p">(</span><span class="kt">bool</span> <span class="n">flag</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="character-volume">
+<h2>Character Volume<a class="headerlink" href="#character-volume" title="Permalink to this headline">¶</a></h2>
+<p>The character uses a bounding volume that is independent from already existing shapes in the SDK. We currently support two different shapes around the character:</p>
+<ul class="simple">
+<li>An AABB, defined by a center position and an extents vector. The AABB does not rotate. It always has a fixed rotation even when the player is (visually) rotating. This avoids getting stuck in places too tight to let the AABB rotate.</li>
+<li>A capsule, defined by a center position, a vertical height and a radius. The height is the distance between the two sphere centers at the end of the capsule. The capsule has a better behavior when climbing stairs, for example. It is the recommended default choice.</li>
+</ul>
+<img alt="../_images/cctCapsule.png" src="../_images/cctCapsule.png" />
+<p>Note: versions prior to 2.3 also supported a sphere. This has been removed since the PxCapsuleController is more robust and provides the same functionality (zero length capsule).</p>
+<p>A small skin is maintained around the character's volume, to avoid numerical issues that would otherwise happen when the character touches other shapes. The size of this skin is user-defined. When rendering the character's volume for debug purpose, remember to expand the volume by the size of this skin to get accurate debug visualization. This skin is defined in <em>PxControllerDesc::contactOffset</em> and later available through the <em>PxController::getContactOffset()</em> function.</p>
+</div>
+<div class="section" id="volume-update">
+<h2>Volume Update<a class="headerlink" href="#volume-update" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes it is useful to change the size of the character's volume at runtime. For example if the character can crouch, it might be required to reduce the height of its bounding volume so that it can then move to places he could not reach otherwise.</p>
+<p>For the box controller, the related functions are:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">bool</span> <span class="n">PxBoxController</span><span class="o">::</span><span class="n">setHalfHeight</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">halfHeight</span><span class="p">)</span>               <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">PxBoxController</span><span class="o">::</span><span class="n">setHalfSideExtent</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">halfSideExtent</span><span class="p">)</span>       <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">PxBoxController</span><span class="o">::</span><span class="n">setHalfForwardExtent</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">halfForwardExtent</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>And for the capsule controller:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">bool</span> <span class="n">PxCapsuleController</span><span class="o">::</span><span class="n">setRadius</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">radius</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">PxCapsuleController</span><span class="o">::</span><span class="n">setHeight</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">height</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Changing the size of a controller using the above functions does not actually change its position. So if the character is standing on the ground (touching it), and its height is suddenly reduced without updating its position, the character will end up levitating above the ground for a few frames until gravity makes it fall and touch the ground again. This happens because the controllers positions are located at the center of the shapes, rather than the bottom. Thus, to modify a controller's height and preserve its bottom position, one must change both the height and position of a controller. The following helper function does that automatically:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxController</span><span class="o">::</span><span class="n">resize</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">height</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<img alt="../_images/cctResize.png" src="../_images/cctResize.png" />
+<p>It is important to note that volumes are directly modified without any extra tests, and thus it might happen that the resulting volume overlaps some geometry nearby. For example when resizing the character to leave a crouch pose, i.e. when the size of the character is <em>increased</em>, it is important to first check that the character can indeed 'stand up': the volume of space above the character must be empty (collision free). It is recommended to use the various PxScene overlap queries for this purpose:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">bool</span> <span class="n">PxScene</span><span class="o">::</span><span class="n">overlap</span><span class="p">(...)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Updating the character's volume at runtime to implement a 'crouch' motion is illustrated in SampleNorthPole. Using overlap queries to leave the crouch pose is done in the <em>SampleNorthPole::tryStandup()</em> function.</p>
+</div>
+<div class="section" id="moving-a-character-controller">
+<h2>Moving a Character Controller<a class="headerlink" href="#moving-a-character-controller" title="Permalink to this headline">¶</a></h2>
+<p>The heart of the CCT algorithm is the function that actually moves characters around:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxControllerCollisionFlags</span> <span class="n">collisionFlags</span> <span class="o">=</span>
+    <span class="n">PxController</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="k">const</span> <span class="n">PxVec3</span><span class="o">&amp;</span> <span class="n">disp</span><span class="p">,</span> <span class="n">PxF32</span> <span class="n">minDist</span><span class="p">,</span> <span class="n">PxF32</span> <span class="n">elapsedTime</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">PxControllerFilters</span><span class="o">&amp;</span> <span class="n">filters</span><span class="p">,</span> <span class="k">const</span> <span class="n">PxObstacleContext</span><span class="o">*</span> <span class="n">obstacles</span><span class="o">=</span><span class="nb">NULL</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><em>disp</em> is the displacement vector for current frame. It is typically a combination of vertical motion due to gravity and lateral motion when your character is moving. Note that users are responsible for applying gravity to characters here.</p>
+<p><em>minDist</em> is a minimal length used to stop the recursive displacement algorithm early when remaining distance to travel goes below this limit.</p>
+<p><em>elapsedTime</em> is the amount of time that passed since the last call to the move function.</p>
+<p><em>filters</em> are filtering parameters similar to the ones used in the SDK. Use these to control what the character should collide with.</p>
+<p><em>obstacles</em> are optional additional obstacle objects with which the character should collide. Those objects are fully controlled by users and do not need to have counterpart SDK objects. Note that touched obstacles are cached, meaning that the cache needs to be invalidated if the collection of obstacles changes.</p>
+<p><em>collisionFlags</em> is a bit mask returned to users to define collision events that happened during the move. This is a combination of PxControllerCollisionFlag flags. It can be used to trigger various character animations. For example your character might be falling while playing a falling idle animation, and you might start the land animation as soon as PxControllerCollisionFlag::eCOLLISION_DOWN is returned.</p>
+<p>It is important to understand the difference between <em>PxController::move</em> and <em>PxController::setPosition</em>. The <em>PxController::move</em> function is the core of the CCT module. This is where the aforementioned 'collide-and-slide' algorithm takes place. So the function will start from the CCT's current position, and use sweep tests to attempt to move in the required direction. If obstacles are found, it may make the CCT slide smoothly against them. Or the CCT can get blocked against a wall: the result of the move call depends on the surrounding geometry. On the contrary, <em>PxController::setPosition</em> is a simple 'teleport' function that will move the CCT to desired position no matter what, regardless of where the CCT starts from, regardless of surrounding geometry, and even if the required position is in the middle of another object.</p>
+<p>Both <em>PxController::move</em> and <em>PxController::setPosition</em> are demonstrated in SampleBridges.</p>
+</div>
+<div class="section" id="graphics-update">
+<h2>Graphics Update<a class="headerlink" href="#graphics-update" title="Permalink to this headline">¶</a></h2>
+<p>Each frame, after <em>PxController::move</em> calls, graphics object must be kept in sync with the new CCT positions. Controllers' positions can be accessed using:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxExtendedVec3</span><span class="o">&amp;</span> <span class="n">PxController</span><span class="o">::</span><span class="n">getPosition</span><span class="p">()</span> <span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This function returns the position from the center of the collision shape, since this is what is used internally both within the PhysX SDK and by usual graphics APIs. Retrieving this position and passing it to the renderer is illustrated in SampleBridges. Note that the position uses double-precision, to make the CCT module work well with large worlds. Also note that a controller never rotates so you can only access its position.</p>
+<p>Alternative helper functions are provided to work using the character's bottom position, a.k.a. the foot position:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxExtendedVec3</span><span class="o">&amp;</span> <span class="n">PxController</span><span class="o">::</span><span class="n">getFootPosition</span><span class="p">()</span> <span class="k">const</span><span class="p">;</span>
+<span class="kt">bool</span>                  <span class="n">PxController</span><span class="o">::</span><span class="n">setFootPosition</span><span class="p">(</span><span class="k">const</span> <span class="n">PxExtendedVec3</span><span class="o">&amp;</span> <span class="n">position</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Note that the foot position takes the contact offset into account.</p>
+<img alt="../_images/cctContactOffset.png" src="../_images/cctContactOffset.png" />
+</div>
+<div class="section" id="auto-stepping">
+<h2>Auto Stepping<a class="headerlink" href="#auto-stepping" title="Permalink to this headline">¶</a></h2>
+<p>Without auto-stepping it is easy for a box-controlled character to get stuck against slight elevations of the ground mesh. In the following picture the small step would stop the character completely. It feels unnatural because in the real world a character would just cross this small obstacle without thinking about it.</p>
+<img alt="../_images/cctStepOffset0.png" src="../_images/cctStepOffset0.png" />
+<p>This is what auto-stepping enables us to do. Without any intervention from the player (i.e. without them thinking about it) the box correctly steps above the minor obstacle.</p>
+<img alt="../_images/cctStepOffset1.png" src="../_images/cctStepOffset1.png" />
+<p>However, if the obstacle is too big, i.e. its height is greater than the <em>stepOffset</em> parameter, the controller cannot climb automatically, and the character gets stuck (correctly this time):</p>
+<img alt="../_images/cctStepOffset2.png" src="../_images/cctStepOffset2.png" />
+<p>'Climbing' (over this bigger obstacle, for example) may also be implemented in the future, as an extension of auto-stepping. The step offset is defined in <em>PxControllerDesc::stepOffset</em> and later available through the <em>PxController::getStepOffset()</em> function.</p>
+<p>Generally speaking, the step offset should be kept as small as possible.</p>
+</div>
+<div class="section" id="climbing-mode">
+<h2>Climbing Mode<a class="headerlink" href="#climbing-mode" title="Permalink to this headline">¶</a></h2>
+<p>The auto-stepping feature was originally intended for box controllers, which are easily blocked by small obstacles on the ground. Capsule controllers, thanks to their rounded nature, do not necessarily need the feature.</p>
+<p>Even with a step offset of 0.0, capsules are able to go over small obstacles since their rounded bottom produces an upward motion after colliding with a small obstacle.</p>
+<p>Capsules with a non-zero step-offset can go over obstacles higher than the step offset, because of the combined effect of the auto-stepping feature and their rounded shape. In this case the largest altitude a capsule can climb over is difficult to predict, as it depends on the auto-step value, the capsule's radius, and even the magnitude of the displacement vector.</p>
+<p>This is why there are two different climbing modes for capsules:</p>
+<ul class="simple">
+<li><em>PxCapsuleClimbingMode::eEASY</em>: in this mode, capsules are not constrained by the step offset value. They can potentially climb over obstacles higher than this value.</li>
+<li><em>PxCapsuleClimbingMode::eCONSTRAINED</em>: in this mode, an attempt is made to make sure the capsule can not climb over obstacles higher than the step offset.</li>
+</ul>
+</div>
+<div class="section" id="up-vector">
+<h2>Up Vector<a class="headerlink" href="#up-vector" title="Permalink to this headline">¶</a></h2>
+<p>In order to implement the auto-stepping feature, the SDK needs to know about the 'up' vector. The up vector is defined in <em>PxControllerDesc::upDirection</em> and later available through the <em>PxController::getUpDirection()</em> function.</p>
+<p>The up vector does not need to be axis-aligned. It can be arbitrary, modified each frame using the <em>PxController::setUpDirection()</em> function, allowing the character to navigate on spherical worlds. This is demonstrated in SampleCustomGravity.</p>
+<p>Modifying the up vector changes the way the CCT library sees character volumes. For example a capsule is defined by a <em>PxCapsuleControllerDesc::height</em>, which is the 'vertical height' along the up vector. Thus, changing the up vector effectively rotates the capsule from the point of view of the library.
+The modification happens immediately, without tests to validate that the character does not overlap nearby geometry. It is then possible for the character to be penetrating some geometry right after the call. Using the overlap recovery module is recommended to solve these issues.</p>
+<img alt="../_images/cctUpVector.png" src="../_images/cctUpVector.png" />
+<p>In the above picture the capsule on the left uses a vertical up vector and does not collide with the surrounding geometry. On the right the up vector has been set to 45 degrees, and the capsule now penetrates the wall nearby. For most applications the up vector will be constant, and the same for all characters. These issues will only appear for characters navigating in spherical worlds (e.g. planetoids, etc).</p>
+</div>
+<div class="section" id="walkable-parts-invisible-walls">
+<h2>Walkable Parts &amp; Invisible Walls<a class="headerlink" href="#walkable-parts-invisible-walls" title="Permalink to this headline">¶</a></h2>
+<p>By default the characters can move everywhere. This may not always be a good thing. In particular, it is often desired to prevent walking on polygons whose slope is steep. The SDK can do this automatically thanks to a user-defined slope limit. All polygons whose slope is higher than the limit slope will be marked as non walk-able, and the SDK will not let characters go there.</p>
+<p>Two modes are available to define what happens when touching a non walk-able part. The desired mode is selected with the <em>PxControllerDesc::nonWalkableMode</em> enum:</p>
+<ul class="simple">
+<li><em>PxControllerNonWalkableMode::ePREVENT_CLIMBING</em> prevents the character from moving up a slope, but does not move the character otherwise. The character will still be able to walk laterally on these polygons, and to move down their slope.</li>
+<li><em>PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING</em> not only prevents the character from moving up non walk-able slopes but also forces it to slide down those slopes.</li>
+</ul>
+<p>The slope limit is defined in <em>PxControllerDesc::slopeLimit</em> and later available through the <em>PxController::getSlopeLimit()</em> function. The limit is expressed as the cosine of desired limit angle. For example this uses a slope limit of 45 degrees:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">slopeLimit</span> <span class="o">=</span> <span class="n">cosf</span><span class="p">(</span><span class="n">PxMath</span><span class="o">::</span><span class="n">degToRad</span><span class="p">(</span><span class="mf">45.0f</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>Using slopeLimit = 0.0f automatically disables the feature (i.e. characters can go everywhere).</p>
+<p>This feature is not always needed. A common strategy is to disable it and place invisible walls in the level, to restrict player's movements. The character module can also create those walls for you, if <em>PxControllerDesc::invisibleWallHeight</em> is non-zero. In this case the library creates those extra triangles on the fly, and that parameter controls their height (extruded in the user-defined up direction). A common problem is that those invisible walls are only created when non-walkable triangles are found. It is possible for a jumping character to go over them, if its bounding volume is too small and does not collide with the non-walkable triangles below him. The <em>PxControllerDesc::maxJumpHeight</em> parameter addresses this issue, by extending the size of the bounding volume downward. That way all potentially non-walkable triangles are properly returned by the collision queries, and invisible walls are properly created - preventing the character from jumping on them.</p>
+<p>A known limitation is that the slope limit mechanism is currently only enabled against static objects. It is not enabled against dynamic objects, and in particular against kinematic objects. It is also not supported for static spheres or static capsules.</p>
+</div>
+<div class="section" id="obstacle-objects">
+<h2>Obstacle Objects<a class="headerlink" href="#obstacle-objects" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes it is convenient to create additional obstacles for the CCT to collide with, without creating an actual SDK object. This is useful in a number of situations. For example:</p>
+<ul class="simple">
+<li>the obstacles might only exist for a couple of frames, in which case creating and deleting SDK objects is not always efficient.</li>
+<li>the obstacles might only exist for stopping the characters, not the SDK's dynamic objects. This would be for example invisible walls around geometry, that only the characters should collide with. In this case it may not be very efficient to create the invisible walls as SDK objects, since their interactions would then have to be filtered out for everything except the characters. It is probably more efficient to create those additional invisible walls as external obstacles, that only characters can interact with.</li>
+<li>the obstacles might be dynamic and updated with a variable timestep, while the SDK uses a fixed timestep. This could be for example a moving platform on which the characters can stand.</li>
+</ul>
+<p>At the time of writing the character controller supports box and capsule <em>PxObstacle</em> objects, namely <em>PxBoxObstacle</em> and <em>PxCapsuleObstacle</em>. To create those, first create a <em>PxObstacleContext</em> object using the following function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxObstacleContext</span><span class="o">*</span> <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">createObstacleContext</span><span class="p">()</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Then manage obstacles with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">ObstacleHandle</span> <span class="n">PxObstacleContext</span><span class="o">::</span><span class="n">addObstacle</span><span class="p">(</span><span class="k">const</span> <span class="n">PxObstacle</span><span class="o">&amp;</span> <span class="n">obstacle</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">PxObstacleContext</span><span class="o">::</span><span class="n">removeObstacle</span><span class="p">(</span><span class="n">ObstacleHandle</span> <span class="n">handle</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">PxObstacleContext</span><span class="o">::</span><span class="n">updateObstacle</span><span class="p">(</span><span class="n">ObstacleHandle</span> <span class="n">handle</span><span class="p">,</span> <span class="k">const</span> <span class="n">PxObstacle</span><span class="o">&amp;</span> <span class="n">obstacle</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Typically <em>updateObstacle</em> is called right before the controllers' <em>move</em> calls.</p>
+<p>Using obstacles for moving platforms is illustrated in SampleBridges, when PLATFORMS_AS_OBSTACLES is defined in SampleBridgesSettings.h.</p>
+</div>
+<div class="section" id="hit-callback">
+<h2>Hit Callback<a class="headerlink" href="#hit-callback" title="Permalink to this headline">¶</a></h2>
+<p>The <em>PxUserControllerHitReport</em> object is used to retrieve some information about controller's evolution. In particular, it is called when a character hits a shape, another character, or a user-defined obstacle object.</p>
+<p>When the character hits a shape, the <em>PxUserControllerHitReport::onShapeHit</em> callback is invoked - for both static and dynamic shapes. Various impact parameters are sent to the callback, and they can then be used to do various things like playing sounds, rendering trails, applying forces, and so on. The use of <em>PxUserControllerHitReport::onShapeHit</em> is illustrated in SampleBridges. Note that this callback will only be called in response to a character moving against a shape. It will <em>not</em> be called if a (dynamic) shape collides against an otherwise non-moving character. In other words, this will only be called during a <em>PxController::move</em> call.</p>
+<p>When the character hits another character, i.e. another object controlled by a character controller, the <em>PxUserControllerHitReport::onControllerHit</em> callback is invoked. This happens when the player collides with an NPC, for example.</p>
+<p>Finally, when the character hits a user-defined obstacle the <em>PxUserControllerHitReport::onObstacleHit</em> callback is invoked.</p>
+</div>
+<div class="section" id="behavior-callback">
+<h2>Behavior Callback<a class="headerlink" href="#behavior-callback" title="Permalink to this headline">¶</a></h2>
+<p>The <em>PxControllerBehaviorCallback</em> object is used to customize the character's behavior after touching a <em>PxShape</em>, a <em>PxController</em>, or a <em>PxObstacle</em>. This is done using the following functions:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxControllerBehaviorFlags</span> <span class="n">PxControllerBehaviorCallback</span><span class="o">::</span><span class="n">getBehaviorFlags</span>
+    <span class="p">(</span><span class="k">const</span> <span class="n">PxShape</span><span class="o">&amp;</span> <span class="n">shape</span><span class="p">,</span> <span class="k">const</span> <span class="n">PxActor</span><span class="o">&amp;</span> <span class="n">actor</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">PxControllerBehaviorFlags</span> <span class="n">PxControllerBehaviorCallback</span><span class="o">::</span><span class="n">getBehaviorFlags</span>
+    <span class="p">(</span><span class="k">const</span> <span class="n">PxController</span><span class="o">&amp;</span> <span class="n">controller</span><span class="p">)</span>             <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">PxControllerBehaviorFlags</span> <span class="n">PxControllerBehaviorCallback</span><span class="o">::</span><span class="n">getBehaviorFlags</span>
+    <span class="p">(</span><span class="k">const</span> <span class="n">PxObstacle</span><span class="o">&amp;</span> <span class="n">obstacle</span><span class="p">)</span>                 <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>At the time of writing the following returned flags are supported:</p>
+<p><em>PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT</em> defines if the character can effectively travel with the object it is standing on. For example a character standing on a dynamic bridge should follow the motion of the PxShape it is standing on (e.g. in SampleBridges). But it should not be the case if the character stands on, say a PxShape bottle rolling on the ground (e.g. the snowballs in SampleNorthPole). Note that this flag only controls the horizontal displacement communicated from an object to the controller. The vertical motion is something slightly different, as many factors contribute to this displacement: the <em>step offset</em> used to automatically walk over small bumps, the vertical motion of underlying dynamic actors like e.g. the bridges in SampleBridges, which should probably always been taken into account, etc.</p>
+<p><em>PxControllerBehaviorFlag::eCCT_SLIDE</em> defines if the character should slide or not when standing on the object. This can be used as an alternative to the previously discussed slope limit feature, to define non walk-able objects rather than non-walkable parts. It can also be used to make a capsule character fall off a platform's edge automatically, when the center of the capsule crosses the platform's edge.</p>
+<p><em>PxControllerBehaviorFlag::eCCT_USER_DEFINED_RIDE</em> simply disables all built-in code related to controllers riding on objects. This can be useful to get the legacy behavior back, which can sometimes be necessary when porting to PhysX 3.x a piece of code built around the PhysX 2.x character controller. The flag simply skips the new codepath, and lets users deal with this particular problem in their own application, outside of the CCT library.</p>
+<p>The behavior callback is demonstrated in SampleBridges.</p>
+</div>
+<div class="section" id="character-interactions-cct-vs-dynamic-actors">
+<h2>Character Interactions: CCT-vs-dynamic actors<a class="headerlink" href="#character-interactions-cct-vs-dynamic-actors" title="Permalink to this headline">¶</a></h2>
+<p>It is tempting to let the physics engine push dynamic objects by applying forces at contact points. However it is often not a very convincing solution.</p>
+<p>The bounding volumes around characters are artificial (boxes, capsules, etc) and invisible, so the forces computed by the physics engine between a bounding volume and its surrounding objects will not be realistic anyway. They will not properly model the interaction between an actual character and these objects. If the bounding volume is large compared to the visible character, maybe to make sure that its limbs never penetrate the static geometry around, the dynamic objects will start moving (pushed by a bounding volume) before the actual character touches them - making it look like the character is surrounded by some kind of force field.</p>
+<p>Additionally, the pushing effect should not change when switching from a box controller to a capsule controller. It should ideally be independent from the bounding volume.</p>
+<p>Pushing effects are usually dictated by gameplay, and sometimes require extra code like inverse kinematic solvers, which are outside of the scope of the CCT module. Even for simple use cases, it is for example difficult to push a dynamic box forward with a capsule controller: since the capsule never hits the box exactly in the middle, applied force tends to rotate the box - even if gameplay dictates that it should move in a straight line.</p>
+<p>Thus, this is an area where the CCT module should best be coupled to specific game code, to implement a specific solution for a specific game. This coupling can be done in many different ways. For simple use cases it is enough to use the <em>PxUserControllerHitReport::onShapeHit</em> callback to apply artificial forces to surrounding dynamic objects. Such an approach is illustrated in SampleBridges.</p>
+<p>Note that the character controller does use overlap queries to determine which shapes are nearby. Thus, SDK shapes that should interact with the characters (e.g. the objects that the character should push) must have the PxShapeFlag::eSCENE_QUERY_SHAPE flag set to true, otherwise the CCT will not detect them and characters will move right through these shapes.</p>
+</div>
+<div class="section" id="character-interactions-cct-vs-cct">
+<h2>Character Interactions: CCT-vs-CCT<a class="headerlink" href="#character-interactions-cct-vs-cct" title="Permalink to this headline">¶</a></h2>
+<p>The interactions between CCTs (i.e. between two PxController objects) are limited, since in this case both objects are effectively kinematic objects. In other words their motion should be fully controlled by users, and neither the PhysX SDK nor the CCT module should be allowed to move them.</p>
+<p>The <em>PxControllerFilterCallback</em> object is used to define basic interactions between characters. Its <em>PxControllerFilterCallback::filter</em> function can be used to determine if two PxController objects should collide at all with each other:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">bool</span> <span class="n">PxControllerFilterCallback</span><span class="o">::</span><span class="n">filter</span><span class="p">(</span><span class="k">const</span> <span class="n">PxController</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">PxController</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>To make CCTs always collide-and-slide against each other, simply return true.</p>
+<p>To make CCTs always move freely through each other, simply return false.</p>
+<p>Otherwise, customized and maybe gameplay-driven filtering rules can be implemented in this callback. Sometimes the filtering changes at runtime, and two characters might be allowed to go through each other only for a limited amount of time. When that limited time expires, the characters may be left in an overlapping state until they separate and move again towards each other. To automatically separate overlapping characters, the following function can be used:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">computeInteractions</span><span class="p">(</span><span class="n">PxF32</span> <span class="n">elapsedTime</span><span class="p">,</span>
+    <span class="n">PxControllerFilterCallback</span><span class="o">*</span> <span class="n">cctFilterCb</span><span class="o">=</span><span class="nb">NULL</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This function is an optional helper to properly resolve overlaps between characters. It should be called once per frame, before the <em>PxController::move</em> calls. The function will not move the characters directly, but it will compute overlap information for each character that will be used in the next <em>PxController::move</em> call.</p>
+</div>
+<div class="section" id="hidden-kinematic-actors">
+<h2>Hidden Kinematic Actors<a class="headerlink" href="#hidden-kinematic-actors" title="Permalink to this headline">¶</a></h2>
+<p>The CCT library creates a kinematic actor under the hood, for each controlled character. When invoking the <em>PxController::move</em> function, the underlying hidden kinematic <em>PxActor</em> is also updated to reflect the CCT position in the physics scene.</p>
+<p>Users should be aware of these hidden entities, since the total number of actors in the scene will be higher than the number they created themselves. Additionally they might get back these potentially confusing unknown actors from scene-level collision queries.</p>
+<p>One possible strategy is to retrieve the controllers' kinematic actors using the following function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxRigidDynamic</span><span class="o">*</span> <span class="n">PxController</span><span class="o">::</span><span class="n">getActor</span><span class="p">()</span> <span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Then mark these actors with a special tag, using the <em>PxRigidDynamic::userData</em> field. That way the CCT actors can easily be identified (and possibly ignored) in collision queries or contact reports.</p>
+</div>
+<div class="section" id="time-stepping">
+<h2>Time Stepping<a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h2>
+<p>Actors used internally by the CCT library follow the same rules as any other PhysX objects. In particular, they are updated using fixed or variable timesteps. This can be troublesome because the PxController objects are otherwise often updated using variable time steps (typically using the elapsed time between two rendering frames).</p>
+<p>Thus the PxController objects (using variable time steps) may not always be perfectly in sync with their kinematic actors (using fixed time steps). This phenomenon is shown in SampleBridges.</p>
+</div>
+<div class="section" id="invalidating-internal-geometry-caches">
+<h2>Invalidating Internal Geometry Caches<a class="headerlink" href="#invalidating-internal-geometry-caches" title="Permalink to this headline">¶</a></h2>
+<p>The CCT library caches the geometry around each character, in order to speed up collision queries. The temporal bounding box for a character is an AABB around the character's motion (it contains the character's volume at both its start and end position). The cached volume of space is determined by the size of the character's temporal bounding box, multiplied by a constant factor. This constant factor is defined for each character by <em>PxControllerDesc::volumeGrowth</em>. Each time a character moves, its temporal bounding box is tested against the cached volume of space. If the motion is fully contained within that volume of space, the contents of the cache are reused instead of regenerated through PxScene-level queries.</p>
+<img alt="../_images/cctCacheBounds.png" src="../_images/cctCacheBounds.png" />
+<p>In PhysX 3.3 and above, those caches should be automatically invalidated when a cached object gets updated or removed. However it is also possible to manually flush those caches using the following function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxController</span><span class="o">::</span><span class="n">invalidateCache</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Prior to deciding if a character will travel with the motion of an object that is touching the character, a number of tests are automatically performed to decide if the cached touched object remains valid. These automatic validity tests mean that in the following cases it is not strictly necessary to invalidate the cache:</p>
+<ul class="simple">
+<li>If the shapes actor is released</li>
+<li>If the shape is released</li>
+<li>If the shape is removed from an actor</li>
+<li>If an actor is removed from scene or moved to another one</li>
+<li>If the shapes scene query flag changed</li>
+<li>If the filtering parameters of the shape or the scene have changed.</li>
+</ul>
+<p>If a cached touched object is no longer actually touching the character and it is desired that the character no longer travels with the motion of that cached object then it is necessary to invalidate the cache. This holds true if the pair have separated as a consequence of an updated global pose or modified geometry.</p>
+</div>
+<div class="section" id="runtime-tessellation">
+<h2>Runtime Tessellation<a class="headerlink" href="#runtime-tessellation" title="Permalink to this headline">¶</a></h2>
+<p>The CCT library is quite robust, but sometimes suffers from FPU accuracy issues when a character collides against large triangles. This can lead to characters not smoothly sliding against those triangles, or even penetrating them. One way to effectively solve these problems is to tessellate the large triangles at runtime, replacing them on-the-fly with a collection of smaller triangles. The library supports a built-in tessellation feature, enabled with this function:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="kt">void</span> <span class="n">PxControllerManager</span><span class="o">::</span><span class="n">setTessellation</span><span class="p">(</span><span class="kt">bool</span> <span class="n">flag</span><span class="p">,</span> <span class="kt">float</span> <span class="n">maxEdgeLength</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The first parameter enables or disables the feature. The second parameter defines the maximum allowed edge length for a triangle, before it gets tessellated. Obviously, a smaller edge length leads to more triangles being created at runtime, and the more triangles get generated, the slower it is to collide against them.</p>
+<p>It is thus recommended to disable the feature at first, and only enable it if experiencing collision problems. When enabling the feature, it is recommended to use the largest possible <em>maxEdgeLength</em> that does fix encountered problems.</p>
+<img alt="../_images/cctTessellation.png" src="../_images/cctTessellation.png" />
+<p>In the screenshot, the large magenta triangle on which the character is standing is replaced with the smaller green triangles by the tessellation module. The internal geometry cache is represented by the blue bounding box. Note that only the green triangles touching this volume of space are kept. Thus, the exact number of triangles produced by the tessellation code depends on both the <em>maxEdgeLength</em> parameter and the <em>PxControllerDesc::volumeGrowth</em> parameter.</p>
+</div>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<p>This section introduces common solutions to common problems with the CCT library.</p>
+<div class="section" id="character-goes-through-walls-in-rare-cases">
+<h3>Character goes through walls in rare cases<a class="headerlink" href="#character-goes-through-walls-in-rare-cases" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Try increasing <em>PxControllerDesc::contactOffset</em>.</li>
+<li>Try enabling runtime tessellation with <em>PxControllerManager::setTessellation</em>. Start with a small <em>maxEdgeLength</em> first, to see if it solves the problem. Then increase that value as much as possible.</li>
+<li>Try enabling overlap recovery module with <em>PxControllerManager::setOverlapRecoveryModule</em>.</li>
+</ol>
+</div>
+<div class="section" id="tessellation-performance-issue">
+<h3>Tessellation performance issue<a class="headerlink" href="#tessellation-performance-issue" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Try fine-tuning the <em>maxEdgeLength</em> parameter. Use the largest possible value that still prevents tunneling issues.</li>
+<li>Try reducing <em>PxControllerDesc::volumeGrowth</em>.</li>
+</ol>
+</div>
+<div class="section" id="the-capsule-controller-manages-to-climb-over-obstacles-higher-than-the-step-offset-value">
+<h3>The capsule controller manages to climb over obstacles higher than the step offset value<a class="headerlink" href="#the-capsule-controller-manages-to-climb-over-obstacles-higher-than-the-step-offset-value" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Try using <em>PxCapsuleClimbingMode::eCONSTRAINED</em>.</li>
+</ol>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="DebugVisualization.html" class="btn btn-neutral float-right" title="Debug Visualization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Vehicles2.html" class="btn btn-neutral" title="Vehicles2" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

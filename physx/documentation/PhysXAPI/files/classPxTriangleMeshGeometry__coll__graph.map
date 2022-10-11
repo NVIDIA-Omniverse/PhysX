@@ -1,0 +1,12 @@
+<map id="PxTriangleMeshGeometry" name="PxTriangleMeshGeometry">
+<area shape="rect" id="node2" href="$classPxGeometry.html" title="A geometry object. " alt="" coords="679,5,773,32"/>
+<area shape="rect" id="node3" href="$classPxMeshScale.html" title="A class expressing a nonuniform scaling transformation. " alt="" coords="675,56,777,83"/>
+<area shape="rect" id="node4" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="402,31,523,57"/>
+<area shape="rect" id="node5" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="401,81,524,108"/>
+<area shape="rect" id="node6" href="$structPxPadding.html" title="PxPadding\&lt; 3 \&gt;" alt="" coords="668,107,784,133"/>
+<area shape="rect" id="node7" href="$classPxTriangleMesh.html" title="A triangle mesh, also called a &#39;polygon soup&#39;. " alt="" coords="669,157,783,184"/>
+<area shape="rect" id="node8" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="410,157,515,184"/>
+<area shape="rect" id="node9" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="284,157,352,184"/>
+<area shape="rect" id="node10" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,150,159,191"/>
+<area shape="rect" id="node11" href="$classPxFlags.html" title="PxFlags\&lt; PxMeshGeometryFlag\l::Enum, PxU8 \&gt;" alt="" coords="620,209,832,250"/>
+</map>

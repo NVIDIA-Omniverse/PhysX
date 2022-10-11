@@ -1,0 +1,940 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>Articulations &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Scene Origin" href="OriginShift.html" />
+    <link rel="prev" title="Joints" href="Joints.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#maximal-coordinate-articulations">Maximal Coordinate Articulations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-an-articulation">Creating an Articulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#articulation-joints">Articulation Joints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#driving-an-articulation">Driving an Articulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#articulation-projection">Articulation Projection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#articulations-and-sleeping">Articulations and Sleeping</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reduced-coordinate-articulations">Reduced Coordinate Articulations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#joint-positions-and-velocities">Joint Positions and Velocities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-reduced-coordinate-articulation">Creating a Reduced Coordinate Articulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fixed-and-floating-base-articulations">Fixed- and Floating-base Articulations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Articulation Joints</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#articulation-drives">Articulation Drives</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pxarticulationcache">PxArticulationCache</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#cache-indexing">Cache Indexing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#inverse-dynamics-jacobian-and-other-utility-computations">Inverse Dynamics, Jacobian and other Utility Computations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#preparing-the-articulation-for-inverse-dynamics-computations">Preparing the Articulation for Inverse Dynamics Computations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#converting-from-and-to-reduced-coordinate-joint-dof-coordinates">Converting From and To Reduced Coordinate Joint DOF Coordinates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compute-generalized-gravity-force">Compute Generalized Gravity Force</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compute-coriolis-joint-forces">Compute Coriolis Joint Forces</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compute-generalized-external-force">Compute Generalized External Force</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compute-joint-accelerations">Compute Joint Accelerations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compute-joint-forces">Compute Joint Forces</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generalized-mass-matrix">Generalized Mass Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#loop-joints-coefficient-matrix-and-lambda-constraint-impulses">Loop Joints, Coefficient Matrix, and Lambda Constraint Impulses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jacobian">Jacobian</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisualDebugger.html">PhysX Visual Debugger (PVD)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>Articulations</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="articulations">
+<span id="id1"></span><h1>Articulations<a class="headerlink" href="#articulations" title="Permalink to this headline">¶</a></h1>
+<p>An articulation is a single actor comprising a set of links (each of which behaves like a rigid body) connected together with special joints. Every articulation has a tree-like structure - so there can be no loops or breaks. Their primary use is modelling physically actuated characters. They support higher mass ratios, more accurate drive models, have better dynamic stability and a more robust recovery from joint separation than standard PhysX joints. However, they are considerably more expensive to simulate.</p>
+<p>Although articulations do not directly build on joints, they use very similar configuration mechanisms. In this section we assume familiarity with PhysX joints.</p>
+</div>
+<div class="section" id="maximal-coordinate-and-reduced-articulations">
+<h1>Maximal Coordinate and Reduced Articulations<a class="headerlink" href="#maximal-coordinate-and-reduced-articulations" title="Permalink to this headline">¶</a></h1>
+<p>PhysX provides two articulation implementations: maximal and reduced/generalized coordinates.</p>
+<p>The Maximal coordinate articulation implementation is designed for game use-cases, specifically powered ragdoll simulations. As such, it supports only spherical joints with limits. This articulation implementation makes some accuracy sacrifices in favor of robustness.</p>
+<p>The reduced coordinate articulation implementation is designed for robotics use-cases. It supports revolute, prismatic, fixed and spherical joints. It was written to favor accurate simulation and produces results that are very close to analytic models of kinematic chains. In addition, it provides inverse dynamics functionality.</p>
+</div>
+<div class="section" id="maximal-coordinate-articulations">
+<h1>Maximal Coordinate Articulations<a class="headerlink" href="#maximal-coordinate-articulations" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="creating-an-articulation">
+<h2>Creating an Articulation<a class="headerlink" href="#creating-an-articulation" title="Permalink to this headline">¶</a></h2>
+<p>To create an articulation, first create the articulation actor without links:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulation</span><span class="o">*</span> <span class="n">articulation</span> <span class="o">=</span> <span class="n">physics</span><span class="p">.</span><span class="n">createArticulation</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Then add links one by one, each time specifying a parent link (NULL for the parent of the initial link), and the pose of the new link:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationLink</span><span class="o">*</span> <span class="n">link</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createLink</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">linkPose</span><span class="p">);</span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">,</span> <span class="n">linkGeometry</span><span class="p">,</span> <span class="n">material</span><span class="p">);</span>
+<span class="n">PxRigidBodyExt</span><span class="o">::</span><span class="n">updateMassAndInertia</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">,</span> <span class="mf">1.0f</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Articulation links have a restricted subset of the functionality of rigid bodies. They may not be kinematic, and they do not support damping, velocity clamping, or contact force thresholds. Sleep state and solver iteration counts are properties of the entire articulation rather than the individual links.</p>
+<p>Each time a link is created beyond the first, a <em>PxArticulationJoint</em> is created between it and its parent. Specify the joint frames for each joint, in exactly the same way as for a PxJoint:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationJoint</span><span class="o">*</span> <span class="n">joint</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">PxArticulationJoint</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">getInboundJoint</span><span class="p">());</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setParentPose</span><span class="p">(</span><span class="n">parentAttachment</span><span class="p">);</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setChildPose</span><span class="p">(</span><span class="n">childAttachment</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Finally, add the articulation to the scene:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">scene</span><span class="p">.</span><span class="n">addArticulation</span><span class="p">(</span><span class="n">articulation</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="articulation-joints">
+<h2>Articulation Joints<a class="headerlink" href="#articulation-joints" title="Permalink to this headline">¶</a></h2>
+<p>The only form of articulation joint currently supported is an anatomical joint, whose properties are similar to D6 joint configured for a typical rag doll (see <a class="reference internal" href="Joints.html#pxd6joint"><em>D6 Joint</em></a>). Specifically, the joint is a spherical joint, with angular drive, a twist limit around the child joint frame's x-axis, and an elliptical swing cone limit around the parent joint frame's x-axis. The configuration of these properties is very similar to a D6 or spherical joint, but the options provided are slightly different.</p>
+<p>The swing limit is a hard elliptical cone limit which does not support spring or restitution from movement perpendicular to the limit surface. The user can set the limit ellipse angle as follows:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setSwingLimit</span><span class="p">(</span><span class="n">yAngle</span><span class="p">,</span> <span class="n">zAngle</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>for the limit angles around y and z. Unlike the PxJoint cone limit the limit provides a tangential spring to limit movement of the axis along the limit surface. Once configured, enable the swing limit:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setSwingLimitEnabled</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The twist limit allows configuration of upper and lower angles:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setTwistLimit</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>and again the user must explicitly enable it:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setTwistLimitEnabled</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>As usual with joint limits, it is good practice to use a sufficient limit contactDistance value that the solver will start to enforce the limit before the limit threshold is exceeded.</p>
+<p>Articulation joints are not breakable, and it is not possible to retrieve the constraint force applied at the joint.</p>
+</div>
+<div class="section" id="driving-an-articulation">
+<h2>Driving an Articulation<a class="headerlink" href="#driving-an-articulation" title="Permalink to this headline">¶</a></h2>
+<p>Articulations are driven through joint acceleration springs. The user can set an orientation target, an angular velocity target, and spring and damping parameters that control how strongly the joint drives towards the target. The user can also set compliance values, indicating how strongly a joint resists acceleration. A compliance near zero indicates very strong resistance, and a compliance of 1 indicates no resistance.</p>
+<p>Articulations are driven in two phases. First the joint spring forces are applied (we use the term <em>internal</em> forces for these) and then any <em>external</em> forces such as gravity and contact forces. The user may supply different compliance values at each joint for each phase.</p>
+<p>Note that with joint acceleration springs, the required strength of the spring is estimated using just the mass of the two bodies connected by the joint. By contrast, articulation drive springs account for the masses of all the bodies in the articulation, and any stiffness from actuation at other joints. This estimation is an iterative process, controlled using the <em>externalDriveIterations</em> and <em>internalDriveIterations</em> properties of the PxArticulation class.</p>
+<p>Instead of setting the target quaternion for the joint drive, it is possible to set the orientation error term directly as a rotation vector. The value is set as the imaginary part of the target quaternion, with the real part set to 0.</p>
+<blockquote>
+<div><blockquote>
+<div>joint-&gt;setDriveType(PxArticulationJointDriveType::eERROR);
+joint-&gt;setTargetOrientation(PxQuat(error.x, error.y, error.z, 0));</div></blockquote>
+<p>This allows the spring to be driven with a larger positional error than can be generated by the difference between 2 quaternions. Obtain the same behavior as with target quaternions by computing the error from the target quaternion, link frames, and joint frames as follows:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxTransform</span> <span class="n">cA2w</span> <span class="o">=</span> <span class="n">parentPose</span><span class="p">.</span><span class="n">transform</span><span class="p">(</span><span class="n">joint</span><span class="p">.</span><span class="n">parentPose</span><span class="p">);</span>          <span class="c1">// parent attachment frame</span>
+<span class="n">PxTransform</span> <span class="n">cB2w</span> <span class="o">=</span> <span class="n">childPose</span><span class="p">.</span><span class="n">transform</span><span class="p">(</span><span class="n">joint</span><span class="p">.</span><span class="n">childPose</span><span class="p">);</span>            <span class="c1">// child attachment frame</span>
+<span class="n">transforms</span><span class="p">.</span><span class="n">cB2cA</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">.</span><span class="n">cA2w</span><span class="p">.</span><span class="n">transformInv</span><span class="p">(</span><span class="n">transforms</span><span class="p">.</span><span class="n">cB2w</span><span class="p">);</span>   <span class="c1">// relative transform</span>
+<span class="k">if</span><span class="p">(</span><span class="n">transforms</span><span class="p">.</span><span class="n">cB2cA</span><span class="p">.</span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>                                          <span class="c1">// shortest path path</span>
+    <span class="n">transforms</span><span class="p">.</span><span class="n">cB2cA</span><span class="p">.</span><span class="n">q</span> <span class="o">=</span> <span class="o">-</span><span class="n">transforms</span><span class="p">.</span><span class="n">cB2cA</span><span class="p">.</span><span class="n">q</span><span class="p">;</span>
+
+<span class="c1">// rotation vector from relative transform to drive pose</span>
+<span class="n">PxVec3</span> <span class="n">error</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">j</span><span class="p">.</span><span class="n">targetPosition</span> <span class="o">*</span> <span class="n">cB2cA</span><span class="p">.</span><span class="n">q</span><span class="p">.</span><span class="n">getConjugate</span><span class="p">());</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="articulation-projection">
+<h2>Articulation Projection<a class="headerlink" href="#articulation-projection" title="Permalink to this headline">¶</a></h2>
+<p>When any of the joints in an articulation separate beyond a specified threshold, the articulation is projected back together automatically. Projection is an iterative process, and the PxArticulation functions <em>PxArticulation::setSeparationTolerance()</em> and <em>PxArticulation::setMaxProjectionIterations()</em> control when projection occurs and trade cost for robustness.</p>
+</div>
+<div class="section" id="articulations-and-sleeping">
+<h2>Articulations and Sleeping<a class="headerlink" href="#articulations-and-sleeping" title="Permalink to this headline">¶</a></h2>
+<p>Like rigid dynamic objects, articulations are also put into a sleep state if their energy falls below a certain threshold for a period of time. In general, all the points in the section <a class="reference internal" href="RigidBodyDynamics.html#sleeping"><em>Sleeping</em></a> apply to articulations as well. The main difference is that articulations can only go to sleep if each individual articulation link fulfills the sleep criteria.</p>
+</div>
+</div>
+<div class="section" id="reduced-coordinate-articulations">
+<h1>Reduced Coordinate Articulations<a class="headerlink" href="#reduced-coordinate-articulations" title="Permalink to this headline">¶</a></h1>
+<p>The PhysX reduced coordinate articulations provide a wide range of functionality for robotics and other applications that require accurate simulations of mechanical structures. The key difference between reduced coordinate and maximal coordinate articulations is that reduced coordinate articulations are guaranteed to exhibit no joint error.</p>
+<p>The reduced coordinate articulations may also be suitable for use in games to simulate humanoids. However, introducing velocity clamps or damping may be required to ensure stability of the simulation at large angular velocities, which would not be required when using the maximal coordinate articulations. The reason for this is the explicit integration of Coriolis and centrifugal forces. There are several options available to introduce damping and clamping: Setting rigid body velocity limits and damping, or setting nonzero joint friction parameters.</p>
+<p>The reduced coordinate technique has different performance properties than the maximal coordinate articulations or rigid bodies and joints. In a simulation without a significant number of contacts affecting the articulation, the simulation cost is generally proportional to the number of degrees of freedom, rather than the number of links. Therefore, in common robotics applications, where most joints have 0-1 degrees of freedom, the cost of simulating using reduced coordinate articulations is often lower than the cost of simulating the same robot using either maximal coordinate articulations or even rigid bodies and joints.</p>
+<div class="section" id="joint-positions-and-velocities">
+<span id="id2"></span><h2>Joint Positions and Velocities<a class="headerlink" href="#joint-positions-and-velocities" title="Permalink to this headline">¶</a></h2>
+<p>Reduced coordinate articulations internally keep track of scalar joint positions, velocities, and accelerations, with one entry corresponding to each degree of freedom. Joint position represents the relative offset between a parent and child link, and their corresponding joint frames in particular, along/around a degree of freedom. If it is a rotational axis, the joint position represents an angle in radians. If it is a translational axis, the joint position represents a distance in whatever units the simulation is being performed in. Similarly, joint velocities represent a velocities around/along the degree of freedom in either radians/s or units/s, where units corresponds to the distance unit being used in the simulation.</p>
+<p>The joint positions determine the links' poses: The root link's world space pose provides a reference frame from which the poses for all other links in the articulation are calculated from the joint positions. This ensures that there cannot be any joint separation or offsets in locked axes which is the aforementioned key distinction to maximal coordinate articulations.</p>
+<p>The caveat with this approach is that it is not possible to directly update the pose of links in an articulation because this new transform could violate locked axes or could differ from the joint position. Instead, it is necessary to update the joint positions, which triggers new link poses to be computed. This ensures that the internal data from which poses are computed is internally consistent at all times. See <a class="reference internal" href="#pxarticulationcache"><em>PxArticulationCache</em></a> below for more information on how to set/read joint positions and other internal data of the articulations.</p>
+<p>Link velocities and joint velocities share a similar relationship. A link's world-space velocity is derived from the world-space velocity of its parent link and the current joint velocity. This means that the root link stores a world-space velocity and all other links' velocities are computed by propagating this velocity and the respective joint velocities through the articulation. As such, it is not possible to directly set the velocity of links in an articulation. Instead, it is necessary to modify the root and joint velocities from which the links' velocities are calculated. It is legal to apply world-space forces on links. These will be propagated through the articulation as part of forward dynamics.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>All queries regarding link pose, velocity, and acceleration report the respective quantities in the world frame and with the links' <em>center of mass</em> as reference point (and <em>not</em> the actor frame's origin).</li>
+<li>Reduced coordinate articulation textbooks, e.g. <em>Rigid Body Dynamics Algorithms</em> by Roy Featherstone, use spatial accelerations to describe the rigid-body, i.e. link accelerations. PhysX does <em>not</em> report spatial accelerations, but classical, i.e. body-fixed accelerations.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="creating-a-reduced-coordinate-articulation">
+<h2>Creating a Reduced Coordinate Articulation<a class="headerlink" href="#creating-a-reduced-coordinate-articulation" title="Permalink to this headline">¶</a></h2>
+<p>The process of creating a reduced coordinate articulation is very similar to the process of creating a maximal articulation. To create an articulation, first create the articulation actor without links:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationReducedCoordinate</span><span class="o">*</span> <span class="n">articulation</span> <span class="o">=</span> <span class="n">physics</span><span class="p">.</span><span class="n">createArticulationReducedCoordinate</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Then add links one by one, each time specifying a parent link (NULL for the parent of the initial link), and the pose of the new link:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationLink</span><span class="o">*</span> <span class="n">link</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createLink</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">linkPose</span><span class="p">);</span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">,</span> <span class="n">linkGeometry</span><span class="p">,</span> <span class="n">material</span><span class="p">);</span>
+<span class="n">PxRigidBodyExt</span><span class="o">::</span><span class="n">updateMassAndInertia</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">,</span> <span class="mf">1.0f</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Note that the initial poses of the child links may be set to arbitrary transforms since the child link poses are computed from the base link pose and the joint positions when they are set to their initial values via the cache, see <a class="reference internal" href="#pxarticulationcache"><em>PxArticulationCache</em></a>.</p>
+<p>Articulation links have a restricted subset of the functionality of rigid bodies. They may not be kinematic and do not support contact force thresholds. Sleep state and solver iteration counts are properties of the entire articulation rather than the individual links. In a reduced coordinate articulation, the links further do not support setting their global pose and velocity directly with PxArticulationLink::setGlobalPose because they are computed from the base pose and velocity and the joint positions and velocities, see <a class="reference internal" href="#joint-positions-and-velocities"><em>Joint Positions and Velocities</em></a>.</p>
+<p>Each time a link is created beyond the first, a PxArticulationJoint is created between it and its parent. Specify the joint frames for each joint, in exactly the same way as for a PxJoint:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationJointReducedCoordinate</span><span class="o">*</span> <span class="n">joint</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">PxArticulationJointReducedCoordinate</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">getInboundJoint</span><span class="p">());</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setParentPose</span><span class="p">(</span><span class="n">parentAttachment</span><span class="p">);</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setChildPose</span><span class="p">(</span><span class="n">childAttachment</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Finally, add the articulation to the scene:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">scene</span><span class="p">.</span><span class="n">addArticulation</span><span class="p">(</span><span class="n">articulation</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="section" id="fixed-and-floating-base-articulations">
+<h3>Fixed- and Floating-base Articulations<a class="headerlink" href="#fixed-and-floating-base-articulations" title="Permalink to this headline">¶</a></h3>
+<p>The root link in a reduced coordinate articulation can be made to operate like a static body. This is advantageous over constraining the root link using a joint because the immoveable property of the root link is solved perfectly. The following code makes the root link of an articulation be fixed:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">setArticulationFlag</span><span class="p">(</span><span class="n">PxArticulationFlag</span><span class="o">::</span><span class="n">eFIX_BASE</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>If this flag is not set, the articulation will be floating base.</p>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>Articulation Joints<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>The PxArticulationJointReducedCoordinate provides an interface that is similar to the PxD6Joint interface for rigid body joints. However, it incurs certain limitations. By default, all axes are locked and the joint type is undefined. The first requirement is that the user defines the joint type. This can currently be any of the following:</p>
+<ul class="simple">
+<li>PxArticulationJointType::eFIX - a fixed joint with zero degrees of freedom</li>
+<li>PxArticulationJointType::ePRISMATIC - a prismatic (sliding) joint with one degree of freedom</li>
+<li>PxArticulationJointType::eREVOLUTE - a revolute (hinge) joint with one degree of freedom</li>
+<li>PxArticulationJointType::eSPHERICAL - a spherical (ball-in-socket) joint with up to three degrees of freedom</li>
+</ul>
+<p>For example, the user can set the joint type to revolute (hinge) with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setJointType</span><span class="p">(</span><span class="n">PxArticulationJointType</span><span class="o">::</span><span class="n">eREVOLUTE</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>After defining the joint type, the user must enable motion on the desired axes, i.e. degrees of freedom (DOFs). Motion can be either locked (default), free, or limited. Here, we set the twist axis (rotation about the joint-frame X-axis) to be limited:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">joint</span><span class="o">-&gt;</span><span class="n">setMotion</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span> <span class="n">PxArticulationMotion</span><span class="o">::</span><span class="n">eLIMITED</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>If a joint axis is limited, the user can define the limit range. Limit ranges are defined using a min/max pair. Here, we set a limit in the range (-0.2, 0.5):</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">lowLimit</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2f</span><span class="p">;</span>  <span class="c1">// [rad] since the DOF is a rotation</span>
+<span class="n">PxReal</span> <span class="n">highLimit</span> <span class="o">=</span> <span class="mf">0.5f</span><span class="p">;</span>  <span class="c1">// [rad] since the DOF is a rotation</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setLimit</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span> <span class="n">lowLimit</span><span class="p">,</span> <span class="n">highLimit</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Articulation joints are not breakable. Furthermore, note that <em>spherical joints</em> are a special case: When there is just one degree of freedom, behavior is equivalent to a revolute joint type, but performance will be worse so it is recommended to use revolute joints instead of spherical joints wherever possible. When there are two or more degrees of freedom unlocked, rotational motion is integrated by rotating by decomposed quaternions rather than by Euler angles to avoid gimbal lock. However, this technique can lead to rotational axis drift, which is corrected by additional constraints in the simulation, which could lead to slight movement on the remaining locked rotational axis.</p>
+<div class="section" id="articulation-drives">
+<h3>Articulation Drives<a class="headerlink" href="#articulation-drives" title="Permalink to this headline">¶</a></h3>
+<p>In addition, a drive may be added to a joint. As with limits, this is defined on a per-axis basis. The drives operate analogous to a PD controller (see implementation note below) and have two terms: stiffness and damping. Stiffness controls how strongly the drive drives towards a target joint position/angle and damping controls how strongly the joint drives towards a target velocity. In this case, we set a stiffness value of 10 and a damping value of 0.1. In addition, we do not limit the motor force by setting it to be PX_MAX_F32, and set the drive type so that it outputs a force, see PxArticulationDriveType:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">stiffness</span> <span class="o">=</span> <span class="mf">10.f</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">damping</span> <span class="o">=</span> <span class="mf">0.1f</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">forceLimit</span> <span class="o">=</span> <span class="n">PX_MAX_F32</span><span class="p">;</span>
+<span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">Enum</span> <span class="n">driveType</span> <span class="o">=</span> <span class="n">PxArticulationDriveType</span><span class="o">::</span><span class="n">eFORCE</span><span class="p">;</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setDrive</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span> <span class="n">stiffness</span><span class="p">,</span> <span class="n">damping</span><span class="p">,</span> <span class="n">forceLimit</span><span class="p">,</span> <span class="n">driveType</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>With these parameters, the joint described so far limits motion within [-0.2, 0.5] [rad] and drive towards a joint angle of zero [rad] and angular velocity of zero [rad/s], with a stiffness and damping of 10 and 0.1, respectively. Assuming that the scene units correspond to (SI) meters, the drive output is a torque in [Nm], the stiffness is in [Nm/rad], and the damping is in [Nm/(rad/s)].</p>
+<p>Setting the driveType to PxArticulationDriveType::eACCELERATION results in the drive output to be a joint acceleration, which can be useful to obtain behavior that is independent of the mass and inertia of the links. For an acceleration drive, the stiffness would be in [rad/s^2 / rad] and damping would be in [rad/s^2 / (rad/s)].</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive that the solver iterates on are with respect to the end of the time step, an not, as usual (in engineering) implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. The nice property of the implicit formulation is that it can handle very large gains without causing joint state instability or oscillations. Of course, for low gains and small enough time steps, the implicit and explicit drive dynamics will be practically identical.</p>
+</div>
+<p>An important articulation flag related to the drives is PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES: If it is set, the forceLimit above refers to a force/torque (e.g. N and Nm), and, otherwise, to an impulse (force * dt, or torque * dt). The set limit applies to both force- and acceleration-type drives.</p>
+<p>The joint can be made to drive towards a target angle of 0.1 [rad] with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">driveTargetAngle</span> <span class="o">=</span> <span class="mf">0.1f</span><span class="p">;</span>  <span class="c1">// rad</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setDriveTarget</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span> <span class="n">driveTargetAngle</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Similarly, the joint can be made to drive towards a target angular velocity of -0.2 [rad/s] with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">driveTargetVelocity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2f</span><span class="p">;</span>  <span class="c1">// rad/s</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setDriveVelocity</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span> <span class="n">driveTargetVelocity</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>By default, the target velocity of the drive is set to 0 [rad/s], so a nonzero damping parameter results in the drive being a (implicit) PD controller where the P gain, i.e. the stiffness, acts on the position error and the D gain, i.e. the damping, acts on the derivative of the position error, i.e. opposing the joint velocity.</p>
+<p>It is possible to retrieve the constraint forces (i.e. drive, joint limits, and joint friction) applied by the solver, see PxArticulationCacheFlag::eJOINT_SOLVER_FORCES and PxArticulationFlag::eCOMPUTE_JOINT_FORCES.</p>
+</div>
+</div>
+<div class="section" id="pxarticulationcache">
+<span id="id4"></span><h2>PxArticulationCache<a class="headerlink" href="#pxarticulationcache" title="Permalink to this headline">¶</a></h2>
+<p>Direct access to joint positions, velocities and forces, and other internal data that controls a reduced coordinate articulation is provided through a class called PxArticulationCache.</p>
+<p>Create an articulation cache like this:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationCache</span><span class="o">*</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createCache</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>This method creates a cache with which to store internal articulation state. This cache is constructed specifically for a given articulation and contains the exact space to store data about that articulation. It cannot be shared between different articulations unless they have the exact same structure. Similarly, if the properties of an articulation change (e.g. a link or force sensor is added/removed, or degrees of freedom are changed), it is necessary to release the cache and recreate it.</p>
+<p>Once a cache has been created, the user can use it to read articulation data by copying the data into the cache. In this case, we copy all data to the cache, but the user can filter and only copy specific data of interest (see PxArticulationCacheFlag):</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">copyInternalStateToCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Since the data in the cache is a copy of the articulation data, any modifications to the cache data do not alter the internal state of the articulation that copied the data to the cache. In order to update the internal state of the articulation, it is necessary to apply the cache, i.e. copy the data back to the articulation. In this example, we apply, i.e. copy just the joint positions:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Note that this will cause the link poses to be updated based on the newly set joint positions, and it is not legal to copy to or apply a cache while the simulation is running.</p>
+<p>A cache stores sufficient information to be able to record the state of an entire articulation at a snapshot in time and then reset the articulation back to that state. It is legal to create and maintain multiple articulation caches for a given articulation.</p>
+<p>A cache further provides access to the root link's state, including transform, velocities and accelerations. See PxArticulationCache for further articulation data that may be accessed via cache.</p>
+<p>Simple operations like zeroing the joint velocities can be done with the following code snippet:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxMemZero</span><span class="p">(</span><span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">PxReal</span><span class="p">)</span> <span class="o">*</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">getDofs</span><span class="p">());</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eVELOCITY</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In addition to setting joint positions and velocities, it is possible to interact with the articulation through the application of joint forces/torques, which behave like an actuator, or by applying external forces to the links directly.</p>
+<div class="section" id="cache-indexing">
+<span id="id5"></span><h3>Cache Indexing<a class="headerlink" href="#cache-indexing" title="Permalink to this headline">¶</a></h3>
+<p>The data in the cache is stored in a specific internal low-level order that facilitates propagation through the articulation. The order imposed by the low-level indices may be different from the order in which the links and joints were originally added to the articulation. Therefore, the user must:</p>
+<ul>
+<li><p class="first">use a link's low-level index link-&gt;getLinkIndex() for link-data indexing, e.g. PxArticulationCache::externalForces;</p>
+</li>
+<li><p class="first">use a link force sensor's PxArticulationSensor::getIndex() for spatial sensor force indexing;</p>
+</li>
+<li><p class="first">calculate the low-level degree-of-freedom (DOF) data indices by summing the joint DOFs in the order of the links' low-level indices:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">Low</span><span class="o">-</span><span class="n">level</span> <span class="n">link</span> <span class="n">index</span><span class="o">:</span>   <span class="o">|</span> <span class="n">link</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">link</span> <span class="mi">1</span> <span class="o">|</span> <span class="n">link</span> <span class="mi">2</span> <span class="o">|</span> <span class="n">link</span> <span class="mi">3</span> <span class="o">|</span> <span class="p">...</span> <span class="o">|</span> <span class="o">&lt;-</span> <span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getLinkIndex</span><span class="p">()</span>
+<span class="n">Link</span> <span class="n">inbound</span> <span class="n">joint</span> <span class="n">DOF</span><span class="o">:</span> <span class="o">|</span> <span class="mi">0</span>      <span class="o">|</span> <span class="mi">1</span>      <span class="o">|</span> <span class="mi">2</span>      <span class="o">|</span> <span class="mi">1</span>      <span class="o">|</span> <span class="p">...</span> <span class="o">|</span> <span class="o">&lt;-</span> <span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getInboundJointDof</span><span class="p">()</span>
+<span class="n">Low</span><span class="o">-</span><span class="n">level</span> <span class="n">DOF</span> <span class="n">index</span><span class="o">:</span>    <span class="o">|</span> <span class="o">-</span>      <span class="o">|</span> <span class="mi">0</span>      <span class="o">|</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>   <span class="o">|</span> <span class="mi">3</span>      <span class="o">|</span> <span class="p">...</span> <span class="o">|</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>The root link always has low-level index 0 and always has zero inbound joint DOFs. The link DOF indexing follows the order in PxArticulationAxis::Enum. For example, assume that low-level link 2 has an inbound spherical joint with two DOFs: eSWING1 and eSWING2. The corresponding low-level joint DOF indices are therefore 1 for eSWING1 and 2 for eSWING2.</p>
+<p><strong>Snippet</strong>: Calculate the low-level DOF indices for an articulation:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxU32</span> <span class="n">nbLinks</span> <span class="o">=</span> <span class="n">art</span><span class="o">-&gt;</span><span class="n">getNbLinks</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">PxArticulationLink</span><span class="o">*&gt;</span> <span class="n">links</span><span class="p">(</span><span class="n">nbLinks</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">);</span>
+<span class="c1">// The links vector is in the order that the links are added to the articulation using createLink.</span>
+<span class="c1">// However, the index in links[index] and the low-level index links[index].getLinkIndex() may differ</span>
+<span class="c1">// depending on the articulation.</span>
+<span class="n">art</span><span class="o">-&gt;</span><span class="n">getLinks</span><span class="p">(</span><span class="n">links</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span> <span class="n">nbLinks</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span> <span class="n">dofStarts</span><span class="p">(</span><span class="n">nbLinks</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">dofStarts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="c1">// The root link never has an incoming articulation joint</span>
+
+<span class="c1">// Put DOF counts into dofStarts in low-level index order</span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nbLinks</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+        <span class="n">PxU32</span> <span class="n">lowLevelIndex</span> <span class="o">=</span> <span class="n">links</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getLinkIndex</span><span class="p">();</span>
+        <span class="n">PxU32</span> <span class="n">dofs</span> <span class="o">=</span> <span class="n">links</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getInboundJointDof</span><span class="p">();</span>
+        <span class="n">dofStarts</span><span class="p">[</span><span class="n">lowLevelIndex</span><span class="p">]</span> <span class="o">=</span> <span class="n">dofs</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Calculate DOF index offsets per low-level link index:</span>
+<span class="n">PxU32</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nbLinks</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+        <span class="n">PxU32</span> <span class="n">dofs</span> <span class="o">=</span> <span class="n">dofStarts</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+        <span class="n">dofStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span><span class="p">;</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="n">dofs</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Consider again the spherical joint described above and that it is the incoming joint of PxArticulationLink* link. We can set the position of the joint's eSWING2 DOF with:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxU32</span> <span class="n">jointSwingTwoIndex</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="n">dofStarts</span><span class="p">[</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">getLinkIndex</span><span class="p">()]</span> <span class="o">+</span> <span class="n">jointSwingTwoIndex</span><span class="p">]</span> <span class="o">=</span> <span class="n">newJointPosition</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>In addition to reading and writing joint DOF data, the cache is used to read and write data for computations that can be performed using reduced coordinate articulations, for example, inverse dynamics and Jacobian matrix computations.</p>
+</div>
+</div>
+<div class="section" id="inverse-dynamics-jacobian-and-other-utility-computations">
+<h2>Inverse Dynamics, Jacobian and other Utility Computations<a class="headerlink" href="#inverse-dynamics-jacobian-and-other-utility-computations" title="Permalink to this headline">¶</a></h2>
+<p>The reduced coordinate articulations offer inverse dynamics functionality in addition to forward dynamics used in simulation. This is a suite of utility functions to compute the joint forces required to counteract gravity, Coriolis/centrifugal force, external forces, and contacts/constraints. Furthermore, there are utility functions to compute kinematic Jacobians, the mass matrix, and the coefficient matrix and lambda values.</p>
+<p>The following descriptions assume knowledge of inverse dynamics concepts.</p>
+<div class="section" id="preparing-the-articulation-for-inverse-dynamics-computations">
+<h3>Preparing the Articulation for Inverse Dynamics Computations<a class="headerlink" href="#preparing-the-articulation-for-inverse-dynamics-computations" title="Permalink to this headline">¶</a></h3>
+<p>Prior to performing any inverse dynamics calculations, it is necessary to ensure that constant joint data has been computed. In order to do this, follow the steps</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Set articulation pose (joint positions and base transform) via articulation cache and applyCache.</li>
+<li>Call <tt class="docutils literal"><span class="pre">articulation-&gt;commonInit()</span></tt></li>
+<li>Depending on method: Setup base link velocity, and computation input values in cache.</li>
+<li>Call inverse dynamics computation method.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="converting-from-and-to-reduced-coordinate-joint-dof-coordinates">
+<h3>Converting From and To Reduced Coordinate Joint DOF Coordinates<a class="headerlink" href="#converting-from-and-to-reduced-coordinate-joint-dof-coordinates" title="Permalink to this headline">¶</a></h3>
+<p>The inverse dynamics functions operate on an articulation and a PxArticulationCache. The majority of properties in PxArticulationCache are stored in a reduced/generalized coordinate space, where one entry corresponds to a degree of freedom. To simplify working in this space, PhysX provides the following methods to pack and unpack data to convert between reduced/generalized and maximal coordinates.</p>
+<p><strong>Indexing</strong>: Indexing into the link maximum joint DOF data is via the link's low-level index minus 1 (the root link is not included), and the reduced-coordinate DOF data follows the cache indexing convention, see <a class="reference internal" href="#cache-indexing"><em>Cache Indexing</em></a>.</p>
+<p><strong>Example:</strong> Unpack a reduced-coordinate joint position of a fixed-base 1-DOF pendulum with a revolute joint with a free eSWING2 (z) motion:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">maximalJointPositions</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">0.0f</span> <span class="p">};</span>
+<span class="n">PxReal</span> <span class="n">reducedJointPosition</span> <span class="o">=</span> <span class="mf">0.5f</span><span class="p">;</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">unpackJointData</span><span class="p">(</span><span class="o">&amp;</span><span class="n">reducedJointPosition</span><span class="p">,</span> <span class="n">maximalJointPositions</span><span class="p">);</span>
+<span class="c1">// Result: maximalJointPositions[PxArticulationAxis::eSWING2] is equal to 0.5f, and all other elements are 0.0f</span>
+</pre></div>
+</div>
+<p><strong>Example:</strong> Pack maximal joint positions of a fixed-base 1-DOF pendulum with a revolute joint with a free eSWING2 (z) motion:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span> <span class="n">maximalJointPositions</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">0.0f</span> <span class="p">};</span>
+<span class="n">maximalJointPositions</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eSWING2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5f</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">reducedJointPosition</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">packJointData</span><span class="p">(</span><span class="n">maximalJointPositions</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">reducedJointPosition</span><span class="p">);</span>
+<span class="c1">// Result: reducedJointPosition is equal to 0.5f</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="compute-generalized-gravity-force">
+<h3>Compute Generalized Gravity Force<a class="headerlink" href="#compute-generalized-gravity-force" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeGeneralizedGravityForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>we can compute the joint DOF forces required to counteract gravitational forces for the given articulation pose. The joint forces returned are determined purely by gravity for the articulation in the current joint and base pose, i.e. external forces, joint velocities, and joint accelerations are set to zero. In addition, any joint drives are not considered in the computation. The computed forces correspond to the (joint-space) G(q) term in a robotics manipulator equation.</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> Articulation pose (joint positions and base transform).</li>
+<li><strong>Outputs:</strong> Joint forces to counteract gravity (in cache).</li>
+</ul>
+<p><strong>Example:</strong> Calculate holding torque to apply at a pendulum's pivot when it is perpendicular to the gravity vector:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// set articulation pose to evaluate gravity forces at</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">PxPiDivTwo</span><span class="p">;</span> <span class="c1">// Set pendulum to be perpendicular to gravity</span>
+<span class="n">pendulumArticulation</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="p">);</span>
+
+<span class="c1">// prepare common articulation data in newly set pose for inverse dynamics calculation</span>
+<span class="n">pendulumArticulation</span><span class="o">-&gt;</span><span class="n">commonInit</span><span class="p">();</span>
+<span class="n">pendulumArticulation</span><span class="o">-&gt;</span><span class="n">computeGeneralizedGravityForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+
+<span class="n">PxReal</span> <span class="n">massPendulum</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>        <span class="c1">// [kg]</span>
+<span class="n">PxReal</span> <span class="n">distancePivotToCOM</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>  <span class="c1">// [m]</span>
+<span class="n">PxReal</span> <span class="n">gravityMagnitude</span> <span class="o">=</span> <span class="mf">10.0f</span><span class="p">;</span>   <span class="c1">// [m / s^2]</span>
+<span class="n">PxReal</span> <span class="n">analyticHoldingTorque</span> <span class="o">=</span> <span class="n">massPendulum</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">gravityMagnitude</span><span class="p">;</span>  <span class="c1">// [N * m]</span>
+<span class="n">PxReal</span> <span class="n">computedHoldingTorque</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>  <span class="c1">// will be equal to analyticHoldingTorque = 10.0f</span>
+
+<span class="c1">// we can now directly apply the computed torque; for example to gravity-compensate a simulated robot arm.</span>
+<span class="c1">// make sure pendulum is at rest before simulation. Force is still set in cache from computation above.</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+<span class="n">pendulumArticulation</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eVELOCITY</span> <span class="o">|</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eFORCE</span><span class="p">);</span>
+
+<span class="c1">// simulate a single step</span>
+<span class="n">runSim</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c1">// read out post-simulation joint velocity</span>
+<span class="n">art</span><span class="o">-&gt;</span><span class="n">copyInternalStateToCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eVELOCITY</span><span class="p">);</span>
+<span class="n">PxReal</span> <span class="n">postSimVel</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>  <span class="c1">// will be zero</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="compute-coriolis-joint-forces">
+<h3>Compute Coriolis Joint Forces<a class="headerlink" href="#compute-coriolis-joint-forces" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeGeneralizedExternalForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>we can compute the joint DOF forces required to counteract Coriolis and centrifugal forces for the given articulation state. The joint forces returned are determined purely by the articulation's state; i.e. external forces, gravity, and joint accelerations are set to zero. Joint drives and potential damping terms, such as link angular or linear damping, or joint friction, are also not considered in the computation. The computed forces correspond to the (joint-space) C(q,qdot) term in a robotics manipulator equation.</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> Articulation state (joint positions and velocities (in cache), and base transform and spatial velocity).</li>
+<li><strong>Outputs:</strong> Joint forces to counteract Coriolis and centrifugal forces (in cache).</li>
+</ul>
+<p>To compute the joint force required to counteract Coriolis and centrifugal force, we must first provide the joint velocities of the articulation because coriolis/centrifugal forces are dependent on those values. In this example, we extract the velocities from the articulation before computing coriolis/centrifugal force:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">copyInternalStateToCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCache</span><span class="o">::</span><span class="n">eVELOCTY</span><span class="p">);</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeCoriolisAndCentrifugalForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Example:</strong> Calculate joint torques to keep a double pendulum's joint accelerations zero when the first link is rotating with 1 rad/s around the fixed pivot and with the second link perpendicular to the first (so that a centrifugal force has to be countered):</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// initial joint states:</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>        <span class="c1">// does not matter</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">PxPiDivTwo</span><span class="p">;</span>  <span class="c1">// perpendicular to first link</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>        <span class="c1">// rotate at 1 rad/s</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>        <span class="c1">// at rest relative to first link</span>
+
+<span class="c1">// set articulation state (velocity not required for computation, but for later simulation from given state):</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span> <span class="o">|</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eVELOCITY</span><span class="p">);</span>
+
+<span class="c1">// prepare common articulation data for inverse dynamics calculation:</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">commonInit</span><span class="p">();</span>
+
+<span class="c1">// compute centrifugal torque (the joint velocities in the cache are used for the computation here)</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">computeCoriolisAndCentrifugalForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+<span class="n">PxReal</span> <span class="n">centrifugalForce</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="c1">// compute gravity compensation as well to keep acceleration zero:</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">computeGeneralizedGravityForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+
+<span class="c1">// add back centrifugal torque</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">centrifugalForce</span><span class="p">;</span>
+
+<span class="c1">// apply torques at joints</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eFORCE</span><span class="p">);</span>
+
+<span class="c1">// run one sim step and get post-sim joint velocities:</span>
+<span class="n">runSim</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">doublePendulum</span><span class="o">-&gt;</span><span class="n">copyInternalStateToCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">eVELOCITY</span><span class="p">);</span>
+<span class="n">PxReal</span> <span class="n">postSimVelOne</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>  <span class="c1">// will be 1 rad/s</span>
+<span class="n">PxReal</span> <span class="n">postSimVelTwo</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointVelocity</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="c1">// will be 0 rad/s</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="compute-generalized-external-force">
+<h3>Compute Generalized External Force<a class="headerlink" href="#compute-generalized-external-force" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeGeneralizedExternalForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>we can compute the joint DOF forces required to counteract external spatial forces applied to articulation links. <strong>Only</strong> the external forces and the current articulation pose are considered in the calculation.</p>
+<p>The external spatial forces are with respect to the links' centers of mass, and not the actor's origin.</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> External forces on links (in cache), articulation pose (joint positions + base transform).</li>
+<li><strong>Outputs:</strong> Joint forces to counteract the external forces (in cache).</li>
+</ul>
+<p><strong>Example:</strong> Compute joint torque at pendulum articulation pivot when spatial force is applied to the pendulum center of mass:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// set pendulum pose</span>
+<span class="c1">// the angle is in +Z relative to upright where the pendulum coincides with +Y, and the pivot is at the origin.</span>
+<span class="n">PxReal</span> <span class="n">pendulumAngle</span> <span class="o">=</span> <span class="n">PxPiDivFour</span><span class="p">;</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pendulumAngle</span><span class="p">;</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="p">);</span>
+
+<span class="c1">// prep common articulation data for given pose for inverse dynamics computation</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">commonInit</span><span class="p">();</span>
+
+<span class="c1">// Define the spatial force to apply to the pendulum</span>
+<span class="c1">// Note that this spatial force is defined with respect to the center of mass of the link</span>
+<span class="c1">// which may or may not coincide with the actor frame origin (@see PxRigidBody::getCMassLocalPose)</span>
+<span class="n">PxSpatialForce</span> <span class="n">force</span> <span class="o">=</span> <span class="n">PxSpatialForce</span><span class="p">();</span>
+<span class="n">force</span><span class="p">.</span><span class="n">force</span> <span class="o">=</span> <span class="n">PxVec3</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">,</span> <span class="mf">0.0f</span><span class="p">,</span> <span class="mf">0.0f</span><span class="p">);</span>  <span class="c1">// acts on center of mass!</span>
+<span class="n">force</span><span class="p">.</span><span class="n">torque</span> <span class="o">=</span> <span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span> <span class="mf">0.0f</span><span class="p">,</span> <span class="mf">1.0f</span><span class="p">);</span>
+
+<span class="n">PxArticulationLink</span><span class="o">*</span> <span class="n">pendulumLink</span> <span class="o">=</span> <span class="n">nullptr</span><span class="p">;</span>
+<span class="c1">// getLinks is indexed in order that the links were added to the articulation</span>
+<span class="n">PxU32</span> <span class="n">linkIndex</span> <span class="o">=</span> <span class="mi">1u</span><span class="p">;</span>
+<span class="n">PxU32</span> <span class="n">bufferSize</span> <span class="o">=</span> <span class="mi">1u</span><span class="p">;</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">getLinks</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pendulumLink</span><span class="p">,</span> <span class="n">bufferSize</span><span class="p">,</span> <span class="n">linkIndex</span><span class="p">);</span>
+<span class="c1">// external forces are indexed by low-level link index</span>
+<span class="c1">// (for this simple articulation the low-level and getLinks indices will be equal)</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">externalForces</span><span class="p">[</span><span class="n">pendulumLink</span><span class="o">-&gt;</span><span class="n">getLinkIndex</span><span class="p">()]</span> <span class="o">=</span> <span class="n">force</span><span class="p">;</span>
+
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">computeGeneralizedExternalForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+
+<span class="c1">// force in +X results in + counter torque and spatial torque in - counter torque</span>
+<span class="n">PxReal</span> <span class="n">analyticCounterTorque</span> <span class="o">=</span> <span class="n">PxCos</span><span class="p">(</span><span class="n">pendulumAngle</span><span class="p">)</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">force</span><span class="p">.</span><span class="n">force</span><span class="p">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">force</span><span class="p">.</span><span class="n">torque</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">computedCounterTorque</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+<span class="c1">// analytic and computed are equal</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="compute-joint-accelerations">
+<h3>Compute Joint Accelerations<a class="headerlink" href="#compute-joint-accelerations" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeJointAcceleration</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>we can compute the joint accelerations for the given articulation state and joint forces, taking into account gravity. Joint drives and potential damping terms are not considered in the computation (for example, linear link damping or joint friction).</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> Joint forces (in cache) and articulation state (joint positions and velocities (in cache), and base transform and spatial velocity).</li>
+<li><strong>Outputs:</strong> Joint accelerations (in cache).</li>
+</ul>
+<p><strong>Example:</strong> Compute joint accelerations at pendulum articulation pivot with and without applying a joint force:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// calculate pendulum inertia for computations below:</span>
+<span class="n">PxReal</span> <span class="n">inertiaAtCOM</span> <span class="o">=</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">mass</span> <span class="o">/</span> <span class="mf">3.0f</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">inertiaAtPivot</span> <span class="o">=</span> <span class="n">inertiaAtCOM</span> <span class="o">+</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">mass</span><span class="p">;</span>
+
+<span class="c1">// Case 1: Pendulum perpendicular to gravity and zero input torque: Pivot acceleration will be due to gravity.</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">PxPiDivTwo</span><span class="p">;</span>  <span class="c1">// gravity will result in a positive angular acceleration</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="p">);</span>
+
+<span class="c1">// prepare articulation data for the computation</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">commonInit</span><span class="p">();</span>
+
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>  <span class="c1">// only consider acceleration due to gravity:</span>
+<span class="c1">// For a more complex articulation than this simple example pendulum, the jointVelocity in the cache would have</span>
+<span class="c1">// to be set for the computation of joint accelerations due to Coriolis terms.</span>
+
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">computeJointAcceleration</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+
+<span class="n">PxReal</span> <span class="n">torqueDueToGravityAtPivot</span> <span class="o">=</span> <span class="n">gravityMagnitude</span> <span class="o">*</span> <span class="n">mass</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">analyticAcceleration</span> <span class="o">=</span> <span class="n">torqueDueToGravityAtPivot</span> <span class="o">/</span> <span class="n">inertiaAtPivot</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">computedAcceleration</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointAcceleration</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+<span class="c1">// analytic and computed are equal</span>
+
+<span class="c1">// Case 2: Apply a torque to cancel the gravitational joint acceleration:</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">torqueDueToGravityAtPivot</span><span class="p">;</span>  <span class="c1">// 1 Nm input</span>
+
+<span class="c1">// running computation with same articulation pose as Case 1, so no need to call commonInit again.</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">computeJointAcceleration</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+<span class="n">analyticAcceleration</span> <span class="o">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+<span class="n">computedAcceleration</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointAcceleration</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+<span class="c1">// analytic and computed are equal</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="compute-joint-forces">
+<h3>Compute Joint Forces<a class="headerlink" href="#compute-joint-forces" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeJointForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>we can compute the joint forces required to achieve desired joint DOF accelerations for the given articulation state, <strong>not</strong> considering gravity. Joint drives and potential damping terms are not considered in the computation (for example, linear link damping or joint friction).</p>
+<p>This method, together with computeGeneralizedGravityForce, can be used to calculate feed-forward joint forces to apply to follow a reference joint-space trajectory using feedback control.</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> Joint accelerations (in cache) and articulation state (joint positions and velocities (in cache), and root transform and spatial velocity).</li>
+<li><strong>Outputs:</strong> Joint forces (in cache).</li>
+</ul>
+<p><strong>Example:</strong> Compute joint forces at pendulum articulation pivot in order to achieve a desired angular acceleration:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// calculate pendulum inertia for computations below:</span>
+<span class="n">PxReal</span> <span class="n">inertiaAtCOM</span> <span class="o">=</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">mass</span> <span class="o">/</span> <span class="mf">3.0f</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">inertiaAtPivot</span> <span class="o">=</span> <span class="n">inertiaAtCOM</span> <span class="o">+</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">distancePivotToCOM</span> <span class="o">*</span> <span class="n">mass</span><span class="p">;</span>
+
+<span class="c1">// Pendulum angle will not matter because gravity is not considered in the computation</span>
+<span class="c1">// so directly prepare articulation data for the computation</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">commonInit</span><span class="p">();</span>
+
+<span class="n">PxReal</span> <span class="n">targetAcceleration</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="p">;</span>  <span class="c1">// rad/s^2</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointAcceleration</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">targetAcceleration</span><span class="p">;</span>
+<span class="c1">// For a more complex articulation than this simple example pendulum, the cache jointVelocity member would have</span>
+<span class="c1">// to be set for the computation of joint accelerations due to Coriolis terms</span>
+
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">computeJointForce</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+
+<span class="n">PxReal</span> <span class="n">analyticTorque</span> <span class="o">=</span> <span class="n">targetAcceleration</span> <span class="o">*</span> <span class="n">inertiaAtPivot</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">computedTorque</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointForce</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+<span class="c1">// analytic and computed are equal</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="generalized-mass-matrix">
+<h3>Generalized Mass Matrix<a class="headerlink" href="#generalized-mass-matrix" title="Permalink to this headline">¶</a></h3>
+<p>With:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeGeneralizedMassMatrix</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>We can compute the generalized mass matrix, which represents the joint-space inertia of the articulation and can be used to convert joint accelerations into joint forces/torques, i.e. forces = massMatrix * accelerations. The indexing into the matrix follows the low-level joint DOF indexing, see <a class="reference internal" href="#cache-indexing"><em>Cache Indexing</em></a>.</p>
+<ul class="simple">
+<li><strong>Inputs:</strong> Articulation pose (joint positions and base transform).</li>
+<li><strong>Outputs:</strong> The generalized mass matrix (in cache).</li>
+</ul>
+</div>
+<div class="section" id="loop-joints-coefficient-matrix-and-lambda-constraint-impulses">
+<h3>Loop Joints, Coefficient Matrix, and Lambda Constraint Impulses<a class="headerlink" href="#loop-joints-coefficient-matrix-and-lambda-constraint-impulses" title="Permalink to this headline">¶</a></h3>
+<p>Articulations are tree structures and do not support closed loops natively. PhysX can simulate closed loop systems by the use of joints. Additionally, contacts between links and other rigid bodies (e.g. the ground) can form loops if more than one link is in contact. These joints and contacts are solved by the rigid body solver during PhysX simulation, but it is often desirable to factor these constraints into inverse dynamics.</p>
+<p>To facilitate this, PhysX provides a mechanism to register loop constraints with the articulation:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxJoint</span><span class="o">*</span> <span class="n">joint</span> <span class="o">=</span> <span class="p">...;</span>
+
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">addLoopJoint</span><span class="p">(</span><span class="n">joint</span><span class="p">);</span>
+
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">removeLoopJoint</span><span class="p">(</span><span class="n">joint</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In order to represent contacts, use PxContactJoint: This is a new addition specifically for inverse dynamics that represents a contact as an extension to the joint system. Currently, the following features are restricted to the use of PxContactJoint.</p>
+<p>Inverse dynamics provides functionality to calculate the coefficient matrix. This matrix is an NxM matrix, where N is the number of degrees of freedom in the articulation and M is the number constraint rows. This matrix represents the joint force caused by a unit impulse applied to each constraint:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxU32</span> <span class="n">coefficientMatrixSize</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">getCoefficentMatrixSize</span><span class="p">();</span>
+<span class="n">PxReal</span><span class="o">*</span> <span class="n">coefficientMatrix</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PxReal</span><span class="p">[</span><span class="n">coefficientMatrixSize</span><span class="p">];</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">coefficientMatrix</span> <span class="o">=</span> <span class="n">coefficientMatrix</span><span class="p">;</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeCoefficientMatrix</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The coefficient matrix can be used to convert a set of lambda values (impulses applied by the respective constraints) into a set of joint forces to counteract these impulses. However, the lambda values are only known after a frame's simulation occurs, so it may be necessary to know these lambda values before they are applied in the solver. However, even if these lambda values are known ahead-of-time, applying a counteracting force may not yield the desired results because the act of applying additional forces on the joints may influence the lambda values, resulting in a different set of joint forces.</p>
+<p>In order to overcome this feedback-loop, inverse dynamics provides a function to compute the lambda values for the loop constraints, assuming that the joint forces required to counteract these lambdas are also applied. This technique is an iterative process that converges on a stable set of joint forces.</p>
+<p>First, we must allocate sufficient space for the lambda values:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxReal</span><span class="o">*</span> <span class="n">lambda</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PxReal</span><span class="p">[</span><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">getNbLoopJoints</span><span class="p">()];</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">lambda</span> <span class="o">=</span> <span class="n">lambda</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>In order to compute the lambda values, we need to have two caches: one to store the initial state, and one to calculate the final state:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxArticulationCache</span><span class="o">*</span> <span class="n">initialState</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createCache</span><span class="p">()</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">copyInternalStateToCache</span><span class="p">(</span><span class="o">*</span><span class="n">initialState</span><span class="p">,</span> <span class="n">PxArticulationCache</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Now we can compute the joint forces. In addition, we must compute the internal and external joint forces caused by gravity and Coriolis/centrifugal force to ensure that we converge on a result that will match the forward dynamics. The joint forces for internal/external accelerations can be calculated using the methods outlined earlier. The method is iterative and terminates either after reaching convergence or when a maximum number of iterations is run (in this case 200). The resulting joint forces are in cache.jointForce:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">const</span> <span class="n">PxU32</span> <span class="n">maxIterations</span> <span class="o">=</span> <span class="mi">200</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">converged</span> <span class="o">=</span> <span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeLambda</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="o">*</span><span class="n">initialState</span><span class="p">,</span> <span class="n">jointForces</span><span class="p">,</span> <span class="n">maxIterations</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="jacobian">
+<h3>Jacobian<a class="headerlink" href="#jacobian" title="Permalink to this headline">¶</a></h3>
+<p>The Jacobian matrix is an important concept to roboticists. Multiplication with the Jacobian matrix maps the joint space velocities of the robot to world-space link velocities. The Jacobian matrix of an articulation can be computed using:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">PxU32</span> <span class="n">nRows</span><span class="p">;</span>
+<span class="n">PxU32</span> <span class="n">nCols</span><span class="p">;</span>
+<span class="n">articulation</span><span class="o">-&gt;</span><span class="n">computeDenseJacobian</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">nRows</span><span class="p">,</span> <span class="n">nCols</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>This will write the Jacobian matrix to cache.denseJacobian; and the dimensions of the matrix are written to the two unsigned integers. Note that the Jacobian matrix is a sparse triangular matrix, so such an explicit dense representation is in general not an optimal use of memory. PhysX does not use this representation internally.</p>
+<p>The spatial link velocities that the matrix maps to are with respect to the center of mass (COM) of the links, and are stacked [<em>vx; vy; vz; wx; wy; wz</em>], where <em>vx</em> and <em>wx</em> refer to the linear and rotational velocity in world X, respectively.</p>
+<dl class="docutils">
+<dt><strong>Indexing</strong>:</dt>
+<dd><ul class="first last simple">
+<li>Links, i.e. rows are in order of the low-level link indices (minus one if PxArticulationFlag::eFIX_BASE is true), see PxArticulationLink::getLinkIndex().</li>
+<li>DOFs, i.e. column indices correspond to the low-level DOF indices, see <a class="reference internal" href="#cache-indexing"><em>Cache Indexing</em></a>.</li>
+</ul>
+</dd>
+</dl>
+<p><strong>Example:</strong> Jacobian of a 1-DOF, single-link pendulum:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// setup perpendicular to gravity (-g * eY), and pointing in -eX direction away from pivot</span>
+<span class="n">cache</span><span class="o">-&gt;</span><span class="n">jointPosition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">PxPiDivTwo</span><span class="p">;</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">applyCache</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">PxArticulationCacheFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="p">);</span>
+
+<span class="n">PxU32</span> <span class="n">nRows</span> <span class="o">=</span> <span class="mi">0u</span><span class="p">;</span>
+<span class="n">PxU32</span> <span class="n">nCols</span> <span class="o">=</span> <span class="mi">0u</span><span class="p">;</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">computeDenseJacobian</span><span class="p">(</span><span class="o">*</span><span class="n">cache</span><span class="p">,</span> <span class="n">nRows</span><span class="p">,</span> <span class="n">nCols</span><span class="p">);</span>
+
+<span class="c1">// nRows will be equal to 6, as the fixed-base articulation has a single free link</span>
+<span class="c1">// nCols will be equal to 1, as the pendulum has a single degree of freedom</span>
+
+<span class="c1">// for a given joint velocity w in eZ and the given pendulum angle of 90deg,</span>
+<span class="c1">// the spatial velocity of the pendulum only has two nonzero elements:</span>
+<span class="c1">// vy = -w * distancePivotToCOM  &lt;- because the spatial velocity is with respect to the COM of the pendulum</span>
+<span class="c1">// wz = w   &lt;- trivially the rotational velocity of the pivot joint</span>
+<span class="c1">// The Jacobian is the partial derivative of the spatial velocity with respect to w, so the matrix will be:</span>
+<span class="c1">// Jac[0, 0] = dvx / dw = 0</span>
+<span class="c1">// Jac[1, 0] = dvy / dw = -distancePivotToCOM</span>
+<span class="c1">// Jac[2, 0] = dvz / dw = 0</span>
+<span class="c1">// Jac[3, 0] = dwx / dw = 0</span>
+<span class="c1">// Jac[4, 0] = dwy / dw = 0</span>
+<span class="c1">// Jac[5, 0] = dwz / dw = 1</span>
+
+<span class="c1">// this is overkill for this simple articulation but shows how to calculate the row index for a more</span>
+<span class="c1">// complex fixed-base articulation. Not done here, but the user in general has to follow the snippet in the</span>
+<span class="c1">// Cache Indexing section above in order to find the low-level DOF index.</span>
+<span class="n">PxArticulationLink</span><span class="o">*</span> <span class="n">pendulumLink</span> <span class="o">=</span> <span class="n">nullptr</span><span class="p">;</span>
+<span class="n">PxU32</span> <span class="n">linkIndex</span> <span class="o">=</span> <span class="mi">1u</span><span class="p">;</span>  <span class="c1">// getLinks is indexed in order that the links were added to the articulation</span>
+<span class="n">PxU32</span> <span class="n">bufferSize</span> <span class="o">=</span> <span class="mi">1u</span><span class="p">;</span>
+<span class="n">pendulum</span><span class="o">-&gt;</span><span class="n">getLinks</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pendulumLink</span><span class="p">,</span> <span class="n">bufferSize</span><span class="p">,</span> <span class="n">linkIndex</span><span class="p">);</span>
+
+<span class="n">PxU32</span> <span class="n">dofColumn</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// relevant column is the 0-th one that corresponds to the single DOF of the pendulum</span>
+<span class="c1">// -1 on the low-level link index as the fixed base link is not included</span>
+<span class="n">PxU32</span> <span class="n">vyRow</span> <span class="o">=</span> <span class="p">((</span><span class="n">pendulumLink</span><span class="o">-&gt;</span><span class="n">getLinkIndex</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">PxU32</span> <span class="n">wzRow</span> <span class="o">=</span> <span class="p">((</span><span class="n">pendulumLink</span><span class="o">-&gt;</span><span class="n">getLinkIndex</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">;</span>
+<span class="n">PxReal</span> <span class="n">jac10</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">denseJacobian</span><span class="p">[</span><span class="n">nCols</span> <span class="o">*</span> <span class="n">vyRow</span> <span class="o">+</span> <span class="n">dofColumn</span><span class="p">];</span>  <span class="c1">// equal to -distancePivotToCOM</span>
+<span class="n">PxReal</span> <span class="n">jac50</span> <span class="o">=</span> <span class="n">cache</span><span class="o">-&gt;</span><span class="n">denseJacobian</span><span class="p">[</span><span class="n">nCols</span> <span class="o">*</span> <span class="n">wzRow</span> <span class="o">+</span> <span class="n">dofColumn</span><span class="p">];</span>  <span class="c1">// equal to 1</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="OriginShift.html" class="btn btn-neutral float-right" title="Scene Origin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Joints.html" class="btn btn-neutral" title="Joints" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<title>NVIDIA PhysX SDK for Linux ReadMe</title>
+<link rel="stylesheet" href="stylesheet.css" type="text/css">
+</head>
+
+<body>
+<h1 style="TEXT-ALIGN: center">NVIDIA<sup>&reg;</sup> PhysX<sup>&reg;</sup> SDK for Linux ReadMe</h1>
+
+<blockquote>
+	<h4>Location of Binaries:</h4>
+	<ul>
+		<li>SDK libraries: bin/linux.clang</li>
+	</ul>
+
+	<h4>Required packages to generate projects:</h4>
+	<ul>
+		<li>CMake, minimum version 3.14 (can be acquired: sudo apt-get install cmake or sudo pip install cmake), note that the requirement can be eventually lowered to cmake 3.10 just in case of linux in the compiler/internal/CMakeLists.txt</li>
+		<li>Python, minimum version 3.5</li>
+		<li>Clang, min version 3.8</li>
+		<li>Gcc for aarch64, min version 5.3</li>
+	</ul>
+
+	<h4>Generating Makefiles:</h4>
+	<ul>
+		<li>Makefiles are generated through a script in physx root directory: generate_projects.sh</li>
+		<li>Script generate_projects.sh expects a preset name as a parameter, if a parameter is not provided it does list the available presets and you can select one.</li>
+		<li>Supported presets for linux platform are: linux, linux-aarch64.</li>
+		<li>Generated solutions are in folder compiler/linux-debug, compiler/linux-checked, compiler/linux-profile, compiler/linux-release.</li>
+	</ul>
+
+	<h4>Building SDK:</h4>
+	<ul>
+		<li>Makefiles are in compiler/linux-debug etc</li>
+		<li>Clean solution: make clean</li>
+		<li>Build solution: make</li>
+   </ul>
+
+	<h4>PhysX GPU Acceleration:</h4>
+	<ul>
+		<li>Requires CUDA 10.0 compatible display driver and CUDA ARCH 3.0 compatible GPU</li>
+	</ul>
+
+	<h4>Required Packages for Building and Running PhysX Snippets:</h4>
+	<ul>
+		<li>libxxf86vm-dev</li>
+		<li>libgl1-mesa-dev</li>
+		<li>libglu1-mesa-dev</li>
+		<li>libglut</li>
+		<li>gcc-multilib</li>
+		<li>g++-multilib</li>
+		<li>ia32-libs</li>
+		<li>freeglut3-dev</li>
+	</ul>
+
+	<h4>How to select the PhysX GPU Device:</h4>
+	<ul>
+		<li>Set the environment variable PHYSX_GPU_DEVICE to the device ordinal on which GPU PhysX should run. Default is 0.
+		<br><i>Example: </i>export PHYSX_GPU_DEVICE="1"</li>
+	</ul>
+
+</blockquote>
+
+<p><br>
+Copyright (c) 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved. <A href="http://www.nvidia.com">www.nvidia.com</A>
+</p>
+</body>
+</html>

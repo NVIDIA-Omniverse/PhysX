@@ -1,0 +1,406 @@
+.. _RigidBodyCollision:
+
+------------------------
+Rigid Body Collision
+------------------------
+
+=========================
+Introduction
+=========================
+
+This section will introduce the fundamentals of rigid body collision.
+
+.. _RigidBodyCollisionShapes:
+
+=========================
+Shapes
+=========================
+
+Shapes describe the spatial extent and collision properties of actors. They are used for three purposes within PhysX: intersection tests that determine the contacting features of rigid objects, scene query tests such as raycasts, and defining trigger volumes that generate notifications when other shapes intersect with them.  
+
+Shapes are reference counted, see :ref:`BasicReferenceCounting`. 
+
+Each shape contains a PxGeometry object and a reference to a PxMaterial, which must both be specified upon creation.
+The following code creates a shape with a sphere geometry and a specific material::
+
+    PxShape* shape = physics.createShape(PxSphereGeometry(1.0f), myMaterial, true);
+    myActor.attachShape(*shape);
+    shape->release();
+
+The method PxRigidActorExt::createExclusiveShape() is equivalent to the three lines above.
+
+.. note:: for reference counting behavior of deserialized shapes refer to :ref:`DeserializeReferenceCounting`.
+
+The parameter 'true' to createShape() informs the SDK that the shape will not be shared with other actors. You can use shape sharing to reduce the memory costs of your simulation when you have many actors with identical geometry, but shared shapes have a very strong restriction: you cannot update the attributes of a shared shape while it is attached to an actor. 
+
+Optionally you may configure a shape by specifying shape flags of type PxShapeFlags. By default a shape is configured as 
+
+* a simulation shape (enabled for contact generation during simulation)
+* a scene query shape (enabled for scene queries)
+* being visualized if debug rendering is enabled
+
+When a geometry object is specified for a shape, the geometry object is copied into the shape. There are some restrictions on which geometries may be specified for a shape, depending on the shape flags and the type of the parent actors.
+
+* TriangleMesh, HeightField and Plane geometries are not supported for simulation shapes that are attached to dynamic actors, unless the dynamic actors are configured to be kinematic.
+* TriangleMesh and HeightField geometries are not supported for trigger shapes.
+
+See the following sections for more details.
+
+Detach the shape from the actor as follows::
+
+    myActor.detachShape(*shape);
+
+========================================
+Simulation Shapes and Scene Query Shapes
+========================================
+
+Shapes may be independently configured to participate in either or both of scene queries and contact tests. By default, a shape will participate in both.
+
+The following pseudo-code configures a PxShape instance so that it no longer participates in shape pair intersection tests::
+
+    void disableShapeInContactTests(PxShape* shape)
+    {
+        shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE,false);
+    }
+    
+A PxShape instance can be configured to participate in shape pair intersection tests as follows::
+
+    void enableShapeInContactTests(PxShape* shape)
+    {
+        shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE,true);
+    }
+    
+To disable a PxShape instance from scene query tests::
+
+    void disableShapeInSceneQueryTests(PxShape* shape)
+    {
+        shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE,false);
+    }
+
+Finally, a PxShape instance can be re-enabled in scene query tests::
+
+    void enableShapeInSceneQueryTests(PxShape* shape)
+    {
+        shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE,true);
+    }
+
+.. note:: If the movement of the shape's actor does not need to be controlled by the simulation at all, i.e., the shape is used for scene queries only and gets moved manually if necessary, then memory can be saved by additionally disabling simulation on the actor (see the API documentation on PxActorFlag::eDISABLE_SIMULATION).
+
+===============================================
+Kinematic Triangle Meshes (Planes, Heighfields)
+===============================================
+
+It is possible to create a kinematic PxRigidDynamic which can have a triangle mesh (plane, heighfield) shape. If this shape has a simulation shape flag, this actor must stay kinematic. If you change the flag to not simulated, you can switch even the kinematic flag. 
+
+To setup kinematic triangle mesh see following code::
+
+    PxRigidDynamic* meshActor = getPhysics().createRigidDynamic(PxTransform(1.0f));    
+    PxShape* meshShape;
+    if(meshActor)
+    {
+        meshActor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+
+        PxTriangleMeshGeometry triGeom;
+        triGeom.triangleMesh = triangleMesh;
+        meshShape = PxRigidActorExt::createExclusiveShape(*meshActor,triGeom,
+            defaultMaterial);
+        getScene().addActor(*meshActor);
+    }
+
+To switch a kinematic triangle mesh actor to a dynamic actor::
+
+    PxRigidDynamic* meshActor = getPhysics().createRigidDynamic(PxTransform(1.0f));    
+    PxShape* meshShape;
+    if(meshActor)
+    {
+        meshActor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+
+        PxTriangleMeshGeometry triGeom;
+        triGeom.triangleMesh = triangleMesh;
+        meshShape = PxRigidActorExt::createExclusiveShape(*meshActor, triGeom, 
+            defaultMaterial);
+        getScene().addActor(*meshActor);
+        
+        PxConvexMeshGeometry convexGeom = PxConvexMeshGeometry(convexBox);
+        convexShape = PxRigidActorExt::createExclusiveShape(*meshActor, convexGeom,
+            defaultMaterial);
+
+
+======================
+Broad-phase Algorithms
+======================
+
+PhysX supports several broad-phase algorithms:
+
+* *sweep-and-prune (SAP)*
+* *multi box pruning (MBP)*
+* *automatic box pruning (ABP)*
+
+*PxBroadPhaseType::eSAP* is a good generic choice with great performance when many objects are sleeping. Performance can degrade significantly though, when all objects are moving, or when large numbers of objects are added to or removed from the broad-phase. This algorithm does not need world bounds to be defined in order to work.
+
+*PxBroadPhaseType::eMBP* is a new algorithm introduced in PhysX 3.3. It is an alternative broad-phase algorithm that does not suffer from the same performance issues as eSAP when all objects are moving or when inserting large numbers of objects. However its generic performance when many objects are sleeping might be inferior to eSAP, and it requires users to define world bounds in order to work.
+
+*PxBroadPhaseType::eABP* is a revisited implementation of *PxBroadPhaseType::eMBP* introduced in PhysX 4. It automatically manages world bounds and broad-phase regions, thus offering the convenience of *PxBroadPhaseType::eSAP* coupled to the performance of *PxBroadPhaseType::eMBP*. While *PxBroadPhaseType::eSAP* can remain faster when most objects are sleeping and *PxBroadPhaseType::eMBP* can remain faster when it uses a large number of properly-defined regions, *PxBroadPhaseType::eABP* often gives the best performance on average and the best memory usage. It is a good default choice for the broadphase.
+
+The desired broad-phase algorithm is controlled by the *PxBroadPhaseType* enum, within the *PxSceneDesc* structure.
+
+===================
+Regions of Interest
+===================
+
+A region of interest is a world-space AABB around a volume of space controlled by the broad-phase. Objects contained inside those regions are properly handled by the broad-phase. Objects falling outside of those regions lose all collision detection. Ideally those regions should cover the whole simulation space, while limiting the amount of covered empty space.
+
+Regions can overlap, although for maximum efficiency it is recommended to minimize the amount of overlap between regions as much as possible. Note that two regions whose AABBs just touch are not considered overlapping. For example the *PxBroadPhaseExt::createRegionsFromWorldBounds* helper function creates a number of non-overlapping region bounds by simply subdividing a given world AABB into a regular 2D grid.
+
+Regions can be defined by the *PxBroadPhaseRegion* structure, along with a user-data assigned to them. They can be defined at scene creation time or at runtime using the *PxScene::addBroadPhaseRegion* function. The SDK returns handles assigned to the newly created regions, that can be used later to remove regions using the *PxScene::removeBroadPhaseRegion* function.
+
+A newly added region may overlap already existing objects. The SDK can automatically add those objects to the new region, if the *populateRegion* parameter from the *PxScene::addBroadPhaseRegion* call is set. However this operation is not cheap and might have a high impact on performance, especially when several regions are added in the same frame. Thus, it is recommended to disable it whenever possible. The region would then be created empty, and it would only be populated either with objects added to the scene after the region has been created, or with previously existing objects when they are updated (i.e. when they move).
+
+Note that only *PxBroadPhaseType::eMBP* requires regions to be defined. The *PxBroadPhaseType::eSAP* and *PxBroadPhaseType::eABP* algorithms do not. This information is captured within the *PxBroadPhaseCaps* structure, which lists information and capabilities of each broad-phase algorithm. This structure can be retrieved by the *PxScene::getBroadPhaseCaps* function.
+
+Runtime information about current regions can be retrieved using the *PxScene::getNbBroadPhaseRegions* and *PxScene::getBroadPhaseRegions* functions.
+
+The maximum number of regions is currently limited to 256.
+
+====================
+Broad-phase Callback
+====================
+
+A callback for broad-phase-related events can be defined within the *PxSceneDesc* structure. This *PxBroadPhaseCallback* object will be called when objects are found out of the specified regions of interest, i.e. "out of bounds". The SDK disables collision detection for those objects. It is re-enabled automatically as soon as the objects re-enter a valid region.
+
+It is up to users to decide what to do with out-of-bounds objects. Typical options are:
+
+* delete the objects
+* let them continue their motion without collisions until they re-enter a valid region
+* artificially teleport them back to a valid place
+
+.. _collisionFiltering:
+
+===============================
+Collision Filtering
+===============================
+
+In almost all applications beyond the trivial, the need arises to exempt certain pairs of objects from interacting, or to configure the SDK collision detection behavior in a particular way for an interacting pair.  In the submarine sample, like indicated above, we need to be notified when the submarine touched a mine, or the chain of a mine, so that we can have them blow up.  The crab's AI also needs to know when crabs touch the heightfield.
+
+Before we can understand what the sample does to achieve this, we need to understand the possibilities of the SDK filtering system.  Because filtering potentially interacting pairs happens in the deepest parts of the simulation engine, and needs to be applied to all pairs of objects that come near each other, it is particularly performance sensitive.  The simplest way to implement it would be to always call a callback function to each potentially interacting pair, where the application, based on the two object pointers could determine, using some custom logic -- like consulting its world data base -- whether the pair should interact.  Unfortunately this quickly becomes too slow if done for a very large game world, especially if the collision detection processing happens on a remote processor like the GPU or an other kind of vector processor with local memory, which would have to suspend its parallel computations, interrupt the main processor that runs game code, and have it execute the callback before it can continue.  Even if it were to be executed on a CPU, it would likely be done so simultaneously on multiple cores or hyperthreads, and thread safe code would have to be put in place to make sure that concurrent access to shared data is safe.  Far better is to use some kind of fixed function logic that can execute on the remote processor.  This is what we did in PhysX 2.x -- unfortunately the simple group based filtering rules we provided were not flexible enough to cover all applications.  In 3.0, we introduce both a shader system, which lets the developer implement an arbitrary system of rules using code that runs on the vector processor (and is therefore not able to access any eventual game data base in main memory), which is more flexible than 2.x fixed function filtering, but just as efficient, and a totally flexible callback mechanism where the filter shader calls a CPU callback function that is able to access any application data, at the cost of performance -- see PxSimulationFilterCallback for details.  The best part is that an application can decide on a per-pair basis to make this speed vs. flexibility trade-off.
+
+Let us look at the shader system first:  Here is the filter shader implemented by SampleSubmarine::
+
+    PxFilterFlags SampleSubmarineFilterShader(
+        PxFilterObjectAttributes attributes0, PxFilterData filterData0, 
+        PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+        PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+    {
+        // let triggers through
+        if(PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+        {
+            pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+            return PxFilterFlag::eDEFAULT;
+        }
+        // generate contacts for all that were not filtered above
+        pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+        // trigger the contact callback for pairs (A,B) where 
+        // the filtermask of A contains the ID of B and vice versa.
+        if((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+            pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+        
+        return PxFilterFlag::eDEFAULT;
+    }
+
+SampleSubmarineFilterShader is a simple shader function that is an implementation of the PxSimulationFilterShader prototype declared in PxFiltering.h.  The shader filter function (called SampleSubmarineFilterShader above) may not reference any memory other than arguments of the function and its own local stack variables -- because the function may be compiled and executed on a remote processor.  
+
+SampleSubmarineFilterShader() will be called for all pairs of shapes that come near each other -- more precisely:  for all pairs of shapes whose axis aligned bounding boxes in world space are found to intersect for the first time.  All behavior beyond that is determined by what SampleSubmarineFilterShader() returns.
+
+The arguments of SampleSubmarineFilterShader() include PxFilterObjectAttributes and PxFilterData for the two objects, and a constant block of memory.  Note that the pointers to the two objects are NOT passed, because those pointers refer to the computer's main memory, and that may, as we said, not be available to the shader, so the pointers would not be very useful, as dereferencing them would likely cause a crash.  PxFilterObjectAttributes and PxFilterData are intended to contain all the useful information that one could quickly glean from the pointers.  PxFilterObjectAttributes are 32 bits of data, that encode the type of object: For example PxFilterObjectType::eRIGID_STATIC or ::eRIGID_DYNAMIC.  Additionally, it lets you find out if the object is kinematic, or a trigger.  
+
+Each PxShape has a member variable of type PxFilterData.  This is 128 bits of user defined data that can be used to store application specific information related to collision filtering.  This is the other variable that is passed to SampleSubmarineFilterShader() for each object.
+
+There is also the constant block.  This is a chunk of per-scene global information that the application can give to the shader to operate on.  You will want to use this to encode rules about what to filter and what not.
+
+Finally, SampleSubmarineFilterShader() also has a PxPairFlags parameter.  This is an output, like the return value PxFilterFlags, though used slightly differently.  PxFilterFlags tells the SDK if it should ignore the pair for good (eKILL), ignore the pair while it is overlapping, but ask again, when filtering related data changes for one of the objects (eSUPPRESS), or call the low performance but more flexible CPU callback if the shader cannot decide (eCALLBACK).
+
+PxPairFlags specifies additional flags that stand for actions that the simulation should take in the future for this pair.  For example, eNOTIFY_TOUCH_FOUND means notify the user when the pair really starts to touch, not just potentially.
+
+
+Let us look at what the above shader does::  
+
+    // let triggers through
+    if(PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+    {
+        pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+        return PxFilterFlag::eDEFAULT;
+    }
+
+
+This means that if either object is a trigger, then perform default trigger behavior (notify the application about start and end of touch), and otherwise perform 'default' collision detection between them.
+::
+
+    // generate contacts for all that were not filtered above
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+    // trigger the contact callback for pairs (A,B) where 
+    // the filtermask of A contains the ID of B and vice versa.
+    if((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+    
+    return PxFilterFlag::eDEFAULT;
+
+
+This says that for all other objects, perform 'default' collision handling.  In addition, there is a rule based on the filterDatas that determines particular pairs where we ask for touch notifications.  To understand what this means, we need to know the special meaning that the sample gives to the filterDatas.
+
+The needs of the sample are very basic, so we will use a very simple scheme to take care of it.  The sample first gives named codes to the different object types using a custom enumeration::
+
+    struct FilterGroup
+    {
+        enum Enum
+        {
+            eSUBMARINE     = (1 << 0),
+            eMINE_HEAD     = (1 << 1),
+            eMINE_LINK     = (1 << 2),
+            eCRAB          = (1 << 3),
+            eHEIGHTFIELD   = (1 << 4),
+        };
+    };
+ 
+
+The sample identifies each shape's type by assigning its PxFilterData::word0 to this FilterGroup type.  Then, it puts a bit mask that specifies each type of object that should generate a report when touched by an object of type word0 into word1.  This could be done in the samples whenever a shape is created, but because shape creation is a bit encapsulated in SampleBase, it is done after the fact, using this function::
+
+
+    void setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask)
+    {
+        PxFilterData filterData;
+        filterData.word0 = filterGroup; // word0 = own ID
+        filterData.word1 = filterMask;  // word1 = ID mask to filter pairs that trigger a 
+                                        // contact callback;
+        const PxU32 numShapes = actor->getNbShapes();
+        PxShape** shapes = (PxShape**)SAMPLE_ALLOC(sizeof(PxShape*)*numShapes);
+        actor->getShapes(shapes, numShapes);
+        for(PxU32 i = 0; i < numShapes; i++)
+        {
+            PxShape* shape = shapes[i];
+            shape->setSimulationFilterData(filterData);
+        }
+        SAMPLE_FREE(shapes);
+    }
+     
+This sets up the PxFilterDatas of each shape belonging to the passed actor.  Here are some examples how this is used in SampleSubmarine::
+
+    setupFiltering(mSubmarineActor, FilterGroup::eSUBMARINE, FilterGroup::eMINE_HEAD | 
+        FilterGroup::eMINE_LINK);
+    setupFiltering(link, FilterGroup::eMINE_LINK, FilterGroup::eSUBMARINE);
+    setupFiltering(mineHead, FilterGroup::eMINE_HEAD, FilterGroup::eSUBMARINE);
+
+    setupFiltering(heightField, FilterGroup::eHEIGHTFIELD, FilterGroup::eCRAB);
+    setupFiltering(mCrabBody, FilterGroup::eCRAB, FilterGroup::eHEIGHTFIELD);
+
+This scheme is probably too simplistic to use in a serious application, but it shows the basic usage of the filter shader, and it will ensure that SampleSubmarine::onContact() is called for all interesting pairs.
+
+An alternative group based filtering mechanism is provided with source in the extensions function PxDefaultSimulationFilterShader.  And, again, if this shader based system is too inflexible, consider using the callback approach provided with PxSimulationFilterCallback.
+
+
+===============================
+Aggregates
+===============================
+
+An aggregate is a collection of actors. Aggregates do not provide extra simulation or query features, but allow you to tell the SDK that a set of actors will be clustered together, which in turn allows the SDK to optimize its spatial data operations. A typical use case is a ragdoll, made of multiple different actors. Without aggregates, this gives rise to as many broad-phase entries as there are shapes in the ragdoll. It is typically more efficient to represent the ragdoll in the broad-phase as a single entity, and perform internal overlap tests in a second pass if necessary.  Another potential use case is a single actor with a large number of attached shapes.
+
+==============================
+Creating an Aggregate
+==============================
+
+Create an aggregate from the *PxPhysics* object::
+
+    PxPhysics* physics; // The physics SDK object
+
+    PxU32 nbActors;     // Max number of actors expected in the aggregate
+    bool selfCollisions = true;
+
+	PxAggregateFilterHint hint = PxGetAggregateFilterHint(PxAggregateType::eGENERIC, selfCollisions);
+
+    PxAggregate* aggregate = physics->createAggregate(nbActors, hint);
+
+If you will never need internal collisions between the actors of the aggregate, disable them at creation time with the selfCollision flag. This is much more efficient than using the scene filtering mechanism, as it bypasses all internal filtering logic.
+
+Aggregates containing only static or kinematic actors should ideally be created with PxAggregateType::eSTATIC or PxAggregateType::eKINEMATIC. This makes filtering faster, especially when combined with PxPairFilteringMode::eKILL for static-vs-kinematic or kinematic-vs-kinematic pairs.
+
+It is not allowed to enable self collisions on PxAggregateType::eSTATIC aggregates. Both the maximum number of actors and the filtering attributes are immutable.
+
+====================================
+Populating an Aggregate
+====================================
+
+Adds an actor to an aggregate as follows::
+
+    PxActor& actor;    // Some actor, previously created
+    aggregate->addActor(actor);
+
+Note that if the actor already belongs to a scene, the call is ignored. Either add the actors to an aggregate and then add the aggregate to the scene, or add the aggregate to the scene and then the actors to the aggregate. 
+
+To add the aggregate to a scene (before or after populating it)::
+
+    scene->addAggregate(*aggregate);
+
+Similarly, to remove the aggregate from the scene::
+
+    scene->removeAggregate(*aggregate);
+
+===============================
+Releasing an Aggregate
+===============================
+
+To release an aggregate::
+
+    PxAggregate* aggregate;    // The aggregate we previously created
+    aggregate->release();
+
+Releasing the PxAggregate does not release the aggregated actors. If the PxAggregate belongs to a scene, the actors are automatically re-inserted in that scene. If you intend to delete both the PxAggregate and its actors, it is most efficient to release the actors first, then release the PxAggregate when it is empty.
+
+===============================================================
+Amortizing Insertion
+===============================================================
+
+Adding many objects to a scene in one frame can be a costly operation. This can be the case for a ragdoll, which as discussed is a good candidate for PxAggregate. Another case is localized debris, for which self-collisions are often disabled. To amortize the cost of object insertion into the broad-phase structure over several, spawn the debris in a PxAggregate, then remove each actor from the aggregate and and re-insert it into the scene over those frames.
+
+===============
+Trigger Shapes
+===============
+
+Trigger shapes play no part in the simulation of the scene (though they can be configured to participate in scene queries).  Instead, their role is to report that there has been an overlap with another shape.  Contacts are not generated for the intersection, and as a result contact reports are not available for trigger shapes.  Further, because triggers play no part in the simulation, the SDK will not allow the the eSIMULATION_SHAPE eTRIGGER_SHAPE flags to be raised simultaneously; that is, if one flag is raised then attempts to raise the other will be rejected, and an error will be passed to the error stream.
+
+Trigger shapes have been used in SampleSubmarine to determine if the submarine has reached the treasure.  In the following code the PxActor representing the treasure has its solitary shape configured as a trigger shapes::
+
+    PxShape* treasureShape;
+    gTreasureActor->getShapes(&treasureShape, 1);
+    treasureShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+    treasureShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+        
+The overlaps with trigger shapes are reported in SampleSubmarine through the implementation of PxSimulationEventCallback::onTrigger in the PxSampleSubmarine class, a sub-class of PxSimulationEventCallback::
+
+    void SampleSubmarine::onTrigger(PxTriggerPair* pairs, PxU32 count)
+    {
+        for(PxU32 i=0; i < count; i++)
+        {
+            // ignore pairs when shapes have been deleted
+            if (pairs[i].flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | 
+                PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
+                continue;
+
+            if ((&pairs[i].otherShape->getActor() == mSubmarineActor) && 
+                (&pairs[i].triggerShape->getActor() == gTreasureActor))
+            {
+                gTreasureFound = true;
+            }
+        }
+    }
+    
+The code above iterates through all pairs of overlapping shapes that involve a trigger shape.  If it is found that the treasure has been touched by the submarine then the flag gTreasureFound is set true.
+
+====================
+Interactions
+====================
+
+The SDK internally creates an interaction object for each overlapping pair reported by the broad-phase. These objects are not only created for pairs of colliding rigid bodies, but also for pairs of overlapping triggers. Generally speaking users should assume that such objects are created regardless of the involved objects' types (rigid body, trigger, etc) and regardless of involved *PxFilterFlag* flags.
+
+There is currently a limit of 65535 such interaction objects for each actor. If more than 65535 interactions involve the same actor, then the SDK outputs an error message and the extra interactions are ignored.
+

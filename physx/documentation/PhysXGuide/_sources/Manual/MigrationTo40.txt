@@ -1,0 +1,115 @@
+.. include:: <isonum.txt>
+
+.. _migrationTo40:
+
+----------------------------------------------------
+Migrating From PhysX SDK 3.4 to 4.0
+----------------------------------------------------
+
+* This guide highlights all significant parts of the API that have changed in the last dot release.  An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.
+
+===============
+Deprecated APIs
+===============
+
+Newly deprecated APIs are:
+
+* The PxD6Joint::getTwist() function has been deprecated. Please use PxD6Joint::getTwistAngle() now.
+* The PxD6Joint::setLinearLimit() and PxD6Joint::getLinearLimit() functions have been deprecated. Please use PxD6Joint::setDistanceLimit() and PxD6Joint::getDistanceLimit() now.
+
+
+=====================================================
+PhysX particles
+=====================================================
+
+The PhysX particle feature has been removed from PhysX version 4. The standalone library PhysX FleX is an alternative with a richer feature set.
+
+=====================================================
+PhysX clothing
+=====================================================
+
+The PhysX clothing feature has been removed from PhysX version 4. Please use the standalone library NvCloth instead.
+
+=====================================================
+PhysX distribution
+=====================================================
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+CMake build
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+PhysX is now distributed without pre-built build configuration files (e.g. Microsoft Visual Studio project and solutions or makefiles). The build configuration files are now exclusively generated with CMake, which needs to be pre-installed along with Python.
+
+* CMake minimum version 3.12
+* Python minimum version 2.7.6
+
+In order to build the PhysX SDK, Snippets and Samples (Windows only) the **generate_projects** script in the *physx/* directory of the PhysX distribution needs to be run. The script accepts a [tool/platform] **preset** either from prompt or as a command line parameter and generates the corresponding build configuration files in *physx/compiler/*.
+
+The new PhysX SDK 4.0 build produces libs and binaries with different output paths and names compared to PhysX SDK 3.4. For example:
+
+* Lib/vc14win64/PhysX3CHECKED_x64.lib |rarr| bin/win.x86_64.vc140.mt/checked/PhysX_64.lib
+* Bin/vc14win64/PhysX3CHECKED_x64.dll |rarr| bin/win.x86_64.vc140.mt/checked/PhysX_64.dll
+
+If the application needs to use the old naming scheme, please refer to the documentation of PxDelayLoadHook and PxGpuLoadHook.
+
+The Linux build has been changed to produce static opposed to shared libraries. The compiler was switched from GCC to Clang.
+
+The naming convention for directories has changed in the PhysX SDK 4.0. Instead of camel-casing, source and include directories are now named in all-lower-case.
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+PxShared
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+The PxShared library contains functionality shared beyond the PhysX SDK. For PhysX 4.0 it has been streamlined to a minimal set of headers. 
+
+* The PxFoundation singleton has been moved back to the PhysX SDK. PxFoundationVersion.h and PX_FOUNDATION_VERSION has been removed. PxCreateFoundation takes now PX_PHYSICS_VERSION as a parameter. Foundation dependent profiling macros (PX_PROFILE_ZONE, PX_PROFILE_START_CROSSTHREAD, PX_PROFILE_STOP_CROSSTHREAD) have been moved to physx/include/common/PxProfileZone.h. The foundation library binary has been renamed from PxFoundation[config]_[x64|x86] to [config]/PhysXFoundation_[64|32].
+
+* The PxTask library has been moved back to the PhysX SDK.
+
+* The PxCudaContextManager interface has been moved to physx/include/cudamanager.
+
+* The PxPvdSDK library has been moved to the PhysX SDK. On Windows and Linux it has been changed from a dynamic to a static linked library.
+
+=====================================================
+Core PhysX
+=====================================================
+
+* The active transforms feature (PxActiveTransform, PxScene::getActiveTransforms, PxSceneFlag::eENABLE_ACTIVETRANSFORMS) has been removed from PhysX version 4. Please use the active actors feature instead.
+* The PxRigidActor::createShape() function has been removed. Please use PxRigidActorExt::createExclusiveShape() instead.
+* The PxVisualizationParameter::eDEPRECATED_BODY_JOINT_GROUPS parameter has been removed. It was not implemented and had no effect.
+* The PxSceneDesc::maxNbObjectsPerRegion has been removed. It was not implemented and had no effect.
+* The PxHitFlag::eDISTANCE flag has been removed. The distance was always computed with or without the flag.
+* Switching a kinematic object to dynamic does not automatically wake up the object anymore. Explicit calls to *PxRigidDynamic::wakeUp()* are now needed.
+* Switching a kinematic object to dynamic re-inserts the object into the broadphase, producing PxPairFlag::eNOTIFY_TOUCH_FOUND events instead of PxPairFlag::eNOTIFY_TOUCH_PERSISTS events.
+* The PxSceneFlag::eSUPPRESS_EAGER_SCENE_QUERY_REFIT has been replaced by PxSceneQueryUpdateMode::enum. Please use PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED instead.
+* PxGetGaussMapVertexLimitForPlatform has been replaced with PxCookingParams::gaussMapLimit.
+* PxBroadPhaseType::eABP is now the default broadphase, which might affect the performance of your application when upgrading. To select the previous default broadphase, use PxBroadPhaseType::eSAP explicitly in PxSceneDesc.
+* PxTolerancesScale::mass got removed because it was not used anymore internally. Simply remove the corresponding setup code from your application.
+* The multi-client feature has changed, in particular the client behavior flags are gone. Users must now implement the desired behaviors in their application. The PxClient values are still supported and stored in PhysX actors. The desired behavior and filtering can then be implemented by users directly in their callbacks, based on client IDs retrieved from provided actors.
+* The legacy heightfields have been removed. What was previously called "unified heightfields" is now the only available implementation. Heightfields are handled as triangle meshes, so fast moving objects can now tunnel through the heightfield surface if continuous collision detection (CCD) is not used. Use CCD to solve this issue.
+* PxCookingParams::meshCookingHint and PxCookingParams::meshSizePerformanceTradeOff have been moved to the PxBVH33MidphaseDesc structure. These parameters only affect the BVH33 structures.
+* PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS has been removed. It is recommended to use a trigger and a non-trigger shape, both with the same geometry and local pose, to emulate getting notifications for overlaps between trigger shapes.
+* PxConvexMeshCookingType::eINFLATION_INCREMENTAL_HULL and PxCookingParams::skinWidth have been removed. Please use the regular PxShape::setRestOffset.
+* PxBVH34MidphaseDesc::numTrisPerLeaf has been renamed to PxBVH34MidphaseDesc::numPrimsPerLeaf
+* PxFoundationDelayLoadHook has been merged into PxDelayLoadHook. The per build configuration callbacks for PxDelayLoadHook and PxGpuLoadHook have been removed. The application provided implementations of PxDelayLoadHook::getPhysXFoundationDllName, PxDelayLoadHook::getPhysXCommonDllName and PxGpuLoadHook::getPhysXGpuDllName now need to provide the correct DLL paths/names based on the application build configurations.
+* A common base class for PxArticulation and PxArticulationReducedCoordinate was introduced: PxArticulationBase. This class encapsulates common functionality between both articulation implementations. API interfaces previously taking/returning a PxArticulation will now take/return PxArticulationBase. The user must statically up-cast to the correct type if non-common functionality is required.
+* A common base class for PxArticulationJoint and PxArticulationJointReducedCoordinate was introduced: PxArticulationJointBase. This class encapsulates common functionality between both reduced and legacy articulations. API interfaces previously taking/return a PxArticulationJoint will now take/return PxArticulationJointBase. The user must statically up-cast to the correct type if implementation-specific functionality is required.
+* Getting/setting linear damping, angular damping and max angular velocity has been migrated from PxRigidDynamic to PxRigidBody to permit usage of these methods with the new reduced coordinate articulations.
+
+=====================================================
+PhysX Extensions
+=====================================================
+
+* The PxD6Joint::getTwist() function has been deprecated. Please use PxD6Joint::getTwistAngle() now.
+* The PxD6Joint::setLinearLimit() and PxD6Joint::getLinearLimit() functions have been deprecated. Please use PxD6Joint::setDistanceLimit() and PxD6Joint::getDistanceLimit() now.
+* PxComputeHeightFieldPenetration has a new signature.
+* PxComputeMeshPenetration has been removed. Use PxComputeTriangleMeshPenetration instead.
+
+.. _migration_4_0_core_phsx:
+
+
+
+
+
+
+

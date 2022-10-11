@@ -1,0 +1,26 @@
+<map id="PxConstraintDesc.h" name="PxConstraintDesc.h">
+<area shape="rect" id="node2" href="$PxSolverDefs_8h.html" title="PxSolverDefs.h" alt="" coords="169,251,280,278"/>
+<area shape="rect" id="node4" href="$PxPhysicsAPI_8h.html" title="PxPhysicsAPI.h" alt="" coords="1071,497,1188,524"/>
+<area shape="rect" id="node8" href="$PxConstraint_8h.html" title="PxConstraint.h" alt="" coords="1305,80,1413,107"/>
+<area shape="rect" id="node21" href="$PxVehiclePhysXConstraintStates_8h.html" title="PxVehiclePhysXConstraint\lStates.h" alt="" coords="1389,155,1566,196"/>
+<area shape="rect" id="node3" href="$PxArticulationJointReducedCoordinate_8h.html" title="PxArticulationJointReduced\lCoordinate.h" alt="" coords="500,408,682,449"/>
+<area shape="rect" id="node5" href="$PxArticulationReducedCoordinate_8h.html" title="PxArticulationReducedCoordinate.h" alt="" coords="71,415,298,442"/>
+<area shape="rect" id="node6" href="$PxImmediateMode_8h.html" title="PxImmediateMode.h" alt="" coords="18,497,159,524"/>
+<area shape="rect" id="node7" href="$PxArticulationTendon_8h.html" title="PxArticulationTendon.h" alt="" coords="30,333,186,360"/>
+<area shape="rect" id="node9" href="$PxJoint_8h.html" title="PxJoint.h" alt="" coords="789,162,865,189"/>
+<area shape="rect" id="node10" href="$PxContactJoint_8h.html" title="PxContactJoint.h" alt="" coords="990,333,1112,360"/>
+<area shape="rect" id="node12" href="$PxD6Joint_8h.html" title="PxD6Joint.h" alt="" coords="822,333,914,360"/>
+<area shape="rect" id="node13" href="$PxDistanceJoint_8h.html" title="PxDistanceJoint.h" alt="" coords="1136,333,1262,360"/>
+<area shape="rect" id="node14" href="$PxFixedJoint_8h.html" title="PxFixedJoint.h" alt="" coords="1194,251,1302,278"/>
+<area shape="rect" id="node15" href="$PxGearJoint_8h.html" title="PxGearJoint.h" alt="" coords="315,251,419,278"/>
+<area shape="rect" id="node16" href="$PxJointLimit_8h.html" title="PxJointLimit.h" alt="" coords="635,251,739,278"/>
+<area shape="rect" id="node17" href="$PxPrismaticJoint_8h.html" title="PxPrismaticJoint.h" alt="" coords="363,333,494,360"/>
+<area shape="rect" id="node18" href="$PxRevoluteJoint_8h.html" title="PxRevoluteJoint.h" alt="" coords="518,333,643,360"/>
+<area shape="rect" id="node19" href="$PxSphericalJoint_8h.html" title="PxSphericalJoint.h" alt="" coords="667,333,798,360"/>
+<area shape="rect" id="node20" href="$PxRackAndPinionJoint_8h.html" title="PxRackAndPinionJoint.h" alt="" coords="864,251,1030,278"/>
+<area shape="rect" id="node11" href="$PxExtensionsAPI_8h.html" title="PxExtensionsAPI.h" alt="" coords="842,415,977,442"/>
+<area shape="rect" id="node22" href="$PxVehicleAPI_8h.html" title="PxVehicleAPI.h" alt="" coords="1396,415,1509,442"/>
+<area shape="rect" id="node23" href="$PxVehiclePhysXConstraintComponents_8h.html" title="PxVehiclePhysXConstraint\lComponents.h" alt="" coords="1634,244,1812,285"/>
+<area shape="rect" id="node24" href="$PxVehiclePvdFunctions_8h.html" title="PxVehiclePvdFunctions.h" alt="" coords="1439,251,1610,278"/>
+<area shape="rect" id="node25" href="$PxVehiclePvdComponents_8h.html" title="PxVehiclePvdComponents.h" alt="" coords="1490,333,1676,360"/>
+</map>

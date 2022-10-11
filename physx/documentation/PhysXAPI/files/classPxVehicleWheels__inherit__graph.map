@@ -1,0 +1,8 @@
+<map id="PxVehicleWheels" name="PxVehicleWheels">
+<area shape="rect" id="node3" href="$classPxVehicleDrive.html" title="A complete vehicle with instance dynamics data and configuration data for wheels and engine..." alt="" coords="170,155,279,181"/>
+<area shape="rect" id="node7" href="$classPxVehicleNoDrive.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with no drive model..." alt="" coords="303,155,429,181"/>
+<area shape="rect" id="node2" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="261,5,329,32"/>
+<area shape="rect" id="node4" href="$classPxVehicleDrive4W.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with up to 4 driven w..." alt="" coords="5,229,135,256"/>
+<area shape="rect" id="node5" href="$classPxVehicleDriveNW.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with up to PX_MAX_NB_..." alt="" coords="159,229,290,256"/>
+<area shape="rect" id="node6" href="$classPxVehicleDriveTank.html" title="Data structure with instanced dynamics data and configuration data of a tank. " alt="" coords="315,229,452,256"/>
+</map>

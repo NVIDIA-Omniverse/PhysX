@@ -1,0 +1,11 @@
+<map id="PxVehiclePhysXRoadGeometryQueryState" name="PxVehiclePhysXRoadGeometryQueryState">
+<area shape="rect" id="node2" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="5,337,104,364"/>
+<area shape="rect" id="node3" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="21,236,91,263"/>
+<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="54,109,122,136"/>
+<area shape="rect" id="node8" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="97,185,202,212"/>
+<area shape="rect" id="node5" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="11,5,165,47"/>
+<area shape="rect" id="node6" href="$classPxMaterial.html" title="Material class to represent a set of surface properties. " alt="" coords="111,388,195,415"/>
+<area shape="rect" id="node7" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="92,287,207,313"/>
+<area shape="rect" id="node10" href="$classPxShape.html" title="Abstract class for collision shapes. " alt="" coords="207,337,281,364"/>
+<area shape="rect" id="node9" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="308,388,431,415"/>
+</map>

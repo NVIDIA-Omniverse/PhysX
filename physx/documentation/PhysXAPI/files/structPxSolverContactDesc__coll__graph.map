@@ -1,0 +1,13 @@
+<map id="PxSolverContactDesc" name="PxSolverContactDesc">
+<area shape="rect" id="node2" href="$structPxSolverConstraintPrepDescBase.html" title="Data structure used for preparing constraints before solving them. " alt="" coords="904,169,1123,196"/>
+<area shape="rect" id="node3" href="$structPxSolverConstraintDesc.html" title="Constraint descriptor used inside the solver. " alt="" coords="594,196,757,223"/>
+<area shape="rect" id="node4" href="$structPxSolverBody.html" title="Struct that the solver uses to store velocity updates for a body. " alt="" coords="289,104,392,131"/>
+<area shape="rect" id="node5" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="5,216,128,243"/>
+<area shape="rect" id="node6" href="$structPxTGSSolverBodyVel.html" title="PxTGSSolverBodyVel" alt="" coords="267,171,415,197"/>
+<area shape="rect" id="node8" href="$structPxSolverBodyData.html" title="Struct that the solver uses to store the state and other properties of a body. " alt="" coords="610,263,741,289"/>
+<area shape="rect" id="node9" href="$classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="265,357,416,384"/>
+<area shape="rect" id="node11" href="$classPxMat33T.html" title="PxMat33T\&lt; float \&gt;" alt="" coords="276,300,405,327"/>
+<area shape="rect" id="node12" href="$structGu_1_1ContactPoint.html" title="Gu::ContactPoint" alt="" coords="440,24,563,51"/>
+<area shape="rect" id="node7" href="$structPxConstraintInvMassScale.html" title="Struct for specifying mass scaling for a pair of rigids. " alt="" coords="587,145,764,172"/>
+<area shape="rect" id="node10" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="6,392,127,419"/>
+</map>

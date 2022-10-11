@@ -1,0 +1,18 @@
+<map id="PxUserAllocated" name="PxUserAllocated">
+<area shape="rect" id="node2" href="$classExtGpu_1_1PxKernelWrangler.html" title="ExtGpu::PxKernelWrangler" alt="" coords="196,5,375,32"/>
+<area shape="rect" id="node3" href="$classExtGpu_1_1PxParticleAttachmentBuffer.html" title="Holds user&#45;defined attachment data to attach particles to other bodies. " alt="" coords="185,57,386,98"/>
+<area shape="rect" id="node4" href="$classphysx_1_1PxPoolBase.html" title="physx::PxPoolBase\&lt;\l T, Alloc \&gt;" alt="" coords="213,122,358,163"/>
+<area shape="rect" id="node7" href="$classPxBitMapBase.html" title="PxBitMapBase\&lt; PxAllocator \&gt;" alt="" coords="185,188,385,215"/>
+<area shape="rect" id="node8" href="$classPxCollisionMeshMappingData.html" title="Contains information about how to update the collision mesh&#39;s vertices given a deformed simulation te..." alt="" coords="188,239,383,265"/>
+<area shape="rect" id="node9" href="$classPxCollisionTetrahedronMeshData.html" title="Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData. " alt="" coords="178,289,393,316"/>
+<area shape="rect" id="node10" href="$classPxPoissonSampler.html" title="Sampler to generate Poisson Samples locally on a triangle mesh or a shape. For every local addition o..." alt="" coords="219,340,352,367"/>
+<area shape="rect" id="node12" href="$classPxSimulationTetrahedronMeshData.html" title="Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData. " alt="" coords="172,391,399,417"/>
+<area shape="rect" id="node13" href="$classPxSocket.html" title="PxSocket" alt="" coords="246,441,325,468"/>
+<area shape="rect" id="node14" href="$classPxSoftBodyCollisionData.html" title="Stores data to accelerate collision detection of a tetrahedral mesh. " alt="" coords="202,492,369,519"/>
+<area shape="rect" id="node15" href="$classPxSoftBodySimulationData.html" title="Stores data to compute and store the state of a deformed tetrahedral mesh. " alt="" coords="196,543,375,569"/>
+<area shape="rect" id="node16" href="$classPxTetrahedronMeshData.html" title="Contains raw geometry information describing the tetmesh&#39;s vertices and its elements (tetrahedra) ..." alt="" coords="203,593,368,620"/>
+<area shape="rect" id="node17" href="$classPxThreadT.html" title="PxThreadT\&lt; Alloc \&gt;" alt="" coords="217,644,354,671"/>
+<area shape="rect" id="node5" href="$classphysx_1_1PxPool.html" title="physx::PxPool\&lt; T, Alloc \&gt;" alt="" coords="465,100,639,127"/>
+<area shape="rect" id="node6" href="$classphysx_1_1PxPool2.html" title="physx::PxPool2\&lt; T,\l Alloc \&gt;" alt="" coords="483,151,621,193"/>
+<area shape="rect" id="node11" href="$classPxTriangleMeshPoissonSampler.html" title="Sampler to generate Poisson Samples on a triangle mesh. " alt="" coords="447,340,657,367"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="PxFEMClothMaterial" name="PxFEMClothMaterial">
+<area shape="rect" id="node2" href="$classPxFEMMaterial.html" title="Material class to represent a set of FEM material properties. " alt="" coords="26,337,138,364"/>
+<area shape="rect" id="node3" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="25,261,139,288"/>
+<area shape="rect" id="node4" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="29,185,135,212"/>
+<area shape="rect" id="node5" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="48,109,116,136"/>
+<area shape="rect" id="node6" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,159,47"/>
+</map>

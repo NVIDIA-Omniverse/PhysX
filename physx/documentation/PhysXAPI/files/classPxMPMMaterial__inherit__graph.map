@@ -1,0 +1,6 @@
+<map id="PxMPMMaterial" name="PxMPMMaterial">
+<area shape="rect" id="node2" href="$classPxParticleMaterial.html" title="Material class to represent a set of particle material properties. " alt="" coords="5,229,133,256"/>
+<area shape="rect" id="node3" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="12,155,127,181"/>
+<area shape="rect" id="node4" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="17,80,122,107"/>
+<area shape="rect" id="node5" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="35,5,103,32"/>
+</map>

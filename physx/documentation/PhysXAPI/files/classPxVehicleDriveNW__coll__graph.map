@@ -1,0 +1,23 @@
+<map id="PxVehicleDriveNW" name="PxVehicleDriveNW">
+<area shape="rect" id="node2" href="$classPxVehicleDrive.html" title="A complete vehicle with instance dynamics data and configuration data for wheels and engine..." alt="" coords="1764,179,1873,205"/>
+<area shape="rect" id="node3" href="$classPxVehicleWheels.html" title="Data structure with instanced dynamics data and configuration data of a vehicle with just wheels..." alt="" coords="1429,93,1554,120"/>
+<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="284,13,352,40"/>
+<area shape="rect" id="node12" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="401,43,471,69"/>
+<area shape="rect" id="node5" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,6,159,47"/>
+<area shape="rect" id="node6" href="$classPxVehicleWheelsSimData.html" title="Data structure describing configuration data of a vehicle with up to 20 wheels. " alt="" coords="1064,93,1239,120"/>
+<area shape="rect" id="node7" href="$classPxVehicleTireLoadFilterData.html" title="Tire load variation can be strongly dependent on the time&#45;step so it is a good idea to filter it to g..." alt="" coords="680,93,867,120"/>
+<area shape="rect" id="node8" href="$classPxVehicleAntiRollBarData.html" title="PxVehicleAntiRollBarData" alt="" coords="687,144,860,171"/>
+<area shape="rect" id="node9" href="$classPxRigidDynamic.html" title="PxRigidDynamic represents a dynamic rigid simulation object in the physics SDK. " alt="" coords="1092,43,1211,69"/>
+<area shape="rect" id="node10" href="$classPxRigidBody.html" title="PxRigidBody is a base class shared between dynamic rigid body objects. " alt="" coords="725,43,822,69"/>
+<area shape="rect" id="node11" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="520,43,619,69"/>
+<area shape="rect" id="node13" href="$classPxVehicleWheelsDynData.html" title="Data structure with instanced dynamics data for wheels. " alt="" coords="1064,144,1239,171"/>
+<area shape="rect" id="node14" href="$classPxVehicleDriveDynData.html" title="Data structure with instanced dynamics data for vehicle with engine, clutch, gears, autobox. " alt="" coords="1412,179,1571,205"/>
+<area shape="rect" id="node15" href="$classPxVehicleDriveSimDataNW.html" title="Data structure describing configuration data of a vehicle with up to PX_MAX_NB_WHEELS driven equally ..." alt="" coords="1728,245,1909,272"/>
+<area shape="rect" id="node16" href="$classPxVehicleDriveSimData.html" title="Data structure describing non&#45;wheel configuration data of a vehicle that has engine, gears, clutch, and auto&#45;box. " alt="" coords="1412,245,1571,272"/>
+<area shape="rect" id="node17" href="$classPxVehicleGearsData.html" title="PxVehicleGearsData" alt="" coords="1080,195,1223,221"/>
+<area shape="rect" id="node18" href="$classPxVehicleClutchData.html" title="PxVehicleClutchData" alt="" coords="1079,245,1224,272"/>
+<area shape="rect" id="node19" href="$classPxVehicleEngineData.html" title="PxVehicleEngineData" alt="" coords="1077,296,1225,323"/>
+<area shape="rect" id="node20" href="$classPxFixedSizeLookupTable.html" title="PxFixedSizeLookupTable\l\&lt; eMAX_NB_ENGINE_TORQUE\l_CURVE_ENTRIES \&gt;" alt="" coords="668,281,879,337"/>
+<area shape="rect" id="node21" href="$classPxVehicleAutoBoxData.html" title="PxVehicleAutoBoxData" alt="" coords="1072,347,1231,373"/>
+<area shape="rect" id="node22" href="$classPxVehicleDifferentialNWData.html" title="PxVehicleDifferentialNWData" alt="" coords="1396,296,1587,323"/>
+</map>

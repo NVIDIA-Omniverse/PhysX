@@ -1,0 +1,5 @@
+<map id="PxUserParticleBuffer" name="PxUserParticleBuffer">
+<area shape="rect" id="node2" href="$classPxUserParticleAndDiffuseBuffer.html" title="A user particle buffer used to simulate diffuse particles. " alt="" coords="5,80,176,121"/>
+<area shape="rect" id="node3" href="$classPxUserParticleClothBuffer.html" title="A user particle buffer used to simulate particle cloth. " alt="" coords="201,87,373,114"/>
+<area shape="rect" id="node4" href="$classPxUserParticleRigidBuffer.html" title="A user particle buffer used to simulate rigid bodies using shape matching with particles. " alt="" coords="397,87,568,114"/>
+</map>

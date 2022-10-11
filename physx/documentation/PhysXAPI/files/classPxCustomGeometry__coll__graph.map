@@ -1,0 +1,4 @@
+<map id="PxCustomGeometry" name="PxCustomGeometry">
+<area shape="rect" id="node2" href="$classPxGeometry.html" title="A geometry object. " alt="" coords="5,5,100,32"/>
+<area shape="rect" id="node3" href="$structPxCustomGeometry_1_1Callbacks.html" title="Custom geometry callbacks structure. User should inherit this and implement all pure virtual function..." alt="" coords="125,5,330,32"/>
+</map>

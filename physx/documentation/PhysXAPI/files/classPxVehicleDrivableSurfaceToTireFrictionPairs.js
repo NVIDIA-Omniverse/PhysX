@@ -1,0 +1,26 @@
+var classPxVehicleDrivableSurfaceToTireFrictionPairs =
+[
+    [ "eMAX_NB_SURFACE_TYPES", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#ad2f972309dec71bed2b79e452edb7e52ab2a1b700aec01af2e3ade75acf926d14", null ],
+    [ "PxVehicleDrivableSurfaceToTireFrictionPairs", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a6838139851fe46e93a55cc3fb4f55239", null ],
+    [ "~PxVehicleDrivableSurfaceToTireFrictionPairs", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#ab318b7ef23407bdf40ea05c367ef2b81", null ],
+    [ "allocate", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#aecff4e0404b9c0458f701754a9a7e1bb", null ],
+    [ "deserializeFromBinary", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a5dba5a7bbe35fd29a6543f24fe37937a", null ],
+    [ "getMaxNbSurfaceTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#ac65a01a9d10c6715a5efd28e111e9591", null ],
+    [ "getMaxNbTireTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#ad543419b49358cfbbeb06ca00d801bc9", null ],
+    [ "getSurfaceType", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a44c4d31e16c68c7824a4fbadad065c82", null ],
+    [ "getTypePairFriction", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a6d6bda30d7d079101e3c0c37862f2bff", null ],
+    [ "getTypePairFriction", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#aa99dac1f5420a07f0a9bf25f6cce1f80", null ],
+    [ "release", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a9068e2dae3d8693743da87a62e7ad918", null ],
+    [ "serializeToBinary", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a813c383dcd8c27618258cfb4b34b98be", null ],
+    [ "setTypePairFriction", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a23b36296b4be7a569f4e97e6849c1ad8", null ],
+    [ "setup", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a7104485ac201ef952d8b164982ac222f", null ],
+    [ "VehicleSurfaceTypeHashTable", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a7791ae023cfacd994421355401e4a54e", null ],
+    [ "mDrivableSurfaceMaterials", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a7c9886f9960190aad098e0b0249ba993", null ],
+    [ "mDrivableSurfaceTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#aca01890cbb1302d4710e3e689bb74cba", null ],
+    [ "mMaterialSerialIds", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a9d8ba062c4e1d6801c06431495994a44", null ],
+    [ "mMaxNbSurfaceTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a2d133e4f753dfff74bed7aad963b3254", null ],
+    [ "mMaxNbTireTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#ad4b247a10569533b5afd523f529c467c", null ],
+    [ "mNbSurfaceTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a0325991a3580bbfd04b57c01c03a6ab8", null ],
+    [ "mNbTireTypes", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a3994d4e6a4bad267c4c1fcaa54e571d1", null ],
+    [ "mPairs", "classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a16921de5c1ead922e0b2f68bfb43d95d", null ]
+];

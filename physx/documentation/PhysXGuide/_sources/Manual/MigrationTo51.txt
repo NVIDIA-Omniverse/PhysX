@@ -1,0 +1,944 @@
+.. include:: <isonum.txt>
+
+.. _migrationTo51:
+
+----------------------------------------------------
+Migrating From PhysX SDK 5.0 to 5.1
+----------------------------------------------------
+
+* This guide highlights all significant parts of the API that have changed in the last dot release.  An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.
+
+=====================================================
+Generic
+=====================================================
+
+The PxFlags::set() function is gone. Please use either PxFlags::raise() to set a single flag, or operator= to set all flags at once.
+
+PxBroadPhaseCaps::maxNbObjects is gone. It was unused and always set to zero.
+
+=====================================================
+Materials
+=====================================================
+
+PxMaterialFlag::eIMPROVED_PATCH_FRICTION is now enabled by default on all PxMaterial objects. This generally provides higher quality friction for no performance cost, so it is recommended to use this flag. For exact compatibility with the PhysX behavior of previous versions, disable that flag on your materials.
+
+=====================================================
+Cooking
+=====================================================
+
+PxPhysicsInsertionCallback is deprecated, renamed to PxInsertionCallback.
+
+=====================================================
+Shapes
+=====================================================
+
+The return type of the PxShape::getGeometry() function has changed. It previously returned a PxGeometryHolder object by value, it now returns a reference to a PxGeometry object. The change was made possible after the removal of the double-buffering layer. Most code should still compile after the change, but patterns like these ones would break::
+
+	shape->getGeometry().any()
+
+In most cases you can simply replace this with::
+
+	shape->getGeometry()
+
+In case the PxGeometryHolder class is really needed, you will now need to create one explicitly::
+
+	PxGeometryHolder geomHolder(shape->getGeometry());
+
+
+=====================================================
+Scene Queries
+=====================================================
+
+PxGeometryQuery::getWorldBounds() has been deprecated. Please use PxGeometryQuery::computeGeomBounds() instead.
+
+-------------------
+
+PxHitFlag::eMESH_ANY is deprecated, please use PxHitFlag::eANY_HIT instead. The name changed after the introduction of PxCustomGeometry, since a PxCustomGeometry can now be a sub-scene that would also benefit from the PxHitFlag::eANY_HIT flag. This flag is thus not limited to meshes anymore.
+
+-------------------
+
+The PxQueryHit structure does not contain the hit actor and shape pointers directly. As a result the PxQueryFilterCallback::postFilter() function has changed. The hit actor and hit shape are now passed as extra arguments to the function.
+
+Replace this::
+
+	virtual PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit)
+	{
+		PxRigidActor* hitActor = hit.actor;
+		PxShape* hitShape = hit.shape;
+		...
+	}
+
+With that::
+
+	virtual PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor)
+	{
+		PxRigidActor* hitActor = actor;
+		PxShape* hitShape = shape;
+		...
+	}
+
+-------------------
+
+Support for batched scene queries has been removed from the PhysX SDK and a replacement PxBatchQueryExt has been added to the extensions layer. The replacement PxBatchQueryExt aims to replicate the core functionality of PxBatchQuery.  The class PxBatchQueryExt wraps calls to PxScene::raycast(), PxScene::sweep() and PxScene::overlap() and consequently employs the same data types PxRaycastBuffer/PxSweepBuffer/PxOverlapBuffer and PxRaycastHit/PxSweepHit/PxOverlapHit.
+
+The following table illustrates the structs, classes, callback and functions that need to be replaced to migrate from PxBatchQuery to PxBatchQueryExt:
+
++--------------------------------+--------------------------------------------------------------+
+|5.0                             |5.1                                                           |
++--------------------------------+--------------------------------------------------------------+
+|PxBatchQuery                    |PxBatchQueryExt                                               |
++--------------------------------+--------------------------------------------------------------+
+|PxRaycastQueryResult            |PxRaycastBuffer                                               |
++--------------------------------+--------------------------------------------------------------+
+|PxSweepQueryResult              |PxSweepBuffer                                                 |
++--------------------------------+--------------------------------------------------------------+
+|PxOverlapQueryResult            |PxOverlapBuffer                                               |
++--------------------------------+--------------------------------------------------------------+
+|PxBatchQueryPreFilterShader     |PxQueryFilterCallback::preFilter()                            |   
++--------------------------------+--------------------------------------------------------------+
+|PxBatchQueryPostFilterShader    |PxQueryFilterCallback::postFilter()                           |
++--------------------------------+--------------------------------------------------------------+
+|PxBatchQueryResult::queryStatus |PxBatchQueryStatus::getStatus()                               |
++--------------------------------+--------------------------------------------------------------+
+|PxScene::createBatchQuery()     |PxCreateBatchQuery()                                          |
++--------------------------------+--------------------------------------------------------------+
+
+A PxBatchQueryExt instance is instantiated with a call to PxCreateBatchQuery().  As an example, the following code will generate a batch query able to perform up to 2 raycast queries with a total of 4 touches, 6 sweep queries with a total of 8 touches, and 10 overlap queries with 12 overlap touches::
+		
+	PxBachQueryExt* bq = PxCreateBatchQueryExt(getScene(), NULL, 2, 4, 6, 8, 10, 12);
+		
+An alternative is to provide the query and result buffers rather than ask PxCreateBatchQueryExt to allocate them::
+
+	PxRaycastBuffer raycasts[2];
+	PxRaycastHit raycastHits[4];
+	PxSweepBuffer sweeps[6];
+	PxSweepHit sweepHits[8];
+	PxOvelapBuffer overlaps[10];
+	PxOverlapHit overlapHits[12];
+	PxBatchQueryExt* bq = PxCreateBatchQueryExt(getScene(), NULL, raycasts, 2, raycastHits, 4, sweeps, 6, sweepHits, 8, overlaps, 10, overlapHits, 12);
+
+Each query returns a pointer to a corresponding PxRaycastBuffer/PxSweepBuffer/PxOverlapBuffer::
+
+	PxRaycastBuffer* result = bq->raycast(origin, unitDir, distance);
+	
+If query and result buffers are supplied to PxCreateBatchQueryExt() then each pointer returned corresponds to an element in the provided result buffer.  The third call to PxBatchQueryExt::sweep(), for example, will return &sweeps[2] in the example above.  A NULL pointer will be returned if the number of calls to a particular query exceeds the length of the allocated or provided buffer. For example, the 9th call to bq->sweep() will return a NULL ptr in the above example.
+
+After calling PxBatchQueryExt::execute() it is possible to determine if any individual query was unable to return all requested touches.  This can happen if the touch buffer, either allocated or provided, was too small for the batch.  This situation is an overflow and can be determined by calling PxBatchQueryStatus::getStatus()::
+
+	PxBatchQueryStatus::Enum status = PxBatchQueryStatus::getStatus(result);
+	bool overflow = (PxBatchQueryStatus::eOVERFLOW == status);
+
+
+=====================================================
+PxBVHStructure
+=====================================================
+
+PxBVHStructure has been renamed to PxBVH. PxBVHStructureDesc has been renamed to PxBVHDesc. PxCooking::cookBVHStructure() is deprecated. Please use PxCooking::cookBVH() now.
+
+The PxBVHStructure scene query functions have changed. The old API is deprecated::
+
+	virtual PxU32	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT rayHits) const = 0;
+	virtual PxU32	sweep(const PxBounds3& aabb, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT sweepHits) const = 0;
+	virtual PxU32	overlap(const PxBounds3& aabb, PxU32 maxHits, PxU32* PX_RESTRICT overlapHits) const = 0;
+
+A new API has been added::
+
+	virtual	bool	raycast(const PxVec3& origin, const PxVec3& unitDir, float distance, RaycastCallback& cb) const = 0;
+	virtual bool	sweep(const PxGeometry& geom, const PxTransform& pose, const PxVec3& unitDir, float distance, RaycastCallback& cb) const = 0;
+	virtual	bool	overlap(const PxGeometry& geom, const PxTransform& pose, OverlapCallback& cb) const = 0;
+
+It is recommended to switch to the new API.
+
+=====================================================
+GPU Rigid Bodies
+=====================================================
+
+Configuring GPU memory usage has been overhauled and simplified in PhysX 5.1. There are not direct 1:1 replacements for all previous configurable properties, as some buffer sizes are now derived either at runtime or from other configurable properties. Previous buffer sizes were defined in terms of bytes, whereas replacements are defined in terms of the number of elements.
+
+PxgDynamicsMemoryConfig::constraintBufferCapacity was removed. No equivalent replacement is provided. Buffer sizes controlled by this parameter are now computed dynamically.
+PxgDynamicsMemoryConfig::contactBufferCapacity and PxgDynamicsMemoryConfig::contactStreamSize have been removed. Instead, the user can adjust maxRigidContactCount to define the maximum number of contacts the simulation can accept.
+PxgDynamicsMemoryConfig::patchStreamSize has been removed. Instead, the user can adjust maxRigidPatchCount to define the maximum number of contact patches the simulation can accept.
+PxgDynamicsMemoryConfig::forceStreamCapacity has been removed. No equivalent replacement is provided as this can be derived from maxRigidContactCount.
+PxgDynamicsMemoryConfig::foundLostAggregatePairs and totalAggregatePairs fields were added. These control the maximum number of found/lost pairs that can be produced in a single frame and the maximum number of supported aggregate pairs respectively.
+
+=====================================================
+Character controller
+=====================================================
+
+The ObstacleHandle typedef has been renamed PxObstacleHandle. The INVALID_OBSTACLE_HANDLE define has been renamed PX_INVALID_OBSTACLE_HANDLE.
+
+=====================================================
+Vehicles
+=====================================================
+
+The Vehicle SDK has been deprecated and replaced with a new SDK with similar functionality but significantly different API. Many of the vehicle parameters, states and functions of the old Vehicle SDK are present in the new SDK albeit in a new form.  A mapping between the two shall now be presented.
+
+#########################################
+Parameters
+#########################################
+
+The data structures used to specify a vehicle and its simulation are quite different in 5.1. These changes shall now be presented.
+
+++++++++++++++++++++
+Engine
+++++++++++++++++++++
+
+The following table illustrates the mapping of engine parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mMOI                                      |PxVehicleEngineParams::moi                                    |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES       |PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES    |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mTorqueCurve                              |PxVehicleEngineParams::torqueCurve                            |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mPeakTorque                               |PxVehicleEngineParams::peakTorque                             |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mMaxOmega                                 |PxVehicleEngineParams::maxOmega                               |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mDampingRateFullThrottle                  |PxVehicleEngineParams::dampingRateFullThrottle                |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mDampingRateZeroThrottleClutchEngaged     |PxVehicleEngineParams::dampingRateZeroThrottleClutchEngaged   |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleEngineData::mDampingRateZeroThrottleClutchDisengaged  |PxVehicleEngineParams::dampingRateZeroThrottleClutchDisengaged|
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The PxVehicleEngineParams struct has a new parameter PxVehicleEngineParams::idleOmega, which governs the minimum rotation speed of the engine.  A value of 0.0  will replicate the behavior of the legacy Vehicle SDK.
+
+++++++++++++++++++++
+Gearbox
+++++++++++++++++++++
+
+The following table illustrates the mapping of gearbox parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleGearsData::mRatios                                    |PxVehicleGearboxParams::ratios                                |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleGearsData::mFinalRatio                                |PxVehicleGearboxParams::finalRatio                            |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleGearsData::mNbRatios                                  |PxVehicleGearboxParams::nbRatios                              |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleGearsData::mSwitchTime                                |PxVehicleGearboxParams::switchTime                            |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleGearsData::Enum                                       |Removed                                                       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The enumerated list of gears specified by PxVehicleGearsData::Enum does not have an equivalent in 5.1. A related change is the addition of a new parameter PxVehicleGearboxParams::neutralGear.  The original hard-coded enumerated list limited gearing to a single reverse gear.  Removing the enumerated list and adding a neutral gear specifier allows any number of reverse gears to be modelled.  To replicate legacy behavior with a single reverse gear, set PxVehicleGearboxParams::neutralGear to 1. With this configuration, gear 0 is the reverse gear, gear 1 is neutral gear and all other gears are forward gears. A general rule is that if there are N reverse gears then PxVehicleGearboxParams::neutralGear should be set to N.
+
+++++++++++++++++++++
+Autobox
+++++++++++++++++++++
+
+The following table illustrates the mapping of autobox parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAutoBoxData::mUpRatios                                |PxVehicleAutoboxParams::upRatios                              |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAutoBoxData::mDownRatios                              |PxVehicleAutoboxParams::downRatios                            |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAutoBoxData::setLatency()                             |PxVehicleAutoboxParams::latency                               |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAutoBoxData::getLatency()                             |PxVehicleAutoboxParams::latency                               |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+++++++++++++++++++++++++++++++++
+N-Wheel Drive Differential
+++++++++++++++++++++++++++++++++
+
+
+The following table illustrates the mapping of N-wheel differential parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferentialNWData::setDrivenWheel()                  |PxVehicleMultiWheelDriveDifferentialParams::isConnected       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferentialNWData::getIsDrivenWheel()                |PxVehicleMultiWheelDriveDifferentialParams::isConnected       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The class PxVehicleDifferentialNWData permitted only an equal split of torque between all wheels connected to the differential.  It also weighted each connected wheel equally when computing the contribution of each wheel's rotational speed to the rotational speed at the wheel-side clutch plate. This has been generalised to allow any conservative split of torque between the wheels connected to the differential. It has been further generalised to allow any weighting of each connected wheel to the rotational speed at the wheel-side clutch plate. The array PxVehicleMultiWheelDriveDifferentialParams::torqueRatios may be used to specify the fraction of torque to be delivered by the differential to each wheel. Further, the array PxVehicleMultiWheelDriveDifferentialParams::aveWheelSpeedRatios specifies the contribution of each wheels's rotational speed to the rotational speed of the wheel-side clutch plate.  To replicate the behaviour of the old  Vehicle SDK, set each connected wheel's entry in the arrays PxVehicleMultiWheelDriveDifferentialParams::torqueRatios and PxVehicleMultiWheelDriveDifferentialParams::aveWheelSpeedRatios to be 1/N with N denoting the number of wheels connected to the differential.
+
+++++++++++++++++++++++++++++++++
+Four-Wheel Drive Differential
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of four-wheel drive differential parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mFrontRearSplit                   |PxVehicleFourWheelDriveDifferentialParams::frontRearSplit     |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mFrontLeftRightSplit              |PxVehicleFourWheelDriveDifferentialParams::frontNegPosSplit   |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mRearLeftRightSplit               |PxVehicleFourWheelDriveDifferentialParams::rearNegPosSplit    |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mCentreBias                       |PxVehicleFourWheelDriveDifferentialParams::centerBias         |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mFrontBias                        |PxVehicleFourWheelDriveDifferentialParams::frontBias          |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mRearBias                         |PxVehicleFourWheelDriveDifferentialParams::rearBias           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::mType                             |PxVehicleFourWheelDriveDifferentialParams::type               |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleDifferential4WData::Enum                              |PxVehicleFourWheelDriveDifferentialParams::Enum               |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The parameters PxVehicleDifferential4WData::mFrontLeftRightSplit and PxVehicleDifferential4WData::mRearLeftRightSplit have been renamed as PxVehicleFourWheelDriveDifferentialParams::frontNegPosSplit and PxVehicleFourWheelDriveDifferentialParams::rearNegPosSplit.  Terms such as "left" and "right are ambiguous in PhysX, which has no specific handedness.  Meanwhile, terms such as "neg"and "pos", denoting negative and positive on the lateral axis, are more precise. 
+
+The enumerated list PxVehicleDifferential4WData::Enum has been replaced with a shorter list in 5.1.  In particular, the entries relating to open differential types have been removed.  These are PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_4WD, PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD and PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD.  The functionality of these differential types may be replicated by using PxVehicleMultiWheelDriveDifferentialParams and configuring the torque split fractions per wheel (PxVehicleMultiWheelDriveDifferentialParams::torqueRatios and PxVehicleMultiWheelDriveDifferentialParams::aveWheelSpeedRatios) to match the torque split specified by the combinations of PxVehicleDifferential4WData::mFrontRearSplit, PxVehicleDifferential4WData::mFrontLeftRightSplit and PxVehicleDifferential4WData::mRearLeftRightSplit. 
+
+The wheel indexing in the old Vehicle SDK had a strict ordering that defined the four wheels connected to the differential in terms of left/right, front/forward.  There is no hard-coded indexing in the new Vehicle SDK.  The four wheels that participate in the four-wheel drive differential must therefore now be specified using the 2-element arrays PxVehicleFourWheelDriveDifferentialParams::frontWheelIds and PxVehicleFourWheelDriveDifferentialParams::rearWheelIds.
+
+
+++++++++++++++++++++++++++++++++
+Clutch
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of clutch parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleClutchAccuracyMode::Enum                              |PxVehicleClutchAccuracyMode::Enum                             |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleClutchData::mAccuracyMode                             |PxVehicleClutchParams::accuracyMode                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleClutchData::mEstimateIterations                       |PxVehicleClutchParams::estimateIterations                     |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleClutchData::mStrength                                 |PxVehicleClutchCommandResponseParams::maxResponse             |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The applied clutch strength is now modelled using a normalised clutch pedal input in conjunction with a specified clutch pedal response. The parameter PxVehicleClutchCommandResponseParams::maxResponse is the clutch response that occurs when the clutch pedal is fully depressed; that is, when the two plates at the clutch are pressed together.  The product of normalised clutch pedal input and maximum clutch response generates an instantaneous clutch strength to be used at each simulation step.  When the clutch pedal is fully depressed, PxVehicleClutchCommandResponseParams::maxResponse is the exact equivalent of PxVehicleClutchData::mStrength.  The difference in the new Vehicle SDK is that the applied clutch strength may be more readily modulated with a clutch pedal input.  This was only possible in the old Vehicle SDK by repeatedly updating PxVehicleClutchData::mStrength to simulate the effect of the clutch pedal on the applied clutch strength.
+
+++++++++++++++++++++++++++++++++
+Ackermann Correction
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of Ackermann correction parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+--------------------------------------------------------------+
+|5.0                                                            |5.1                                                           |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAckermannGeometryData::mAccuracy                      |PxVehicleAckermannCorrection::strength                        |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAckermannGeometryData::mFrontWidth                    |Removed                                                       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAckermannGeometryData::mRearWidth                     |Removed                                                       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+|PxVehicleAckermannGeometryData::mAxleSeparation                |PxVehicleAckermannCorrection::wheelBase                       |
++---------------------------------------------------------------+--------------------------------------------------------------+
+
+The old Vehicle SDK used a hard-coded indexing system to identify the wheels in terms of front/rear and left/right. Moreover, the Ackermann correction was applied to the front wheels and to the rear wheels. For this reason, PxVehicleAckermannGeometryData required a front axle width and a rear axle width to be specified.  Both front and rear correction shared the same correction strength, as specified by PxVehicleAckermannGeometryData::mAccuracy. Furthermore, PxVehicleAckermannGeometryData::mAxleSeparation applied equally to both front and rear axle corrections. In most cases, the rear wheels did not accept a steer angle and the Ackermann correction would only affect the front wheels.
+
+The new Vehicle SDK has further generalised Ackermann correction so that it is now specified as an array of individual corrections to be applied.  Given the absence of hard-coded wheel indexing, each Ackermann correction requires the affected wheels and their axle to be specified using the 2-element array PxVehicleAckermannCorrection::wheelIds and the parameter PxVehicleAckermannCorrection::axleId.  Each correction is applied to only a single axle so there is only a need to specify the track width of the affected axle for each Ackermann correction.  This is achieved using the PxVehicleAckermannCorrection::trackWidth parameter. For front axle correction, PxVehicleAckermannCorrection::trackWidth plays the same role as PxVehicleAckermannGeometryData::mFrontWidth.  Similarly, for rear axle correction,   PxVehicleAckermannCorrection::trackWidth plays the same role as PxVehicleAckermannGeometryData::mRearWidth.
+
+In most cases, only a single PxVehicleAckermannCorrection is required to replicate the behavior of the old Vehicle SDK.  To replicate the situation where front and rear wheels are noticeably corrected, it is necessary to use two PxVehicleAckermannCorrection instances: one instance for each axle to be affected by Ackermann correction. The struct PxVehicleAckermannParams has been introduced as a container for multiple PxVehicleAckermannCorrection instances.
+
+It is important to note that PxVehicleAckermannCorrection::wheelBase is the distance between the axle being corrected and any reference axle. In most cases, this will be the distance between front and rear axles but this is not a strict rule:  correction may be applied to any axle using any other axle as a reference.
+
+++++++++++++++++++++++++++++++++
+Wheels
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of wheel parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|5.0                                                            |5.1                                                              |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mRadius                                    |PxVehicleWheelParams::radius                                     |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mWidth                                     |PxVehicleWheelParams::halfWidth                                  |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mMass                                      |PxVehicleWheelParams::mass                                       |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mMOI                                       |PxVehicleWheelParams::moi                                        |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mDampingRate                               |PxVehicleWheelParams::dampingRate                                |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mMaxBrakeTorque                            |PxVehicleBrakeCommandResponseParams::maxResponse                 |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mMaxHandBrakeTorque                        |PxVehicleBrakeCommandResponseParams::maxResponse                 |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mMaxSteer                                  |PxVehicleSteerCommandResponseParams::maxResponse                 |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelData::mToeAngle                                  |PxVehicleSuspensionComplianceParams::wheelToeAngle               |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleWheelsSimData::setWheelCentreOffset()                 |PxVehicleSuspensionParams::suspensionAttachment                  |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+
+It is worth noting that PxVehicleWheelData::mWidth has been replaced with PxVehicleWheelParams::halfWidth.  A wheel with PxVehicleWheelData::mWidth of value 1.0 should now be represented using a wheel with PxVehicleWheelParams::halfWidth of value 0.5.
+
+The old Vehicle SDK assumed a linear relationship between pedal and response. For example, a brake pedal value of 0.5 generated a brake torque of 0.5*PxVehicleWheelData::mMaxBrakeTorque.  This was true for the per-wheel brake, handbrake and pre-Ackermann corrected steer values. This relationship has been generalised in order to provide the flexibility to implement non-linear responses to controller inputs.  Data structures such as PxVehicleBrakeCommandResponseParams specify the per-wheel maximum response that occurs when the brake pedal has value 1.0.  It's important to note that this does not make any assumptions about brake torques or steer angles having a linear relationship with brake pedal or steering wheel. The pipeline of the new Vehicle SDK converts the per-wheel maximum responses specified by constant parameters to per-wheel maximum responses stored as volatile state data representing torques and steer angles to apply to wheels.  This conversion may implement a linear or non-linear response to control input.  
+
+The old Vehicle SDK assumed a constant toe angle. The toe angle, however, is a function of suspension compression and is far from constant. With this in mind, a suspension compliance system has been introduced. The compliance system allows properties such as toe and camber angle to be specified as graphs with normalised suspension compression serving as the x-axis of each graph.  Currently, a maximum of 3 graph points is permitted for each value affected by suspension compliance. This allows, for example, toe to be specified at maximum droop (x=0.0), half-way in-between maximum droop and maximum compression (x=0.5), and at maximum compression (x=1.0).  Alternatively, a single graph point will generate a constant toe angle, while a graph with zero graph points will generate a toe angle of 0.0.  The parameter PxVehicleSuspensionComplianceParams::wheelToeAngle stores the graph of toe angle as a function of suspension compression.  It is worth noting that PxVehicleSuspensionComplianceParams::wheelToeAngle defaults to an empty graph; that is, a constant toe angle of 0.0.
+
+The old Vehicle SDK allowed a reference pose to be specified for each wheel. This reference pose dictated the pose adopted by the vehicle at rest with all wheels contacting a flat plane.  The reference pose was typically chosen to be the pose that was the equilibrium state of the suspension; that is, the suspension compression that generated forces to equally balance the gravitational force on the sprung mass.  This, however, was not a strict requirement. The reference pose in the new Vehicle SDK is specified by PxVehicleSuspensionParams::suspensionAttachment. This pose does not automatically dictate the pose adopted by the vehicle at rest. Instead, the reference pose now describes the pose of the wheel at the maximum suspension compression state. Furthermore, the equilibrium pose of the wheel on a flat plane is governed by the algorithm chosen to compute the suspension force. 
+
+
+++++++++++++++++++++++++++++++++
+Tire Load Filter
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of tire load filter parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|5.0                                                            |5.1                                                              |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleTireLoadFilterData::mMinNormalisedLoad                |PxVehicleTireForceParams::loadFilter[0][0]                       |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleTireLoadFilterData::mMinFilteredNormalisedLoad        |PxVehicleTireForceParams::loadFilter[0][1]                       |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleTireLoadFilterData::mMaxNormalisedLoad                |PxVehicleTireForceParams::loadFilter[1][0]                       |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+|PxVehicleTireLoadFilterData::mMaxFilteredNormalisedLoad        |PxVehicleTireForceParams::loadFilter[1][1]                       |
++---------------------------------------------------------------+-----------------------------------------------------------------+
+
+The old Vehicle SDK specified a single tire load filter instance per vehicle.  This has been generalised to a per-wheel tire load filter.
+
+++++++++++++++++++++++++++++++++
+Tire 
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of tire parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|5.0                                                            |5.1                                                                |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mLatStiffX                                  |PxVehicleTireForceParams::latStiffX                                |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mLatStiffY                                  |PxVehicleTireForceParams::latStiffY                                |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mLongitudinalStiffnessPerUnitGravity        |PxVehicleTireForceParams::longStiff                                |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mCamberStiffnessPerUnitGravity              |PxVehicleTireForceParams::camberStiff                              |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mFrictionVsSlipGraph                        |PxVehicleTireForceParams::frictionVsSlip                           |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|PxVehicleTireData::mType                                       |Removed                                                            |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+|                                                               |PxVehicleSuspensionComplianceParams::tireForceAppPointLongitudinal |
+|PxVehicleWheelsSimData::setTireForceAppPointOffset()           |PxVehicleSuspensionComplianceParams::tireForceAppPointLateral      |	
+|                                                               |PxVehicleSuspensionComplianceParams::tireForceAppPointVertical     |
++---------------------------------------------------------------+-------------------------------------------------------------------+
+
+The first thing to note is that PxVehicleTireData::mLatStiffX and PxVehicleTireForceParams::latStiffX have identical meaning. Values from 5.0 may be directly applied to 5.1.  The same is true for PxVehicleTireData::mFrictionVsSlipGraph and PxVehicleTireForceParams::frictionVsSlip.
+
+PxVehicleTireForceParams::latStiffY performs the same role as PxVehicleTireData::mLatStiffY but is now the stiffness per radian rather than a normalised stiffness per radian. A simple formula describes the conversion::
+	
+	PxVehicleTireForceParams::latStiffY = PxVehicleTireData::mLatStiffY * (PxVehicleWheelData::mMass + PxVehicleSuspensionData::mSprungMass) *  |gravitationalAcceleration|
+
+PxVehicleTireForceParams::longStiff and PxVehicleTireData::mLongitudinalStiffnessPerUnitGravity perform the same role but are expressed in different units. A simple formula describes the conversion::
+
+	PxVehicleTireForceParams::longStiff = PxVehicleTireData::mLongitudinalStiffnessPerUnitGravity*|gravitationalAcceleration|
+
+PxVehicleTireForceParams::camberStiff and PxVehicleTireData::mCamberStiffnessPerUnitGravity perform the same role but are expressed in different units. Furthermore, the old Vehicle SDK expected camber stiffness to be a negative value, while the new Vehicle SDK expects camber stiffness to be a positive value. A simple formula describes the conversion::
+
+	PxVehicleTireForceParams::camberStiff = -PxVehicleTireData::mCamberStiffnessPerUnitGravity*|gravitationalAcceleration|
+
+PxVehicleTireData::mType has been removed. This parameter played a role in the computation of tire friction. The new Vehicle SDK introduces a simpler and more flexible system to determine tire friction.
+
+The tire force application point in the old Vehicle SDK was set using the function PxVehicleWheelsSimData::setTireForceAppPointOffset(). This function specified a position in the rigid body frame. The application point, however, ought to be a function of suspension state. With this in mind, a compliance system has been introduced in the new Vehicle SDK. The compliance system allows properties such as tire force application point to be specified as graphs with normalised suspension compression serving as the x-axis of each graph. Currently, a maximum of 3 graph points is permitted for each value affected by suspension compliance. This allows, for example, a lateral force offset to be specified at maximum droop (x=0.0), half-way in-between maximum droop and maximum compression (x=0.5), and at maximum compression (x=1.0). Alternatively, a single graph point will generate a constant offset, while a graph with zero graph points will generate an offset of 0.0. The parameters PxVehicleSuspensionComplianceParams::tireForceAppPointLongitudinal, PxVehicleSuspensionComplianceParams::tireForceAppPointLateral and PxVehicleSuspensionComplianceParams::tireForceAppPointVertical collectively describe the (x,y,z) offsets in the suspension frame with the suspension frame  specified by PxVehicleSuspensionParams::suspensionAttachment.  
+
+The tire force application point may be configured to produce legacy behavior. The first step is to configure the three relevant graphs with a single graph point.  This will generate a constant offset in the suspension frame that is independent of the suspension compression state. If the offset in the suspension frame is V, the suspension frame is W and PxVehicleWheelsSimData::setTireForceAppPointOffset() has value X then we have the following::
+
+		V = W.getInverse()*X
+
+With knowledge of V it is straightforward to apply each component of the 3-vector to PxVehicleSuspensionComplianceParams::tireForceAppPointLongitudinal, PxVehicleSuspensionComplianceParams::tireForceAppPointLateral and PxVehicleSuspensionComplianceParams::tireForceAppPointVertical.
+
+.. _Tire Contact Friction:
+
+++++++++++++++++++++++++++++++++
+Tire Contact Friction
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK computed tire contact friction using a lookup table that contained a unique entry for each combination of two integers that represented the tire type and surface material type. The tire type was specified by PxVehicleTireData::mType. The material type was computed using a lookup table that mapped PxMaterial instances to an integer material type. The class PxVehicleDrivableSurfaceToTireFrictionPairs maintained the mapping between PxMaterial instance and integer material type. It also maintained the lookup table for each combination of tire and surface material type. This class has been removed.
+
+The new Vehicle SDK uses a per wheel contact friction value stored in PxVehicleRoadGeometryState::friction. The value stored in the state PxVehicleRoadGeometryState::friction will be consumed by the tire force computation. It is worth noting that the new Vehicle SDK is independent of the subsystem used to determine the value of PxVehicleRoadGeometryState::friction. The only requirement here is that PxVehicleRoadGeometryState::friction has a value that represents the desired contact friction. This being the case, the friction value will be forwarded to the tire force computation, which will consume the friction in order to compute tire forces.
+
+The new Vehicle SDK introduces a friction subsystem that has some similarities with PxVehicleDrivableSurfaceToTireFrictionPairs. The data structure PxVehiclePhysXMaterialFrictionParams maintains a list of direct mappings between PxMaterial instance and friction. It also specifies a default friction to use in the event that the PxMaterial instance under the wheel is not present in the list of mappings. The default friction is specified by PxVehiclePhysXMaterialFrictionParams::defaultFriction.
+
+The class PxVehiclePhysXMaterialFrictionParams is designed to be used in conjunction with scene queries against a PxScene instance. The entire subsystem of scene queries and contact friction calculation is wrapped in the component PxVehiclePhysXRoadGeometrySceneQueryComponent.
+
+++++++++++++++++++++++++++++++++
+Suspension 
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of suspension parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                            |5.1                                                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mSpringStrength                       |PxVehicleSuspensionForceParams::stiffness                         |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mSpringDamperRate                     |PxVehicleSuspensionForceParams::damping                           |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mSprungMass                           |PxVehicleSuspensionForceParams::sprungMass                        |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mMaxCompression                       |PxVehicleSuspensionParams::suspensionTravelDist                   |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mMaxDroop                             |PxVehicleSuspensionParams::suspensionTravelDist                   |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mCamberAtRest                         |PxVehicleSuspensionComplianceParams::wheelCamberAngle             |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mCamberAtMaxCompression               |PxVehicleSuspensionComplianceParams::wheelCamberAngle             |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleSuspensionData::mCamberAtMaxDroop                     |PxVehicleSuspensionComplianceParams::wheelCamberAngle             |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsSimData::setSuspTravelDirection()               |PxVehicleSuspensionParams::suspensionTravelDir                    |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|                                                               |PxVehicleSuspensionComplianceParams::suspForceAppPointLongitudinal|
+|PxVehicleWheelsSimData::setSuspForceAppPointOffset()           |PxVehicleSuspensionComplianceParams::suspForceAppPointLateral     |
+|                                                               |PxVehicleSuspensionComplianceParams::suspForceAppPointVertical    |
++---------------------------------------------------------------+------------------------------------------------------------------+
+
+PxVehicleSuspensionData::mMaxCompression and PxVehicleSuspensionData::mMaxDroop have been replaced by a single parameter PxVehicleSuspensionParams::suspensionTravelDist.  PxVehicleSuspensionData::mMaxCompression and PxVehicleSuspensionData::mMaxDroop described the maximum spring compression and elongation from a reference spring pose that was typically taken to be the rest pose of the spring; that is, the spring compression that generated a spring force that balanced the gravitational force acting on the sprung mass.  The new Vehicle SDK uses a different reference pose.  Instead of using the spring's rest pose, the new reference pose is taken to be the pose at maximum spring compression. The spring can only move in one direction from this reference pose. As a consequence, only a single travel limit needs to be specified. This travel limit is specified by the parameter PxVehicleSuspensionParams::suspensionTravelDist. A simple formula governs the relationship between PxVehicleSuspensionData::mMaxDroop, PxVehicleSuspensionData::mMaxCompression and  PxVehicleSuspensionParams::suspensionTravelDist::
+
+	PxVehicleSuspensionParams::suspensionTravelDist = PxVehicleSuspensionData::mMaxDroop + PxVehicleSuspensionData::mMaxCompression
+
+The parameters governing the camber angle have been replaced with a more generic suspension compliance system. The compliance system allows properties such as toe and camber angle to be specified as graphs with normalised suspension compression serving as the x-axis of each graph. Currently, a maximum of 3 graph points is permitted for each value affected by suspension compliance. This allows, for example, camber to be specified at maximum droop (x=0.0), half-way in-between maximum droop and maximum compression (x=0.5), and at maximum compression (x=1.0). Alternatively, a single graph point will generate a constant camber angle, while a graph with zero graph points will generate a camber angle of 0.0. It is worth noting that PxVehicleSuspensionComplianceParams::wheelCamberAngle defaults to an empty graph; that is, a constant camber angle of 0.0.
+
+The suspension force application point in the old Vehicle SDK was set using the function PxVehicleWheelsSimData::setSuspForceAppPointOffset(). This function specified a position in the rigid body frame. The application point, however, ought to be a function of suspension state. With this in mind, a compliance systsem has been introduced in the new Vehicle SDK. The compliance system allows properties such as suspension force application point to be specified as graphs with normalised suspension compression serving as the x-axis of each graph. Currently, a maximum of 3 graph points is permitted for each value affected by suspension compliance. This allows, for example, a lateral force offset to be specified at maximum droop (x=0.0), half-way in-between maximum droop and maximum compression (x=0.5), and at maximum compression (x=1.0). Alternatively, a single graph point will generate a constant lateral offset, while a graph with zero graph points will generate an offset of 0.0. The parameters PxVehicleSuspensionComplianceParams::suspForceAppPointLongitudinal, PxVehicleSuspensionComplianceParams::suspForceAppPointLateral and PxVehicleSuspensionComplianceParams::suspForceAppPointVertical collectively describe the (x,y,z) offsets in the suspension frame with the suspension frame specified by PxVehicleSuspensionParams::suspensionAttachment.
+
+The suspension force application point may be configured to produce legacy behavior. The first step is to configure the three relevant graphs with a single graph point. This will generate a constant offset in the suspension frame that is independent of the suspension compression state. If the offset in the suspension frame is V, the suspension frame is W and PxVehicleWheelsSimData::setSuspForceAppPointOffset() has value X then we have the following::
+
+		V = W.getInverse()*X
+
+With knowledge of V it is straightforward to apply each component of the 3-vector to PxVehicleSuspensionComplianceParams::suspForceAppPointLongitudinal, PxVehicleSuspensionComplianceParams::suspForceAppPointLateral and PxVehicleSuspensionComplianceParams::suspForceAppPointVertical.
+
+The new Vehicle SDK introduces a new parameter PxVehicleSuspensionParams::wheelAttachment.  This parameter allows the wheel to be in a frame that is the child of the suspension frame. Legacy behavior may be replicated by setting PxVehicleSuspensionParams::wheelAttachment to the identity transform.
+
+++++++++++++++++++++++++++++++++
+Anti-Roll Bars
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of anti-roll parameters from 5.0 to 5.1:
+
++---------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                            |5.1                                                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleAntiRollBarData::mWheel0                              |PxVehicleAntiRollBar::wheel0                                      |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleAntiRollBarData::mWheel1                              |PxVehicleAntiRollBar::wheel1                                      |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleAntiRollBarData::mStiffness                           |PxVehicleAntiRollBar::stiffness                                   |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsSimData::addAntiRollBarData()                   |PxVehicleAntiRollForceParams::nbAntiRolls                         |
++---------------------------------------------------------------+------------------------------------------------------------------+
+
+++++++++++++++++++++++++++++++++
+Telemetry
+++++++++++++++++++++++++++++++++
+
+Telemetry is not supported in the new Vehicle SDK. The class PxVehicleTelemetryData, associated classes, and the function PxVehicleUpdateSingleVehicleAndStoreTelemetryData have all been removed.
+
+++++++++++++++++++++++++++++++++
+Longitudinal Slip Parameters
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK had the function PxVehicleWheelsSimData::setMinLongSlipDenominator().  The  equivalent in the new Vehicle SDK is the parameter PxVehicleTireSlipParams::minPassiveLongSlipDenominator.
+
+#########################################
+Simulation State 
+#########################################
+
+The data structures used to record the state of a vehicle are quite different in 5.1. These changes shall now be presented.
+
+++++++++++++++++++++++++++++++++
+Tertiary Properties 
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK maintained per wheel tertiary variables used internally in the vehicle update and stored in the struct PxWheelQueryResult.  The following table illustrates the corresponding mapping from 5.0 to 5.1:
+
++----------------------------------------+-------------------------------------------------------------------------------------+
+|5.0                                     |5.1                                                                                  |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::suspLineStart       |Removed                                                                              |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::suspLineDir         |Removed                                                                              |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::suspLineLength      |Removed                                                                              |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::isInAir             |!PxVehicleIsWheelOnGround()                                                          |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireContactActor    |PxVehiclePhysXRoadGeometryQueryState::actor                                          |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireContactShape    |PxVehiclePhysXRoadGeometryQueryState::shape                                          |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireSurfaceMaterial |PxVehiclePhysXRoadGeometryQueryState::material                                       |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireSurfaceType     |Removed                                                                              |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireContactPoint    |PxVehiclePhysXRoadGeometryQueryState::hitPosition                                    |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireContactNormal   |PxVehicleAntiRollForceParams::plane.n                                                |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireFriction        |PxVehicleRoadGeometryState::stiffness                                                |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::suspJounce          |PxVehicleSuspensionState::jounce                                                     |   
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::suspSpringForce     |PxVehicleSuspensionForce::force                                                      |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireLongitudinalDir |PxVehicleTireDirectionState::directions[PxVehicleTireDirectionModes::eLONGITUDINAL]  | 
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::tireLateralDir      |PxVehicleTireDirectionState::directions[PxVehicleTireDirectionModes::eLATERAL]       |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::longitudinalSlip    |PxVehicleTireSlipState::slips[PxVehicleTireDirectionModes::eLONGITUDINAL]            |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::lateralSlip         |PxVehicleTireSlipState::slips[PxVehicleTireDirectionModes::eLATERAL]                 |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::steerAngle          |Removed                                                                              |
++----------------------------------------+-------------------------------------------------------------------------------------+
+|PxWheelQueryResult::localPose           |PxVehicleWheelLocalPose::localPose                                                   |
++----------------------------------------+-------------------------------------------------------------------------------------+
+
+The suspension start, direction and length were recorded in the state variables PxWheelQueryResult::suspLineStart, PxWheelQueryResult::suspLineDir and PxWheelQueryResult::suspLineLength.  These quantities are no longer  recorded in the new Vehicle SDK.  The helper functions PxComputeSuspensionRaycast() and PxComputeSuspensionSweep(), however, may be used to compute the equivalent properties.
+
+The old Vehicle SDK had a helper function PxVehicleIsInAir() to determine if a vehicle had all wheels in the air. This function made use of the per-wheel state PxWheelQueryResult::isInAir.  The new Vehicle SDK has no direct equivalent of either PxVehicleIsInAir() or PxWheelQueryResult::isInAir.  Instead, a helper function PxVehicleIsWheelOnGround() is provided. A return value of false indicates that the wheel is in the air. It is a straightforward exercise to determine if no wheels are on the ground in order to implement the equivalent of PxVehicleIsInAir().
+
+The property PxWheelQueryResult::tireSurfaceType has no equivalent in the new Vehicle SDK.  This is discussed in more detail in Section Section :ref:`Tire Contact Friction`.
+
+The old Vehicle SDK allowed the suspension state to be queried with the parameter PxWheelQueryResult::suspJounce.  The equivalent in the new Vehicle SDK is the state variable PxVehicleSuspensionState::jounce.  It is important to note that jounce has a different meaning in the new Vehicle SDK.  A jounce of 0.0 now corresponds to a suspension in the fully elongated state, while a jounce with value PxVehicleSuspensionParams::suspensionTravelDist corresponds to a suspension in the fully compressed state.  As a consequence, jounce is now positive semi-definite.
+
+The property PxWheelQueryResult::steerAngle has no equivalent in the new Vehicle SDK.  It may, however, be directly calculated using the following formula::
+	
+	steerAngle = steerAngles[wheelId] + PxVehicleSuspensionComplianceState::toe;
+
+++++++++++++++++++++++++++++++++
+Dynamic State
+++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of dynamic state getters and setters from 5.0 to 5.1:
+ 
++---------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                            |5.1                                                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsDynData::setWheelRotationSpeed()                |PxVehicleWheelRigidBody1dState::rotationSpeed                     |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsDynData::getWheelRotationSpeed()                |PxVehicleWheelRigidBody1dState::correctedRotationSpeed            |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsDynData::setWheelRotationAngle()                |PxVehicleWheelRigidBody1dState::rotationAngle                     |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleWheelsDynData::getWheelRotationAngle()                |PxVehicleWheelRigidBody1dState::rotationAngle                     |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::getEngineRotationSpeed()                |PxVehicleEngineState::rotationSpeed                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setEngineRotationSpeed()                |PxVehicleEngineState::rotationSpeed                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+
+#########################################
+Functions
+#########################################
+
+++++++++++++++++++++++++++++++++
+Startup And Shutdown
+++++++++++++++++++++++++++++++++
+
+
+The following table illustrates the mapping of initialisation and shutdown functions from 5.0 to 5.1:
+
++---------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                            |5.1                                                               |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxInitVehicleSDK()                                             |PxInitVehicleExtension()                                          |
++---------------------------------------------------------------+------------------------------------------------------------------+
+|PxCloseVehicleSDK()                                            |PxCloseVehicleExtension()                                         |
++---------------------------------------------------------------+------------------------------------------------------------------+
+
+
+++++++++++++++++++++++++++++++++
+Scene Queries
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK separated out scene queries and simulation step. Scene queries against a PxScene instance were performed using the functions PxVehicleSuspensionRaycast() and PxVehicleSuspensionSweeps().  These functions have been removed.  
+
+The new Vehicle SDK makes no requirement that scene queries are performed against a PxScene.  The only requirement is that a subsystem writes to the state variables PxVehicleRoadGeometryState::plane, PxVehicleRoadGeometryState::friction and PxVehicleRoadGeometryState::hitState. These three variables allow subsequent subsystems to conditionally consume the contact plane and friction.
+
+The new Vehicle SDK introduces a subsystem that is similar to PxVehicleSuspensionRaycast() and PxVehicleSuspensionSweeps() in the sense that it performs scene queries against a PxScene instance. This is found in the component PxVehiclePhysXRoadGeometrySceneQueryComponent, which may be configured to perform either raycasts or sweeps.  More specifically, PxVehiclePhysXRoadGeometryQueryParams::roadGeometryQueryType is used to determine if scene queries should be implemented as sweeps or as raycasts.  Furthermore, PxVehiclePhysXRoadGeometryQueryType::filterData and PxVehiclePhysXRoadGeometryQueryType::filterCallback may be used to make choices about the types of geometry that serve as road geometry.
+
+++++++++++++++++++++++++++++++++
+Vehicle Update
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK separated out scene queries and simulation step. Moreover, the simulation step was separated into two steps: a mandatory call to PxVehicleUpdates() and an optional call to PxVehiclePostUpdates().  The purpose of PxVehicleUpdates() was to compute velocity changes to apply to the vehicle's PxRigidDynamic actor. The purpose of PxVehiclePostUpdates(), on the other hand, was to apply the velocity changes to the vehicle's PxRigidDynamic actor.  This deferral was important when simulating multiple vehicle instances across multiple threads because PhysX write operations have a tendency to serialize the computation due to the necessity of PhysX write locks. Both PxVehicleUpdates() and PxVehiclePostUpdates() have been removed.  
+
+The new Vehicle SDK more naturally separates out velocity calculation from velocity application. This is achieved using two components:  PxVehiclePhysXActorBeginComponent and PxVehiclePhysXActorEndComponent.  The component PxVehiclePhysXActorBeginComponent is designed to read poses and velocities from the PhysX actor. The vehicle simulation step begins with these poses and velocities and proceeds to update both using the suspension and tire forces that develop on the vehicle. The component PxVehiclePhysXActorEndComponent is designed to write velocities back to the PhysX actor so that the PxScene may forward integrate the vehicle's PxRigidDynamic actor and manage any rigid body collisions that it may encounter.
+
+The new Vehicle SDK performs vehicle simulation steps by sequentially updating customisable components in a customisable order, where each component represents a vehicle feature such as the suspension system or a rigid body or the drivetrain. As a consequence, there is no specific update function that plays the role of PxVehicleUpdates() or PxVehiclePostUpdates().  Instead, vehicles are forward integrated by updating the sequence of components using the function PxVehicleComponentSequence::update().  The nature of each update, however, depends on the sequence of components and the functions executed by those components.
+
+If multiple vehicles are to be run on multiple threads, it is recommended to batch process all the PxVehiclePhysXActorBeginComponent instances at the beginning of the vehicle simulation step.  Similarly, all the PxVehiclePhysXActorEndComponent instances should be batch processed at the end of the vehicle simulation step. This serializes all PhysX read and write operations in a manner similar to PxVehiclePostUpdates(). The remaining component sequence for each vehicle is now focused exclusively on computing a velocity. These component sequences may be updated in parallel without the risk of PhysX read/write locks serializing the computation.
+
+++++++++++++++++++++++++++++++++
+Update Mode
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK had a function PxVehicleSetUpdateMode().  The effect of this function was to apply changes to the vehicle's PxRigidDynamic actor as either a velocity change or an acceleration change. The equivalent choice is made in the new Vehicle SDK by setting PxVehiclePhysXSimulationContext::physxActorUpdateMode to either PxVehiclePhysXActorUpdateMode::eAPPLY_VELOCITY or PxVehiclePhysXActorUpdateMode::eAPPLY_ACCELERATION.
+
+++++++++++++++++++++++++++++++++
+Wheel Shapes
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK allowed a mapping to be made between the PxShape instance that represented the wheel and the wheel index used by the Vehicle SDK. This was implemented using the function PxVehicleWheelsSimData::setWheelShapeMapping(). The mapping set by PxVehicleWheelsSimData::setWheelShapeMapping() allowed the Vehicle SDK to update the PxShape instances that represented the wheels with the correct pose that reflected jounce, steer, camber etc.  The new Vehicle SDK stores the corresponding PxShape pointers in the array PxVehiclePhysXActor::wheelShapes with the ith element of the array storing the PxShape instance of the ith wheel. 
+
+It is worth noting that the old Vehicle SDK could only perform sweeps against the PxScene if a PxShape instance had been specified for each wheel. This is no longer the case.  Sweeps are now possible even if PxVehiclePhysXActor::wheelShapes contains only NULL pointers, provided that PxVehiclePhysXSimulationContext::physxUnitCylinderSweepMesh has been configured with a cylinder shape of unit radius and halfwidth.  The function PxVehicleUnitCylinderSweepMeshCreate() may be used to create the cylinder shape that will be swept against the PxScene::
+
+	PxVehiclePhysXSimulationContext::physxUnitCylinderSweepMesh = PxVehicleUnitCylinderSweepMeshCreate()
+
+++++++++++++++++++++++++++++++++
+Sprung Mass Computation
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK had a helper function PxVehicleComputeSprungMasses(). The aim of this function was to compute sprung masses that match the centre of mass and mass of the vehicle's rigid body. The new Vehicle SDK has a similar helper function with identical name. The primary difference between the two is that the function in the new Vehicle SDK requires the sprung mass coordinates to be specified in the rigid body frame rather than in the frame of the associated PhysX actor. The function in the old Vehicle SDK specified the direction of gravity as a PxU32. This has been replaced with an enum PxVehicleAxes::Enum. It is important to note that the PxU32 does not automatically map to PxVehicleAxes::Enum. For the purposes of clarity: the equivalent of using 0 in the old SDK is now PxVehicleAxes::eNegX and 1 maps to PxVehicleAxes::eNegY and 2 maps to PxVehicleAxes::eNegZ.
+
+++++++++++++++++++++++++++++++++
+Disabling Wheels
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK supported the disabling and enabling of wheels using the functions PxVehicleWheelsSimData::disableWheel() and PxVehicleWheelsSimData::enableWheel().  The new Vehicle SDK provides no direct equivalent function but does provide the flexibility to readily enable or disable wheels. 
+
+The axles of a vehicle and the wheels on each axle are now described with the struct PxVehicleAxleDescription.  The configuration of PxVehicleAxleDescription can be changed at any time before or after a vehicle simulation step.  To disable or enable a wheel it is necesary to reconfigure PxVehicleAxleDescription with a fresh set of axles and wheels.  One difficulty here is that vehicle configuration parameters such as PxAckermannCorrection and PxVehicleFourWheelDriveDifferentialParams might now maintain a reference to a disable wheel.   These parameters will need to be adjusted or removed from simulation.
+
+++++++++++++++++++++++++++++++++
+Simulation Substeps
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK supported substeps with the function PxVehicleWheelsSimData::setSubStepCount().  This function allowed an inner loop of the vehicle update to be conditionally simulated with substeps. More specifically, the function specified the number of substeps to run when the longitudional speed of the vehicle was less than or equal to a threshold speed, and the number to run when the longitudinal speed exceeded the threshold speed.
+
+The new Vehicle SDK also supports substeps but this time in a more general sense. For example, the inner loop that is substepped is not fixed, as it was in 5.0. Moreover, there is no hard-coded condition to decide the number of substeps that will be applied to any inner loop. To describe this in further detail a quick summary of vehicle components is required.
+
+A vehicle simulation update proceeds by updating the components of the vehicle in sequence. Each component represents a high-level feature of a vehicle such as a drivetrain or a suspension system or a rigid body.  The components and the sequence order of a vehicle are customisable.  A key point here is that the class PxVehicleComponentSequence is configured for each vehicle with an ordered sequence of components. The sequence order is dictated by the order that components are added to the sequence.  
+
+The class PxVehicleComponentSequence allows groups of sequential components to be collected into substep groups using the functions PxVehicleComponentSequence::beginSubstepGroup() and PxVehicleComponentSequence::endSubstepGroup().  These two functions are used to book-end any components that are added to the sequence using the function PxVehicleComponentSequence::add().  Each time PxVehicleComponentSequence::beginSubstepGroup() is called, a new subgroup is instantiated and a unique identifier for that subgroup is returned.  The following pseudo-code illustrates the creation of a subgroup::
+
+		PxVehicleComponentSequence sequence;
+		sequence.add(new Component1);
+		PxU32 subgroupId = sequence.beginSubstepGroup();
+		sequence.add(new Component2);
+		sequence.add(new Component3);
+		sequence.endSubstepGroup();
+		sequence.add(new Component4);
+
+The example above creates a subgroup containing an instance of Component2 and Component3. The unique identifier of the subgroup is stored in the parameter subgroupId.  The parameter subgroupId may be used to set the number of substeps for this subgroup.  The following pseudo-code sets the number of substeps to 3::
+
+		sequence.setSubsteps(subgroupId, 3);
+
+An update of the sequence with timstep dt will now proceed as follows::
+
+		component1->update(dt);
+		component2->update(dt/3);
+		component3->update(dt/3);
+		component2->update(dt/3);
+		component3->update(dt/3);
+		component2->update(dt/3);
+		component3->update(dt/3);
+		component4->update(dt);
+
+It's important to note that there is no pre-defined logic to decide the number of substeps applied to any substep group.  This is left an an exercise to users of the Vehicle SDK.  Another point to note is that substeps may be nested.  This will be useful for systems that have a stiff component that needs updated with small timesteps. Rather than update the entire vehicle with small timesteps, it may be advantageous to target computational effort at only those subgroups that need it.
+
+SnippetVehicle2DirectDrive provide an examples of a subgroup that replicates the inner loop and substepping condition that was found in 5.0.
+
+
+++++++++++++++++++++++++++++++++
+Serialization
+++++++++++++++++++++++++++++++++
+
+Due to the customizable nature of the new Vehicle SDK, no support for serialization is provided.  An example, however, is provided in the associated snippets. These snippets deserialize a vehicle from json format.
+
+++++++++++++++++++++++++++++++++
+Removed Functions
+++++++++++++++++++++++++++++++++
+
+The following functions have all been removed and have no directly supported equivalent in the new Vehicle SDK::
+
+	PxVehicle4WEnable3WTadpoleMode()
+	PxVehicle4WEnable3WDeltaMode()
+	PxVehicleUpdateCMassLocalPose()
+	PxVehicleCopyDynamicsData()
+	PxVehicleUpdateSingleVehicleAndStoreTelemetryData()
+	PxVehicleSetSweepHitRejectionAngles()
+	PxVehicleSetMaxHitActorAcceleration()
+	PxVehicleIsInAir()
+	PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs()
+	PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs()
+	PxVehicleDriveNWSmoothDigitalRawInputsAndSetAnalogInputs()
+	PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs()
+	PxVehicleDriveTankSmoothDigitalRawInputsAndSetAnalogInputs()
+	PxVehicleDriveTankSmoothAnalogRawInputsAndSetAnalogInputs()
+	PxVehicleModifyWheelContacts()
+
+#########################################
+Behavior Changes
+#########################################
+
+++++++++++++++++++++++++++++++++
+Applying Gravity on Substeps
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK applied gravitational acceleration during the PxScene update and ignored it during all substeps of the vehicle update. The default behaviour in the new Vehicle SDK is to apply gravity in the substeps of the vehicle update so that its effect accumulates in the velocity or acceleration forwarded to the PhysX actor.  Gravity is then not applied to the rigid body in the PxScene update.
+
+++++++++++++++++++++++++++++++++
+Jounce
+++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK defined zero jounce to be the suspension compression state at the reference pose dictacted by PxVehicleWheelsSimData::setWheelCentreOffset(). A negative jounce indicated a suspension state nearer to the maximum droop state, while a positive jounce indicated a suspension state nearer to the maximum compression state.  The jounce was thus always in range [-maxDroop, maxCompression].  The new Vehicle SDK defines zero jounce to be the suspension state at maximum droop.  Further, it introduces a single parameter to describe the distance between maximum droop and maximum compression. This parameter is PxVehicleSuspensionParams::suspensionTravelDist.  The jounce in the new Vehicle SDK is therefore always in range [0, PxVehicleSuspensionParams::suspensionTravelDist].
+
+++++++++++++++++++++++++++++++++
+Camber
+++++++++++++++++++++++++++++++++
+
+The camber logic in the old Vehicle SDK suffered from a historic bug that took the camber angle directly from the suspension parameters and ignored the relationship between the wheel pose and contact normal. This error has been fixed in the new Vehicle SDK. However, this means that setting camber to 0.0 is not the same as disabling the effect of camber because the camber angle parameter is a correction to the camber angle that develops between wheel pose and contact normal. Camber effects may only be disabled in the new Vehicle SDK by setting the camber stiffness to zero (PxVehicleTireForceParams::camberStiff).
+
+The default value for camber stiffness in the old Vehicle SDK falsely suggested that it was specified per degree rathan than the documented per radian.  As a clarification, the new Vehicle SDK requires a camber stiffness specified in Newtons per radians.
+
+++++++++++++++++++++++++++++++++++++++++
+Suspension Compression Limit Constraint
+++++++++++++++++++++++++++++++++++++++++
+
+When the suspension compresses beyond the limit a PhysX constraint is used to push the rigid body so that the suspension compressions project  back into a valid jounce range. The old Vehicle SDK used the suspension direction as the constraint direction. A better choice is to use the contact normal and to treat the unresolved suspension compression in the manner of a rigid contact. The new Vehicle SDK offers choices for the constraint direction.  Legacy behavior may be produced using PxVehiclePhysXSuspensionLimitConstraintParams::eSUSPENSION.  The preferred choice, however, is to use PxVehiclePhysXSuspensionLimitConstraintParams::eROAD_GEOMETRY_NORMAL, which treats the unresolved suspension compression in the manner of a rigid contact.  An entirely new choice is to completely disable the application of PhysX constraints to resolve suspension discrepancies. This is achieved using PxVehiclePhysXSuspensionLimitConstraintParams::eNONE.
+
+++++++++++++++++++++++++++++++++++++++++
+Sleep State
+++++++++++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK set the wheel steer angles of a sleeping vehicle to 0.0. This had no impact on the poses of the wheel shapes of the rigid body because those shapes were not updated after the vehicle entered the sleep state. The steer angle reported by the vehicle, however, would have been 0.0 for the duration of the sleep state. This is no longer the case: the new Vehicle SDK allows a vehicle to enter the sleep state with a non-zero steer angle applied to each wheel.
+
+The old Vehicle SDK set the suspension jounces of a sleeping vehicle to a special internal value that was used to impose a jounce speed of zero  on the suspensions of sleeping vehicles. This had no impact on the poses of the wheel shapes of the rigid body because those shapes were not updated after the vehicle entered the sleep state. The jounce reported by the vehicle, however, would have been equal to the special internal value for the duration of the sleep state. This is no longer the case: the new Vehicle SDK allows a vehicle to enter the sleep state with a legal jounce applied to each suspension that matches the geometry under each wheel.
+
+The new Vehicle SDK forbids a vehicle entering the sleep state if a gear change is pending.  Moreover, the vehicle is woken up if a gear change is initiated and the vehicle is already in the sleep state.  This behavior was not present in the old Vehicle SDK.
+
+The new Vehicle SDK maintains the vehicle in the woken state if the mass-normalized rotational kinetic energy of a wheel is above the actor's sleep threshold. This behavior was not present in the old Vehicle SDK.
+
++++++++++++++++++++++++++++++++++++++++
+Gear Switching
++++++++++++++++++++++++++++++++++++++++
+
+The state PxVehicleGearboxState::gearSwitchTime now has the special value PX_VEHICLE_NO_GEAR_SWITCH_PENDING to denote that no gear change is underway. This is in contrast to PxVehicleDriveDynData::mGearSwitchTime, which was ambiguously set to 0.0 to denote that no gear change was underway.  It is hoped that PX_VEHICLE_NO_GEAR_SWITCH_PENDING better communicates the state of the gearbox.
+
++++++++++++++++++++++++++++++++++++++++
+Autobox
++++++++++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK allowed the autobox to be disabled using the boolean PxVehicleDriveDynData::mUseAutoGears. The new Vehicle SDK offers a different path to disable the autobox that is more in keeping with real-world behavior.  When PxVehicleEngineDriveTransmissionCommandState::targetGear has value PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR, the target gear enables automatic gear mode, similar to the Drive mode "D" in real cars with automatic transmission. If the target gear has not been assigned to this special value, the transmission will be considered to be in manual mode and the autobox will not initiate a gear change.
+
+The old Vehicle SDK allowed automatic shifting from neutral to first gear.  This is no longer supported: a vehicle in neutral gear will remain in neutral gear until a manual change is indicated.
+
+The old Vehicle SDK initialized PxVehicleDriveDynData::mAutoBoxSwitchTime to 0.0.  The autobox could only instantiate a gear change after PxVehicleDriveDynData::mAutoBoxSwitchTime had accumulated a value greater than or equal to PxVehicleAutoBoxData::getLatency().  This introduced an initial latency to any gear change instantiated by the autobox. This behavior has changed in the new Vehicle SDK.  The equivalent timer is now initialized to a special value PX_VEHICLE_UNSPECIFIED_TIME_SINCE_LAST_SHIFT. This special value allows gear changes to be initiated by the autobox without any time accumulation; that is, without latency. Moreover, the autobox timer PxVehicleAutoboxState::timeSinceLastShift is reset to  PX_VEHICLE_UNSPECIFIED_TIME_SINCE_LAST_SHIFT every time the autobox is disabled.
+
++++++++++++++++++++++++++++++++++++++++
+Tire Sticky Constraint
++++++++++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK reduced the target speed of each active tire sticky constraint using a hard-coded damping value that was applied as a simple multiplier each substep of the vehicle simulation. This was not timestep aware, meaning that smaller timesteps would result in the target speeds more quickly approaching 0.0. The new Vehicle SDK exposes separate damping values that directly map to the damping values of the constraints being used to reach a zero target velocity. These damping values are configured in the parameters PxVehicleTireStickyParams::stickyParams[PxVehicleTireDirectionModes::eLONGITUDINAL]::damping and PxVehicleTireStickyParams::stickyParams[PxVehicleTireDirectionModes::eLATERAL]::damping. Note that the default values for these parameters reduce damping significantly compared to the old Vehicle SDK. To achieve the previous degree of damping, values in the range 100-1000 are a good starting point.
+
++++++++++++++++++++++++++++++++++++++++
+Tire Slip
++++++++++++++++++++++++++++++++++++++++
+
+The longitudinal slip computation has been modified for the case that either a brake or drive torque is applied to the wheel. The denominator use to be sum of an constant term and and the maximum of the wheel's linear speed at the road contact point and the longitudinal speed of the rigid body at the road contact point. The denominator is now the sum of a constant term and the longitudinal speed of the rigid body at the road contact point.  This change leads to higher values of longitudinal slip, especially when the vehicle is aggressively throttled from rest, and greater longitudinal force. A consequence of this is that smaller timesteps may be required to maintain numerical stability.  The class PxVehicleLegacyTireComponent has been introduced to implement the legacy longitudinal slip computation. 
+
++++++++++++++++++++++++++++++++++++++++
+Limiting Suspension Expansion Velocity
++++++++++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK introduced the flag PxVehicleWheelsSimFlag::eLIMIT_SUSPENSION_EXPANSION_VELOCITY.  The purpose of this flag was to limit suspension expansion to the distance that could physically be achieved in any given simulation step.  If the flag was not set, the suspension would instantaneously reach the compression state required to place the wheel on the ground, provided this state lay within the suspension travel limits.
+
+The new Vehicle SDK introduces the flag PxVehicleSuspensionStateCalculationParams::limitSuspensionExpansionVelocity, which performs a role similar to PxVehicleWheelsSimFlag::eLIMIT_SUSPENSION_EXPANSION_VELOCITY.  The implementation in 5.1 follows a different algorithm that better incorporates damping and jounce accelerations to generate more detailed but subtly different behavior.
+
+#########################################
+Analog Control Inputs
+#########################################
+
+The old Vehicle SDK offered a variety of data structures and functions to pre-process analog control inputs from gamepads and keyboards.  These have all been removed from the new Vehicle SDK. Pre-processing of control inputs is left as an exercise for users of the new Vehicle SDK. 
+
++++++++++++++++++++++++++++++++++++++++
+Four Wheel Drive
++++++++++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of control values for four wheel drive from 5.0 to 5.1:
+
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                                                       |5.1                                                               |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL)       |PxVehicleCommandState::throttle                                   |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_BRAKE)       |PxVehicleCommandState::brakes[0]                                  |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_HANDBRAKE)   |PxVehicleCommandState::brakes[1]                                  |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_STEER_LEFT)  |Removed                                                           |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_STEER_RIGHT) |Removed                                                           |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+
+There is no equivalent of PxVehicleDrive4WControl::eANALOG_INPUT_STEER_LEFT or PxVehicleDrive4WControl::eANALOG_INPUT_STEER_RIGHT in the new Vehicle SDK.  Instead, the state of the steering wheel is specified by a single parameter PxVehicleCommandState::steer with values in range [-1, 1].
+
+
++++++++++++++++++++++++++++++++++++++++
+Multi Wheel Drive
++++++++++++++++++++++++++++++++++++++++
+
+The following table illustrates the mapping of control values for N wheel drive from 5.0 to 5.1:
+
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|5.0                                                                                       |5.1                                                               |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDriveNWControl::eANALOG_INPUT_ACCEL)       |PxVehicleCommandState::throttle                                   |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDriveNWControl::eANALOG_INPUT_BRAKE)       |PxVehicleCommandState::brakes[0]                                  |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDriveNWControl::eANALOG_INPUT_HANDBRAKE)   |PxVehicleCommandState::brakes[1]                                  |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDriveNWControl::eANALOG_INPUT_STEER_LEFT)  |Removed                                                           |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+|PxVehicleDriveDynData::setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_STEER_RIGHT) |Removed                                                           |
++------------------------------------------------------------------------------------------+------------------------------------------------------------------+
+
+There is no equivalent of PxVehicleDriveNWControl::eANALOG_INPUT_STEER_LEFT or PxVehicleDriveNWControl::eANALOG_INPUT_STEER_RIGHT in the new Vehicle SDK.  Instead, the state of the steering wheel is specified by a single parameter PxVehicleCommandState::steer with values in range [-1, 1].
+
++++++++++++++++++++++++++++++++++++++++
+Direct Drive
++++++++++++++++++++++++++++++++++++++++
+
+The old Vehicle SDK applied brake torque, drive torques and steer angles to each wheel using the functions::
+
+	PxVehicleNoDrive::setBrakeTorque()
+	PxVehicleNoDrive::setDriveTorque()
+	PxVehicleNoDrive::setSteerAngle()
+
+The new Vehicle SDK offers a number of alternatives to replicate this functionality.  The first strategy is to use the data structure PxVehicleCommandState in the same way it is applied for every other type of drive. The data structures PxVehicleBrakeCommandResponseParams, PxVehicleDirectDriveThrottleCommandResponseParams and PxVehicleSteerCommandResponseParams may be used to specify the per wheel response to brake, throttle and steer commands.  The combination of command, per vehicle maximum command response, and per wheel maximum command response allows a runtime computation of a value to apply per wheel.  It is straightforward to tune the per wheel responses to generate any specific per wheel torque or steering angle.  One thing to bear in mind with this strategy is that it additionally relies on PxVehicleDirectDriveTransmissionCommandState, which introduces a forward, neutral and reverse gear for direct drive.  PxVehicleDirectDriveTransmissionCommandState::gear must be set to the desired value prior to each simulation step.
+
+A second strategy any alternative mechanism that writes per wheel values to float arrays representing torques and steering angles. This may be achieved with custom components that distribute torques and steer angles to each wheel. A custom component that implements AEB or a limited slip differential might serve as good examples. If the torques and angles are already known, the process is as simple as writing directly to the command response states and ensuring that the pipeline of components does not overwrite any values until they are applied to the wheels.
+
+#########################################
+Digital Control Inputs
+#########################################
+
+The old Vehicle SDK provided a variety of methods  to change gear.  The functions PxVehicleDriveDynData::setTargetGear() and PxVehicleDriveDynData::startGearChange() instantiated a timed gear change from the current gear to a specified target gear.  Further functionality allowed incremental timed gear changes with the functions PxVehicleDriveDynData::setGearUp() and PxVehicleDriveDynData::setGearDown(). Finally, the function PxVehicleDriveDynData::forceGearChange() had the effect of an immediate change from the current gear to a specified target gear. 
+
+Just as in the old Vehicle SDK, timed gear changes are instantiated in the new Vehicle SDK when current and target gear are different.  The current gear is now stored in PxVehicleGearboxState::currentGear and the target gear is specified using PxVehicleEngineDriveTransmissionCommandState::targetGear.  Choices of PxVehicleEngineDriveTransmissionCommandState::targetGear allow either incremental or non-incremental timed gear changes to be instantiated::
+
+	PxVehicleEngineDriveTransmissionCommandState::targetGear = targetGear
+
+Immediate gear changes are also possible in the new Vehicle SDK. This is achieved by aligning internal state with the input gear command and resetting the gear timer. The relevant changes are are as follows::
+
+	PxVehicleEngineDriveTransmissionCommandState::targetGear = targetGear
+	PxVehicleGearboxState::currentGear = targetGear
+	PxVehicleGearboxState::targetGear = targetGear
+	PxVehicleGearboxState::gearSwitchTime = PX_VEHICLE_NO_GEAR_SWITCH_PENDING
+
+Caution must be taken with immediate gear changes if the autobox is active. 
+
+#########################################
+Vehicle Frame And Lengthscale
+#########################################
+
+The old Vehicle SDK specified the vehicle frame using the function PxVehicleSetBasisVectors(). The equivalent in the new Vehicle SDK is the data structure PxVehicleFrame (PxVehicleSimulationContext::frame). 
+
+The old Vehicle SDK automatically configured the lengthscale using the lengthscale of the corresponding PxPhysics instance. The new Vehicle SDK requires the lengthscale to be explicitly specified using the data structure PxVehicleScale (PxVehicleSimulationContext::scale).
+

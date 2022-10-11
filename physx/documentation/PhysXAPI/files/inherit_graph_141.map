@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structPxContactPairExtraDataItem.html" title="Base class for items in the extra data stream of contact pairs. " alt="" coords="5,56,195,83"/>
+<area shape="rect" id="node2" href="$structPxContactPairIndex.html" title="Marker for the beginning of a new item set in the extra data stream. " alt="" coords="251,5,388,32"/>
+<area shape="rect" id="node3" href="$structPxContactPairPose.html" title="World space actor poses of the contact pair rigid bodies. " alt="" coords="251,56,387,83"/>
+<area shape="rect" id="node4" href="$structPxContactPairVelocity.html" title="Velocities of the contact pair rigid bodies. " alt="" coords="243,107,396,133"/>
+</map>

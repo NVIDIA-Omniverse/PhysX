@@ -1,0 +1,434 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+  <title>PhysX Visual Debugger (PVD) &mdash; NVIDIA PhysX SDK 5.1 Documentation</title>
+  
+
+  
+  <link rel="shortcut icon" href="_static/images/favicon.ico"/>
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/breathe.css" type="text/css" />
+    <link rel="next" title="Simulation Statistics" href="Statistics.html" />
+    <link rel="prev" title="Debug Visualization" href="DebugVisualization.html" />
+    <link href="../_static/css/nvidia_theme.css" rel="stylesheet" type="text/css">
+    
+    
+        <style>
+            .wy-nav-content::before {
+                content: "PhysX 5.1 SDK Guide";
+            }
+        </style>
+    
+
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../Index.html" class="icon icon-home"> Python
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="Index.html">User's Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Welcome to PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HelloWorld.html">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API.html">The PhysX API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-and-reduced-articulations">Maximal Coordinate and Reduced Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#maximal-coordinate-articulations">Maximal Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Articulations.html#reduced-coordinate-articulations">Reduced Coordinate Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SoftBodies.html">GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Vehicles2.html">Vehicles2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">PhysX Visual Debugger (PVD)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pvd">PVD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-setup-sdk-side">Basic Setup (SDK Side)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#network-setup">Network Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#file-setup">File Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-setup">Advanced Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#connection-flags">Connection Flags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualizing-externals-and-extended-data">Visualizing Externals and Extended Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualizing-scenequery">Visualizing SceneQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#custom-pvdclient">Custom PvdClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pvd-error-stream">PVD Error Stream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#custom-profiling">Custom profiling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo50.html">Migrating From PhysX SDK 4.0 to 5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 5.0 to 5.1</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../Index.html">Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../Index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="Index.html">User's Guide</a> &raquo;</li>
+        
+      <li>PhysX Visual Debugger (PVD)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="physx-visual-debugger-pvd">
+<span id="physxvisualdebugger"></span><h1>PhysX Visual Debugger (PVD)<a class="headerlink" href="#physx-visual-debugger-pvd" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pvd">
+<h2>PVD<a class="headerlink" href="#pvd" title="Permalink to this headline">¶</a></h2>
+<div class="figure align-center">
+<img alt="../_images/PvdScreenshot.png" src="../_images/PvdScreenshot.png" />
+</div>
+<p>The PhysX Visual Debugger (PVD) provides a graphical view of the PhysX scene and includes various tools to inspect and visualize variables of every PhysX object. Additionally it can also record and visualize memory and timing data.</p>
+<p>PVD can be downloaded from: <a class="reference external" href="https://developer.nvidia.com/physx-visual-debugger">https://developer.nvidia.com/physx-visual-debugger</a></p>
+<p>Questions regarding the usage of the GUI should all be answered by its detailed built-in help.</p>
+</div>
+<div class="section" id="basic-setup-sdk-side">
+<h2>Basic Setup (SDK Side)<a class="headerlink" href="#basic-setup-sdk-side" title="Permalink to this headline">¶</a></h2>
+<p>PVD integration is enabled in the debug, checked and profiling configurations of the SDK. In order to reduce memory footprint and code size, it is not enabled in the release configuration.</p>
+<p>The SDK outputs the PVD debugging data in form of a stream. PVD supports reading the stream either from a TCP/IP network socket or from a file.</p>
+<div class="section" id="network-setup">
+<h3>Network Setup<a class="headerlink" href="#network-setup" title="Permalink to this headline">¶</a></h3>
+<p>Streaming to TCP/IP is supported on almost all platforms, and is usually the most convenient way to collect PVD data. In this mode the stream can be watched in real-time, depending on network speed and scene complexity. In network mode PVD acts as a TCP/IP server and must therefore be launched before the SDK tries to connect to it. The default listening port is 5425:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">use</span> <span class="k">namespace</span> <span class="n">physx</span><span class="p">;</span>
+
+<span class="n">PxPvd</span><span class="o">*</span>  <span class="n">pvd</span> <span class="o">=</span> <span class="n">PxCreatePvd</span><span class="p">(</span><span class="o">*</span><span class="n">foundation</span><span class="p">);</span>
+<span class="n">PxPvdTransport</span><span class="o">*</span> <span class="n">transport</span> <span class="o">=</span> <span class="n">PxDefaultPvdSocketTransportCreate</span><span class="p">(</span><span class="n">PVD_HOST</span><span class="p">,</span> <span class="mi">5425</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+<span class="n">pvd</span><span class="o">-&gt;</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">transport</span><span class="p">,</span><span class="n">PxPvdInstrumentationFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span>
+
+<span class="n">PxPhysics</span><span class="o">*</span> <span class="n">physics</span> <span class="o">=</span> <span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span> <span class="o">*</span><span class="n">gFoundation</span><span class="p">,</span> <span class="n">PxTolerancesScale</span><span class="p">(),</span> <span class="nb">true</span><span class="p">,</span> <span class="n">pvd</span><span class="p">);</span>
+
+<span class="c1">//After releasing PxPhysics, release the PVD</span>
+<span class="n">physics</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+<span class="n">pvd</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+<span class="n">transport</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="file-setup">
+<h3>File Setup<a class="headerlink" href="#file-setup" title="Permalink to this headline">¶</a></h3>
+<p>Streaming to file is an alternative to network streams. This is the recommended fall-back in case your platform or system setup does not support a network connection to PVD. File streams are often faster than network sockets and therefore a good alternative if performance is more important than real-time viewing.
+Streams stored as files can be loaded by drag&amp;drop or over the File-&gt;Load menu in PVD:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">use</span> <span class="k">namespace</span> <span class="n">physx</span><span class="p">;</span>
+
+<span class="n">PxPvd</span><span class="o">*</span>  <span class="n">pvd</span> <span class="o">=</span> <span class="n">PxCreatePvd</span><span class="p">(</span><span class="o">*</span><span class="n">foundation</span><span class="p">);</span>
+<span class="n">PxPvdTransport</span><span class="o">*</span> <span class="n">transport</span> <span class="o">=</span> <span class="n">PxDefaultPvdFileTransportCreate</span><span class="p">(</span><span class="n">filename</span><span class="p">);</span>
+<span class="n">pvd</span><span class="o">-&gt;</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">transport</span><span class="p">,</span><span class="n">PxPvdInstrumentationFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span>
+
+<span class="n">PxPhysics</span><span class="o">*</span> <span class="n">physics</span> <span class="o">=</span> <span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span> <span class="o">*</span><span class="n">gFoundation</span><span class="p">,</span> <span class="n">PxTolerancesScale</span><span class="p">(),</span><span class="nb">true</span><span class="p">,</span> <span class="n">pvd</span><span class="p">);</span>
+
+<span class="c1">//After releasing PxPhysics, release the PVD</span>
+<span class="n">physics</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+<span class="n">pvd</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+<span class="n">transport</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="advanced-setup">
+<h2>Advanced Setup<a class="headerlink" href="#advanced-setup" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="connection-flags">
+<h3>Connection Flags<a class="headerlink" href="#connection-flags" title="Permalink to this headline">¶</a></h3>
+<p>To optimize the stream size we provide flags to enable specific features. This has both influence on PVD's and the SDK's performance:</p>
+<ul class="simple">
+<li><strong>PxPvdInstrumentationFlag::eDEBUG</strong>: Transfer all debug data to visualize and inspect objects. This flag has usually the biggest impact on the stream's size.</li>
+<li><strong>PxPvdInstrumentationFlag::ePROFILE</strong>: Transfer timing information of various profiling zones in our SDK.</li>
+<li><strong>PxPvdInstrumentationFlag::eMEMORY</strong>: Transfer memory usage data of our SDK.</li>
+</ul>
+<p>Setup to transfer only profiling data over network:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">pvd</span><span class="o">-&gt;</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">transport</span><span class="p">,</span> <span class="n">PxPvdInstrumentationFlag</span><span class="o">::</span><span class="n">ePROFILE</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="visualizing-externals-and-extended-data">
+<h3>Visualizing Externals and Extended Data<a class="headerlink" href="#visualizing-externals-and-extended-data" title="Permalink to this headline">¶</a></h3>
+<p>Joints are implemented as an extension to the SDK constraints and therefore need special handling to get transmitted to PVD.
+Both joint and contact data can increase the stream size significantly. Visualizing it in PVD is therefore disabled by default. To enable them use following API calls:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">getScenePvdClient</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">setScenePvdFlags</span><span class="p">(</span><span class="n">PxPvdSceneFlag</span><span class="o">::</span><span class="n">eTRANSMIT_CONSTRAINTS</span> <span class="o">|</span> <span class="n">PxPvdSceneFlag</span><span class="o">::</span><span class="n">eTRANSMIT_SCENEQUERIES</span> <span class="o">|</span> <span class="n">PxPvdSceneFlag</span><span class="o">::</span><span class="n">eTRANSMIT_CONTACTS</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>or set the flags separately:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">getScenePvdClient</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">setScenePvdFlag</span><span class="p">(</span><span class="n">PxPvdSceneFlag</span><span class="o">::</span><span class="n">eTRANSMIT_CONSTRAINTS</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="visualizing-scenequery">
+<h3>Visualizing SceneQuery<a class="headerlink" href="#visualizing-scenequery" title="Permalink to this headline">¶</a></h3>
+<p>Visualizing SceneQuery in PVD is disabled by default since queries and hits data can increase the stream size significantly. To enable it use following API calls:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="n">mScene</span><span class="o">-&gt;</span><span class="n">getScenePvdClient</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">setScenePvdFlag</span><span class="p">(</span><span class="n">PxPvdSceneFlag</span><span class="o">::</span><span class="n">eTRANSMIT_SCENEQUERIES</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="custom-pvdclient">
+<h3>Custom PvdClient<a class="headerlink" href="#custom-pvdclient" title="Permalink to this headline">¶</a></h3>
+<p>Implement the PvdClient interface if your application needs to react upon connection or disconnection from PVD, or if you plan to send custom PVD events from your application.
+It is recommended to toggle the contact and constraint visualization in the onPvdConnected/onPvdDisconnected callbacks to avoid potential memory and compute overhead in the SDK:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="c1">// derive from PvdClient</span>
+<span class="k">struct</span> <span class="n">MyPvdClient</span> <span class="o">:</span> <span class="k">public</span> <span class="n">physx</span><span class="o">::</span><span class="n">pvdsdk</span><span class="o">::</span><span class="n">PvdClient</span>
+<span class="p">{</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">onPvdConnected</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// 1. create a PvdDataStream</span>
+        <span class="c1">// 2. send your custom PVD class descriptions from here</span>
+        <span class="c1">// this then allows PVD to correctly identify and represent</span>
+        <span class="c1">// custom data that is sent from your application to a PxVisualDebuggerConnection.</span>
+        <span class="c1">// example in JointConnectionHandler</span>
+        <span class="c1">// 3. do something when successfully connected</span>
+        <span class="c1">// e.g. enable contact and constraint visualization</span>
+    <span class="p">}</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">onPvdDisconnected</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// handle disconnection, release PvdDataStream</span>
+        <span class="c1">// e.g. disable contact and constraint visualization</span>
+    <span class="p">}</span>
+    <span class="c1">//impleament other methods</span>
+    <span class="p">...</span>
+<span class="p">};</span>
+
+<span class="c1">// register custom handler</span>
+<span class="n">MyPvdClient</span> <span class="n">myPvdClient</span><span class="p">;</span>
+<span class="n">pvd</span><span class="o">-&gt;</span><span class="n">addClient</span><span class="p">(</span><span class="n">myPvdClient</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="pvd-error-stream">
+<h3>PVD Error Stream<a class="headerlink" href="#pvd-error-stream" title="Permalink to this headline">¶</a></h3>
+<p>PhysX SDK sends all its own error messages to PVD if PVD is connected.
+In addition, you can call Ps::Foundation::error() or Ps::Foundation::getErrorHandler()::reportError() to report your error message. These functions will send error messages to PVD automatically.</p>
+<p>The messages will be listed in ErrorStream view of PVD.</p>
+</div>
+<div class="section" id="custom-profiling">
+<h3>Custom profiling<a class="headerlink" href="#custom-profiling" title="Permalink to this headline">¶</a></h3>
+<p>When using PxPvdInstrumentationFlag::ePROFILE, PVD internally calls PxSetProfilerCallback() to set itself up as the current profiler. This happens during the PxPvd::connect() call, and it overrides the potentially already existing profiler callback. That is, if users call PxSetProfilerCallback() with their own user profiler callback, and then initialize PVD with PxPvdInstrumentationFlag::ePROFILE, then the user profiler callback is lost. Similarly, initializing PVD first then calling PxSetProfilerCallback() will make PVD's profiling results vanish.</p>
+<p>In case both PVD's internal profiling and a user's custom profiling are needed at the same time, it is recommended to initialize PVD first, then call PxSetProfilerCallback() with your own profiler. In your implementation, call the PVD profiling functions manually, before or after performing your own profiling operations:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span class="k">struct</span> <span class="n">UserProfilerCallback</span> <span class="o">:</span> <span class="k">public</span> <span class="n">PxProfilerCallback</span>
+<span class="p">{</span>
+        <span class="n">PxPvd</span><span class="o">*</span> <span class="n">mPvd</span><span class="p">;</span>
+
+        <span class="k">virtual</span> <span class="kt">void</span><span class="o">*</span> <span class="nf">zoneStart</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">eventName</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">detached</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="n">contextId</span><span class="p">)</span>
+        <span class="p">{</span>
+                <span class="c1">// Do custom profiling here</span>
+
+                <span class="c1">// Then re-route to PVD implementation</span>
+                <span class="k">return</span> <span class="n">mPvd</span><span class="o">-&gt;</span><span class="n">zoneStart</span><span class="p">(</span><span class="n">eventName</span><span class="p">,</span> <span class="n">detached</span><span class="p">,</span> <span class="n">contextId</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">virtual</span> <span class="kt">void</span> <span class="nf">zoneEnd</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">profilerData</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">eventName</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">detached</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="n">contextId</span><span class="p">)</span>
+        <span class="p">{</span>
+                <span class="c1">// Do custom profiling here</span>
+
+                <span class="c1">// Then re-route to PVD implementation</span>
+                <span class="n">mPvd</span><span class="o">-&gt;</span><span class="n">zoneEnd</span><span class="p">(</span><span class="n">profilerData</span><span class="p">,</span> <span class="n">eventName</span><span class="p">,</span> <span class="n">detached</span><span class="p">,</span> <span class="n">contextId</span><span class="p">);</span>
+        <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>This is illustrated in SnippetCustomProfiler.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Statistics.html" class="btn btn-neutral float-right" title="Simulation Statistics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="DebugVisualization.html" class="btn btn-neutral" title="Debug Visualization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2008-2022 NVIDIA Corporation, 2788 San Tomas Expressway, Santa Clara, CA 95051 U.S.A. All rights reserved
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'5.1',
+              LANGUAGE:'',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: ''
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

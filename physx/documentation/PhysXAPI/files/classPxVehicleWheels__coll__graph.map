@@ -1,0 +1,12 @@
+<map id="PxVehicleWheels" name="PxVehicleWheels">
+<area shape="rect" id="node2" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="284,13,352,40"/>
+<area shape="rect" id="node10" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="401,43,471,69"/>
+<area shape="rect" id="node3" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,6,159,47"/>
+<area shape="rect" id="node4" href="$classPxVehicleWheelsSimData.html" title="Data structure describing configuration data of a vehicle with up to 20 wheels. " alt="" coords="1040,93,1215,120"/>
+<area shape="rect" id="node5" href="$classPxVehicleTireLoadFilterData.html" title="Tire load variation can be strongly dependent on the time&#45;step so it is a good idea to filter it to g..." alt="" coords="668,93,855,120"/>
+<area shape="rect" id="node6" href="$classPxVehicleAntiRollBarData.html" title="PxVehicleAntiRollBarData" alt="" coords="675,144,848,171"/>
+<area shape="rect" id="node7" href="$classPxRigidDynamic.html" title="PxRigidDynamic represents a dynamic rigid simulation object in the physics SDK. " alt="" coords="1068,43,1187,69"/>
+<area shape="rect" id="node8" href="$classPxRigidBody.html" title="PxRigidBody is a base class shared between dynamic rigid body objects. " alt="" coords="713,43,810,69"/>
+<area shape="rect" id="node9" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="520,43,619,69"/>
+<area shape="rect" id="node11" href="$classPxVehicleWheelsDynData.html" title="Data structure with instanced dynamics data for wheels. " alt="" coords="1040,144,1215,171"/>
+</map>

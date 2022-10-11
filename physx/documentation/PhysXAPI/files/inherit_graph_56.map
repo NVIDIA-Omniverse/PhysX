@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classPxAllocator.html" title="PxAllocator" alt="" coords="5,100,95,127"/>
+<area shape="rect" id="node2" href="$classPxHashBase.html" title="PxHashBase\&lt; Entry,\l Key, HashFn, GetKey,\l PxAllocator, compacting \&gt;" alt="" coords="154,5,334,61"/>
+<area shape="rect" id="node3" href="$classPxHashBase.html" title="PxHashBase\&lt; Entry,\l Key, HashFn, GetKey,\l PxAllocator, true \&gt;" alt="" coords="165,85,323,141"/>
+<area shape="rect" id="node4" href="$classPxHashBase.html" title="PxHashBase\&lt; Key, Key,\l HashFn, GetKey, PxAllocator,\l Coalesced \&gt;" alt="" coords="143,165,345,221"/>
+</map>

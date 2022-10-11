@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preset name="linux-aarch64" comment="Linux-aarch64 gcc PhysX SDK general settings">
+  <platform targetPlatform="linuxAarch64" compiler="gcc" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="True" comment="Generate the snippets" />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />    
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64/PhysX" comment="Install path relative to PhysX SDK root" />
+  </CMakeParams>
+</preset>

@@ -1,0 +1,12 @@
+<map id="PxControllerShapeHit" name="PxControllerShapeHit">
+<area shape="rect" id="node2" href="$structPxControllerHit.html" title="Describes a generic CCT hit. " alt="" coords="213,289,323,316"/>
+<area shape="rect" id="node3" href="$structPxExtendedVec3.html" title="PxExtendedVec3" alt="" coords="5,185,128,212"/>
+<area shape="rect" id="node4" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="152,185,275,212"/>
+<area shape="rect" id="node5" href="$classPxController.html" title="Base class for character controllers. " alt="" coords="299,185,392,212"/>
+<area shape="rect" id="node6" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="401,289,500,316"/>
+<area shape="rect" id="node7" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="416,185,485,212"/>
+<area shape="rect" id="node8" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="453,109,521,136"/>
+<area shape="rect" id="node11" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="510,185,615,212"/>
+<area shape="rect" id="node9" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="410,5,563,47"/>
+<area shape="rect" id="node10" href="$classPxShape.html" title="Abstract class for collision shapes. " alt="" coords="524,289,599,316"/>
+</map>

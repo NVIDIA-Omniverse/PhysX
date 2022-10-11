@@ -1,0 +1,533 @@
+.. _RigidBodyDynamics:
+
+------------------------
+Rigid Body Dynamics
+------------------------
+
+In this chapter we cover a number of topics that are also important to understand once you are comfortable with setting up a basic rigid body simulation world.
+
+======================
+Velocity
+======================
+
+A rigid body's motion is separated into linear and angular velocity components. During simulation, PhysX will modify the velocity of an object in accordance with gravity, other applied forces and torques and as a result of various constraints, such as collisions or joints.
+
+A body's linear and angular velocities can be read using the following methods::
+
+    PxVec3 PxRigidBody::getLinearVelocity();
+    PxVec3 PxRigidBody::getAngularVelocity();
+
+A body's linear and angular velocities can be set using the following methods::
+
+    void PxRigidBody::setLinearVelocity(const PxVec3& linVel, bool autowake);
+    void PxRigidBody::setAngularVelocity(const PxVec3& angVel, bool autowake);
+
+===============================
+Mass Properties
+===============================
+
+
+A dynamic actor needs mass properties: the mass, moment of inertia, and the center of mass frame which specifies the position of the actor's center of mass and its principal inertia axes. The easiest way to calculate mass properties is to use the PxRigidBodyExt::updateMassAndInertia() helper function, which will set all three properties based on the actor's shapes and a uniform density value. Variants of this function allow combinations of per-shape densities and manual specification of some mass properties. See the reference for PxRigidBodyExt for more details.
+
+The Wobbly Snowmen in the North Pole Sample illustrate the use of different mass properties.  The snowmen act like roly-poly toys, which are usually just an empty shell with the bottom filled with some heavy material. The low centers of mass cause them to move back to an upright position after they have been tilted. They come in different flavors, depending on how the mass properties are set:
+
+The first is basically massless. There is just a little sphere with a relatively high mass at the bottom of the Actor. This results in a quite rapid movement due to the small resulting moments of inertia. The snowman feels light.
+
+The second uses the mass of the bottom snowball only, resulting in a bigger inertia. Later on, the center of mass is moved to the bottom of the actor. This approximation is by no means physically correct, but the resulting snowman feels a bit more filled.
+
+The third and fourth snowman use shapes to calculate the mass. The difference is that one calculates the moments of inertia first (from the real center of mass) and then the center of mass is moved to the bottom. The other calculates the moments of inertia about the low center of mass that we pass to the calculation routine. Note how much slower the wobbling is for the second case although both have the same mass. This is because the head accounts for much more in the moment of inertia (the distance from the center of mass squared).
+
+The last snowman's mass properties are set up manually. The sample uses rough values for the moment of inertia to create a specific desired behavior. The diagonal tensor has a low value in X, and high values in Y and Z, producing a low resistance to rotation around the X-axis and high resistance around Y and Z. As a consequence, the snowman will wobble back and forth only around the X axis.
+
+If you have a 3x3 inertia matrix (for example, you have real-life inertia tensors for your objects) use the PxDiagonalize() function to obtain principal axes and diagonal inertia tensors to initialize PxRigidDynamic actors.
+
+When manually setting the mass/inertia tensor of bodies, PhysX requires positive values for the mass and each principal axis of inertia. However, it is legal to provide 0s in these values. When provided with a 0 mass or inertia value, PhysX interprets this to mean infinite mass or inertia around that principal axis. This can be used to create bodies that resist all linear motion or that resist all or some angular motion. Examples of the effects that could be achieved using this approach are:
+
+* Bodies that behave as if they were kinematic.
+* Bodies whose translation behaves kinematically but whose rotation is dynamic.
+* Bodies whose translation is dynamic but whose rotation is kinematic.
+* Bodies which can only rotate around a specific axis.
+
+Some examples of what could be achieved are detailed below. First, let's assume that we are creating a common structure - a windmill. The code to construct the bodies that would be part of the windmill are provided below::
+
+	PxRigidDynamic* dyn = physics.createRigidDynamic(PxTransform(PxVec3(0.f, 2.5f, 0.f)));
+	PxRigidActorExt::createExclusiveShape(*dyn, PxBoxGeometry(2.f, 0.2f, 0.1f), material);
+	PxRigidActorExt::createExclusiveShape(*dyn, PxBoxGeometry(0.2f, 2.f, 0.1f), material);
+	dyn->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+	dyn->setAngularVelocity(PxVec3(0.f, 0.f, 5.f));
+	dyn->setAngularDamping(0.f);
+	PxRigidStatic* st = mPhysics.createRigidStatic(PxTransform(PxVec3(0.f, 1.5f, -1.f)));
+	PxRigidActorExt::createExclusiveShape(*t, PxBoxGeometry(0.5f, 1.5f, 0.8f), material);
+	scene.addActor(dyn);
+	scene.addActor(st);
+	
+The above code creates a static box frame for the windmill and a cross to represent the blades of the turbine. We turn off gravity and angular damping on the windmill blade and give it an initial angular velocity. As a result, this turbine blade will rotate at a constant angular velocity indefinitely. However, if another object collided with the turbine, our windmill would cease to function correctly because the turbine blade would be knocked out of place. There are several options to make the turbine blade stay in the correct position when other bodies interact with it. One such approach might be to make the turbine have infinite mass and inertia. In this case, any interactions with bodies would not affect the turbine at all::
+
+    dyn->setMass(0.f);
+    dyn->setMassSpaceInertiaTensor(PxVec3(0.f));
+
+This example retains the previous behavior of the turbine spinning at a constant angular velocity indefinitely. However, now the body's velocities cannot be affected by any constraints because the body has infinite mass and inertia. If a body collided with the turbine blade, the collision would behave as if the turbine blade was a kinematic body.
+
+Another alternative would be to make the turbine have infinite mass and limit its rotation to just around the body's local z-axis. This would provide the same effect as applying a revolute joint between the turbine and the static windmill frame::
+
+    dyn->setMass(0.f);
+    dyn->setMassSpaceInertiaTensor(PxVec3(0.f, 0.f, 10.f));
+
+In both examples, the body's mass was set to 0, indicating that the body has infinite mass so its linear velocity cannot be changed by any constraints. However, in this example, the body's inertia is configured to permit the body's angular velocity to be affected by constraints around one principal axis or inertia. This provides a similar effect to introducing a revolute joint. The value of the inertia around the z-axis can be increased or decreased to make the turbines more/less resistive to motion.
+
+===============================
+Applying Forces and Torques
+===============================
+
+The most physics-friendly way to interact with a body is to apply a force to it. In classical mechanics, most interactions between bodies are typically solved by using forces. Because of the law:
+
+    f = m*a (force = mass * acceleration)
+
+Forces directly control a body's acceleration, but its velocity and position only indirectly. For this reason control by force may be inconvenient if you need immediate response. The advantage of forces is that regardless of what forces you apply to the bodies in the scene, the simulation will be able to keep all the defined constraints (joints and contacts) satisfied. For example gravity works by applying a force to bodies.
+
+Unfortunately applying large forces to articulated bodies at the resonant frequency of a system may lead to ever increasing velocities, and eventually to the failure of the solver to maintain the joint constraints. This is not unlike a real world system, where the joints would ultimately break.
+
+The forces acting on a body are accumulated before each simulation frame, applied to the simulation, and then reset to zero in preparation for the next frame. The relevant methods of PxRigidBody and PxRigidBodyExt are listed below. Please refer to the API reference for more detail::
+
+    void PxRigidBody::addForce(const PxVec3& force, PxForceMode::Enum mode, bool autowake);
+    void PxRigidBody::addTorque(const PxVec3& torque, PxForceMode::Enum mode, bool autowake);
+
+    void PxRigidBodyExt::addForceAtPos(PxRigidBody& body, const PxVec3& force,
+        const PxVec3& pos, PxForceMode::Enum mode, bool wakeup);
+    void PxRigidBodyExt::addForceAtLocalPos(PxRigidBody& body, const PxVec3& force,
+        const PxVec3& pos, PxForceMode::Enum mode, bool wakeup);
+    void PxRigidBodyExt::addLocalForceAtPos(PxRigidBody& body, const PxVec3& force,
+        const PxVec3& pos, PxForceMode::Enum mode, bool wakeup);
+    void PxRigidBodyExt::addLocalForceAtLocalPos(PxRigidBody& body, const PxVec3& force,
+        const PxVec3& pos, PxForceMode::Enum mode, bool wakeup);
+
+The PxForceMode member defaults to PxForceMode::eFORCE to apply simple forces. There are other possibilities. For example PxForceMode::eIMPULSE will apply an impulsive force. PxForceMode::eVELOCITY_CHANGE will do the same, but also ignore the mass of the body, effectively leading to an instantaneous velocity change. See the API documentation of PxForceMode for the other possibilities.
+
+.. note:: The methods in PxRigidBodyExt support only the force modes eFORCE and eIMPULSE.
+
+There are further extension functions that compute the linear and angular velocity changes that would arise in the next simulation frame if an impulsive force or impulsive torque were to be applied::
+
+    void PxRigidBodyExt::computeVelocityDeltaFromImpulse(const PxRigidBody& body,
+        const PxVec3& impulsiveForce, const PxVec3& impulsiveTorque, PxVec3& deltaLinearVelocity,
+        PxVec3& deltaAngularVelocity);
+
+A use case for this function might be to predict an updated velocity for an object so that asset loading may be initiated in advance of the simulation frame if the body is likely to exceed a threshold velocity at the end of the frame.  The impulsive force and torque are simply the force and torque that are to be applied to the body multiplied by the timestep of the simulation frame.  Neglecting the effect of constraint and contact forces, the change in linear and angular velocity that are expected to arise in the next simulation frame are returned in deltaLinearVelocity and deltaAngularVelocity.  The predicted linear velocity can then be computed with body.getLinearVelocity() + deltaLinearVelocity, while the predicted angular velocity can be computed with body.getAngularVelocity() + deltaAngularVelocity.  If required, it is possible to immediately update the velocity of the body using body.setLinearVelocity(body.getLinearVelocity() + deltaLinearVelocity) and body.setAngularVelocity(body.getAngularVelocity() + deltaAngularVelocity).
+
+===============================
+Gravity
+===============================
+
+Gravity is such a common force in simulations that PhysX makes it particularly simple to apply. For a scene-wide gravity effect, or any other uniform force field, set the PxScene class' gravity vector using PxScene::setGravity().
+
+The parameter is the acceleration due to gravity. In meters and seconds, this works out to have a magnitude of about 9.8 on earth, and should point downwards. The force that will be applied at the center of mass of each body in the scene is this acceleration vector times the actor's mass.
+
+Certain special effects can require that some dynamic actors are not influenced by gravity. To specify this set the flag::
+
+    PxActor::setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+
+.. note:: Be careful when changing gravity (or enabling/disabling it) during the simulation. For performance reasons the change will not wake up sleeping actors automatically. Thus it may be necessary to iterate through all actors and call PxRigidDynamic::wakeUp() manually.
+
+An alternative to PxActorFlag::eDISABLE_GRAVITY is to use a zero gravity vector for the whole scene, then apply your own gravity force to rigid bodies, each frame. This can be used to create radial gravity fields, as demonstrated in SampleCustomGravity.
+
+===============================
+Friction and Restitution
+===============================
+
+All physical objects have at least one material, which defines the friction and restitution properties used to resolve a collision with the objects.
+
+To create a material, call PxPhysics::createMaterial()::
+
+    PxMaterial* mMaterial;
+
+    mMaterial = mPhysics->createMaterial(0.5f, 0.5f, 0.1f); // static friction, dynamic friction,
+                                                            // restitution
+    if(!mMaterial)
+        fatalError("createMaterial failed!");
+
+Materials are owned by the PxPhysics object, and can be shared among objects in multiple scenes. The material properties of two objects involved in a collision may be combined in various ways. See the reference documentation for PxMaterial for more details.
+
+PhysX objects whose collision geometry is a triangle mesh or a heightfield (see :ref:`RigidBodyCollisionShapes`) can have a material per triangle.
+
+Friction uses the coulomb friction model, which is based around the concepts of 2 coefficients: the static friction coefficient and the dynamic friction coefficient (sometimes called kinetic friction). Friction resists relative lateral motion of two solid surfaces in contact. These two coefficients define a relationship between the normal force exerted by each surface on the other and the amount of friction force that is applied to resist lateral motion. Static friction defines the amount of friction that is applied between surfaces that are not moving lateral to each-other. Dynamic friction defines the amount of friction applied between surfaces that are moving relative to each-other.
+
+When using the default patch friction model, PhysX's friction model is, by default, stronger than analytical models. To achieve results much closer to analytical models, PhysX 4.0 introduced the PxMaterialFlag::eIMPROVED_PATCH_FRICTION flag. By default, this flag is not enabled to maintain legacy behavior. 
+
+The coefficient of restitution of two colliding objects is a fractional value representing the ratio of speeds after and before an impact, taken along the line of impact. A coefficient of restitution of 1 is said to collide elastically, while a coefficient of restitution < 1 is said to be inelastic.
+
+.. _sleeping:
+
+===============================
+Sleeping
+===============================
+
+When an actor does not move for a period of time, it is assumed that it will not move in the future either until some external force acts on it that throws it out of equilibrium. Until then it is no longer simulated in order to save resources. This state is called sleeping. You can query an actor's sleep state with the following method::
+
+    bool PxRigidDynamic::isSleeping() const;
+
+It is however often more convenient to listen for events that the SDK sends when actors fall asleep or wake up.  To receive the following events, PxActorFlag::eSEND_SLEEP_NOTIFIES must be set for the actor::
+
+    void PxSimulationEventCallback::onWake(PxActor** actors, PxU32 count) = 0;
+    void PxSimulationEventCallback::onSleep(PxActor** actors, PxU32 count) = 0;
+
+See the section :ref:`callbacks` and the subsection :ref:`sleep_callbacks` for more information.
+
+An actor goes to sleep when its kinetic energy is below a given threshold for a certain time. Basically, every dynamic rigid actor has a wake counter which gets decremented by the simulation time step when the kinetic energy of the actor is below the specified threshold. However, if the energy is above the threshold after a simulation step, the counter gets reset to a minimum default value and the whole process starts anew. Once the wake counter reaches zero, it does not get decremented any further and the actor is ready to go to sleep. Please note that a zero wake counter does not mean that the actor has to be asleep, it only indicates that it is ready to go to sleep. There are other factors that might keep an actor awake for a while longer.
+
+The energy threshold as well as the minimum amount of time an actor will stay awake can be manipulated using the following methods::
+
+    void PxRigidDynamic::setSleepThreshold(PxReal threshold);
+    PxReal PxRigidDynamic::getSleepThreshold() const;
+
+    void PxRigidDynamic::setWakeCounter(PxReal wakeCounterValue);
+    PxReal PxRigidDynamic::getWakeCounter() const;
+
+.. note:: For kinematic actors, special sleep rules apply. A kinematic actor is asleep unless a target pose has been set (in which case it will stay awake until two consecutive simulation steps without a target pose being set have passed). As a consequence, it is not allowed to use setWakeCounter() for kinematic actors. The wake counter of a kinematic actor is solely defined based on whether a target pose has been set.
+
+If a dynamic rigid actor is sleeping, the following state is guaranteed:
+
+* The wake counter is zero.
+* The linear and angular velocity is zero.
+* There is no force update pending.
+
+When an actor gets inserted into a scene, it will be considered asleep if all the points above hold, else it will be treated as awake.
+
+In general, a dynamic rigid actor is guaranteed to be awake if at least one of the following holds:
+
+* The wake counter is positive.
+* The linear or angular velocity is non-zero.
+* A non-zero force or torque has been applied.
+
+As a consequence, the following calls will wake the actor up automatically:
+
+* PxRigidDynamic::setWakeCounter(), if the wake counter value is larger than zero.
+* PxRigidBody::setLinearVelocity(), ::setAngularVelocity(), if the velocity is non-zero.
+* PxRigidBody::addForce(), ::addTorque(), if the torque is non-zero.
+
+In addition, the following calls and events wake an actor up:
+
+* PxRigidDynamic::setKinematicTarget() in the case of a kinematic actor (because this also sets the wake counter to a positive value).
+* PxRigidActor::setGlobalPose(), if the autowake parameter is set to true (default).
+* Simulation gets disabled for a PxRigidActor by raising PxActorFlag::eDISABLE_SIMULATION.
+* PxScene::resetFiltering().
+* PxShape::setSimulationFilterData(), if the subsequent re-filtering causes the type of the shape pair to transition between suppressed, trigger and contact.
+* Touch with an actor that is awake.
+* A touching rigid actor gets removed from the scene (this is the default behavior but it can be specified by the user, see note further below).
+* Contact with a static rigid actor is lost.
+* Contact with a dynamic rigid actor is lost and this actor is awake in the next simulation step.
+
+.. note:: When removing a rigid actor from the scene or a shape from an actor, it is possible to specify whether to wake up the objects that were touching the removed object in the previous simulation step. See the API comments in PxScene::removeActor() and PxRigidActor::detachShape() for details.
+
+To explicitly wake up a sleeping object, or force an object to sleep, use::
+
+    void PxRigidDynamic::wakeUp();
+    void PxRigidDynamic::putToSleep();
+
+.. note:: It is not allowed to use these methods for kinematic actors. The sleep state of a kinematic actor is solely defined based on whether a target pose has been set.
+
+The API reference documents exactly which methods cause an actor to be woken up.
+
+.. _sleep_callbacks:
+
+++++++++++++++++++++++++++++++++++++++++++
+Sleep state change events
+++++++++++++++++++++++++++++++++++++++++++
+
+As mentioned above, PhysX provides an event system that reports changes to the sleep state of dynamic rigid bodies during *PxScene::fetchResults()*::
+
+    void PxSimulationEventCallback::onWake(PxActor** actors, PxU32 count) = 0;
+    void PxSimulationEventCallback::onSleep(PxActor** actors, PxU32 count) = 0;
+
+It is important to understand the correct usage of these events, and their limitations:
+
+* A body added since the previous *fetchResults()* or *flushSimulation()* will always generate an event, even if no sleep state transition occured. 
+* If there have been multiple changes in a body's sleep state since the previous *fetchResults()* or *flushSimulation()*, PhysX will report only the most recent.
+
+Sometimes it is desirable to detect transitions between awake and asleep, e.g. when keeping track of the number of awake bodies. Suppose a sleeping body *B* is woken by the application, the counter is incremented, and during the next simulation step *B* stays awake. Even though *B*'s sleep state did not change during simulation, it has changed since the previous *fetchResults()*, and so an *onWake()* event will be generated for it. If the counter is incremented again in response to this event, its value will be incorrect.
+
+To use sleep state events to detect transitions, a record of the sleep state for objects of interest has to be kept, for example in a hash. When processing an event, this record can be used to check whether there has been a transition.
+
+
+===============================
+Kinematic Actors
+===============================
+
+Sometimes controlling an actor using forces or constraints is not sufficiently robust, precise or flexible. For example moving platforms or character controllers often need to manipulate an actor's position or have it exactly follow a specific path. Such a control scheme is provided by kinematic actors.
+
+A kinematic actor is controlled using the PxRigidDynamic::setKinematicTarget() function. Each simulation step PhysX moves the actor to its target position, regardless of external forces, gravity, collision, etc. Thus one must continually call setKinematicTarget(), every time step, for each kinematic actor, to make them move along their desired paths. The movement of a kinematic actor affects dynamic actors with which it collides or to which it is constrained with a joint. The actor will appear to have infinite mass and will push regular dynamic actors out of the way.
+
+To create a kinematic actor, simply create a regular dynamic actor then set its kinematic flag::
+
+    PxRigidBody::setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+
+Use the same function to transform a kinematic actor back to a regular dynamic actor. While you do need to provide a mass for the kinematic actor as for all dynamic actors, this mass will not actually be used for anything while the actor is in kinematic mode.
+
+Caveats:
+
+- It is important to understand the difference between PxRigidDynamic::setKinematicTarget() and PxRigidActor::setGlobalPose() here. While setGlobalPose() would also move the actor to the desired position, it would not make that actor properly interact with other objects. In particular, with setGlobalPose() the kinematic actor would not push away other dynamic actors in its path, instead it would go right through them. The setGlobalPose() function can still be used though, if one simply wants to teleport a kinematic actor to a new position.
+
+- A kinematic actor can push away dynamic objects, but nothing pushes it back. As a result, a kinematic can easily squish a dynamic actor against a static actor, or against another kinematic actor. As a result, the squished dynamic object can deeply penetrate the geometry it has been pushed into.
+
+- There is no interaction or collision between kinematic actors and static actors. However, it is possible to request contact information for these cases with the PxSceneDesc::kineKineFilteringMode and PxSceneDesc::staticKineFilteringMode.
+
+++++++++++++++++++++++++++++++++++++++++++
+Kinematic Surface Velocities
+++++++++++++++++++++++++++++++++++++++++++
+
+In addition to setting kinematic targets or the global pose of a kinematic actor, it is also possible to set a kinematic surface velocity using the method PxRigidDynamic::setKinematicSurfaceVelocity(). This method is only legal to call if the rigid body in question is set to be kinematic. This method sets a persistent velocity on the kinematic actor but flags the actor to bypass integration. This means that objects interacting with the kinematic actor through collisions will behave as if the kinematic actor is moving, although the actor's pose does not actually change. This mechanism can be used to create conveyor belts and rotating surfaces.
+
+===============================
+Active Actors
+===============================
+
+The active actors API provides an efficient way to reflect actor transform changes in a PhysX scene to an associated external object such as a render mesh.
+
+When a scene's fetchResults() method is called an array of active *PxActor* is generated. Because only actors that have moved will be included in the list this approach is potentially much more efficient than, for example, analyzing each actor in the scene individually.
+
+The example below shows how to use active actors to update a render object::
+
+    // update scene
+    scene.simulate(dt);
+    scene.fetchResults();
+
+    // retrieve array of actors that moved
+    PxU32 nbActiveActors;
+    PxActor** activeActors = scene.getActiveActors(nbActiveActors);
+
+    // update each render object with the new transform
+    for (PxU32 i=0; i < nbActiveActors; ++i)
+    {
+        MyRenderObject* renderObject = static_cast<MyRenderObject*>(activeActors[i]->userData);
+        renderObject->setTransform(activeActors[i]->getGlobalPose());
+    }
+
+.. note::
+    PxSceneFlag::eENABLE_ACTIVE_ACTORS must be set on the scene for the active actors array to be generated.
+	
+.. note::
+    Since the target transform for kinematic rigid bodies is set by the user, kinematics can be excluded from the list by setting the flag PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS.
+	
+===================================
+Dominance
+===================================
+
+Dominance is a mechanism to enable dynamic bodies to dominate each-other. Dominance effectively imbues the dominant body in a pair with infinite mass. This is a form of local mass modification within the constraint solver and, as such, can override the mass of one of the bodies in a pair. Similar effects can be achieved through local mass modification in contact modification but dominance has the advantage of being handled automatically within the SDK so does not incur the additional memory and performance overhead of contact modification.
+
+Each actor must be assigned a dominance group ID. This is a 5-bit value in the range [0, 31]. As such, you are restricted to at-most 32 dominance groups. By default, all bodies are placed in dominance group 0. An actor can be assigned to a dominance group using the following method on PxActor::
+
+    virtual void setDominanceGroup(PxDominanceGroup dominanceGroup) = 0;
+
+Dominance is defined by 2 real numbers in the following struct::
+
+    struct PxDominanceGroupPair
+    {
+        PxDominanceGroupPair(PxReal a, PxReal b)
+            : dominance0(a), dominance1(b) {}
+        PxReal dominance0;
+        PxReal dominance1;
+    };
+
+And dominance between two dominance groups can be configured using the following method on PxScene::
+
+    virtual void setDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2,
+        const PxDominanceGroupPair& dominance) = 0;
+
+The user can define 3 different states for a given PxDominanceGroupPair:
+* 1 : 1. This indicates that both bodies have equal dominance. This is the default behavior.
+* 1 : 0. This indicates that body B dominates body A.
+* 0 : 1. This indicates that body A dominates body B.
+
+Any values other than 0 and 1 are not valid in a PxDominanceGroupPair. Assigning 0 to both sides of the PxDominanceGroupPair is also invalid. These values can be considered to be scales applied to the bodies' respective inverse mass and inverse inertia. A dominance value of 0 would therefore equate to an infinite mass body.
+
+The following example sets two actors, actorA and actorB, into different dominance groups and configures the dominance group to make actorA dominate actorB::
+
+    PxRigidDynamic* actorA = mPhysics->createRigidDynamic(PxTransform(PxIdentity));
+    PxRigidDynamic* actorB = mPhysics->createRigidDynamic(PxTransform(PxIdentity));
+
+    actorA->setDominanceGroup(1);
+    actorB->setDominanceGroup(2);
+
+    mScene->setDominanceGroupPair(1, 2, PxDominanceGroupPair(0.f, 1.f));
+
+Dominance values will not affect joints. Local mass modification on joints must be performed using the following methods on PxJoint::
+
+    virtual void setInvMassScale0(PxReal invMassScale) = 0;
+    virtual void setInvMassScale1(PxReal invMassScale) = 0;
+    virtual void setInvInertiaScale0(PxReal invInertiaScale) = 0;
+    virtual void setInvInertiaScale1(PxReal invInertiaScale) = 0;
+
+As previously mentioned, dominance does not permit values other than 0 or 1 and any dominance values are applied uniformly to both the inverse mass and inverse inertia. Joints and contacts through contact modification permit defining separate inverse mass and inverse inertia scales, which accept any values within the range [0, PX_MAX_REAL] so can be used to achieve a wider range of effects than dominance can.
+
+Dominance can produce some very peculiar results if misused. For example, given bodies A, B and C configured in the following way:
+
+* Body A dominates body B
+* Body B dominance body C
+* Body C dominates body A
+
+In this situation, body A cannot push body C directly. However, it can push body C if it pushes body B into body C.
+
+===============================
+Solver Iterations
+===============================
+
+When the motion of a rigid body is constrained either by contacts or joints, the constraint solver comes into play. The solver satisfies the constraints on the bodies by iterating over all the constraints restricting the motion of the body a certain number of times. The more iterations, the more accurate the results become. The solver iteration count defaults to 4 position iterations and 1 velocity iteration. Those counts may be set individually for each body using the following function::
+
+    void PxRigidDynamic::setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters);
+
+Typically it is only necessary to significantly increase these values for objects with lots of joints and a small tolerance for joint error. If you find a need to use a setting higher than 30, you may wish to reconsider the configuration of your simulation.
+
+The solver groups contacts into friction patches; friction patches are groups of contacts which share the same materials and have similar contact normals. However, the solver permits a maximum of 32 friction patches per contact manager (pair of shapes). If more than 32 friction patches are produced, which may be due to very complex collision geometry or very large contact offsets, the solver will ignore the remaining friction patches. A warning will be issues in checked/debug builds when this happens.
+
+
+===============================
+Immediate Mode
+===============================
+
+In addition to simulation using a *PxScene*, *PhysX* offers a low-level simulation API called "immediate mode". This provides an API to access the low-level contact generation and constraint solver. This approach currently only supports CPU rigid bodies and reduced coordinate articulations. It does not support maximal coordinate articulations.
+
+The immediate mode API is defined in *PxImmediateMode.h* and there are two Snippets demonstrating its usage: "SnippetImmediateMode" and "SnippetImmediateArticulation". The first one does not use articulations and shows how to use the API for rigid bodies and joints that still belong to a *PxScene*. This can be used e.g. to simulate a specific actor of a scene with a higher frequency than the rest of the scene. The second snippet is a "pure" immediate mode example where all involved actors, joints and articulations exist without the need for *PxScene*, *PxActor* or *PxArticulation* objects.
+
+The immediate mode API provides a function to perform contact generation::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API bool PxGenerateContacts(const PxGeometry* const * geom0, const PxGeometry* const * geom1, const PxTransform* pose0, const PxTransform* pose1, PxCache* contactCache, const PxU32 nbPairs, PxContactRecorder& contactRecorder, const PxReal contactDistance, const PxReal meshContactMargin, const PxReal toleranceLength, PxCacheAllocator& allocator);
+		
+This function takes a set of pairs of *PxGeometry* objects located at specific poses and performs collision detection between the pairs. If the pair of geometries collide, contacts are generated, which are reported to *contactRecorder*. In addition, information may be cached in *contactCache* to accelerate future queries between these pairs of geometries. Any memory required for this cached information will be allocated using *allocator*. 
+
+In addition, the immediate mode provides APIs for the constraint solver. These include functions to create bodies used by the solver::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void PxConstructSolverBodies(const PxRigidBodyData* inRigidData, PxSolverBodyData* outSolverBodyData, const PxU32 nbBodies, const PxVec3& gravity, const PxReal dt);
+	
+	PX_C_EXPORT PX_PHYSX_CORE_API void PxConstructStaticSolverBody(const PxTransform& globalPose, PxSolverBodyData& solverBodyData);
+
+In addition to constructing the bodies, *PxConstructSolverBodies* also integrates the provided gravitational acceleration into the bodies velocities.
+
+The following function is optional and is used to batch constraints::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API PxU32 PxBatchConstraints(	const PxSolverConstraintDesc* solverConstraintDescs, const PxU32 nbConstraints, PxSolverBody* solverBodies, const PxU32 nbBodies,
+															PxConstraintBatchHeader* outBatchHeaders, PxSolverConstraintDesc* outOrderedConstraintDescs,
+															Dy::ArticulationV** articulations=NULL, const PxU32 nbArticulations=0);
+															
+Batching constraints reorders the provided constraints and produces batchHeaders, which can be used by the solver to accelerate constraint solving by grouping together independent constraints and solving them in parallel using multiple lanes in SIMD registers. This process is entirely optional and can bypassed if not desired. Note that this will change the order in which constraints are processed, which can change the outcome of the solver.
+
+The following methods is provided to create contact constraints::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API bool PxCreateContactConstraints(PxConstraintBatchHeader* batchHeaders, const PxU32 nbHeaders, PxSolverContactDesc* contactDescs,
+		PxConstraintAllocator& allocator, const PxReal invDt, const PxReal bounceThreshold, const PxReal frictionOffsetThreshold, const PxReal correlationDistance);
+
+This method can be provided with the contacts produced by *PxGenerateContacts* or by contacts produced by application-specific contact generation approaches.
+
+The following methods are provided to create joint constraints::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API bool PxCreateJointConstraints(PxConstraintBatchHeader* batchHeaders, const PxU32 nbHeaders, PxSolverConstraintPrepDesc* jointDescs, PxConstraintAllocator& allocator,
+																const PxReal dt, const PxReal invDt);
+		
+	PX_C_EXPORT PX_PHYSX_CORE_API bool PxCreateJointConstraintsWithShaders(PxConstraintBatchHeader* batchHeaders, const PxU32 nbBatchHeaders, PxConstraint** constraints, PxSolverConstraintPrepDesc* jointDescs,
+																			PxConstraintAllocator& allocator, const PxReal dt, const PxReal invDt);
+	
+	PX_C_EXPORT PX_PHYSX_CORE_API bool PxCreateJointConstraintsWithImmediateShaders(PxConstraintBatchHeader* batchHeaders, const PxU32 nbBatchHeaders, immConstraint* constraints, PxSolverConstraintPrepDesc* jointDescs,
+																					PxConstraintAllocator& allocator, const PxReal dt, const PxReal invDt);
+	
+The methods provide a mechanism for the application to define joint rows or for the application to make use of *PhysX PxConstraint* objects, which create the constraint rows.
+
+The following method solves the constraints::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, const PxU32 nbBatchHeaders, const PxSolverConstraintDesc* solverConstraintDescs,
+		const PxSolverBody* solverBodies, PxVec3* linearMotionVelocity, PxVec3* angularMotionVelocity, const PxU32 nbSolverBodies, const PxU32 nbPositionIterations, const PxU32 nbVelocityIterations,
+		const float dt=0.0f, const float invDt=0.0f, const PxU32 nbSolverArticulations=0, Dy::ArticulationV** solverArticulations=NULL);
+		
+This method performs all required position and velocity iterations and updates the objects' delta velocities and motion velocities, which are stored in *PxSolverBody* and *linear/angularMotionVelocity* respectively.
+
+The following method is provided to integrate the bodies' final poses and update the bodies' velocities to reflect the motion produced by the constraint solver::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void PxIntegrateSolverBodies(PxSolverBodyData* solverBodyData, PxSolverBody* solverBody, const PxVec3* linearMotionVelocity, const PxVec3* angularMotionState, const PxU32 nbBodiesToIntegrate,
+ 	const PxReal dt);
+
+The above methods are the ones needed for simulating regular rigid bodies and joints in immediate mode. See SnippetImmediateMode for an example.
+
+Additional functions are provided to simulate reduced coordinate articulations. First, register articulation-related solver functions with *PxRegisterImmediateArticulations*::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void PxRegisterImmediateArticulations();
+
+This is the counterpart of *PxRegisterArticulationsReducedCoordinate* for immediate mode. You only need to call it once at the start of your program. Then create a low-level reduced coordinate articulations with the following function::
+	
+	PX_C_EXPORT PX_PHYSX_CORE_API Dy::ArticulationV*	PxCreateFeatherstoneArticulation(const PxFeatherstoneArticulationData& data);
+
+Once the articulation is created, add articulation links to it with the following function::
+	
+	PX_C_EXPORT PX_PHYSX_CORE_API Dy::ArticulationLinkHandle	PxAddArticulationLink(Dy::ArticulationV* articulation, const PxFeatherstoneArticulationLinkData& data, bool isLastLink=false);
+
+The number of links per articulation is currently limited to 64, just as with PxScene-level articulations. After all links have been added, the articulation is ready to be simulated.
+	
+Note that for articulations the current API is not as "immediate" as for rigid bodies, since the returned object is still a thin "retained mode" wrapper around low-level structures. This is done to make articulations easier to use: the low-level structures currently contain data for both reduced coordinate and maximal coordinate articulations, and intimate knowledge of PhysX's internals is needed to distinguish between the two. The thin wrapper makes things more accessible. On the other hand, the data is not directly owned by the user, and the following function must be called to eventually release it at the end of your program::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void	PxReleaseArticulation(Dy::ArticulationV* articulation);
+
+Meanwhile there are a number of data accessor functions available::
+	
+	PX_C_EXPORT PX_PHYSX_CORE_API Dy::ArticulationV*	PxGetLinkArticulation(const Dy::ArticulationLinkHandle link);
+	PX_C_EXPORT PX_PHYSX_CORE_API PxU32	PxGetLinkIndex(const Dy::ArticulationLinkHandle link);
+	PX_C_EXPORT PX_PHYSX_CORE_API bool	PxGetLinkData(const Dy::ArticulationLinkHandle link, PxLinkData& data);
+	PX_C_EXPORT PX_PHYSX_CORE_API PxU32	PxGetAllLinkData(const Dy::ArticulationV* articulation, PxLinkData* data);
+	PX_C_EXPORT PX_PHYSX_CORE_API bool	PxGetMutableLinkData(const Dy::ArticulationLinkHandle link, PxMutableLinkData& data);
+	PX_C_EXPORT PX_PHYSX_CORE_API bool	PxSetMutableLinkData(Dy::ArticulationLinkHandle link, const PxMutableLinkData& data);
+	PX_C_EXPORT PX_PHYSX_CORE_API bool	PxGetJointData(const Dy::ArticulationLinkHandle link, PxFeatherstoneArticulationJointData& data);
+	PX_C_EXPORT PX_PHYSX_CORE_API bool	PxSetJointData(Dy::ArticulationLinkHandle link, const PxFeatherstoneArticulationJointData& data);
+	
+Some of them are here to update the data at runtime, say for articulation drives. Some of them are needed to setup the articulation data for aforementioned immediate mode functions like *PxSolveConstraints*, which have been updated in *PhysX 4.1* to take additional articulation-related parameters (but which should otherwise be used the same way as for immediate mode rigid bodies).
+
+The only new articulation-specific functions are otherwise::
+
+	PX_C_EXPORT PX_PHYSX_CORE_API void	PxComputeUnconstrainedVelocities(Dy::ArticulationV* articulation, const PxVec3& gravity, const PxReal dt);
+	PX_C_EXPORT PX_PHYSX_CORE_API void	PxUpdateArticulationBodies(Dy::ArticulationV* articulation, const PxReal dt);
+
+Use the first one at the start of the simulation loop to compute unconstrained velocities for each immediate mode articulations. Use the second one at the end of the simulation loop to update the articulation bodies/links after *PxIntegrateSolverBodies* has finished. Please refer to SnippetImmediateArticulation for examples.
+	
+======================
+Enhanced Determinism
+======================
+
+PhysX provides limited deterministic simulation. Specifically, the results of the simulation will be identical between runs if simulating the exact same scene (same actors inserted in the same order) using the same time-stepping scheme and same PhysX release running on the same platform. The simulation behavior is not influenced by the number of worker threads that are used.
+
+However, the results of the simulation can change if actors are inserted in a different order. In addition, the overall behavior of the simulation can change if additional actors are added or if some actors are removed from the scene. This means that the simulation of a particular collection of actors can change depending on whether other actors are present in the scene or not, irrespective of whether these actors actually interact with the collection of actors. This behavioral property is usually tolerable but there are circumstances in which it is not acceptable.
+
+To overcome this issue, PhysX provides a flag: PxSceneFlag::eENABLE_ENHANCED_DETERMINISM, which provides additional levels of determinism. Specifically, provided the application inserts the actors in a deterministic order, with this flag raised, the simulation of an island will be identical regardless of any other islands in the scene. However, this mode sacrifices some performance to ensure this additional determinism.
+
+
+=======================
+Axis locking
+=======================
+
+It is possible to restrict motion along or around specific world-space axes in PhysX using PxRigidDynamicLockFlag. For example, the below code snippet demonstrates how to restrict a PxRigidDynamic to two dimensional simulation. In this case, we permit the PxRigidDynamic to rotate only around the Z-axis and to translate only along the X- and Y- axes::
+
+	PxRigidDynamic* dyn = physics.createRigidDynamic(PxTransform(PxVec3(0.f, 2.5f, 0.f)));
+
+	...
+
+	//Lock the motion 
+	dyn->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
+
+
+It is legal to restrict movement or rotation around any combination of the 6 degrees of freedom.
+
+.. _TemporalGaussSeidel:
+
+=======================
+Temporal Gauss-Seidel
+=======================
+
+PhysX provides a default Projected Gauss-Seidel-style (PGS) solver and an optional Temporal Gauss-Seidel (TGS) solver.
+
+Temporal gauss-seidel offers several advantages over the PGS-style solver:
+
+* Dramatically improved convergence
+* Improved handling of high-mass ratios
+* Minimizes energy introduced when correcting penetrations (depending on solver convergence)
+* Improved joint drive accuracy
+
+TGS is generally a little slower than PGS. This is partially due to the increased complexity of the constraint solver and also partially due to TGS solving friction constraints every iteration, whereas PGS solves friction constraints only in the final 3 position iterations by default.
+
+Enabling the TGS solver requires setting PxSceneDesc::solverType to PxSolverType::eTGS. This is an immutable scene property that must be set before the scene is constructed.
+
+The TGS solver is available when using both CPU and GPU simulation.
+
+
+

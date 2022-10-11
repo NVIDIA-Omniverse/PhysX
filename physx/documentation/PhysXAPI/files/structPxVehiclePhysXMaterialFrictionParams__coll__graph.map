@@ -1,0 +1,8 @@
+<map id="PxVehiclePhysXMaterialFrictionParams" name="PxVehiclePhysXMaterialFrictionParams">
+<area shape="rect" id="node2" href="$structPxVehiclePhysXMaterialFriction.html" title="PxVehiclePhysXMaterialFriction" alt="" coords="5,427,212,453"/>
+<area shape="rect" id="node3" href="$classPxMaterial.html" title="Material class to represent a set of surface properties. " alt="" coords="67,337,151,364"/>
+<area shape="rect" id="node4" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="51,261,166,288"/>
+<area shape="rect" id="node5" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="56,185,161,212"/>
+<area shape="rect" id="node6" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="75,109,143,136"/>
+<area shape="rect" id="node7" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="32,5,185,47"/>
+</map>

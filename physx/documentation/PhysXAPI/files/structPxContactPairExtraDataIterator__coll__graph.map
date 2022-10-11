@@ -1,0 +1,8 @@
+<map id="PxContactPairExtraDataIterator" name="PxContactPairExtraDataIterator">
+<area shape="rect" id="node2" href="$structPxContactPairVelocity.html" title="Velocities of the contact pair rigid bodies. " alt="" coords="31,187,184,213"/>
+<area shape="rect" id="node3" href="$structPxContactPairExtraDataItem.html" title="Base class for items in the extra data stream of contact pairs. " alt="" coords="112,96,301,123"/>
+<area shape="rect" id="node5" href="$structPxContactPairPose.html" title="World space actor poses of the contact pair rigid bodies. " alt="" coords="209,187,345,213"/>
+<area shape="rect" id="node4" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="65,5,188,32"/>
+<area shape="rect" id="node6" href="$classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="326,96,476,123"/>
+<area shape="rect" id="node7" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="340,5,462,32"/>
+</map>

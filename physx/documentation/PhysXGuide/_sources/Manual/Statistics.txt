@@ -1,0 +1,25 @@
+.. _statistics:
+
+---------------------
+Simulation Statistics
+---------------------
+
+=========
+Interface
+=========
+
+In this chapter we will have a quick look at the statistics information that PhysX collects every simulation step. Usually, this information can be explored in the PhysX Visual Debugger but we do offer a PhysX API method as well to allow applications to access the data directly. After a simulation step and a call to *PxScene::fetchResults()*, the simulation statistics for the processed step can be retrieved through the *PxScene::getSimulationStatistics()* interface. The method copies the data to a user provided *PxSimulationStatistics* structure. For details about the individual members please refer to the API documentation.
+
+.. note:: Do not fetch the simulation statistics while the simulation is running.
+
+=====
+Usage
+=====
+
+The provided simulation statistics is mainly meant to help investigate performance issues. It provides a quantitative summary of the work done, i.e., the number of objects or combination of objects which have been processed in the current simulation step. For example, if you encounter performance spikes in certain frames, then the simulation statistics might give some insight into possible causes. For instance:
+
+* Has a large amount of volumes been added or removed from the broadphase in one single step? You could try to distribute the addition/removal of objects over a couple of simulation steps.
+* Are there suddenly many more collision pairs processed than expected? This could be caused by a badly configured collision pair filter or maybe some *PxPairFlags* have been accidentally raised.
+* etc.
+
+Please keep in mind that the simulation statistics are currently less a measurement of what the scene contains but rather what got processed. So it is only partially helpful to detect whether objects have been configured and arranged properly.

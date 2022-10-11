@@ -1,0 +1,8 @@
+<map id="PxVehicleDrivableSurfaceToTireFrictionPairs" name="PxVehicleDrivableSurfaceToTireFrictionPairs">
+<area shape="rect" id="node2" href="$classPxMaterial.html" title="Material class to represent a set of surface properties. " alt="" coords="40,337,124,364"/>
+<area shape="rect" id="node3" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="25,261,139,288"/>
+<area shape="rect" id="node4" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="29,185,135,212"/>
+<area shape="rect" id="node5" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="48,109,116,136"/>
+<area shape="rect" id="node6" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,159,47"/>
+<area shape="rect" id="node7" href="$structPxVehicleDrivableSurfaceType.html" title="Driving surface type. Each PxMaterial is associated with a corresponding PxVehicleDrivableSurfaceType..." alt="" coords="171,337,369,364"/>
+</map>

@@ -1,0 +1,201 @@
+.. _API:
+
+
+-------------
+The PhysX API
+-------------
+
+============
+Introduction
+============
+
+This chapter covers the basic patterns common to the PhysX application programming interface (API.) We are committed to keeping this API stable and backwards-compatible from one minor release to the next, to protect the investment you make in your integration code. 
+
+The PhysX API is composed primarily of abstract interface classes. Classes, enumerations and functions defined by the API have the prefix Px.
+
+.. note:: There is currently one section of the public API which does not have the Px prefix: the PhysX Visual Debugger connection library which has the prefix Pvd.
+
+The PhysX libraries also expose some classes and functions that are not part of the public API. These are primarily containers and platform abstractions that are required to build the PhysX libraries which are distributed as source, and are also used in the samples. They can be recognized because they do not have the Px prefix. Even though they are in principle accessible to users, they are largely undocumented and we do not maintain compatibility of this code between PhysX versions. For that reason we recommend strongly against their use in applications.
+
+
+.. _MemoryManagement:
+
+=================
+Memory Management
+=================
+
+PhysX performs all allocations via the *PxAllocatorCallback* interface. You must implement this interface in order to initialize PhysX::
+
+    class PxAllocatorCallback
+    {
+    public:
+        virtual ~PxAllocatorCallback() {}
+        virtual void* allocate(size_t size, const char* typeName, const char* filename, 
+            int line) = 0;
+        virtual void deallocate(void* ptr) = 0;
+    };
+
+The size of the request is specified in bytes, and PhysX requires that the memory that is returned be 16-byte aligned.  On many platforms malloc() returns memory that is 16-byte aligned, and on Windows the system function _aligned_malloc() provides this capability. The other parameters to allocate() are a string which identifies the type of allocation, and the __FILE__ and __LINE__ location inside PhysX code where the allocation was made. Refer to PxAllocatorCallback::allocate() to find out more about them.  
+
+A simple implementation of the allocator callback class can be found in the PhysX Extensions library, see class *PxDefaultAllocatorCallback*.
+
+.. note:: On some platforms PhysX uses system library calls to determine the correct type name, and the system function that returns the type name may call the system memory allocator. If you are instrumenting system memory allocations, you may observe this behavior. To prevent PhysX requesting type names, disable allocation names using the method PxFoundation::setReportAllocationNames().
+
+You can place PhysX objects in memory owned by the application using PhysX' binary deserialization mechanism. See :ref:`serialization` for details.
+
+As an alternative to instrumenting the allocator, you can obtain detailed information about memory allocation in the PhysX Visual Debugger (see: :ref:`physxvisualdebugger`)
+
+.. _ErrorReporting:
+
+===============
+Error Reporting
+===============
+
+PhysX logs all error messages through the *PxErrorCallback* interface. You must implement this interface in order to initialize PhysX::
+
+    class UserErrorCallback : public PxErrorCallback
+    {
+    public:
+        virtual void reportError(PxErrorCode::Enum code, const char* message, const char* file, 
+            int line)
+        {
+            // error processing implementation
+            ...
+        }
+    };
+
+There is only a single function to implement, *reportError*.  This function should log the passed message, or print it on the application's output console. For the more serious error codes *eABORT*, *eINVALID_PARAMETER*, *eINVALID_OPERATION*, *eINTERNAL_ERROR* and *eOUT_OF_MEMORY*, breaking into the debugger may be a more appropriate choice.  Whatever you do, do not just ignore the messages.
+
+A simple implementation of the error callback class can be found in the PhysX Extensions library, see class *PxDefaultErrorCallback*.
+
+.. _MathTypes:
+
+===============================
+Math Classes
+===============================
+
+The common math classes used in PhysX are PxVec2, PxVec3, PxVec4, PxMat33, PxMat44, PxTransform, PxPlane and PxQuat, which are are defined in their respective header files, e.g. (SDKRoot)/Include/foundation/PxVec3.h. The types support standard operator overloads and typical math operations. Zero and identity objects where appropriate can be constructed by passing the arguments PxZero and PxIdentity respectively.
+
+Some points to note are:
+
+* PxTransform is a representation of a rigid body transform as a rotation quaternion and a position vector, and PhysX functions which take transforms all use this type.
+* PxPlane is a homogeneous plane equation: that is, the constructor PxPlane(n, d) represents the equation n.x + d = 0.
+
+PxMat33 and PxMat44 matrices represent transformations with basis vectors in the columns (pre-multiply with matrix on the left hand side) and are stored in column-major order. This format is layout compatible with popular graphics APIs such as OpenGL and Direct3D. For example, to set the model transformation for a rigid body in OpenGL::
+
+    // retrieve world space transform of rigid body
+    PxTransform t = rigidActor.getGlobalPose();
+
+    // convert to matrix form
+    PxMat44 m = PxMat44(t);
+
+    // set to OpenGL
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    
+    // PxMat44::front() returns a pointer to the first matrix element
+    glMultMatrixf(m.front());
+    
+    // draw model
+    
+    glPopMatrix()
+    
+
+DirectX uses row-major storage for matrices by default (D3DMATRIX), but also stores basis vectors in rows (post-multiply on the right), so PxMat44 may be used in place of D3DXMATRIX types directly.
+
+
+.. _UserData:
+
+======================================================
+Connecting PhysX Objects with User Application Objects
+======================================================
+
+Often an application needs to associate PhysX objects with application objects for application logic or rendering purposes. An easy way to connect a single user application object with a PhysX object is to use the *userData* member provided by the most important PhysX classes (*PxActor::userData*, *PxShape::userData*, *PxMaterial::userData*, ...). The *userData* member is a *void\** pointer which is reserved for application use. Each class only has one *userData* field, so to manage multiple associations another mechanism must be used.
+
+============
+Type Casting
+============
+
+PhysX API interface classes inherit from a top-level interface called PxBase, which provides mechanisms for type-safe down-casting between interface types. For example, to cast from a PxActor to a PxRigidDynamic, use the following idiom::
+
+  PxActor* actor = <...>
+  PxRigidDynamic* myActor = actor->is<PxRigidDynamic>();
+  
+  const PxActor* actor = <...>
+  const PxRigidDynamic* myActor = actor->is<PxRigidDynamic>();
+
+This pattern can be used to cast to intermediate types in the hierarchy such as PxRigidActor, but this is somewhat slower than casting to concrete types. In addition, PxBase provides the following capabilities:
+
+* getConcreteType() provides an integer value which corresponds to the concrete type of an object
+* getConcreteTypeName() provides a string name of the concrete type
+* isKindOf() provides string-based testing of inheritance
+
+
+.. _BasicReferenceCounting:
+
+==================
+Reference Counting
+==================
+Some PhysX objects are designed to be shared and referenced multiple times in a PhysX scene graph. For example, a PxConvexMesh may be referenced by multiple PxShape objects, each sharing the same geometry but associated with different actors. The specific types are PxTriangleMesh, PxHeightField, PxConvexMesh, PxMaterial, and PxShape. Each object of these types has a reference count. The rules for reference counting are as follows:
+
+* when an object is created from PxPhysics, it has a reference count of 1. 
+* when an object's reference count reaches 0, the object is destroyed.
+* when a new counted reference is created, the reference count is incremented. Counted references are as follows:
+
+  * when a PxShape references a PxConvexMesh, PxHeightfield, or PxTriangleMesh.
+  * when a PxShape references a PxMaterial.
+  * when a PxRigidActor references a PxShape.
+
+* when a counted reference is destroyed, or the object's release() method is called, the reference count is decremented.
+* when an object is created through deserialization, its reference count is 1, plus the number of counted references that exist to the object. 
+
+The initial reference count of 1 ensures the object is not destroyed until the application allows it by calling release() - thereafter it will be destroyed when no remaining counted references to it exist. 
+
+For example, if you create a shape using PxPhysics::createShape() and attach it to an actor with PxRigidActor::attachShape(), it has a reference count of 2. If you then call the shape's
+release() method, it has a reference count of 1. When the actor is destroyed, or the shape is detached from the actor, the reference count is decremented, and since it is now 0, the shape is destroyed.
+
+The acquireReference() method increments the reference count of an object. For example, when a spatial query returns a reference to a mesh shape, and you want to pass that result to another thread for deferred processing, incrementing the reference count will ensure that even if the shape referencing the mesh is released, the mesh continues to exist.
+
+.. note:: subtypes of PxGeometry do not have counted references to the meshes to which they point, e.g. when PxConvexMeshGeometry points to a PxConvexMesh. A counted reference exists only when the geometry is within a PxShape.
+
+.. note:: shapes are often created using the utility method PxRigidActorExt::createExclusiveShape(). Take special care when deserializing such actors (see :ref:`RigidBodyCollisionShapes` and :ref:`DeserializeReferenceCounting`)
+
+
+.. _PxToleranceScale:
+
+=====================
+Using Different Units
+=====================
+PhysX is designed to produce correct results regardless of the units of length or mass, so long as inputs use those units consistently. However, there are certain tolerances values whose defaults need to be adjusted depending on the units. In order to ensure that these tolerances default to reasonable values, adjust the values in PxTolerancesScale when creating the PxPhysics and PxCooking interfaces. Tolerances for objects are set at creation time, and may then be overridden by the application.
+
+You should set tolerances based on the typical size of objects in your simulation. For example, if you are working with objects of size approximately one meter, but in units of centimeters, you should set the scale as follows::
+
+    PxFoundation* foundation = ...;
+    PxTolerancesScale scale;
+    scale.length = 100;        // typical length of an object
+    scale.speed = 981;         // typical speed of an object, gravity*1s is a reasonable choice
+    PxPhysics *p = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, scale, ...);
+
+This will result in the defaults for values like PxShape::contactDistance being scaled appropriately for your objects.
+
+You can also set the typical object mass in PxTolerancesScale.
+
+It is important to use the same PxTolerances value for initialization of PxCooking and PxPhysics, and also when creating PxSceneDesc objects.
+
+.. _Assertions:
+
+==========
+Assertions
+==========
+PhysX uses the PX_DEBUG macro to enable or disable assertions. This macro is not set in the PhysXCore and PhysXCommon libraries, and so by default these libraries will not trigger assertions, however you may configure the libraries provided as source to enable them. When an assert is triggered, PhysX calls an assert handler. By default the assert handler will trigger a debug breakpoint. However, you may call the function PxSetAssertHandler() to customize the assert handler.
+
+===========
+Determinism
+===========
+PhysX is deterministic in the sense it will produce identical simulation results from the same sequence of API calls applied from the point where a scene is originally created (and the same responses from simulation callbacks which modify data). Note that removing all the objects from a scene is not in general sufficient to reinitialize it for this purpose.
+
+PhysX simulation behavior is not sensitive to the number of CPU worker threads used.
+
+An important caveat to determinism is the state of the x87 FPU on 32-bit Intel/AMD platforms. Some compilers produce x87 floating point instructions even when configured to prefer SSE instructions, and the results of those operations may depend on the state of the x87 control word.  Since it is too expensive to modify the x87 FPU state at every PhysX entry point, this is delegated to the application if necessary. PhysX operations do not result in changes to the x87 control word, but certain other libraries (including DirectX) may modify it. 
+
+Configurations in which this is known to be a issue are all 32-bit MSVC debug configurations, and all MSVC 32-bit checked, release and profile configurations prior to Visual Studio 2012.

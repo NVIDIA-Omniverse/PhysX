@@ -1,0 +1,5 @@
+<map id="PxPBDParticleSystem" name="PxPBDParticleSystem">
+<area shape="rect" id="node2" href="$classPxParticleSystem.html" title="The shared base class for all particle systems. " alt="" coords="19,155,146,181"/>
+<area shape="rect" id="node3" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="48,80,117,107"/>
+<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="49,5,117,32"/>
+</map>

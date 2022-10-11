@@ -1,0 +1,722 @@
+.. _Geometry:
+
+--------
+Geometry
+--------
+
+============
+Introduction
+============
+This section discusses the PhysX geometry classes. Geometries are used to build shapes for rigid bodies, as collision triggers, and as volumes in PhysX' scene query system. PhysX also provides standalone functions for testing intersection between geometries, raycasting against them, and sweeping one geometry against another.
+
+Geometries are value types, and inherit from a common base class, PxGeometry. Each geometry class defines a volume or surface with a fixed position and orientation. A transform specifies the frame in which the geometry is interpreted. For plane and capsule geometry types PhysX provides helper functions to construct these transforms from common alternative representations.
+
+Geometries fall into two classes: 
+
+* primitives (PxBoxGeometry, PxSphereGeometry, PxCapsuleGeometry, PxPlaneGeometry) where the geometry object contains all of the data
+* meshes or height fields (PxConvexMeshGeometry, PxTriangleMeshGeometry, PxHeightFieldGeometry), where the geometry object contains a pointer to a much larger object (PxConvexMesh, PxTriangleMesh, PxHeightField respectively) You can use these objects with different scales in each PxGeometry type which references them. The larger objects must be created using a *cooking* process, described for each type below.
+
+When passed into and out of the SDK for use as simulation geometry, the geometry is copied into and out of a PxShape class. It can be awkward in this case to retrieve the geometry without knowing its type, so PhysX provides a union-like wrapper class (PxGeometryHolder) that can be used to pass any geometry type by value. Each mesh (or height field) has a reference count that tracks the number of PxShapes whose geometries reference the mesh.
+
+==============
+Geometry Types
+==============
+
++++++++++++++++++++++++++++++++
+Spheres
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeSphere.png
+
+A PxSphereGeometry is specified by one attribute, its radius, and is centered at the origin.
+
++++++++++++++++++++++++++++++++
+Capsules
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeCapsule.png
+
+A PxCapsuleGeometry is centered at the origin. It is specified by a radius and a half-height value by which its axis extends along the positive and negative X-axis.
+
+To create a dynamic actor whose geometry is a capsule standing upright, the shape needs a relative transform that rotates it around the Z-axis by a quarter-circle. By doing this, the capsule will extend along the Y-axis of the actor instead of the X-axis. Setting up the shape and actor is otherwise the same as for the sphere::
+
+    PxRigidDynamic* aCapsuleActor = thePhysics->createRigidDynamic(PxTransform(position));
+    PxTransform relativePose(PxQuat(PxHalfPi, PxVec(0,0,1)));
+    PxShape* aCapsuleShape = PxRigidActorExt::createExclusiveShape(*aCapsuleActor,
+        PxCapsuleGeometry(radius, halfHeight), aMaterial);
+    aCapsuleShape->setLocalPose(relativePose);
+    PxRigidBodyExt::updateMassAndInertia(*aCapsuleActor, capsuleDensity);
+    aScene->addActor(aCapsuleActor);
+
+The function PxTransformFromSegment() converts from a line segment defining the capsule axis to a transform and halfheight.
+
++++++++++++++++++++++++++++++++
+Boxes
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeBox.png
+
+A PxBoxGeometry has three attributes, the three extents halved::
+
+
+    PxShape* aBoxShape = PxRigidActorExt::createExclusiveShape(*aBoxActor,
+        PxBoxGeometry(a/2, b/2, c/2), aMaterial);
+
+Where a, b and c are the side lengths of the resulting box.
+
++++++++++++++++++++++++++++++++
+Planes
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypePlane.png
+
+Planes divide space into "above" and "below" them. Everything "below" the plane will collide with it. 
+
+The Plane lies on the YZ plane with "above" pointing towards positive X. To convert from a plane equation to an equivalent transform, use the function PxTransformFromPlaneEquation(). PxPlaneEquationFromTransform() performs the reverse conversion.
+
+A PxPlaneGeometry has no attributes, since the shape's pose entirely defines the plane's collision volume. 
+
+Shapes with a PxPlaneGeometry may only be created for static actors.
+
++++++++++++++++++++++++++++++++
+Convex Meshes
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeConvex.png
+
+A shape is convex if, given any two points within the shape, the shape contains the line between them. A PxConvexMesh is a convex polyhedron represented as a set of vertices and polygonal faces. The number of vertices and faces of a convex mesh in PhysX is limited to 255.
+
+Creating a PxConvexMesh requires cooking. It is assumed here that the cooking library has already been initialized (see :ref:`startup`.) The following steps explain how to create a simple square pyramid. 
+
+First, define the vertices of the convex object::
+
+    static const PxVec3 convexVerts[] = {PxVec3(0,1,0),PxVec3(1,0,0),PxVec3(-1,0,0),PxVec3(0,0,1),
+        PxVec3(0,0,-1)};
+
+Then construct a description of the convex data layout::
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count     = 5;
+    convexDesc.points.stride    = sizeof(PxVec3);
+    convexDesc.points.data      = convexVerts;
+    convexDesc.flags            = PxConvexFlag::eCOMPUTE_CONVEX;
+
+Now use the cooking library to construct a PxConvexMesh::
+
+    PxDefaultMemoryOutputStream buf;
+    PxConvexMeshCookingResult::Enum result;
+    if(!cooking.cookConvexMesh(convexDesc, buf, &result))
+        return NULL;
+    PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+    PxConvexMesh* convexMesh = physics->createConvexMesh(input);
+
+Finally, create a shape using a PxConvexMeshGeometry which instances the mesh::
+
+    PxShape* aConvexShape = PxRigidActorExt::createExclusiveShape(*aConvexActor,
+        PxConvexMeshGeometry(convexMesh), aMaterial);
+        
+Alternatively the PxConvexMesh can be cooked and directly inserted into PxPhysics without stream serialization. This is useful if real-time cooking is required. It is strongly recommended to use offline cooking and streams. Here is an example showing how to improve cooking speed if needed::
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count     = 5;
+    convexDesc.points.stride    = sizeof(PxVec3);
+    convexDesc.points.data      = convexVerts;
+    convexDesc.flags            = PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eDISABLE_MESH_VALIDATION | PxConvexFlag::eFAST_INERTIA_COMPUTATION;
+    
+    #ifdef _DEBUG    
+        // mesh should be validated before cooking without the mesh cleaning
+        bool res = theCooking->validateConvexMesh(convexDesc);
+        PX_ASSERT(res);    
+    #endif
+
+    PxConvexMesh* aConvexMesh = theCooking->createConvexMesh(convexDesc, 
+        thePhysics->getPhysicsInsertionCallback());
+        
+Please note that mesh validation is required for debug and checked builds, as creating meshes from unvalidated input descriptors may result in undefined behavior. Providing PxConvexFlag::eFAST_INERTIA_COMPUTATION flag the volume integration will use SIMD code path which does faster computation but with lesser precision.
+
+The user can optionally provide a per-instance PxMeshScale in the PxConvexMeshGeometry. The scale defaults to identity. Negative scale is not supported for convex meshes.
+
+PxConvexMeshGeometry also contains flags to tweak some aspects of the convex object. By default the system computes approximate (loose) bounds around convex objects. Using PxConvexMeshGeometryFlag::eTIGHT_BOUNDS enables smaller/tighter bounds, which are more expensive to compute but could result in improved simulation performance when a lot of convex objects are interacting with each other.
+
+
++++++++++++++++++++++++++++++++
+Convex Mesh cooking
++++++++++++++++++++++++++++++++
+
+Convex Mesh cooking transforms the mesh data into a form which allows the SDK to perform efficient collision detection. The input to cooking is defined using the input PxConvexMeshDesc.
+
+There are different ways to fill in this structure, depending on whether you want to produce a convex mesh starting from just a cloud of vertices, or whether you have the vertices and faces of a polyhedron already.
+
+
+If Only Vertex Points are Provided
+-------------------------------------------
+
+When providing only vertices, set the PxConvexFlag::eCOMPUTE_CONVEX flag to compute the mesh::
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count     = 20;
+    convexDesc.points.stride    = sizeof(PxVec3);
+    convexDesc.points.data      = convexVerts;
+    convexDesc.flags            = PxConvexFlag::eCOMPUTE_CONVEX;
+    convexDesc.maxVerts         = 10;
+
+    PxDefaultMemoryOutputStream buf;
+    if(!cooking.cookConvexMesh(convexDesc, buf))
+        return NULL;
+                
+The algorithm tries to create a convex mesh from the source vertices. The field convexDesc.vertexLimit specifies the limit for the maximum number of vertices in the resulting hull. 
+
+This routine can sometimes fail when the source data is geometrically challenging, for example if it contains a lot of vertices close to each-other. If cooking fails, an error is reported to the error stream and the routine returns false. 
+
+If PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES is used, the algorithm does not include triangles with an area less than PxCookingParams::areaTestEpsilon. If the algorithm cannot find 4 initial vertices without a small triangle, PxConvexMeshCookingResult::eZERO_AREA_TEST_FAILED is returned. This means that the provided vertices were in a very small area and the cooker could not produce a valid hull.
+The toolkit helper function PxToolkit::createConvexMeshSafe illustrates the most robust strategy for convex mesh cooking. First it tries to create the regular convex hull. If that fails it will use an AABB or OBB. 
+
+It is recommended to provide vertices around origin and put transformation in PxShape, otherwise addional PxConvexFlag::eSHIFT_VERTICES flag for the mesh computation. 
+
+If huge amount of input vertices are provided, it might be useful to quantize the input vertices, in this case use PxConvexFlag::eQUANTIZE_INPUT and set the required PxConvexMeshDesc::quantizedCount.
+
+Quickhull Algorithm
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This algorithm creates a convex mesh whose vertices are a subset of the original vertices, and the number of vertices is guaranteed to be no more than the specified maximum.
+
+The Quickhull algorithm performs these steps:
+
+* Cleans the vertices - removes duplicates etc.
+* Finds a subset of vertices, no more than vertexLimit, that enclose the input set. 
+* If the vertexLimit is reached, expand the limited hull around the input vertices to ensure we encapsulate all the input vertices.
+* Compute a vertex map table. (Requires at least 3 neighbor polygons for each vertex.)
+* Checks the polygon data - verifies that all vertices are on or inside the hull, etc.
+* Computes mass and inertia tensor assuming density is 1.
+* Saves data to stream.
+
+When the hull is constructed each new vertex added must be further than PxCookingParams::planeTolerance from the hull, if not that vertex is dropped. 
+
+Vertex Limit Algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If a vertex limit has been provided, there are two algorithms that handle vertex limitation.
+
+The default algorithm computes the full hull, and an OBB around the input vertices. This OBB is then sliced with the hull planes until the vertex limit is reached. The default algorithm requires the vertex limit to be set to at least 8, and typically produces results that are much better quality than are produced by plane shifting.
+
+When plane shifting is enabled (PxConvexFlag::ePLANE_SHIFTING), the hull computation stops when vertex limit is reached. The hull planes are then shifted to contain all input vertices, and the new plane intersection points are then used to generate the final hull with the given vertex limit. Plane shifting may produce sharp edges to vertices very far away from the input cloud, and does not guarantee that all input vertices are inside the resulting hull. However, it can be used with a vertex limit as low as 4, and so may be a better choice for cases such as small pieces of debris with very low vertex counts.
+
+
+Vertex Points, Indices and Polygons are Provided
+--------------------------------------------------
+
+To create a PxConvexMesh given a set of input vertices (convexVerts) and polygons (hullPolygons)::
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count             = 12;
+    convexDesc.points.stride            = sizeof(PxVec3);
+    convexDesc.points.data              = convexVerts;
+    convexDescPolygons.polygons.count   = 20;
+    convexDescPolygons.polygons.stride  = sizeof(PxHullPolygon);
+    convexDescPolygons.polygons.data    = hullPolygons;
+    convexDesc.flags                    = 0;
+
+    PxDefaultMemoryOutputStream buf;
+    if(!cooking.cookConvexMesh(convexDesc, buf))
+        return NULL;
+        
+When points and polygons are provided, the SDK validates the mesh and creates the PxConvexmesh directly. This is the fastest way to create a convex mesh. Note that the SDK requires at least 3 neighbor polygons for each vertex. Otherwise acceleration structure for PCM is not created and it does result in performance penalty if PCM is enabled.
+
+(NOTE: the SDK should reject such a mesh as invalid) 
+
+Internal steps during convex cooking:        
+
+* Compute vertex map table, requires at least 3 neighbor polygons for each vertex.
+* Check polygons data - check if all vertices are on or inside the hull, etc.
+* Compute mass and inertia tensor assuming density 1.
+* Save data to stream.
+
++++++++++++++++++++++++++++++++
+Triangle Meshes
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeMesh.png
+
+Like graphical triangle meshes, a collision triangle mesh consists of a collection of vertices and the triangle indices. Triangle mesh creation requires use of the cooking library. It is assumed here that the cooking library has already been initialized (see :ref:`startup`.)::
+
+    PxTriangleMeshDesc meshDesc;
+    meshDesc.points.count           = nbVerts;
+    meshDesc.points.stride          = sizeof(PxVec3);
+    meshDesc.points.data            = verts;
+
+    meshDesc.triangles.count        = triCount;
+    meshDesc.triangles.stride       = 3*sizeof(PxU32);
+    meshDesc.triangles.data         = indices32;
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    PxTriangleMeshCookingResult::Enum result;
+    bool status = cooking.cookTriangleMesh(meshDesc, writeBuffer,result);
+    if(!status)
+        return NULL;
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    return physics.createTriangleMesh(readBuffer);
+    
+Alternatively *PxTriangleMesh* can be cooked and directly inserted into *PxPhysics* without stream serialization. This is useful if real-time cooking is required. It is strongly recommended to use offline cooking and streams. Example how to improve cooking speed if needed::
+
+    PxTolerancesScale scale;
+    PxCookingParams params(scale);
+    // disable mesh cleaning - perform mesh validation on development configurations
+    params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+    // disable edge precompute, edges are set for each triangle, slows contact generation
+    params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+    // lower hierarchy for internal mesh
+    params.meshCookingHint = PxMeshCookingHint::eCOOKING_PERFORMANCE;
+    
+    theCooking->setParams(params);
+
+    PxTriangleMeshDesc meshDesc;
+    meshDesc.points.count           = nbVerts;
+    meshDesc.points.stride          = sizeof(PxVec3);
+    meshDesc.points.data            = verts;
+
+    meshDesc.triangles.count        = triCount;
+    meshDesc.triangles.stride       = 3*sizeof(PxU32);
+    meshDesc.triangles.data         = indices32;
+    
+    #ifdef _DEBUG    
+        // mesh should be validated before cooked without the mesh cleaning
+        bool res = theCooking->validateTriangleMesh(meshDesc);
+        PX_ASSERT(res);    
+    #endif
+
+    PxTriangleMesh* aTriangleMesh = theCooking->createTriangleMesh(meshDesc, 
+        thePhysics->getPhysicsInsertionCallback());
+
+Indices can be 16 or 32 bit. The strides used here assume that vertices and indices are arrays of PxVec3s and 32bit integers respectively with no gaps in the data layout. 
+
+Returned result enum *PxTriangleMeshCookingResult::eLARGE_TRIANGLE* does warn the user if the mesh contains large triangles, which should be tessellated to ensure better simulation and CCT stability. 
+    
+Like height fields, triangle meshes support per-triangle material indices. To use per-triangle materials for a mesh, provide per-triangle indices to the cooking library in the mesh descriptor. Later, when creating the PxShape, supply a table mapping the index values in the mesh to material instances.
+
+
+Triangle Mesh cooking
+-------------------------------------------
+    
+Triangle mesh cooking proceeds as follows:
+
+* Check validity of input vertices.
+* Weld vertices and check triangle sizes.
+* create acceleration structure for queries.
+* Compute edge convexity information and adjacencies.
+* Save data to stream.
+
+Note that mesh cleaning may result in the set of triangles produced by cooking being a subset different from the original input set. Mesh cleaning removes invalid triangles (containing out-of-range vertex references), duplicate triangles, and zero-area triangles. When this happens, PhysX optionally outputs a mesh remapping table that links each internal triangle to its source triangle in the user's data.
+
+There are multiple parameters to control mesh creation.
+
+In *PxTriangleMeshDesc*:
+
+* *materialIndices* defines per triangle materials. When a triangle mesh collides with another object, a material is required at the collision point. If materialIndices is NULL, then the material of the PxShape instance is used.
+
+In *PxCookingParams*:
+ 
+* *scale* defines Tolerance scale is used to check if cooked triangles are not too huge. This check will help with simulation stability.
+* *suppressTriangleMeshRemapTable* specifies whether the face remap table is created. If not, this saves a significant amount of memory, but the SDK will not be able to provide information about which original mesh triangle is hit in collisions, sweeps or raycasts hits.
+* *buildTriangleAdjacencies* specifies if the triangle adjacency information is created. The adjacent triangles can be retrieved for a given triangle using the getTriangle.
+* *meshPreprocessParams* specifies mesh pre-processing parameters.
+        * *PxMeshPreprocessingFlag::eWELD_VERTICES* enables vertex welding during triangle mesh cooking.
+        * *PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH* disables mesh clean process. Vertices duplicities are not searched, huge triangles test is not done. Vertices welding is not done. Does speed up the cooking.
+        * *PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE* disables vertex edge precomputation. Makes cooking faster but slow up contact generation.
+* *meshWeldTolerance* - If mesh welding is enabled, this controls the distance at which vertices are welded. If mesh welding is not enabled, this value defines the acceptance distance for mesh validation. Provided no two vertices are within this distance, the mesh is considered to be clean. If not, a warning will be emitted. Having a clean mesh is required to achieve the best possible performance.
+* *midphaseDesc* specifies the desired midphase acceleration structure descriptor.
+        * *PxBVH33MidphaseDesc - PxMeshMidPhase::eBVH33* is the default structure. It was the one used in recent PhysX versions up to PhysX 3.3. It has great performance and is supported on all platforms.
+        * *PxBVH34MidphaseDesc - PxMeshMidPhase::eBVH34* is a revisited implementation introduced in PhysX 3.4. It can be significantly faster both in terms of cooking performance and runtime performance, but it is currently only available on platforms supporting the SSE2 instuction set.
+		
+*PxBVH33MidphaseDesc params*:
+
+* *meshCookingHint* specifies mesh hierarchy construction preferences. Enables better cooking performance over collision performance, for applications where cooking performance is more important than best quality mesh creation.
+* *meshSizePerformanceTradeOff* specifies the trade-off between mesh size and runtime performance.        
+
+*PxBVH34MidphaseDesc params*:
+
+* *numTrisPerLeaf* specifies the number of triangles per leaf. Less triangles per leaf produces larger meshes with general better runtime performance and worse cooking performance.
+
++++++++++++++++++++++++++++++++
+Height Fields
++++++++++++++++++++++++++++++++
+
+.. image:: ../images/GeomTypeHeightField.png
+
+Local space axes for the height fields are:
+ * Row - X axis
+ * Column - Z axis
+ * Height - Y axis
+
+As the name suggests, terrains can be described by just the height values on a regular, rectangular sampling grid::
+
+    PxHeightFieldSample* samples = (PxHeightFieldSample*)alloc(sizeof(PxHeightFieldSample)*
+        (numRows*numCols));
+
+Each sample consists of a 16 bit integer height value, two materials (for the two triangles in the samples rectangle) and a tessellation flag.
+
+The flag and materials refer to the cell below and to the right of the sample point, and indicate along which diagonal to split it into triangles, and the materials of those triangles.  A special predefined material ``PxHeightFieldMaterial::eHOLE`` specifies a hole in the height field. See the reference documentation for *PxHeightFieldSample* for more details.
+
+.. csv-table::
+   :header: Tesselation flag not set, Tesselation flag set
+   
+   .. image:: ../images/heightfieldTriMat1.png, .. image:: ../images/heightfieldTriMat2.png
+
+Examples:
+
++-------------------+-------------------------------------------+
+| Tesselation flags | Result                                    |
++===================+===========================================+
+| |     0,0,0       | .. image:: ../images/heightfieldTess2.png |
+| |     0,0,0       |                                           |
+| |     0,0,0       |                                           |
++-------------------+-------------------------------------------+
+| |     1,1,1       | .. image:: ../images/heightfieldTess1.png |
+| |     1,1,1       |                                           |
+| |     1,1,1       |                                           |
++-------------------+-------------------------------------------+
+| |     1,0,1       | .. image:: ../images/heightfieldTess3.png |
+| |     0,1,0       |                                           |
+| |     1,0,1       |                                           |
++-------------------+-------------------------------------------+
+
+To tell the system the number of sampled heights in each direction, use a descriptor to instantiate a PxHeightField object::
+
+    PxHeightFieldDesc hfDesc;
+    hfDesc.format             = PxHeightFieldFormat::eS16_TM;
+    hfDesc.nbColumns          = numCols;
+    hfDesc.nbRows             = numRows;
+    hfDesc.samples.data       = samples;
+    hfDesc.samples.stride     = sizeof(PxHeightFieldSample);
+    
+    PxHeightField* aHeightField = theCooking->createHeightField(hfDesc, 
+        thePhysics->getPhysicsInsertionCallback());
+
+Now create a PxHeightFieldGeometry and a shape:: 
+
+    PxHeightFieldGeometry hfGeom(aHeightField, PxMeshGeometryFlags(), heightScale, rowScale, 
+        colScale);
+    PxShape* aHeightFieldShape = PxRigidActorExt::createExclusiveShape(*aHeightFieldActor,
+        hfGeom, aMaterialArray, nbMaterials);
+
+The row and column scales tell the system how far apart the sampled points lie in the associated direction. The height scale scales the integer height values to a floating point range. 
+
+The variant of *createExclusiveShape()* used here specifies an array of materials for the height field, which will be indexed by the material indices of each cell to resolve collisions with that cell. The single-material variant may be used instead, but the height field material indices must all be a single value or the special value ``eHOLE``.
+
+Contact generation with triangle edges at the terrain's borders can be disabled using the *PxHeightFieldFlag::eNO_BOUNDARY_EDGES* flag, allowing more efficient contact generation when there are multiple heightfield shapes arranged so that their edges touch.
+
+
+Heightfield cooking
+-------------------------------------------
+Heightfield data can be cooked in offline and then used to createHeightField. The cooking does precompute and store the edge information. This allows much faster create of the heightfield, since the edges are already precomputed. It is very useful if you need to create heightfields in the runtime, since it does improve the speed of createHeightField significantly.
+
+Heightfield cooking proceeds as follows:
+
+* Load heightfield samples into internal memory.
+* Precompute edge collision information.
+* Save data to stream.
+
+
+Heightfields contact generation
+-------------------------------------------
+
+The heightfield contact generation approach extracts triangles from the heightfield and utilizes the same low-level contact generation code that is used for triangle meshes. This approach ensures equivalent behavior and performance if triangle meshes or heightfields are used interchangeably. However, with this approach, the heightfield surface has no thickness so fast-moving objects may tunnel if CCD is not enabled.
+
+
+Heightfields registration
+-------------------------------------------
+
+Heightfields are enabled by calling::
+
+	PxRegisterHeightFields(PxPhysics& physics);
+
+This call must be made before creating any scene, otherwise warnings will be issued. This is a global setting, and it applies to all scenes.
+
+If PxCreatePhysics(...) is called, this will automatically call PxRegisterHeightFields(...). If PxCreateBasePhysics(...) is called, heightfields are not registered by default. If heightfields are used, the application must call the heightfield registration function.
+
+=================================
+Deformable meshes
+=================================
+
+PhysX supports deformable meshes, i.e. meshes whose vertices move over time (while the topology, i.e. the triangle indices, remains fixed).
+
+Deformable meshes are only supported with the *PxMeshMidPhase::eBVH33* data structure. Because the mesh vertices are going to be updated, the mapping between the user-defined vertices and PhysX' internal vertices must also be preserved. That is, PhysX should not reorder vertices during cooking. So all cooking operations that could reorder vertices should be disabled, and it is the user's responsability to make sure that the passed vertices are correct w.r.t. disabled operations. For example the mesh cleaning phase should be disabled::
+
+    cookingParams.midphaseDesc.setToDefault(PxMeshMidPhase::eBVH33);
+	cookingParams.meshPreprocessParams	= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+
+It is possible to mix eBVH33 and eBVH34 meshes in the same scene, so the default cooking parameters can still be used for non-deformable / static meshes.
+
+To modify the vertices, use the *PxTriangleMesh::getVerticesForModification()* and *PxTriangleMesh::refitBVH()* functions before simulating the scene::
+
+	// get vertex array
+	PxVec3* verts = mesh->getVerticesForModification();
+	
+	// update the vertices here
+	...
+	
+	// tell PhysX to update the mesh structure
+	PxBounds3 newBounds = mesh->refitBVH();
+
+Then use *PxScene::resetFiltering()* for the corresponding mesh actor, to tell the broadphase its bounds have been modified::
+
+	scene->resetFiltering(*actor);
+
+When the mesh deforms and moves away from the objects resting on it, said meshes can bounce and jitter slightly on the mesh. Using a slightly negative rest offset for the mesh shape can help reduce this effect::
+
+	PxShape* shape;
+	mesh->getShapes(&shape, 1);
+	shape->setRestOffset(-0.5f);   // something negative, value depends on your world's scale
+
+This will let objects "sink" a bit into the dynamic mesh. That way contacts are not immediately lost and the motion remains smooth. Please refer to the deformable mesh snippet in the SDK for more details.
+ 
+=================================
+Mesh Scaling
+=================================
+
+A shared PxTriangleMesh or PxConvexMesh may be stretched or compressed when it is instanced by a geometry. This allows multiple instancing of the same mesh with different scale factors applied.  Scaling is specified with the PxMeshScale class, which defines scale factors to be applied along 3 orthogonal axes. A factor greater than 1.0 results in stretching, while a factor less than 1.0 results in compression. The directions of the axes are governed by a quaternion, and specified in the local frame of the shape.
+
+Negative mesh scale is supported, with negative values producing a reflection along each corresponding axis. In addition PhysX will flip the normals for mesh triangles when scale.x*scale.y*scale.z < 0.
+
+The following code creates a shape with a PxTriangleMesh scaled by a factor of x along the x-axis, y along the y-axis, and z along the z-axis::
+    
+    // created earlier
+    PxRigidActor* myActor;
+    PxTriangleMesh* myTriMesh;
+    PxMaterial* myMaterial;
+    
+    // create a shape instancing a triangle mesh at the given scale
+    PxMeshScale scale(PxVec3(x,y,z), PxQuat(PxIdentity));
+    PxTriangleMeshGeometry geom(myTriMesh,scale);
+    PxShape* myTriMeshShape = PxRigidActorExt::createExclusiveShape(*myActor,geom,*myMaterial);
+    
+Convex meshes are scaled using the PxMeshScale class in a similar manner.  The following code creates a shape with a PxConvexMesh scaled by a factor of x along (sqrt(1/2), 1.0, -sqrt(1/2)), by a factor of y along (0,1,0) and a by a factor of z along (sqrt(1/2), 1.0, sqrt(1/2))::
+
+    PxMeshScale scale(PxVec3(x,y,z), PxQuat quat(PxPi*0.25f, PxVec3(0,1,0)));
+    PxConvexMeshGeometry geom(myTriMesh,scale);
+    PxShape* myConvexMeshShape = PxRigidActorExt::createExclusiveShape(*myActor,geom,*myMaterial);
+    
+Height fields can also be scaled, using scale factors stored in PxHeightFieldGeometry. In this case the scale is assumed to be along the axes of the rows, columns and height directions of the height field. The scaling of is demonstrated in SampleNorthPole in SampleNorthPoleBuilder.cpp::
+
+    PxHeightFieldGeometry hfGeom(heightField, PxMeshGeometryFlags(), heightScale, hfScale, hfScale);
+    PxShape* hfShape = PxRigidActorExt::createExclusiveShape(*hfActor, hfGeom, getDefaultMaterial());
+
+In this example, the coordinates along the x and z axes are scaled by hfScale, while the sample heights are scaled by heightScale. 
+
+===============================
+PxGeometryHolder
+===============================
+
+When a geometry is provided for a shape, either on creation or with *PxShape::setGeometry()*, the geometry is copied into the SDK's internal structures. If you know the type of a shape's geometry you may retrieve it directly::
+
+    PxBoxGeometry boxGeom;
+    bool status = shape->getBoxGeometry(geometry);
+
+The status return code is set to false if the shape's geometry is not of the expected type. 
+
+However, it is often convenient to retrieve a geometry object from a shape without first knowing its type - for example, to call a function which takes a PxGeometry reference as an argument.
+
+PxGeometryHolder is a union-like class that allows the return of a PxGeometry object by value, regardless of type. Its use is illustrated in the *createRenderObjectFromShape()* function in PhysXSample.cpp::
+
+    const PxGeometryHolder geom(shape->getGeometry());
+
+    switch(geom.getType())
+    {
+    case PxGeometryType::eSPHERE:
+        shapeRenderActor = SAMPLE_NEW(RenderSphereActor)(renderer, geom.sphere().radius);
+        break;
+    case PxGeometryType::eCAPSULE:
+        shapeRenderActor = SAMPLE_NEW(RenderCapsuleActor)(renderer, geom.capsule().radius, 
+            geom.capsule().halfHeight);
+        break;
+    ...
+    }
+
+The function *PxGeometryHolder::any()* returns a reference to a PxGeometry object. For example, to compare two shapes in a scene for overlap::
+
+    bool testForOverlap(const PxShape& s0, const PxShape& s1)
+    {
+        return PxGeometryQuery::overlap(s0.getGeometry().any(), PxShapeExt::getGlobalPose(s0),
+                                        s1.getGeometry().any(), PxShapeExt::getGlobalPose(s1));
+    }
+
+Note that since PhysX 5 the PxShape::getGeometry() function directly retrieves the reference to a PxGeometry object.
+
+
+====================
+Vertex and Face Data
+====================
+
+Convex meshes, triangle meshes, and height fields can all be queried for vertex and face data.  This is particularly useful, for example, when rendering the mesh of the convex shape. The function::
+
+    RenderBaseActor* PhysXSample::createRenderObjectFromShape(PxShape* shape, 
+        RenderMaterial* material)
+    
+in PhysXSample.cpp contains a switch statement with a case for each shape type, illustrating the steps required to query the vertices and faces.
+
+It is possible to get information about triangle from a triangle mesh or height field using PxMeshQuery::getTriangle function. You can also retrieve adjacent triangle indices for the given triangle (triangle triangleNeighbour[i] shares the edge vertex[i]-vertex[(i+1)%3] with triangle indexed as 'triangleIndex', where vertex is in the range from 0 to 2). To enable this feature the triangle mesh is cooked with buildTriangleAdjacencies parameter set to true.
+
++++++++++++++++++++++++++++++++
+Convex Meshes
++++++++++++++++++++++++++++++++
+
+A convex mesh contains an array of vertices, an array of faces, and an index buffer which concatenates the vertex indices for each face. To unpack a convex mesh, the first step is to extract the shared convex mesh::
+
+    PxConvexMesh* convexMesh = geom.convexMesh().convexMesh;
+
+Then obtain references to the vertex and index buffers::
+
+    PxU32 nbVerts = convexMesh->getNbVertices();
+    const PxVec3* convexVerts = convexMesh->getVertices();
+    const PxU8* indexBuffer = convexMesh->getIndexBuffer();
+    
+Now iterate over the array of faces to triangulate them::
+
+    PxU32 offset = 0;
+    for(PxU32 i=0;i<nbPolygons;i++)
+    {
+        PxHullPolygon face;
+        bool status = convexMesh->getPolygonData(i, face);
+        PX_ASSERT(status);
+
+        const PxU8* faceIndices = indexBuffer + face.mIndexBase;
+        for(PxU32 j=0;j<face.mNbVerts;j++)
+        {
+            vertices[offset+j] = convexVerts[faceIndices[j]];
+            normals[offset+j] = PxVec3(face.mPlane[0], face.mPlane[1], face.mPlane[2]);
+        }
+
+        for(PxU32 j=2;j<face.mNbVerts;j++)
+        {
+            *triangles++ = PxU16(offset);
+            *triangles++ = PxU16(offset+j);
+            *triangles++ = PxU16(offset+j-1);
+        }
+
+        offset += face.mNbVerts;
+    }
+    
+Observe that the vertex indices of the polygon begin at indexBuffer[face.mIndexBase], and the count of vertices is given by face.mNbVerts.
+
++++++++++++++++++++++++++++++++
+Triangle Meshes
++++++++++++++++++++++++++++++++
+
+Triangle meshes contain arrays of vertices and index triplets which define the triangles by indexing into the vertex buffer. The arrays can be accessed directly from the shared triangle mesh::
+
+    PxTriangleMesh* tm = geom.triangleMesh().triangleMesh;
+    const PxU32 nbVerts = tm->getNbVertices();
+    const PxVec3* verts = tm->getVertices();
+    const PxU32 nbTris = tm->getNbTriangles();
+    const void* tris = tm->getTriangles();
+
+The indices may be stored with either 16-bit or 32-bit values, specified when the mesh was originally cooked. To determine the storage format at runtime, use the API call::
+    
+    const bool has16bitIndices = tm->has16BitTriangleIndices();
+    
+Assuming that the triangle indices are stored in 16-bit format, find the jth vertex of the ith triangle by::
+
+    const PxU16* triIndices = (const PxU16*)tris;
+    const PxU16 index = triIndices[3*i +j];
+    
+The corresponding vertex is::
+
+    const PxVec3& vertex = verts[index];
+    
++++++++++++++++++++++++++++++++
+Height Fields
++++++++++++++++++++++++++++++++
+
+The storage of height field data is platform-dependent, and therefore direct access to the height field samples is not provided. Instead, calls are provided to render the samples to a user-supplied buffer.
+
+Again, the first step is to retrieve the geometry for the height field::
+
+    const PxHeightFieldGeometry& geometry = geom.heightField();
+
+The height field has three scaling parameters::
+
+    const PxReal    rs = geometry.rowScale;
+    const PxReal    hs = geometry.heightScale;
+    const PxReal    cs = geometry.columnScale;        
+    
+And a shared data structure, which stores the row and column count::
+
+    PxHeightField*  hf = geometry.heightField;
+    const PxU32     nbCols = hf->getNbColumns();
+    const PxU32     nbRows = hf->getNbRows();
+    
+To render the height field, first extract the samples to an array::
+
+    const PxU32 nbVerts = nbRows * nbCols;
+    PxHeightFieldSample* sampleBuffer = new PxHeightFieldSample[nbVerts];
+    hf->saveCells(sampleBuffer, nbVerts * sizeof(PxHeightFieldSample));
+
+The samples are stored in row-major order; that is, row0 is stored first, followed by row1, then row2, and so on. Thus the sample corresponding to the ith row and the jth column is i*nbCols + j. 
+
+Evaluate the scaled vertices of the height field as follows::
+
+    PxVec3* vertices = new PxVec3[nbVerts];
+    for(PxU32 i = 0; i < nbRows; i++) 
+    {
+        for(PxU32 j = 0; j < nbCols; j++) 
+        {
+            vertices[i * nbCols + j] = PxVec3(PxReal(i) * rs, PxReal(sampleBuffer[j + 
+                (i*nbCols)].height) * hs, PxReal(j) * cs);
+        }
+    }
+    
+Then tessellate the field from the samples as required.
+
++++++++++++++++++++++++++++++++
+Heightfield Modification
++++++++++++++++++++++++++++++++
+
+Heightfield samples can be modified at runtime in rectangular blocks. In the following code snippet we create a HF and modify its samples::
+
+    // create a 5x5 HF with height 100 and materials 2,3
+    PxHeightFieldSample samples1[25];
+    for (PxU32 i = 0; i < 25; i ++)
+    {
+        samples1[i].height = 100;
+        samples1[i].materialIndex0 = 2;
+        samples1[i].materialIndex1 = 3;
+    }
+
+    PxHeightFieldDesc heightFieldDesc;
+    heightFieldDesc.nbColumns = 5;
+    heightFieldDesc.nbRows = 5;
+    heightFieldDesc.convexEdgeThreshold = 3;
+    heightFieldDesc.samples.data = samples1;
+    heightFieldDesc.samples.stride = sizeof(PxHeightFieldSample);
+
+    PxPhysics* physics = getPhysics();
+    PxHeightField* pHeightField = cooking->createHeightField(heightFieldDesc, physics->getPhysicsInsertionCallback());
+
+    // create modified HF samples, this 10-sample strip will be used as a modified row
+    // Source samples that are out of range of target heightfield will be clipped with no error.
+    PxHeightFieldSample samplesM[10];
+    for (PxU32 i = 0; i < 10; i ++)
+    {
+        samplesM[i].height = 1000;
+        samplesM[i].materialIndex0 = 1;
+        samplesM[i].materialIndex1 = 127;
+    }
+
+    PxHeightFieldDesc desc10Rows;
+    desc10Rows.nbColumns = 1;
+    desc10Rows.nbRows = 10;
+    desc10Rows.samples.data = samplesM;
+    desc10Rows.samples.stride = sizeof(PxHeightFieldSample);
+
+    pHeightField->modifySamples(1, 0, desc10Rows); // modify row 1 with new sample data
+
+PhysX does not keep a mapping from the heightfield to heightfield shapes that reference it. Call PxShape::setGeometry on each shape which references the height field, to ensure that internal data structures are updated to reflect the new geometry::
+
+    PxShape *hfShape = userGetHfShape(); // the user is responsible for keeping track of 
+                                         // shapes associated with modified HF
+    hfShape->setGeometry(PxHeightFieldGeometry(pHeightField, ...));
+
+Please also note that PxShape::setGeometry() does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry.
+
+The method PxHeightField::getTimestamp() returns the number of times a heightfield has been modified.
+

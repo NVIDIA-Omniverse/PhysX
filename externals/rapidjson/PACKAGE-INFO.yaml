@@ -1,0 +1,5 @@
+Package : rapidjson
+Description : A fast JSON parser/generator for C++ with both SAX/DOM style API.
+Maintainers : hfannar@nvidia.com
+SWIPAT NvBug : http://nvbugs/2674747
+Repository : https://gitlab-master.nvidia.com/carbon/Carbonite-externals/rapidjson
