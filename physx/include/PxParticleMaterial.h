@@ -32,7 +32,8 @@
 @{
 */
 
-#include "PxPhysXConfig.h"
+#include "foundation/PxSimpleTypes.h"
+
 #include "PxBaseMaterial.h"
 
 #if !PX_DOXYGEN
@@ -40,109 +41,108 @@ namespace physx
 {
 #endif
 
-	class PxScene;
+/**
+\brief Material class to represent a set of particle material properties.
+
+@see PxPhysics.createPBDMaterial, PxPhysics.createFLIPMaterial, PxPhysics.createMPMMaterial
+*/
+class PxParticleMaterial : public PxBaseMaterial
+{
+public:
+
 	/**
-	\brief Material class to represent a set of particle material properties.
-
-	@see PxPhysics.createPBDMaterial, PxPhysics.createFLIPMaterial, PxPhysics.createMPMMaterial
-	*/
-	class PxParticleMaterial : public PxBaseMaterial
-	{
-	public:
-
-		/**
-		\brief Sets friction
+	\brief Sets friction
 	
-		\param[in] friction Friction. <b>Range:</b> [0, PX_MAX_F32)
+	\param[in] friction Friction. <b>Range:</b> [0, PX_MAX_F32)
 
-		@see getFriction()
-		*/
-		virtual		void	setFriction(PxReal friction) = 0;
+	@see getFriction()
+	*/
+	virtual		void	setFriction(PxReal friction) = 0;
 
-		/**
-		\brief Retrieves the friction value.
+	/**
+	\brief Retrieves the friction value.
 
-		\return The friction value.
+	\return The friction value.
 
-		@see setFriction()
-		*/
-		virtual		PxReal	getFriction() const = 0;
+	@see setFriction()
+	*/
+	virtual		PxReal	getFriction() const = 0;
 
-		/**
-		\brief Sets velocity damping term
+	/**
+	\brief Sets velocity damping term
 
-		\param[in] damping Velocity damping term.
+	\param[in] damping Velocity damping term.
 
-		@see getDamping
-		*/
-		virtual		void	setDamping(PxReal damping) = 0;
+	@see getDamping
+	*/
+	virtual		void	setDamping(PxReal damping) = 0;
 
-		/**
-		\brief Retrieves the velocity damping term
-		\return The velocity damping term.
+	/**
+	\brief Retrieves the velocity damping term
+	\return The velocity damping term.
 
-		@see setDamping()
-		*/
-		virtual		PxReal	getDamping() const = 0;
+	@see setDamping()
+	*/
+	virtual		PxReal	getDamping() const = 0;
 
-		/**
-		\brief Sets adhesion term
+	/**
+	\brief Sets adhesion term
 
-		\param[in] adhesion adhesion coefficient.
+	\param[in] adhesion adhesion coefficient.
 
-		@see getAdhesion
-		*/
-		virtual		void	setAdhesion(PxReal adhesion) = 0;
+	@see getAdhesion
+	*/
+	virtual		void	setAdhesion(PxReal adhesion) = 0;
 
-		/**
-		\brief Retrieves the adhesion term
-		\return The adhesion term.
+	/**
+	\brief Retrieves the adhesion term
+	\return The adhesion term.
 
-		@see setAdhesion()
-		*/
-		virtual		PxReal	getAdhesion() const = 0;
+	@see setAdhesion()
+	*/
+	virtual		PxReal	getAdhesion() const = 0;
 
-		/**
-		\brief Sets gravity scale term
+	/**
+	\brief Sets gravity scale term
 
-		\param[in] scale gravity scale coefficient.
+	\param[in] scale gravity scale coefficient.
 
-		@see getAdhesion
-		*/
-		virtual		void	setGravityScale(PxReal scale) = 0;
+	@see getAdhesion
+	*/
+	virtual		void	setGravityScale(PxReal scale) = 0;
 
-		/**
-		\brief Retrieves the gravity scale term
-		\return The gravity scale term.
+	/**
+	\brief Retrieves the gravity scale term
+	\return The gravity scale term.
 
-		@see setAdhesion()
-		*/
-		virtual		PxReal	getGravityScale() const = 0;
+	@see setAdhesion()
+	*/
+	virtual		PxReal	getGravityScale() const = 0;
 
-		/**
-		\brief Sets material adhesion radius scale. This is multiplied by the particle rest offset to compute the fall-off distance
-		at which point adhesion ceases to operate.
+	/**
+	\brief Sets material adhesion radius scale. This is multiplied by the particle rest offset to compute the fall-off distance
+	at which point adhesion ceases to operate.
 
-		\param[in] scale Material adhesion radius scale.
+	\param[in] scale Material adhesion radius scale.
 
-		@see getAdhesionRadiusScale
-		*/
-		virtual		void	setAdhesionRadiusScale(PxReal scale) = 0;
+	@see getAdhesionRadiusScale
+	*/
+	virtual		void	setAdhesionRadiusScale(PxReal scale) = 0;
 
-		/**
-		\brief Retrieves the adhesion radius scale.
-		\return The adhesion radius scale.
+	/**
+	\brief Retrieves the adhesion radius scale.
+	\return The adhesion radius scale.
 
-		@see setAdhesionRadiusScale()
-		*/
-		virtual		PxReal	getAdhesionRadiusScale() const = 0;
+	@see setAdhesionRadiusScale()
+	*/
+	virtual		PxReal	getAdhesionRadiusScale() const = 0;
 
-	protected:
-		PX_INLINE			PxParticleMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags)	{}
-		PX_INLINE			PxParticleMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
-		virtual				~PxParticleMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxParticleMaterial", name) || PxBaseMaterial::isKindOf(name); }
-	};
+protected:
+	PX_INLINE			PxParticleMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags)	{}
+	PX_INLINE			PxParticleMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
+	virtual				~PxParticleMaterial() {}
+	virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxParticleMaterial", name) || PxBaseMaterial::isKindOf(name); }
+};
 
 #if !PX_DOXYGEN
 } // namespace physx

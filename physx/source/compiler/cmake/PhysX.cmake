@@ -71,9 +71,11 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxNodeIndex.h
 	${PHYSX_ROOT_DIR}/include/PxParticleBuffer.h
 	${PHYSX_ROOT_DIR}/include/PxParticleGpu.h
+	${PHYSX_ROOT_DIR}/include/PxParticlePhase.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSolverType.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystem.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystemFlag.h
+	${PHYSX_ROOT_DIR}/include/PxPBDParticleSystem.h
 	${PHYSX_ROOT_DIR}/include/PxPhysics.h
 	${PHYSX_ROOT_DIR}/include/PxPhysicsAPI.h
 	${PHYSX_ROOT_DIR}/include/PxPhysicsSerialization.h

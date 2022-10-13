@@ -47,7 +47,7 @@ extern void stepPhysics(bool interactive);
 extern void cleanupPhysics(bool interactive);
 extern void keyPress(unsigned char key, const PxTransform& camera);
 extern PxPBDParticleSystem* getParticleSystem();
-extern PxUserParticleAndDiffuseBuffer* getUserParticleBuffer();
+extern PxParticleAndDiffuseBuffer* getParticleBuffer();
 
 extern int getNumDiffuseParticles();
 
@@ -69,7 +69,7 @@ void renderParticles()
 	PxPBDParticleSystem* particleSystem = getParticleSystem();
 	if (particleSystem)
 	{
-		PxUserParticleAndDiffuseBuffer* userBuffer = getUserParticleBuffer();
+		PxParticleAndDiffuseBuffer* userBuffer = getParticleBuffer();
 		PxVec4* positions = userBuffer->getPositionInvMasses();
 		PxVec4* diffusePositions = userBuffer->getDiffusePositionLifeTime();
 
@@ -98,7 +98,7 @@ void renderParticles()
 	PxVec3 color(0.5f, 0.5f, 1);
 	Snippets::DrawPoints(sPosBuffer.vbo, sPosBuffer.size / sizeof(PxVec4), color, 2.f);
 
-	PxUserParticleAndDiffuseBuffer* userBuffer = getUserParticleBuffer();
+	PxParticleAndDiffuseBuffer* userBuffer = getParticleBuffer();
 
 	const PxU32 numActiveDiffuseParticles = userBuffer->getNbActiveDiffuseParticles();
 
@@ -119,7 +119,7 @@ void allocParticleBuffers()
 	PxGetPhysics().getScenes(&scene, 1);
 	PxCudaContextManager* cudaContexManager = scene->getCudaContextManager();
 
-	PxUserParticleAndDiffuseBuffer* userBuffer = getUserParticleBuffer();
+	PxParticleAndDiffuseBuffer* userBuffer = getParticleBuffer();
 
 	const PxU32 maxParticles = userBuffer->getMaxParticles();
 	const PxU32 maxDiffuseParticles = userBuffer->getMaxDiffuseParticles();

@@ -46,7 +46,7 @@ extern void stepPhysics(bool interactive);
 extern void cleanupPhysics(bool interactive);
 extern void keyPress(unsigned char key, const PxTransform& camera);
 extern PxParticleSystem* getParticleSystem();
-extern PxUserParticleBuffer* getUserParticleBuffer();
+extern PxParticleBuffer* getParticleBuffer();
 
 namespace
 {
@@ -157,10 +157,10 @@ void onBeforeRenderParticles()
 	
 	if (particleSystem)
 	{
-		PxUserParticleBuffer* userBuffer = getUserParticleBuffer();
+		PxParticleBuffer* userBuffer = getParticleBuffer();
 		PxVec4* positions = userBuffer->getPositionInvMasses();
 		PxVec4* vels = userBuffer->getVelocities();
-		PxU32* phases = userBuffer->getPhase();
+		PxU32* phases = userBuffer->getPhases();
 
 		const PxU32 numParticles = userBuffer->getNbActiveParticles();
 
@@ -195,7 +195,7 @@ void allocParticleBuffers()
 	//const PxU32 maxParticles = particleSystem->getMaxParticles();
 	if (particleSystem)
 	{
-		PxUserParticleBuffer* userBuffer = getUserParticleBuffer();
+		PxParticleBuffer* userBuffer = getParticleBuffer();
 		const PxU32 maxParticles = userBuffer->getMaxParticles();
 
 		sPosBufferH = new PxArray<PxVec4>(maxParticles);

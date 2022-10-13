@@ -29,22 +29,37 @@
 #include "foundation/PxPreprocessor.h"
 
 #if PX_SUPPORT_GPU_PHYSX
+
 #include "NpParticleSystem.h"
-#include "NpWriteCheck.h"
-#include "NpReadCheck.h"
-#include "NpScene.h"
-#include "NpShape.h"
-#include "geometry/PxParticleSystemGeometry.h"
-#include "PxPhysXGpu.h"
-#include "PxvGlobals.h"
-#include "PxsMemoryManager.h"
-#include "cudamanager/PxCudaContextManager.h"
+
+#include "foundation/PxAllocator.h"
+#include "foundation/PxArray.h"
+#include "foundation/PxMath.h"
+#include "foundation/PxMemory.h"
+#include "foundation/PxSort.h"
+
+#include "common/PxPhysXCommonConfig.h"
+
 #include "cudamanager/PxCudaContext.h"
-#include "ScParticleSystemSim.h"
-#include "NpRigidDynamic.h"
-#include "NpRigidStatic.h"
-#include "NpArticulationLink.h"
+#include "cudamanager/PxCudaContextManager.h"
+
+#include "PxGridParticleSystem.h"
+#include "PxRigidActor.h"
+
 #include "PxsSimulationController.h"
+
+#include "NpArticulationLink.h"
+#include "NpRigidDynamic.h"
+#include "NpScene.h"
+#include "NpWriteCheck.h"
+
+#include "ScBodyCore.h"
+#include "ScParticleSystemCore.h"
+#include "ScParticleSystemSim.h"
+#include "ScParticleSystemShapeCore.h"
+
+#include "DyParticleSystemCore.h"
+
 #include "CmVisualization.h"
 
 #define PARTICLE_MAX_NUM_PARTITIONS_TEMP	32
@@ -53,6 +68,7 @@
 
 namespace physx
 {
+
 #if PX_ENABLE_DEBUG_VISUALIZATION
 	static void visualizeParticleSystem(PxRenderOutput& out, NpScene& npScene, const Sc::ParticleSystemCore& core)
 	{
@@ -95,12 +111,12 @@ namespace physx
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-	PxParticleClothOutput::PxParticleClothOutput() 
+	PxPartitionedParticleCloth::PxPartitionedParticleCloth() 
 	{ 
 		PxMemZero(this, sizeof(*this)); 
 	}
 
-	PxParticleClothOutput::~PxParticleClothOutput()
+	PxPartitionedParticleCloth::~PxPartitionedParticleCloth()
 	{
 		if (mCudaManager)
 		{
@@ -119,7 +135,7 @@ namespace physx
 		}
 	}
 
-	void PxParticleClothOutput::allocateBuffers(PxU32 nbParticles, PxCudaContextManager* cudaManager)
+	void PxPartitionedParticleCloth::allocateBuffers(PxU32 nbParticles, PxCudaContextManager* cudaManager)
 	{
 		mCudaManager = cudaManager;
 
@@ -589,7 +605,7 @@ namespace physx
 		return remapOutputSize;
 	}
 
-	void NpParticleClothPreProcessor::partitionSprings(const PxParticleClothDesc& clothDesc, PxParticleClothOutput& output)
+	void NpParticleClothPreProcessor::partitionSprings(const PxParticleClothDesc& clothDesc, PxPartitionedParticleCloth& output)
 	{
 		mNumSprings = clothDesc.nbSprings;
 		mNumParticles = clothDesc.nbParticles;
@@ -696,7 +712,7 @@ namespace physx
 		NpDestroyParticleSystem(this);
 	}
 
-	void NpPBDParticleSystem::addParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer)
+	void NpPBDParticleSystem::addParticleClothBuffer(PxParticleClothBuffer* clothBuffer)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpPBDParticleSystem::addClothBuffer: this function cannot be called when the particle system is not inserted into the scene!");
@@ -704,12 +720,12 @@ namespace physx
 		mCore.getShapeCore().addParticleClothBuffer(clothBuffer);
 	}
 
-	void NpPBDParticleSystem::removeParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer)
+	void NpPBDParticleSystem::removeParticleClothBuffer(PxParticleClothBuffer* clothBuffer)
 	{
 		mCore.getShapeCore().removeParticleClothBuffer(clothBuffer);
 	}
 
-	void NpPBDParticleSystem::addParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+	void NpPBDParticleSystem::addParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpPBDParticleSystem::addRigidBuffer: this function cannot be called when the particle system is not inserted into the scene!");
@@ -717,7 +733,7 @@ namespace physx
 		mCore.getShapeCore().addParticleRigidBuffer(rigidBuffer);
 	}
 
-	void NpPBDParticleSystem::removeParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+	void NpPBDParticleSystem::removeParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 	{
 		mCore.getShapeCore().removeParticleRigidBuffer(rigidBuffer);
 	}

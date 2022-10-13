@@ -210,9 +210,9 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node2" href="structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html" title="Structure to define user&#45;defined particle state when constructing a new particle system that includes..." alt="" coords="251,5,447,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_24.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleClothBuffers"/>
-<map name="ExtGpu_1_1PxParticleClothBuffers" id="ExtGpu_1_1PxParticleClothBuffers">
-<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleClothBuffers.html" title="Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to Px..." alt="" coords="5,5,209,32"/>
+<tr><td><img src="inherit_graph_24.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleClothBufferHelper"/>
+<map name="ExtGpu_1_1PxParticleClothBufferHelper" id="ExtGpu_1_1PxParticleClothBufferHelper">
+<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleClothBufferHelper.html" title="Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to Px..." alt="" coords="5,5,203,47"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_25.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleClothConstraint"/>
@@ -225,9 +225,9 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node1" href="classExtGpu_1_1PxParticleClothCooker.html" title="ExtGpu::PxParticleClothCooker" alt="" coords="5,5,211,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_27.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleRigidBuffers"/>
-<map name="ExtGpu_1_1PxParticleRigidBuffers" id="ExtGpu_1_1PxParticleRigidBuffers">
-<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleRigidBuffers.html" title="Helper class to manage PxParticleRigidDesc buffers used for communicating particle based rigids to Px..." alt="" coords="5,5,208,32"/>
+<tr><td><img src="inherit_graph_27.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleRigidBufferHelper"/>
+<map name="ExtGpu_1_1PxParticleRigidBufferHelper" id="ExtGpu_1_1PxParticleRigidBufferHelper">
+<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleRigidBufferHelper.html" title="Helper class to manage PxParticleRigidDesc buffers used for communicating particle based rigids to Px..." alt="" coords="5,5,201,47"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_28.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleRigidDesc"/>
@@ -235,14 +235,14 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node1" href="structExtGpu_1_1PxParticleRigidDesc.html" title="Structure to define user&#45;defined particle state when constructing a new particle system that includes..." alt="" coords="5,5,199,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_29.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleVolumeBuffers"/>
-<map name="ExtGpu_1_1PxParticleVolumeBuffers" id="ExtGpu_1_1PxParticleVolumeBuffers">
-<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleVolumeBuffers.html" title="Helper class to manage communicating PxParticleVolumes data to PxPaticleSystem. " alt="" coords="5,5,184,47"/>
+<tr><td><img src="inherit_graph_29.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleVolumeBufferHelper"/>
+<map name="ExtGpu_1_1PxParticleVolumeBufferHelper" id="ExtGpu_1_1PxParticleVolumeBufferHelper">
+<area shape="rect" id="node1" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html" title="Helper class to manage communicating PxParticleVolumes data to PxParticleBuffer. " alt="" coords="5,5,184,47"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_30.png" border="0" alt="" usemap="#ExtGpu_1_1PxParticleVolumeMesh"/>
 <map name="ExtGpu_1_1PxParticleVolumeMesh" id="ExtGpu_1_1PxParticleVolumeMesh">
-<area shape="rect" id="node1" href="structExtGpu_1_1PxParticleVolumeMesh.html" title="Helper struct that holds information about a specific mesh in a PxParticleVolumeBuffers. " alt="" coords="5,5,216,32"/>
+<area shape="rect" id="node1" href="structExtGpu_1_1PxParticleVolumeMesh.html" title="Helper struct that holds information about a specific mesh in a PxParticleVolumeBufferHelper. " alt="" coords="5,5,216,32"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_31.png" border="0" alt="" usemap="#ExtGpu_1_1PxSparseGridBuilder"/>
@@ -1862,24 +1862,27 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node1" href="structPxPairFlag.html" title="Collection of flags describing the actions to take for a collision pair. " alt="" coords="5,5,92,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_330.png" border="0" alt="" usemap="#PxParticleBufferFlag"/>
+<tr><td><img src="inherit_graph_330.png" border="0" alt="" usemap="#PxParticleBuffer"/>
+<map name="PxParticleBuffer" id="PxParticleBuffer">
+<area shape="rect" id="node1" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ..." alt="" coords="5,56,120,83"/>
+<area shape="rect" id="node2" href="classPxParticleAndDiffuseBuffer.html" title="A particle buffer used to simulate diffuse particles. " alt="" coords="168,5,345,32"/>
+<area shape="rect" id="node3" href="classPxParticleClothBuffer.html" title="A particle buffer used to simulate particle cloth. " alt="" coords="184,56,329,83"/>
+<area shape="rect" id="node4" href="classPxParticleRigidBuffer.html" title="A particle buffer used to simulate rigid bodies using shape matching with particles. " alt="" coords="185,107,329,133"/>
+</map>
+</td></tr>
+<tr><td><img src="inherit_graph_331.png" border="0" alt="" usemap="#PxParticleBufferFlag"/>
 <map name="PxParticleBufferFlag" id="PxParticleBufferFlag">
 <area shape="rect" id="node1" href="structPxParticleBufferFlag.html" title="Identifies dirty particle buffers that need to be updated in the particle system. ..." alt="" coords="5,5,145,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_331.png" border="0" alt="" usemap="#PxParticleCloth"/>
+<tr><td><img src="inherit_graph_332.png" border="0" alt="" usemap="#PxParticleCloth"/>
 <map name="PxParticleCloth" id="PxParticleCloth">
-<area shape="rect" id="node1" href="structPxParticleCloth.html" title="Particle cloth structure. Holds information about a single piece of cloth that is part of a PxUserPar..." alt="" coords="5,5,117,32"/>
+<area shape="rect" id="node1" href="structPxParticleCloth.html" title="Particle cloth structure. Holds information about a single piece of cloth that is part of a PxParticl..." alt="" coords="5,5,117,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_332.png" border="0" alt="" usemap="#PxParticleClothDesc"/>
+<tr><td><img src="inherit_graph_333.png" border="0" alt="" usemap="#PxParticleClothDesc"/>
 <map name="PxParticleClothDesc" id="PxParticleClothDesc">
-<area shape="rect" id="node1" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxUserParticleClothBuffer. Used an input for the cloth preprocessing. " alt="" coords="5,5,148,32"/>
-</map>
-</td></tr>
-<tr><td><img src="inherit_graph_333.png" border="0" alt="" usemap="#PxParticleClothOutput"/>
-<map name="PxParticleClothOutput" id="PxParticleClothOutput">
-<area shape="rect" id="node1" href="structPxParticleClothOutput.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo..." alt="" coords="5,5,156,32"/>
+<area shape="rect" id="node1" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxParticleClothBuffer. Used an input for the cloth preprocessing. " alt="" coords="5,5,148,32"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_334.png" border="0" alt="" usemap="#PxParticleClothPreProcessor"/>
@@ -1923,102 +1926,107 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node1" href="structPxParticleVolume.html" title="Particle volume structure. Used to track the bounding volume of a user&#45;specified set of particles..." alt="" coords="5,5,132,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_342.png" border="0" alt="" usemap="#PxPhysics"/>
+<tr><td><img src="inherit_graph_342.png" border="0" alt="" usemap="#PxPartitionedParticleCloth"/>
+<map name="PxPartitionedParticleCloth" id="PxPartitionedParticleCloth">
+<area shape="rect" id="node1" href="structPxPartitionedParticleCloth.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo..." alt="" coords="5,5,180,32"/>
+</map>
+</td></tr>
+<tr><td><img src="inherit_graph_343.png" border="0" alt="" usemap="#PxPhysics"/>
 <map name="PxPhysics" id="PxPhysics">
 <area shape="rect" id="node1" href="classPxPhysics.html" title="Abstract singleton factory class used for instancing objects in the Physics SDK. " alt="" coords="5,5,91,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_343.png" border="0" alt="" usemap="#PxPlane"/>
+<tr><td><img src="inherit_graph_344.png" border="0" alt="" usemap="#PxPlane"/>
 <map name="PxPlane" id="PxPlane">
 <area shape="rect" id="node1" href="classPxPlane.html" title="Representation of a plane. " alt="" coords="5,5,76,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_344.png" border="0" alt="" usemap="#PxPrismaticJointFlag"/>
+<tr><td><img src="inherit_graph_345.png" border="0" alt="" usemap="#PxPrismaticJointFlag"/>
 <map name="PxPrismaticJointFlag" id="PxPrismaticJointFlag">
 <area shape="rect" id="node1" href="structPxPrismaticJointFlag.html" title="Flags specific to the prismatic joint. " alt="" coords="5,5,151,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_345.png" border="0" alt="" usemap="#PxProcessPxBaseCallback"/>
+<tr><td><img src="inherit_graph_346.png" border="0" alt="" usemap="#PxProcessPxBaseCallback"/>
 <map name="PxProcessPxBaseCallback" id="PxProcessPxBaseCallback">
 <area shape="rect" id="node1" href="classPxProcessPxBaseCallback.html" title="Callback class used to process PxBase objects. " alt="" coords="5,5,188,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_346.png" border="0" alt="" usemap="#PxProfilerCallback"/>
+<tr><td><img src="inherit_graph_347.png" border="0" alt="" usemap="#PxProfilerCallback"/>
 <map name="PxProfilerCallback" id="PxProfilerCallback">
 <area shape="rect" id="node1" href="classPxProfilerCallback.html" title="The pure virtual callback interface for general purpose instrumentation and profiling of GameWorks mo..." alt="" coords="5,5,133,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_347.png" border="0" alt="" usemap="#PxProfileScoped"/>
+<tr><td><img src="inherit_graph_348.png" border="0" alt="" usemap="#PxProfileScoped"/>
 <map name="PxProfileScoped" id="PxProfileScoped">
 <area shape="rect" id="node1" href="classPxProfileScoped.html" title="PxProfileScoped" alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_348.png" border="0" alt="" usemap="#PxPruningStructureType"/>
+<tr><td><img src="inherit_graph_349.png" border="0" alt="" usemap="#PxPruningStructureType"/>
 <map name="PxPruningStructureType" id="PxPruningStructureType">
 <area shape="rect" id="node1" href="structPxPruningStructureType.html" title="Pruning structure used to accelerate scene queries. " alt="" coords="5,5,168,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_349.png" border="0" alt="" usemap="#PxPvd"/>
+<tr><td><img src="inherit_graph_350.png" border="0" alt="" usemap="#PxPvd"/>
 <map name="PxPvd" id="PxPvd">
 <area shape="rect" id="node2" href="classPxPvd.html" title="PxPvd is the top&#45;level class for the PVD framework, and the main customer interface for PVD configura..." alt="" coords="181,5,240,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_350.png" border="0" alt="" usemap="#PxPvdInstrumentationFlag"/>
+<tr><td><img src="inherit_graph_351.png" border="0" alt="" usemap="#PxPvdInstrumentationFlag"/>
 <map name="PxPvdInstrumentationFlag" id="PxPvdInstrumentationFlag">
 <area shape="rect" id="node1" href="structPxPvdInstrumentationFlag.html" title="types of instrumentation that PVD can do. " alt="" coords="5,5,179,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_351.png" border="0" alt="" usemap="#PxPvdSceneClient"/>
+<tr><td><img src="inherit_graph_352.png" border="0" alt="" usemap="#PxPvdSceneClient"/>
 <map name="PxPvdSceneClient" id="PxPvdSceneClient">
 <area shape="rect" id="node1" href="classPxPvdSceneClient.html" title="Special client for PxScene. It provides access to the PxPvdSceneFlag. It also provides simple user de..." alt="" coords="5,5,135,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_352.png" border="0" alt="" usemap="#PxPvdSceneFlag"/>
+<tr><td><img src="inherit_graph_353.png" border="0" alt="" usemap="#PxPvdSceneFlag"/>
 <map name="PxPvdSceneFlag" id="PxPvdSceneFlag">
 <area shape="rect" id="node1" href="structPxPvdSceneFlag.html" title="PVD scene Flags. They are disabled by default, and only works if PxPvdInstrumentationFlag::eDEBUG is ..." alt="" coords="5,5,127,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_353.png" border="0" alt="" usemap="#PxPvdTransport"/>
+<tr><td><img src="inherit_graph_354.png" border="0" alt="" usemap="#PxPvdTransport"/>
 <map name="PxPvdTransport" id="PxPvdTransport">
 <area shape="rect" id="node1" href="classPxPvdTransport.html" title="PxPvdTransport is an interface representing the data transport mechanism. This class defines all serv..." alt="" coords="5,5,119,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_354.png" border="0" alt="" usemap="#PxPvdUpdateType"/>
+<tr><td><img src="inherit_graph_355.png" border="0" alt="" usemap="#PxPvdUpdateType"/>
 <map name="PxPvdUpdateType" id="PxPvdUpdateType">
 <area shape="rect" id="node1" href="structPxPvdUpdateType.html" title="Flags for determining how PVD should serialize a constraint update. " alt="" coords="5,5,133,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_355.png" border="0" alt="" usemap="#PxQuatT_3_01float_01_4"/>
+<tr><td><img src="inherit_graph_356.png" border="0" alt="" usemap="#PxQuatT_3_01float_01_4"/>
 <map name="PxQuatT_3_01float_01_4" id="PxQuatT_3_01float_01_4">
 <area shape="rect" id="node1" href="classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="5,5,127,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_356.png" border="0" alt="" usemap="#PxQuatT_3_01Type_01_4"/>
+<tr><td><img src="inherit_graph_357.png" border="0" alt="" usemap="#PxQuatT_3_01Type_01_4"/>
 <map name="PxQuatT_3_01Type_01_4" id="PxQuatT_3_01Type_01_4">
 <area shape="rect" id="node1" href="classPxQuatT.html" title="This is a quaternion class. For more information on quaternion mathematics consult a mathematics sour..." alt="" coords="5,5,131,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_357.png" border="0" alt="" usemap="#PxQueryCache"/>
+<tr><td><img src="inherit_graph_358.png" border="0" alt="" usemap="#PxQueryCache"/>
 <map name="PxQueryCache" id="PxQueryCache">
 <area shape="rect" id="node1" href="structPxQueryCache.html" title="single hit cache for scene queries. " alt="" coords="5,5,116,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_358.png" border="0" alt="" usemap="#PxQueryFilterCallback"/>
+<tr><td><img src="inherit_graph_359.png" border="0" alt="" usemap="#PxQueryFilterCallback"/>
 <map name="PxQueryFilterCallback" id="PxQueryFilterCallback">
 <area shape="rect" id="node1" href="classPxQueryFilterCallback.html" title="Scene query filtering callbacks. " alt="" coords="5,5,157,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_359.png" border="0" alt="" usemap="#PxQueryFilterData"/>
+<tr><td><img src="inherit_graph_360.png" border="0" alt="" usemap="#PxQueryFilterData"/>
 <map name="PxQueryFilterData" id="PxQueryFilterData">
 <area shape="rect" id="node1" href="structPxQueryFilterData.html" title="Scene query filtering data. " alt="" coords="5,5,135,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_360.png" border="0" alt="" usemap="#PxQueryFlag"/>
+<tr><td><img src="inherit_graph_361.png" border="0" alt="" usemap="#PxQueryFlag"/>
 <map name="PxQueryFlag" id="PxQueryFlag">
 <area shape="rect" id="node1" href="structPxQueryFlag.html" title="Filtering flags for scene queries. " alt="" coords="5,5,104,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_361.png" border="0" alt="" usemap="#PxQueryHit"/>
+<tr><td><img src="inherit_graph_362.png" border="0" alt="" usemap="#PxQueryHit"/>
 <map name="PxQueryHit" id="PxQueryHit">
 <area shape="rect" id="node1" href="structPxActorShape.html" title="Combines a shape pointer and the actor the shape belongs to into one memory location. " alt="" coords="338,43,445,69"/>
 <area shape="rect" id="node2" href="structPxOverlapHit.html" title="PxOverlapHit" alt="" coords="511,5,608,32"/>
@@ -2031,12 +2039,12 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node9" href="structPxGeomSweepHit.html" title="Stores results of sweep queries. " alt="" coords="327,144,455,171"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_362.png" border="0" alt="" usemap="#PxQueryHitType"/>
+<tr><td><img src="inherit_graph_363.png" border="0" alt="" usemap="#PxQueryHitType"/>
 <map name="PxQueryHitType" id="PxQueryHitType">
 <area shape="rect" id="node1" href="structPxQueryHitType.html" title="Classification of scene query hits (intersections). " alt="" coords="5,5,123,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_363.png" border="0" alt="" usemap="#PxQueryThreadContext"/>
+<tr><td><img src="inherit_graph_364.png" border="0" alt="" usemap="#PxQueryThreadContext"/>
 <map name="PxQueryThreadContext" id="PxQueryThreadContext">
 <area shape="rect" id="node1" href="structPxQueryThreadContext.html" title="A per&#45;thread context passed to low&#45;level query functions. " alt="" coords="5,97,163,124"/>
 <area shape="rect" id="node2" href="structPxHitCallback.html" title="This callback class facilitates reporting scene query hits (intersections) to the user..." alt="" coords="224,5,396,32"/>
@@ -2052,37 +2060,37 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node12" href="structPxSweepBufferN.html" title="Returns touching sweep hits to the user in a fixed size array embedded in the buffer class..." alt="" coords="701,188,853,215"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_364.png" border="0" alt="" usemap="#PxRawAllocator"/>
+<tr><td><img src="inherit_graph_365.png" border="0" alt="" usemap="#PxRawAllocator"/>
 <map name="PxRawAllocator" id="PxRawAllocator">
 <area shape="rect" id="node1" href="classPxRawAllocator.html" title="PxRawAllocator" alt="" coords="5,5,120,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_365.png" border="0" alt="" usemap="#PxReadWriteLock"/>
+<tr><td><img src="inherit_graph_366.png" border="0" alt="" usemap="#PxReadWriteLock"/>
 <map name="PxReadWriteLock" id="PxReadWriteLock">
 <area shape="rect" id="node1" href="classPxReadWriteLock.html" title="PxReadWriteLock" alt="" coords="5,5,132,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_366.png" border="0" alt="" usemap="#PxReflectionAllocator_3_01T_01_4"/>
+<tr><td><img src="inherit_graph_367.png" border="0" alt="" usemap="#PxReflectionAllocator_3_01T_01_4"/>
 <map name="PxReflectionAllocator_3_01T_01_4" id="PxReflectionAllocator_3_01T_01_4">
 <area shape="rect" id="node1" href="classPxReflectionAllocator.html" title="PxReflectionAllocator\&lt; T \&gt;" alt="" coords="5,5,183,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_367.png" border="0" alt="" usemap="#PxRemeshingExt"/>
+<tr><td><img src="inherit_graph_368.png" border="0" alt="" usemap="#PxRemeshingExt"/>
 <map name="PxRemeshingExt" id="PxRemeshingExt">
 <area shape="rect" id="node1" href="classPxRemeshingExt.html" title="Provides methods to adjust the tessellation of meshes. " alt="" coords="5,5,128,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_368.png" border="0" alt="" usemap="#PxRenderBuffer"/>
+<tr><td><img src="inherit_graph_369.png" border="0" alt="" usemap="#PxRenderBuffer"/>
 <map name="PxRenderBuffer" id="PxRenderBuffer">
 <area shape="rect" id="node1" href="classPxRenderBuffer.html" title="Interface for points, lines, triangles, and text buffer. " alt="" coords="5,5,117,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_369.png" border="0" alt="" usemap="#PxRenderOutput"/>
+<tr><td><img src="inherit_graph_370.png" border="0" alt="" usemap="#PxRenderOutput"/>
 <map name="PxRenderOutput" id="PxRenderOutput">
 <area shape="rect" id="node1" href="classPxRenderOutput.html" title="PxRenderOutput" alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_370.png" border="0" alt="" usemap="#PxReportCallback_3_01T_01_4"/>
+<tr><td><img src="inherit_graph_371.png" border="0" alt="" usemap="#PxReportCallback_3_01T_01_4"/>
 <map name="PxReportCallback_3_01T_01_4" id="PxReportCallback_3_01T_01_4">
 <area shape="rect" id="node1" href="classPxReportCallback.html" title="Base class for callback reporting an unknown number of items to users. " alt="" coords="5,85,163,112"/>
 <area shape="rect" id="node2" href="classPxDynamicArrayReportCallback.html" title="Dynamic array report callback. " alt="" coords="217,5,455,32"/>
@@ -2091,78 +2099,78 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node5" href="classPxRegularReportCallback.html" title="Regular report callback. " alt="" coords="235,173,437,200"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_371.png" border="0" alt="" usemap="#PxRepXInstantiationArgs"/>
+<tr><td><img src="inherit_graph_372.png" border="0" alt="" usemap="#PxRepXInstantiationArgs"/>
 <map name="PxRepXInstantiationArgs" id="PxRepXInstantiationArgs">
 <area shape="rect" id="node1" href="structPxRepXInstantiationArgs.html" title="Arguments required to instantiate a serializable object from RepX. " alt="" coords="5,5,171,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_372.png" border="0" alt="" usemap="#PxRepXObject"/>
+<tr><td><img src="inherit_graph_373.png" border="0" alt="" usemap="#PxRepXObject"/>
 <map name="PxRepXObject" id="PxRepXObject">
 <area shape="rect" id="node1" href="structPxRepXObject.html" title="Helper class containing the mapping of id to object, and type name. " alt="" coords="5,5,112,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_373.png" border="0" alt="" usemap="#PxRepXSerializer"/>
+<tr><td><img src="inherit_graph_374.png" border="0" alt="" usemap="#PxRepXSerializer"/>
 <map name="PxRepXSerializer" id="PxRepXSerializer">
 <area shape="rect" id="node1" href="classPxRepXSerializer.html" title="Serializer interface for RepX (Xml) serialization. " alt="" coords="5,5,128,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_374.png" border="0" alt="" usemap="#PxRevoluteJointFlag"/>
+<tr><td><img src="inherit_graph_375.png" border="0" alt="" usemap="#PxRevoluteJointFlag"/>
 <map name="PxRevoluteJointFlag" id="PxRevoluteJointFlag">
 <area shape="rect" id="node1" href="structPxRevoluteJointFlag.html" title="Flags specific to the Revolute Joint. " alt="" coords="5,5,144,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_375.png" border="0" alt="" usemap="#PxRigidActorExt"/>
+<tr><td><img src="inherit_graph_376.png" border="0" alt="" usemap="#PxRigidActorExt"/>
 <map name="PxRigidActorExt" id="PxRigidActorExt">
 <area shape="rect" id="node1" href="classPxRigidActorExt.html" title="utility functions for use with PxRigidActor and subclasses " alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_376.png" border="0" alt="" usemap="#PxRigidBodyData"/>
+<tr><td><img src="inherit_graph_377.png" border="0" alt="" usemap="#PxRigidBodyData"/>
 <map name="PxRigidBodyData" id="PxRigidBodyData">
 <area shape="rect" id="node1" href="structPxRigidBodyData.html" title="Structure to store rigid body properties. " alt="" coords="5,5,129,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_377.png" border="0" alt="" usemap="#PxRigidBodyExt"/>
+<tr><td><img src="inherit_graph_378.png" border="0" alt="" usemap="#PxRigidBodyExt"/>
 <map name="PxRigidBodyExt" id="PxRigidBodyExt">
 <area shape="rect" id="node1" href="classPxRigidBodyExt.html" title="utility functions for use with PxRigidBody and subclasses " alt="" coords="5,5,123,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_378.png" border="0" alt="" usemap="#PxRigidBodyFlag"/>
+<tr><td><img src="inherit_graph_379.png" border="0" alt="" usemap="#PxRigidBodyFlag"/>
 <map name="PxRigidBodyFlag" id="PxRigidBodyFlag">
 <area shape="rect" id="node1" href="structPxRigidBodyFlag.html" title="Collection of flags describing the behavior of a rigid body. " alt="" coords="5,5,128,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_379.png" border="0" alt="" usemap="#PxRigidDynamicLockFlag"/>
+<tr><td><img src="inherit_graph_380.png" border="0" alt="" usemap="#PxRigidDynamicLockFlag"/>
 <map name="PxRigidDynamicLockFlag" id="PxRigidDynamicLockFlag">
 <area shape="rect" id="node1" href="structPxRigidDynamicLockFlag.html" title="Collection of flags providing a mechanism to lock motion along/around a specific axis. " alt="" coords="5,5,176,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_380.png" border="0" alt="" usemap="#PxSamplingExt"/>
+<tr><td><img src="inherit_graph_381.png" border="0" alt="" usemap="#PxSamplingExt"/>
 <map name="PxSamplingExt" id="PxSamplingExt">
 <area shape="rect" id="node1" href="classPxSamplingExt.html" title="utility functions to sample vertices on or inside a triangle mesh or other geometries ..." alt="" coords="5,5,117,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_381.png" border="0" alt="" usemap="#PxSceneFlag"/>
+<tr><td><img src="inherit_graph_382.png" border="0" alt="" usemap="#PxSceneFlag"/>
 <map name="PxSceneFlag" id="PxSceneFlag">
 <area shape="rect" id="node1" href="structPxSceneFlag.html" title="flags for configuring properties of the scene " alt="" coords="5,5,105,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_382.png" border="0" alt="" usemap="#PxSceneLimits"/>
+<tr><td><img src="inherit_graph_383.png" border="0" alt="" usemap="#PxSceneLimits"/>
 <map name="PxSceneLimits" id="PxSceneLimits">
 <area shape="rect" id="node1" href="classPxSceneLimits.html" title="Class used to retrieve limits(e.g. maximum number of bodies) for a scene. The limits are used as a hi..." alt="" coords="5,5,116,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_383.png" border="0" alt="" usemap="#PxSceneQueryDesc"/>
+<tr><td><img src="inherit_graph_384.png" border="0" alt="" usemap="#PxSceneQueryDesc"/>
 <map name="PxSceneQueryDesc" id="PxSceneQueryDesc">
 <area shape="rect" id="node1" href="classPxSceneQueryDesc.html" title="Descriptor class for scene query system. See PxSceneQuerySystem. " alt="" coords="5,5,145,32"/>
 <area shape="rect" id="node2" href="classPxSceneDesc.html" title="Descriptor class for scenes. See PxScene. " alt="" coords="193,5,299,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_384.png" border="0" alt="" usemap="#PxSceneQueryExt"/>
+<tr><td><img src="inherit_graph_385.png" border="0" alt="" usemap="#PxSceneQueryExt"/>
 <map name="PxSceneQueryExt" id="PxSceneQueryExt">
 <area shape="rect" id="node1" href="classPxSceneQueryExt.html" title="utility functions for use with PxScene, related to scene queries. " alt="" coords="5,5,136,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_385.png" border="0" alt="" usemap="#PxSceneQuerySystemBase"/>
+<tr><td><img src="inherit_graph_386.png" border="0" alt="" usemap="#PxSceneQuerySystemBase"/>
 <map name="PxSceneQuerySystemBase" id="PxSceneQuerySystemBase">
 <area shape="rect" id="node1" href="classPxSceneQuerySystemBase.html" title="Base class for the scene&#45;query system. " alt="" coords="5,31,191,57"/>
 <area shape="rect" id="node2" href="classPxSceneQuerySystem.html" title="Scene&#45;queries external sub&#45;system for PxScene&#45;based objects. " alt="" coords="239,5,393,32"/>
@@ -2171,396 +2179,396 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node5" href="classPxScene.html" title="A scene is a collection of bodies and constraints which can interact. " alt="" coords="504,56,579,83"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_386.png" border="0" alt="" usemap="#PxSceneQueryUpdateMode"/>
+<tr><td><img src="inherit_graph_387.png" border="0" alt="" usemap="#PxSceneQueryUpdateMode"/>
 <map name="PxSceneQueryUpdateMode" id="PxSceneQueryUpdateMode">
 <area shape="rect" id="node1" href="structPxSceneQueryUpdateMode.html" title="Scene query update mode. " alt="" coords="5,5,188,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_387.png" border="0" alt="" usemap="#PxSceneReadLock"/>
+<tr><td><img src="inherit_graph_388.png" border="0" alt="" usemap="#PxSceneReadLock"/>
 <map name="PxSceneReadLock" id="PxSceneReadLock">
 <area shape="rect" id="node1" href="classPxSceneReadLock.html" title="RAII wrapper for the PxScene read lock. " alt="" coords="5,5,139,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_388.png" border="0" alt="" usemap="#PxSceneWriteLock"/>
+<tr><td><img src="inherit_graph_389.png" border="0" alt="" usemap="#PxSceneWriteLock"/>
 <map name="PxSceneWriteLock" id="PxSceneWriteLock">
 <area shape="rect" id="node1" href="classPxSceneWriteLock.html" title="RAII wrapper for the PxScene write lock. " alt="" coords="5,5,140,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_389.png" border="0" alt="" usemap="#PxSdfBitsPerSubgridPixel"/>
+<tr><td><img src="inherit_graph_390.png" border="0" alt="" usemap="#PxSdfBitsPerSubgridPixel"/>
 <map name="PxSdfBitsPerSubgridPixel" id="PxSdfBitsPerSubgridPixel">
 <area shape="rect" id="node1" href="classPxSdfBitsPerSubgridPixel.html" title="Defines the number of bits per subgrid pixel. " alt="" coords="5,5,179,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_390.png" border="0" alt="" usemap="#PxSDFDesc"/>
+<tr><td><img src="inherit_graph_391.png" border="0" alt="" usemap="#PxSDFDesc"/>
 <map name="PxSDFDesc" id="PxSDFDesc">
 <area shape="rect" id="node1" href="classPxSDFDesc.html" title="A structure describing signed distance field for mesh. " alt="" coords="5,5,100,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_391.png" border="0" alt="" usemap="#PxSerialization"/>
+<tr><td><img src="inherit_graph_392.png" border="0" alt="" usemap="#PxSerialization"/>
 <map name="PxSerialization" id="PxSerialization">
 <area shape="rect" id="node1" href="classPxSerialization.html" title="Utility functions for serialization. " alt="" coords="5,5,115,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_392.png" border="0" alt="" usemap="#PxSerialization_1_1PxXmlMiscParameter"/>
+<tr><td><img src="inherit_graph_393.png" border="0" alt="" usemap="#PxSerialization_1_1PxXmlMiscParameter"/>
 <map name="PxSerialization_1_1PxXmlMiscParameter" id="PxSerialization_1_1PxXmlMiscParameter">
 <area shape="rect" id="node1" href="structPxSerialization_1_1PxXmlMiscParameter.html" title="Additional PxScene and PxPhysics options stored in XML serialized data. " alt="" coords="5,5,188,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_393.png" border="0" alt="" usemap="#PxSerializationContext"/>
+<tr><td><img src="inherit_graph_394.png" border="0" alt="" usemap="#PxSerializationContext"/>
 <map name="PxSerializationContext" id="PxSerializationContext">
 <area shape="rect" id="node1" href="classPxSerializationContext.html" title="Binary serialization context class. " alt="" coords="5,5,160,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_394.png" border="0" alt="" usemap="#PxSerializationRegistry"/>
+<tr><td><img src="inherit_graph_395.png" border="0" alt="" usemap="#PxSerializationRegistry"/>
 <map name="PxSerializationRegistry" id="PxSerializationRegistry">
 <area shape="rect" id="node1" href="classPxSerializationRegistry.html" title="Class serving as a registry for XML (RepX) and binary serializable types. " alt="" coords="5,5,163,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_395.png" border="0" alt="" usemap="#PxSerializer"/>
+<tr><td><img src="inherit_graph_396.png" border="0" alt="" usemap="#PxSerializer"/>
 <map name="PxSerializer" id="PxSerializer">
 <area shape="rect" id="node1" href="classPxSerializer.html" title="Serialization interface class. " alt="" coords="5,5,97,32"/>
 <area shape="rect" id="node2" href="classPxSerializerDefaultAdapter.html" title="Default PxSerializer implementation. " alt="" coords="145,5,353,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_396.png" border="0" alt="" usemap="#PxShapeExt"/>
+<tr><td><img src="inherit_graph_397.png" border="0" alt="" usemap="#PxShapeExt"/>
 <map name="PxShapeExt" id="PxShapeExt">
 <area shape="rect" id="node1" href="classPxShapeExt.html" title="utility functions for use with PxShape " alt="" coords="5,5,100,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_397.png" border="0" alt="" usemap="#PxShapeFlag"/>
+<tr><td><img src="inherit_graph_398.png" border="0" alt="" usemap="#PxShapeFlag"/>
 <map name="PxShapeFlag" id="PxShapeFlag">
 <area shape="rect" id="node1" href="structPxShapeFlag.html" title="Flags which affect the behavior of PxShapes. " alt="" coords="5,5,105,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_398.png" border="0" alt="" usemap="#PxSIMDGuard"/>
+<tr><td><img src="inherit_graph_399.png" border="0" alt="" usemap="#PxSIMDGuard"/>
 <map name="PxSIMDGuard" id="PxSIMDGuard">
 <area shape="rect" id="node1" href="classPxSIMDGuard.html" title="PxSIMDGuard" alt="" coords="5,5,111,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_399.png" border="0" alt="" usemap="#PxSimpleTriangleMesh"/>
+<tr><td><img src="inherit_graph_400.png" border="0" alt="" usemap="#PxSimpleTriangleMesh"/>
 <map name="PxSimpleTriangleMesh" id="PxSimpleTriangleMesh">
 <area shape="rect" id="node1" href="classPxSimpleTriangleMesh.html" title="A structure describing a triangle mesh. " alt="" coords="5,5,160,32"/>
 <area shape="rect" id="node2" href="classPxTriangleMeshDesc.html" title="Descriptor class for PxTriangleMesh. " alt="" coords="208,5,353,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_400.png" border="0" alt="" usemap="#PxSimulationEventCallback"/>
+<tr><td><img src="inherit_graph_401.png" border="0" alt="" usemap="#PxSimulationEventCallback"/>
 <map name="PxSimulationEventCallback" id="PxSimulationEventCallback">
 <area shape="rect" id="node1" href="classPxSimulationEventCallback.html" title="An interface class that the user can implement in order to receive simulation events. " alt="" coords="5,5,187,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_401.png" border="0" alt="" usemap="#PxSimulationFilterCallback"/>
+<tr><td><img src="inherit_graph_402.png" border="0" alt="" usemap="#PxSimulationFilterCallback"/>
 <map name="PxSimulationFilterCallback" id="PxSimulationFilterCallback">
 <area shape="rect" id="node1" href="classPxSimulationFilterCallback.html" title="Filter callback to specify handling of collision pairs. " alt="" coords="5,5,184,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_402.png" border="0" alt="" usemap="#PxSimulationStatistics"/>
+<tr><td><img src="inherit_graph_403.png" border="0" alt="" usemap="#PxSimulationStatistics"/>
 <map name="PxSimulationStatistics" id="PxSimulationStatistics">
 <area shape="rect" id="node1" href="classPxSimulationStatistics.html" title="Class used to retrieve statistics for a simulation step. " alt="" coords="5,5,160,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_403.png" border="0" alt="" usemap="#PxSoftBodyData"/>
+<tr><td><img src="inherit_graph_404.png" border="0" alt="" usemap="#PxSoftBodyData"/>
 <map name="PxSoftBodyData" id="PxSoftBodyData">
 <area shape="rect" id="node1" href="structPxSoftBodyData.html" title="Identifies input and output buffers for PxSoftBody. " alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_404.png" border="0" alt="" usemap="#PxSoftBodyDataFlag"/>
+<tr><td><img src="inherit_graph_405.png" border="0" alt="" usemap="#PxSoftBodyDataFlag"/>
 <map name="PxSoftBodyDataFlag" id="PxSoftBodyDataFlag">
 <area shape="rect" id="node1" href="classPxSoftBodyDataFlag.html" title="These flags determine what data is read or written to the gpu softbody. " alt="" coords="5,5,148,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_405.png" border="0" alt="" usemap="#PxSoftBodyExt"/>
+<tr><td><img src="inherit_graph_406.png" border="0" alt="" usemap="#PxSoftBodyExt"/>
 <map name="PxSoftBodyExt" id="PxSoftBodyExt">
 <area shape="rect" id="node1" href="classPxSoftBodyExt.html" title="utility functions for use with PxSoftBody and subclasses " alt="" coords="5,5,116,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_406.png" border="0" alt="" usemap="#PxSoftBodyFlag"/>
+<tr><td><img src="inherit_graph_407.png" border="0" alt="" usemap="#PxSoftBodyFlag"/>
 <map name="PxSoftBodyFlag" id="PxSoftBodyFlag">
 <area shape="rect" id="node1" href="structPxSoftBodyFlag.html" title="Flags to enable or disable special modes of a SoftBody. " alt="" coords="5,5,121,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_407.png" border="0" alt="" usemap="#PxSoftBodySimulationDataDesc"/>
+<tr><td><img src="inherit_graph_408.png" border="0" alt="" usemap="#PxSoftBodySimulationDataDesc"/>
 <map name="PxSoftBodySimulationDataDesc" id="PxSoftBodySimulationDataDesc">
 <area shape="rect" id="node1" href="classPxSoftBodySimulationDataDesc.html" title="Descriptor class for PxSoftBodyMesh (contains only additional data used for softbody simulation)..." alt="" coords="5,5,215,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_408.png" border="0" alt="" usemap="#PxSolverBody"/>
+<tr><td><img src="inherit_graph_409.png" border="0" alt="" usemap="#PxSolverBody"/>
 <map name="PxSolverBody" id="PxSolverBody">
 <area shape="rect" id="node1" href="structPxSolverBody.html" title="Struct that the solver uses to store velocity updates for a body. " alt="" coords="5,5,108,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_409.png" border="0" alt="" usemap="#PxSolverBodyData"/>
+<tr><td><img src="inherit_graph_410.png" border="0" alt="" usemap="#PxSolverBodyData"/>
 <map name="PxSolverBodyData" id="PxSolverBodyData">
 <area shape="rect" id="node1" href="structPxSolverBodyData.html" title="Struct that the solver uses to store the state and other properties of a body. " alt="" coords="5,5,136,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_410.png" border="0" alt="" usemap="#PxSolverConstraintDesc"/>
+<tr><td><img src="inherit_graph_411.png" border="0" alt="" usemap="#PxSolverConstraintDesc"/>
 <map name="PxSolverConstraintDesc" id="PxSolverConstraintDesc">
 <area shape="rect" id="node1" href="structPxSolverConstraintDesc.html" title="Constraint descriptor used inside the solver. " alt="" coords="5,5,168,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_411.png" border="0" alt="" usemap="#PxSolverConstraintPrepDescBase"/>
+<tr><td><img src="inherit_graph_412.png" border="0" alt="" usemap="#PxSolverConstraintPrepDescBase"/>
 <map name="PxSolverConstraintPrepDescBase" id="PxSolverConstraintPrepDescBase">
 <area shape="rect" id="node1" href="structPxSolverConstraintPrepDescBase.html" title="Data structure used for preparing constraints before solving them. " alt="" coords="5,31,224,57"/>
 <area shape="rect" id="node2" href="structPxSolverConstraintPrepDesc.html" title="Data structure used for preparing constraints before solving them. " alt="" coords="272,5,461,32"/>
 <area shape="rect" id="node3" href="structPxSolverContactDesc.html" title="Data structure used for preparing constraints before solving them. " alt="" coords="293,56,441,83"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_412.png" border="0" alt="" usemap="#PxSolverType"/>
+<tr><td><img src="inherit_graph_413.png" border="0" alt="" usemap="#PxSolverType"/>
 <map name="PxSolverType" id="PxSolverType">
 <area shape="rect" id="node1" href="structPxSolverType.html" title="Enum for selecting the type of solver used for the simulation. " alt="" coords="5,5,107,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_413.png" border="0" alt="" usemap="#PxSparseGridData"/>
+<tr><td><img src="inherit_graph_414.png" border="0" alt="" usemap="#PxSparseGridData"/>
 <map name="PxSparseGridData" id="PxSparseGridData">
 <area shape="rect" id="node1" href="structPxSparseGridData.html" title="Minimal set of data to access cells in a sparse grid. " alt="" coords="5,5,136,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_414.png" border="0" alt="" usemap="#PxSparseGridParams"/>
+<tr><td><img src="inherit_graph_415.png" border="0" alt="" usemap="#PxSparseGridParams"/>
 <map name="PxSparseGridParams" id="PxSparseGridParams">
 <area shape="rect" id="node1" href="structPxSparseGridParams.html" title="Parameters to define the sparse grid settings like grid spacing, maximal number of subgrids etc..." alt="" coords="5,5,153,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_415.png" border="0" alt="" usemap="#PxSparseIsosurfaceExtractionData"/>
+<tr><td><img src="inherit_graph_416.png" border="0" alt="" usemap="#PxSparseIsosurfaceExtractionData"/>
 <map name="PxSparseIsosurfaceExtractionData" id="PxSparseIsosurfaceExtractionData">
 <area shape="rect" id="node1" href="structPxSparseIsosurfaceExtractionData.html" title="Bundles all data used to extract an isosurface on a sparse grid. " alt="" coords="5,5,229,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_416.png" border="0" alt="" usemap="#PxsParticleMaterialData"/>
+<tr><td><img src="inherit_graph_417.png" border="0" alt="" usemap="#PxsParticleMaterialData"/>
 <map name="PxsParticleMaterialData" id="PxsParticleMaterialData">
 <area shape="rect" id="node1" href="structPxsParticleMaterialData.html" title="PxsParticleMaterialData" alt="" coords="5,5,168,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_417.png" border="0" alt="" usemap="#PxSpatialForce"/>
+<tr><td><img src="inherit_graph_418.png" border="0" alt="" usemap="#PxSpatialForce"/>
 <map name="PxSpatialForce" id="PxSpatialForce">
 <area shape="rect" id="node1" href="structPxSpatialForce.html" title="Data structure to represent spatial forces. " alt="" coords="5,5,116,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_418.png" border="0" alt="" usemap="#PxSpatialVector"/>
+<tr><td><img src="inherit_graph_419.png" border="0" alt="" usemap="#PxSpatialVector"/>
 <map name="PxSpatialVector" id="PxSpatialVector">
 <area shape="rect" id="node1" href="structPxSpatialVector.html" title="Structure to store linear and angular components of spatial vector. " alt="" coords="5,5,121,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_419.png" border="0" alt="" usemap="#PxSpatialVelocity"/>
+<tr><td><img src="inherit_graph_420.png" border="0" alt="" usemap="#PxSpatialVelocity"/>
 <map name="PxSpatialVelocity" id="PxSpatialVelocity">
 <area shape="rect" id="node1" href="structPxSpatialVelocity.html" title="Data structure to represent spatial velocities. " alt="" coords="5,5,131,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_420.png" border="0" alt="" usemap="#PxSphericalJointFlag"/>
+<tr><td><img src="inherit_graph_421.png" border="0" alt="" usemap="#PxSphericalJointFlag"/>
 <map name="PxSphericalJointFlag" id="PxSphericalJointFlag">
 <area shape="rect" id="node1" href="structPxSphericalJointFlag.html" title="Flags specific to the spherical joint. " alt="" coords="5,5,149,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_421.png" border="0" alt="" usemap="#PxSpring"/>
+<tr><td><img src="inherit_graph_422.png" border="0" alt="" usemap="#PxSpring"/>
 <map name="PxSpring" id="PxSpring">
 <area shape="rect" id="node1" href="classPxSpring.html" title="PxSpring" alt="" coords="5,5,80,32"/>
 <area shape="rect" id="node2" href="classPxD6JointDrive.html" title="parameters for configuring the drive model of a PxD6Joint " alt="" coords="128,5,237,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_422.png" border="0" alt="" usemap="#PxStack_3_01PxAllocator_01_4"/>
+<tr><td><img src="inherit_graph_423.png" border="0" alt="" usemap="#PxStack_3_01PxAllocator_01_4"/>
 <map name="PxStack_3_01PxAllocator_01_4" id="PxStack_3_01PxAllocator_01_4">
 <area shape="rect" id="node1" href="classPxStack.html" title="PxStack\&lt; PxAllocator \&gt;" alt="" coords="5,5,168,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_423.png" border="0" alt="" usemap="#PxStridedData"/>
+<tr><td><img src="inherit_graph_424.png" border="0" alt="" usemap="#PxStridedData"/>
 <map name="PxStridedData" id="PxStridedData">
 <area shape="rect" id="node1" href="structPxStridedData.html" title="PxStridedData" alt="" coords="5,5,112,32"/>
 <area shape="rect" id="node2" href="structPxBoundedData.html" title="PxBoundedData" alt="" coords="160,5,276,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_424.png" border="0" alt="" usemap="#PxStrideIterator_3_01T_01_4"/>
+<tr><td><img src="inherit_graph_425.png" border="0" alt="" usemap="#PxStrideIterator_3_01T_01_4"/>
 <map name="PxStrideIterator_3_01T_01_4" id="PxStrideIterator_3_01T_01_4">
 <area shape="rect" id="node1" href="classPxStrideIterator.html" title="Iterator class for iterating over arrays of data that may be interleaved with other data..." alt="" coords="5,5,148,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_425.png" border="0" alt="" usemap="#PxStringTable"/>
+<tr><td><img src="inherit_graph_426.png" border="0" alt="" usemap="#PxStringTable"/>
 <map name="PxStringTable" id="PxStringTable">
 <area shape="rect" id="node1" href="classPxStringTable.html" title="a table to manage strings. Strings allocated through this object are expected to be owned by this obj..." alt="" coords="5,5,108,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_426.png" border="0" alt="" usemap="#PxStringTableExt"/>
+<tr><td><img src="inherit_graph_427.png" border="0" alt="" usemap="#PxStringTableExt"/>
 <map name="PxStringTableExt" id="PxStringTableExt">
 <area shape="rect" id="node1" href="classPxStringTableExt.html" title="a factory class for creating PxStringTable with a specific allocator. " alt="" coords="5,5,128,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_427.png" border="0" alt="" usemap="#PxSyncImpl"/>
+<tr><td><img src="inherit_graph_428.png" border="0" alt="" usemap="#PxSyncImpl"/>
 <map name="PxSyncImpl" id="PxSyncImpl">
 <area shape="rect" id="node1" href="classPxSyncImpl.html" title="PxSyncImpl" alt="" coords="5,5,97,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_428.png" border="0" alt="" usemap="#PxTaskManager"/>
+<tr><td><img src="inherit_graph_429.png" border="0" alt="" usemap="#PxTaskManager"/>
 <map name="PxTaskManager" id="PxTaskManager">
 <area shape="rect" id="node1" href="classPxTaskManager.html" title="The PxTaskManager interface. " alt="" coords="5,5,121,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_429.png" border="0" alt="" usemap="#PxTaskType"/>
+<tr><td><img src="inherit_graph_430.png" border="0" alt="" usemap="#PxTaskType"/>
 <map name="PxTaskType" id="PxTaskType">
 <area shape="rect" id="node1" href="structPxTaskType.html" title="Identifies the type of each heavyweight PxTask object. " alt="" coords="5,5,100,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_430.png" border="0" alt="" usemap="#PxTempAllocator"/>
+<tr><td><img src="inherit_graph_431.png" border="0" alt="" usemap="#PxTempAllocator"/>
 <map name="PxTempAllocator" id="PxTempAllocator">
 <area shape="rect" id="node1" href="classPxTempAllocator.html" title="PxTempAllocator" alt="" coords="5,5,127,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_431.png" border="0" alt="" usemap="#PxTempAllocatorChunk"/>
+<tr><td><img src="inherit_graph_432.png" border="0" alt="" usemap="#PxTempAllocatorChunk"/>
 <map name="PxTempAllocatorChunk" id="PxTempAllocatorChunk">
 <area shape="rect" id="node1" href="unionPxTempAllocatorChunk.html" title="PxTempAllocatorChunk" alt="" coords="5,5,164,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_432.png" border="0" alt="" usemap="#PxTetMaker"/>
+<tr><td><img src="inherit_graph_433.png" border="0" alt="" usemap="#PxTetMaker"/>
 <map name="PxTetMaker" id="PxTetMaker">
 <area shape="rect" id="node1" href="classPxTetMaker.html" title="Provides functionality to create a tetrahedral mesh from a triangle mesh. " alt="" coords="5,5,97,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_433.png" border="0" alt="" usemap="#PxTetrahedron"/>
+<tr><td><img src="inherit_graph_434.png" border="0" alt="" usemap="#PxTetrahedron"/>
 <map name="PxTetrahedron" id="PxTetrahedron">
 <area shape="rect" id="node1" href="classPxTetrahedron.html" title="Tetrahedron class. " alt="" coords="5,5,112,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_434.png" border="0" alt="" usemap="#PxTetrahedronMeshAnalysisResult"/>
+<tr><td><img src="inherit_graph_435.png" border="0" alt="" usemap="#PxTetrahedronMeshAnalysisResult"/>
 <map name="PxTetrahedronMeshAnalysisResult" id="PxTetrahedronMeshAnalysisResult">
 <area shape="rect" id="node1" href="classPxTetrahedronMeshAnalysisResult.html" title="These flags indicate what kind of deficiencies a tetrahedron mesh has and describe if the mesh is con..." alt="" coords="5,5,193,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_435.png" border="0" alt="" usemap="#PxTetrahedronMeshDesc"/>
+<tr><td><img src="inherit_graph_436.png" border="0" alt="" usemap="#PxTetrahedronMeshDesc"/>
 <map name="PxTetrahedronMeshDesc" id="PxTetrahedronMeshDesc">
 <area shape="rect" id="node1" href="classPxTetrahedronMeshDesc.html" title="Descriptor class for PxTetrahedronMesh (contains only pure geometric data). " alt="" coords="5,5,173,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_436.png" border="0" alt="" usemap="#PxTetrahedronMeshExt"/>
+<tr><td><img src="inherit_graph_437.png" border="0" alt="" usemap="#PxTetrahedronMeshExt"/>
 <map name="PxTetrahedronMeshExt" id="PxTetrahedronMeshExt">
 <area shape="rect" id="node1" href="classPxTetrahedronMeshExt.html" title="utility functions for use with PxTetrahedronMesh and subclasses " alt="" coords="5,5,164,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_437.png" border="0" alt="" usemap="#PxTetrahedronMeshFlag"/>
+<tr><td><img src="inherit_graph_438.png" border="0" alt="" usemap="#PxTetrahedronMeshFlag"/>
 <map name="PxTetrahedronMeshFlag" id="PxTetrahedronMeshFlag">
 <area shape="rect" id="node1" href="structPxTetrahedronMeshFlag.html" title="PxTetrahedronMeshFlag" alt="" coords="5,5,168,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_438.png" border="0" alt="" usemap="#PxTGSSolverBodyData"/>
+<tr><td><img src="inherit_graph_439.png" border="0" alt="" usemap="#PxTGSSolverBodyData"/>
 <map name="PxTGSSolverBodyData" id="PxTGSSolverBodyData">
 <area shape="rect" id="node1" href="structPxTGSSolverBodyData.html" title="PxTGSSolverBodyData" alt="" coords="5,5,161,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_439.png" border="0" alt="" usemap="#PxTGSSolverBodyTxInertia"/>
+<tr><td><img src="inherit_graph_440.png" border="0" alt="" usemap="#PxTGSSolverBodyTxInertia"/>
 <map name="PxTGSSolverBodyTxInertia" id="PxTGSSolverBodyTxInertia">
 <area shape="rect" id="node1" href="structPxTGSSolverBodyTxInertia.html" title="PxTGSSolverBodyTxInertia" alt="" coords="5,5,184,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_440.png" border="0" alt="" usemap="#PxTGSSolverBodyVel"/>
+<tr><td><img src="inherit_graph_441.png" border="0" alt="" usemap="#PxTGSSolverBodyVel"/>
 <map name="PxTGSSolverBodyVel" id="PxTGSSolverBodyVel">
 <area shape="rect" id="node1" href="structPxTGSSolverBodyVel.html" title="PxTGSSolverBodyVel" alt="" coords="5,5,153,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_441.png" border="0" alt="" usemap="#PxTGSSolverConstraintPrepDescBase"/>
+<tr><td><img src="inherit_graph_442.png" border="0" alt="" usemap="#PxTGSSolverConstraintPrepDescBase"/>
 <map name="PxTGSSolverConstraintPrepDescBase" id="PxTGSSolverConstraintPrepDescBase">
 <area shape="rect" id="node1" href="structPxTGSSolverConstraintPrepDescBase.html" title="PxTGSSolverConstraintPrep\lDescBase" alt="" coords="5,23,191,65"/>
 <area shape="rect" id="node2" href="structPxTGSSolverConstraintPrepDesc.html" title="PxTGSSolverConstraintPrepDesc" alt="" coords="239,5,453,32"/>
 <area shape="rect" id="node3" href="structPxTGSSolverContactDesc.html" title="PxTGSSolverContactDesc" alt="" coords="259,56,433,83"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_442.png" border="0" alt="" usemap="#PxThreadImpl"/>
+<tr><td><img src="inherit_graph_443.png" border="0" alt="" usemap="#PxThreadImpl"/>
 <map name="PxThreadImpl" id="PxThreadImpl">
 <area shape="rect" id="node1" href="classPxThreadImpl.html" title="PxThreadImpl" alt="" coords="5,5,107,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_443.png" border="0" alt="" usemap="#PxThreadPriority"/>
+<tr><td><img src="inherit_graph_444.png" border="0" alt="" usemap="#PxThreadPriority"/>
 <map name="PxThreadPriority" id="PxThreadPriority">
 <area shape="rect" id="node1" href="structPxThreadPriority.html" title="PxThreadPriority" alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_444.png" border="0" alt="" usemap="#PxTime"/>
+<tr><td><img src="inherit_graph_445.png" border="0" alt="" usemap="#PxTime"/>
 <map name="PxTime" id="PxTime">
 <area shape="rect" id="node1" href="classPxTime.html" title="PxTime" alt="" coords="5,5,72,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_445.png" border="0" alt="" usemap="#PxTireContactIntersectionMethod"/>
+<tr><td><img src="inherit_graph_446.png" border="0" alt="" usemap="#PxTireContactIntersectionMethod"/>
 <map name="PxTireContactIntersectionMethod" id="PxTireContactIntersectionMethod">
 <area shape="rect" id="node1" href="structPxTireContactIntersectionMethod.html" title="Description of the per wheel intersection method to be used by PxVehicleWheelsDynData::setTireContact..." alt="" coords="5,5,176,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_446.png" border="0" alt="" usemap="#PxTolerancesScale"/>
+<tr><td><img src="inherit_graph_447.png" border="0" alt="" usemap="#PxTolerancesScale"/>
 <map name="PxTolerancesScale" id="PxTolerancesScale">
 <area shape="rect" id="node1" href="classPxTolerancesScale.html" title="Class to define the scale at which simulation runs. Most simulation tolerances are calculated in term..." alt="" coords="5,5,140,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_447.png" border="0" alt="" usemap="#PxTransformT_3_01float_01_4"/>
+<tr><td><img src="inherit_graph_448.png" border="0" alt="" usemap="#PxTransformT_3_01float_01_4"/>
 <map name="PxTransformT_3_01float_01_4" id="PxTransformT_3_01float_01_4">
 <area shape="rect" id="node1" href="classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="5,5,156,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_448.png" border="0" alt="" usemap="#PxTransformT_3_01Type_01_4"/>
+<tr><td><img src="inherit_graph_449.png" border="0" alt="" usemap="#PxTransformT_3_01Type_01_4"/>
 <map name="PxTransformT_3_01Type_01_4" id="PxTransformT_3_01Type_01_4">
 <area shape="rect" id="node1" href="classPxTransformT.html" title="class representing a rigid euclidean transform as a quaternion and a vector " alt="" coords="5,5,160,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_449.png" border="0" alt="" usemap="#PxTriangle"/>
+<tr><td><img src="inherit_graph_450.png" border="0" alt="" usemap="#PxTriangle"/>
 <map name="PxTriangle" id="PxTriangle">
 <area shape="rect" id="node1" href="classPxTriangle.html" title="Triangle class. " alt="" coords="5,5,88,32"/>
 <area shape="rect" id="node2" href="classPxTrianglePadded.html" title="A padded version of PxTriangle, to safely load its data using SIMD. " alt="" coords="136,5,263,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_450.png" border="0" alt="" usemap="#PxTriangleMeshAnalysisResult"/>
+<tr><td><img src="inherit_graph_451.png" border="0" alt="" usemap="#PxTriangleMeshAnalysisResult"/>
 <map name="PxTriangleMeshAnalysisResult" id="PxTriangleMeshAnalysisResult">
 <area shape="rect" id="node1" href="classPxTriangleMeshAnalysisResult.html" title="These flags indicate what kind of deficiencies a triangle mesh has and describe if the mesh is consid..." alt="" coords="5,5,208,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_451.png" border="0" alt="" usemap="#PxTriangleMeshCookingResult"/>
+<tr><td><img src="inherit_graph_452.png" border="0" alt="" usemap="#PxTriangleMeshCookingResult"/>
 <map name="PxTriangleMeshCookingResult" id="PxTriangleMeshCookingResult">
 <area shape="rect" id="node1" href="structPxTriangleMeshCookingResult.html" title="Result from triangle mesh cooking. " alt="" coords="5,5,204,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_452.png" border="0" alt="" usemap="#PxTriangleMeshFlag"/>
+<tr><td><img src="inherit_graph_453.png" border="0" alt="" usemap="#PxTriangleMeshFlag"/>
 <map name="PxTriangleMeshFlag" id="PxTriangleMeshFlag">
 <area shape="rect" id="node1" href="structPxTriangleMeshFlag.html" title="Flags for the mesh geometry properties. " alt="" coords="5,5,145,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_453.png" border="0" alt="" usemap="#PxTriangleMeshInternalData"/>
+<tr><td><img src="inherit_graph_454.png" border="0" alt="" usemap="#PxTriangleMeshInternalData"/>
 <map name="PxTriangleMeshInternalData" id="PxTriangleMeshInternalData">
 <area shape="rect" id="node1" href="structPxTriangleMeshInternalData.html" title="PxTriangleMeshInternalData" alt="" coords="5,5,189,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_454.png" border="0" alt="" usemap="#PxTriggerPair"/>
+<tr><td><img src="inherit_graph_455.png" border="0" alt="" usemap="#PxTriggerPair"/>
 <map name="PxTriggerPair" id="PxTriggerPair">
 <area shape="rect" id="node1" href="structPxTriggerPair.html" title="Descriptor for a trigger pair. " alt="" coords="5,5,105,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_455.png" border="0" alt="" usemap="#PxTriggerPairFlag"/>
+<tr><td><img src="inherit_graph_456.png" border="0" alt="" usemap="#PxTriggerPairFlag"/>
 <map name="PxTriggerPairFlag" id="PxTriggerPairFlag">
 <area shape="rect" id="node1" href="structPxTriggerPairFlag.html" title="Collection of flags providing information on trigger report pairs. " alt="" coords="5,5,131,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_456.png" border="0" alt="" usemap="#PxTypedStridedData_3_01PxFEMMaterialTableIndex_01_4"/>
+<tr><td><img src="inherit_graph_457.png" border="0" alt="" usemap="#PxTypedStridedData_3_01PxFEMMaterialTableIndex_01_4"/>
 <map name="PxTypedStridedData_3_01PxFEMMaterialTableIndex_01_4" id="PxTypedStridedData_3_01PxFEMMaterialTableIndex_01_4">
 <area shape="rect" id="node1" href="structPxTypedStridedData.html" title="PxTypedStridedData\l\&lt; PxFEMMaterialTableIndex \&gt;" alt="" coords="5,5,204,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_457.png" border="0" alt="" usemap="#PxTypedStridedData_3_01PxMaterialTableIndex_01_4"/>
+<tr><td><img src="inherit_graph_458.png" border="0" alt="" usemap="#PxTypedStridedData_3_01PxMaterialTableIndex_01_4"/>
 <map name="PxTypedStridedData_3_01PxMaterialTableIndex_01_4" id="PxTypedStridedData_3_01PxMaterialTableIndex_01_4">
 <area shape="rect" id="node1" href="structPxTypedStridedData.html" title="PxTypedStridedData\l\&lt; PxMaterialTableIndex \&gt;" alt="" coords="5,5,176,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_458.png" border="0" alt="" usemap="#PxTypedStridedData_3_01TDataType_01_4"/>
+<tr><td><img src="inherit_graph_459.png" border="0" alt="" usemap="#PxTypedStridedData_3_01TDataType_01_4"/>
 <map name="PxTypedStridedData_3_01TDataType_01_4" id="PxTypedStridedData_3_01TDataType_01_4">
 <area shape="rect" id="node1" href="structPxTypedStridedData.html" title="PxTypedStridedData\l\&lt; TDataType \&gt;" alt="" coords="5,5,147,47"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_459.png" border="0" alt="" usemap="#PxTypeInfo_3_01T_01_4"/>
+<tr><td><img src="inherit_graph_460.png" border="0" alt="" usemap="#PxTypeInfo_3_01T_01_4"/>
 <map name="PxTypeInfo_3_01T_01_4" id="PxTypeInfo_3_01T_01_4">
 <area shape="rect" id="node1" href="structPxTypeInfo.html" title="a structure containing per&#45;type information for types inheriting from PxBase " alt="" coords="5,5,123,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_460.png" border="0" alt="" usemap="#PxUnConst_3_01const_01T_01_4"/>
+<tr><td><img src="inherit_graph_461.png" border="0" alt="" usemap="#PxUnConst_3_01const_01T_01_4"/>
 <map name="PxUnConst_3_01const_01T_01_4" id="PxUnConst_3_01const_01T_01_4">
 <area shape="rect" id="node1" href="structPxUnConst_3_01const_01T_01_4.html" title="PxUnConst\&lt; const T \&gt;" alt="" coords="5,5,160,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_461.png" border="0" alt="" usemap="#PxUnConst_3_01T_01_4"/>
+<tr><td><img src="inherit_graph_462.png" border="0" alt="" usemap="#PxUnConst_3_01T_01_4"/>
 <map name="PxUnConst_3_01T_01_4" id="PxUnConst_3_01T_01_4">
 <area shape="rect" id="node1" href="structPxUnConst.html" title="PxUnConst\&lt; T \&gt;" alt="" coords="5,5,124,32"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_462.png" border="0" alt="" usemap="#PxUserAllocated"/>
+<tr><td><img src="inherit_graph_463.png" border="0" alt="" usemap="#PxUserAllocated"/>
 <map name="PxUserAllocated" id="PxUserAllocated">
 <area shape="rect" id="node2" href="classphysx_1_1PxArray.html" title="physx::PxArray\&lt; T,\l Alloc \&gt;" alt="" coords="218,865,353,906"/>
 <area shape="rect" id="node3" href="classphysx_1_1PxPoolBase.html" title="physx::PxPoolBase\&lt;\l T, Alloc \&gt;" alt="" coords="213,630,358,671"/>
@@ -2588,17 +2596,9 @@ $(document).ready(function(){initNavTree('hierarchy.html','');});
 <area shape="rect" id="node20" href="classPxTriangleMeshPoissonSampler.html" title="Sampler to generate Poisson Samples on a triangle mesh. " alt="" coords="447,325,657,352"/>
 </map>
 </td></tr>
-<tr><td><img src="inherit_graph_463.png" border="0" alt="" usemap="#PxUserControllerHitReport"/>
+<tr><td><img src="inherit_graph_464.png" border="0" alt="" usemap="#PxUserControllerHitReport"/>
 <map name="PxUserControllerHitReport" id="PxUserControllerHitReport">
 <area shape="rect" id="node1" href="classPxUserControllerHitReport.html" title="User callback class for character controller events. " alt="" coords="5,5,180,32"/>
-</map>
-</td></tr>
-<tr><td><img src="inherit_graph_464.png" border="0" alt="" usemap="#PxUserParticleBuffer"/>
-<map name="PxUserParticleBuffer" id="PxUserParticleBuffer">
-<area shape="rect" id="node1" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular..." alt="" coords="5,71,148,98"/>
-<area shape="rect" id="node2" href="classPxUserParticleAndDiffuseBuffer.html" title="A user particle buffer used to simulate diffuse particles. " alt="" coords="197,5,367,47"/>
-<area shape="rect" id="node3" href="classPxUserParticleClothBuffer.html" title="A user particle buffer used to simulate particle cloth. " alt="" coords="196,71,368,98"/>
-<area shape="rect" id="node4" href="classPxUserParticleRigidBuffer.html" title="A user particle buffer used to simulate rigid bodies using shape matching with particles. " alt="" coords="197,122,367,149"/>
 </map>
 </td></tr>
 <tr><td><img src="inherit_graph_465.png" border="0" alt="" usemap="#PxVec2T_3_01Type_01_4"/>

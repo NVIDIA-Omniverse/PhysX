@@ -164,7 +164,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a712dc3c835d1848bb8a427cdae590787"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structPxgDynamicsMemoryConfig.html">PxgDynamicsMemoryConfig</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxScene.html#a712dc3c835d1848bb8a427cdae590787">getGpuDynamicsConfig</a> () const =0</td></tr>
 <tr class="separator:a712dc3c835d1848bb8a427cdae590787"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b2957594d3e2cb5c5eead57a602b8ee"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxScene.html#a8b2957594d3e2cb5c5eead57a602b8ee">applyParticleBufferData</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> *indices, const <a class="el" href="structPxGpuParticleBufferIndexPair.html">PxGpuParticleBufferIndexPair</a> *bufferIndexPair, const <a class="el" href="PxParticleSystemFlag_8h.html#a40ee49464d092e80c734711ba65feb25">PxParticleBufferFlags</a> *flags, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> nbUpdatedBuffers, void *waitEvent=NULL, void *signalEvent=NULL)=0</td></tr>
-<tr class="memdesc:a8b2957594d3e2cb5c5eead57a602b8ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply user-provided data to particle user buffers.  <a href="#a8b2957594d3e2cb5c5eead57a602b8ee">More...</a><br /></td></tr>
+<tr class="memdesc:a8b2957594d3e2cb5c5eead57a602b8ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply user-provided data to particle buffers.  <a href="#a8b2957594d3e2cb5c5eead57a602b8ee">More...</a><br /></td></tr>
 <tr class="separator:a8b2957594d3e2cb5c5eead57a602b8ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Add/Remove Articulations</div></td></tr>
 <tr class="memitem:a0f2f982e77296953ec91f82e188ab273"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxScene.html#a0f2f982e77296953ec91f82e188ab273">addArticulation</a> (<a class="el" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a> &amp;articulation)=0</td></tr>
@@ -1281,15 +1281,15 @@ If the aggregate already contains actors, those actors are added to the scene as
 </table>
 </div><div class="memdoc">
 
-<p>Apply user-provided data to particle user buffers. </p>
-<p>This function should be used if the particle buffer flags are already on the device. Otherwise, use <a class="el" href="classPxUserParticleBuffer.html#af7a3cc563cf67f32e20cd919f527ad4c" title="Raise dirty flags on this user particle buffer to communicate that the corresponding data has been up...">PxUserParticleBuffer::raiseFlags()</a> from the CPU.</p>
-<p>This assumes the data has been changed directly in the <a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a>.</p>
+<p>Apply user-provided data to particle buffers. </p>
+<p>This function should be used if the particle buffer flags are already on the device. Otherwise, use <a class="el" href="classPxParticleBuffer.html#a4d41be31677838590e6bb4989c7b2637" title="Raise dirty flags on this particle buffer to communicate that the corresponding data has been updated...">PxParticleBuffer::raiseFlags()</a> from the CPU.</p>
+<p>This assumes the data has been changed directly in the <a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">indices</td><td>User-provided index buffer that indexes into the BufferIndexPair and flags list. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">bufferIndexPair</td><td>User-provided index pair buffer specifying the unique id and GPU particle system for each <a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a>. See <a class="el" href="structPxGpuParticleBufferIndexPair.html" title="A pair of particle buffer unique id and GPU particle system index. ">PxGpuParticleBufferIndexPair</a>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferIndexPair</td><td>User-provided index pair buffer specifying the unique id and GPU particle system for each <a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a>. See <a class="el" href="structPxGpuParticleBufferIndexPair.html" title="A pair of particle buffer unique id and GPU particle system index. ">PxGpuParticleBufferIndexPair</a>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flags</td><td>Flags to mark what data needs to be updated. See PxParticleBufferFlags. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">nbUpdatedBuffers</td><td>The number of user particle buffers to update. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">nbUpdatedBuffers</td><td>The number of particle buffers to update. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">waitEvent</td><td>User-provided event for the particle stream to wait for data. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">signalEvent</td><td>User-provided event for the particle stream to signal when the data read from the user buffer has completed. </td></tr>
   </table>

@@ -168,8 +168,10 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxForceMode.h"
 #include "PxLockedData.h"
 #include "PxMaterial.h"
-#include "PxParticleSystem.h"
 #include "PxParticleBuffer.h"
+#include "PxParticlePhase.h"
+#include "PxParticleSystem.h"
+#include "PxPBDParticleSystem.h"
 #include "PxPBDMaterial.h"
 #include "PxPhysics.h"
 #include "PxPhysXConfig.h"
@@ -189,11 +191,13 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxVisualizationParameter.h"
 #include "PxPruningStructure.h"
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-#include "PxMPMMaterial.h"
 #include "PxFEMCloth.h"
 #include "PxFEMClothMaterial.h"
+#include "PxFLIPParticleSystem.h"
 #include "PxFLIPMaterial.h"
 #include "PxHairSystem.h"
+#include "PxMPMMaterial.h"
+#include "PxMPMParticleSystem.h"
 #endif
 
 //Character Controller

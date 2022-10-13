@@ -42,7 +42,7 @@ var searchData=
   ['solverprep',['solverPrep',['../structPxConstraintShaderTable.html#a177a8411969e943559378c9311877d66',1,'PxConstraintShaderTable']]],
   ['solverprogress',['solverProgress',['../structPxSolverBody.html#abe151efeabf33d524e5589fc9897fbd7',1,'PxSolverBody']]],
   ['solvertype',['solverType',['../classPxSceneDesc.html#a166d622a6ea49c6e58be0b1d123f03ab',1,'PxSceneDesc']]],
-  ['sortedclothstartindices',['sortedClothStartIndices',['../structPxParticleClothOutput.html#ac7dca1719b02415354371783bb66f062',1,'PxParticleClothOutput']]],
+  ['sortedclothstartindices',['sortedClothStartIndices',['../structPxPartitionedParticleCloth.html#a4de4a3e7bbd5106f752a825e9e3e9352',1,'PxPartitionedParticleCloth']]],
   ['sourcewheelids',['sourceWheelIds',['../classPxVehicleCopyDynamicsMap.html#a722820ae9c733991667bfb5c2956efe5',1,'PxVehicleCopyDynamicsMap']]],
   ['spacing',['spacing',['../classPxSDFDesc.html#a7ddab440215abc02092fd2402453015f',1,'PxSDFDesc']]],
   ['speed',['speed',['../classPxTolerancesScale.html#a629358a15988697feaa85759d5c57e33',1,'PxTolerancesScale']]],

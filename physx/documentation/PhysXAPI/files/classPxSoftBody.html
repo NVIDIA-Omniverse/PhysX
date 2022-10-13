@@ -191,15 +191,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9f125fff89033d1f57c4fc62eb341257"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#a9f125fff89033d1f57c4fc62eb341257">release</a> ()=0</td></tr>
 <tr class="memdesc:a9f125fff89033d1f57c4fc62eb341257"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases the softbody.  <a href="#a9f125fff89033d1f57c4fc62eb341257">More...</a><br /></td></tr>
 <tr class="separator:a9f125fff89033d1f57c4fc62eb341257"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a930e0678f1d98df6c11a987720552743"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#a930e0678f1d98df6c11a987720552743">addParticleFilter</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId)=0</td></tr>
-<tr class="memdesc:a930e0678f1d98df6c11a987720552743"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a collision filter between a particle and a tetrahedron in the soft body's collision mesh.  <a href="#a930e0678f1d98df6c11a987720552743">More...</a><br /></td></tr>
-<tr class="separator:a930e0678f1d98df6c11a987720552743"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff81deff4280d6fc3dc3076e0d76224d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#aff81deff4280d6fc3dc3076e0d76224d">removeParticleFilter</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId)=0</td></tr>
-<tr class="memdesc:aff81deff4280d6fc3dc3076e0d76224d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a collision filter between a particle and a tetrahedron in the soft body's collision mesh.  <a href="#aff81deff4280d6fc3dc3076e0d76224d">More...</a><br /></td></tr>
-<tr class="separator:aff81deff4280d6fc3dc3076e0d76224d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96113202efee6d65dd28201a4d9a74f1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#a96113202efee6d65dd28201a4d9a74f1">addParticleAttachment</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId, const <a class="el" href="group__foundation.html#ga7346068a75502045a7c8f65e7dcee471">PxVec4</a> &amp;barycentric)=0</td></tr>
-<tr class="memdesc:a96113202efee6d65dd28201a4d9a74f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an attachment between a particle and a soft body. Be aware that destroying the particle system before destroying the attachment is illegal and may cause a crash. The soft body keeps track of these attachments but the particle system does not.  <a href="#a96113202efee6d65dd28201a4d9a74f1">More...</a><br /></td></tr>
-<tr class="separator:a96113202efee6d65dd28201a4d9a74f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9dc27b112525604e1834e24289408a2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#ad9dc27b112525604e1834e24289408a2">addParticleFilter</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId)=0</td></tr>
+<tr class="memdesc:ad9dc27b112525604e1834e24289408a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a collision filter between a particle and a tetrahedron in the soft body's collision mesh.  <a href="#ad9dc27b112525604e1834e24289408a2">More...</a><br /></td></tr>
+<tr class="separator:ad9dc27b112525604e1834e24289408a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4513c65348d23ac90b5c8f4876887d1f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#a4513c65348d23ac90b5c8f4876887d1f">removeParticleFilter</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId)=0</td></tr>
+<tr class="memdesc:a4513c65348d23ac90b5c8f4876887d1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a collision filter between a particle and a tetrahedron in the soft body's collision mesh.  <a href="#a4513c65348d23ac90b5c8f4876887d1f">More...</a><br /></td></tr>
+<tr class="separator:a4513c65348d23ac90b5c8f4876887d1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6642f021a6183f1a186507ea121c099d"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#a6642f021a6183f1a186507ea121c099d">addParticleAttachment</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *buffer, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleId, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> tetId, const <a class="el" href="group__foundation.html#ga7346068a75502045a7c8f65e7dcee471">PxVec4</a> &amp;barycentric)=0</td></tr>
+<tr class="memdesc:a6642f021a6183f1a186507ea121c099d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an attachment between a particle and a soft body. Be aware that destroying the particle system before destroying the attachment is illegal and may cause a crash. The soft body keeps track of these attachments but the particle system does not.  <a href="#a6642f021a6183f1a186507ea121c099d">More...</a><br /></td></tr>
+<tr class="separator:a6642f021a6183f1a186507ea121c099d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae362061ccf427420adad2670cddecfa0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxSoftBody.html#ae362061ccf427420adad2670cddecfa0">removeParticleAttachment</a> (<a class="el" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a> *particlesystem, <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> handle)=0</td></tr>
 <tr class="memdesc:ae362061ccf427420adad2670cddecfa0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes an attachment between a particle and a soft body. Be aware that destroying the particle system before destroying the attachment is illegal and may cause a crash. The soft body keeps track of these attachments but the particle system does not.  <a href="#ae362061ccf427420adad2670cddecfa0">More...</a><br /></td></tr>
 <tr class="separator:ae362061ccf427420adad2670cddecfa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -461,8 +461,8 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a96113202efee6d65dd28201a4d9a74f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96113202efee6d65dd28201a4d9a74f1">&#9670;&nbsp;</a></span>addParticleAttachment()</h2>
+<a id="a6642f021a6183f1a186507ea121c099d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6642f021a6183f1a186507ea121c099d">&#9670;&nbsp;</a></span>addParticleAttachment()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -479,7 +479,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *&#160;</td>
           <td class="paramname"><em>buffer</em>, </td>
         </tr>
         <tr>
@@ -517,7 +517,7 @@ Additional Inherited Members</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">particlesystem</td><td>The particle system used for the attachment </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a> to which the particle belongs to. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a> to which the particle belongs to. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">particleId</td><td>The particle that is attached to a tetrahedron in the soft body's collision mesh. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tetId</td><td>The tetrahedron in the soft body's collision mesh to attach the particle to. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">barycentric</td><td>The barycentric coordinates of the particle attachment position with respect to the tetrahedron specified with tetId. </td></tr>
@@ -528,8 +528,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a930e0678f1d98df6c11a987720552743"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a930e0678f1d98df6c11a987720552743">&#9670;&nbsp;</a></span>addParticleFilter()</h2>
+<a id="ad9dc27b112525604e1834e24289408a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9dc27b112525604e1834e24289408a2">&#9670;&nbsp;</a></span>addParticleFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -546,7 +546,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *&#160;</td>
           <td class="paramname"><em>buffer</em>, </td>
         </tr>
         <tr>
@@ -578,7 +578,7 @@ Additional Inherited Members</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">particlesystem</td><td>The particle system used for the collision filter </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a> to which the particle belongs to. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a> to which the particle belongs to. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">particleId</td><td>The particle whose collisions with the tetrahedron in the soft body are filtered. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tetId</td><td>The tetradedron in the soft body that is filtered. If tetId is PX_MAX_TETID, this particle will filter against all tetrahedra in this soft body </td></tr>
   </table>
@@ -1841,8 +1841,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="aff81deff4280d6fc3dc3076e0d76224d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff81deff4280d6fc3dc3076e0d76224d">&#9670;&nbsp;</a></span>removeParticleFilter()</h2>
+<a id="a4513c65348d23ac90b5c8f4876887d1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4513c65348d23ac90b5c8f4876887d1f">&#9670;&nbsp;</a></span>removeParticleFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1859,7 +1859,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *&#160;</td>
           <td class="paramname"><em>buffer</em>, </td>
         </tr>
         <tr>
@@ -1891,7 +1891,7 @@ Additional Inherited Members</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">particlesystem</td><td>The particle system used for the collision filter </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a> to which the particle belongs to. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">buffer</td><td>The <a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a> to which the particle belongs to. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">particleId</td><td>The particle whose collisions with the tetrahedron in the soft body are filtered. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tetId</td><td>The tetrahedron in the soft body is filtered. </td></tr>
   </table>

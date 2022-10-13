@@ -54,7 +54,7 @@ static PxScene*							gScene				= NULL;
 static PxMaterial*						gMaterial			= NULL;
 static PxPvd*							gPvd				= NULL;
 static PxPBDParticleSystem*				gParticleSystem		= NULL;
-static PxUserParticleAndDiffuseBuffer*	gUserParticleBuffer = NULL;
+static PxParticleAndDiffuseBuffer*		gParticleBuffer 	= NULL;
 static bool								gIsRunning			= true;
 static bool								gStep				= true;
 
@@ -223,8 +223,8 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 	bufferDesc.velocities = velocity;
 	bufferDesc.phases = phase;
 
-	gUserParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaContextManager);
-	gParticleSystem->addParticleAndDiffuseBuffer(gUserParticleBuffer);
+	gParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer(bufferDesc, cudaContextManager);
+	gParticleSystem->addParticleAndDiffuseBuffer(gParticleBuffer);
 }
 
 PxPBDParticleSystem* getParticleSystem()
@@ -232,9 +232,9 @@ PxPBDParticleSystem* getParticleSystem()
 	return gParticleSystem;
 }
 
-PxUserParticleAndDiffuseBuffer* getUserParticleBuffer()
+PxParticleAndDiffuseBuffer* getParticleBuffer()
 {
-	return gUserParticleBuffer;
+	return gParticleBuffer;
 }
 
 

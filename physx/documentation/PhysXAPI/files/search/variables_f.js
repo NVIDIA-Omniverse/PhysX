@@ -4,7 +4,7 @@ var searchData=
   ['offsetsize',['offsetSize',['../structPxMetaDataEntry.html#a62398e1e02dcbfca7126ee6a8e4e9f71',1,'PxMetaDataEntry']]],
   ['offsetslop',['offsetSlop',['../structPxSolverContactDesc.html#a72d34cec0de7603fb8400cae6cf3bae2',1,'PxSolverContactDesc::offsetSlop()'],['../structPxTGSSolverContactDesc.html#a28cf786b988432f341c733df59a8361b',1,'PxTGSSolverContactDesc::offsetSlop()']]],
   ['omniwriter',['omniWriter',['../structPxVehicleSimulationContext.html#a4a067d23f7311f5649681be5f4c71746',1,'PxVehicleSimulationContext']]],
-  ['orderedsprings',['orderedSprings',['../structPxParticleClothOutput.html#a1470cd24cf672a4ac34c63a36fbb7a7f',1,'PxParticleClothOutput']]],
+  ['orderedsprings',['orderedSprings',['../structPxPartitionedParticleCloth.html#acf9cabafbba175b23f4622c4727e54ba',1,'PxPartitionedParticleCloth']]],
   ['origin',['origin',['../structPxDenseGridParams.html#af927a828d0745dac5a5d9a8166e92b85',1,'PxDenseGridParams']]],
   ['originalangularvelocity',['originalAngularVelocity',['../structPxTGSSolverBodyData.html#adcfb898a3284a280700296191ac1ac45',1,'PxTGSSolverBodyData']]],
   ['originallinearvelocity',['originalLinearVelocity',['../structPxTGSSolverBodyData.html#a6f613c8b47b2c4bc390478743bf9e539',1,'PxTGSSolverBodyData']]],

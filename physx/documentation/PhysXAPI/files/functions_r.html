@@ -101,7 +101,7 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 : <a class="el" href="classPxFlags.html#ab7b4a97abd7b52ce42687a6337def31c">PxFlags&lt; enumtype, storagetype &gt;</a>
 </li>
 <li>raiseFlags()
-: <a class="el" href="classPxUserParticleBuffer.html#af7a3cc563cf67f32e20cd919f527ad4c">PxUserParticleBuffer</a>
+: <a class="el" href="classPxParticleBuffer.html#a4d41be31677838590e6bb4989c7b2637">PxParticleBuffer</a>
 </li>
 <li>rate
 : <a class="el" href="structPxVehicleFourWheelDriveDifferentialParams.html#a6332362f1f6e75caee5bfc839991555c">PxVehicleFourWheelDriveDifferentialParams</a>
@@ -242,10 +242,10 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 : <a class="el" href="classExtGpu_1_1PxGpuRadixSort.html#ab17eaf1821b391520da1f97a360f5870">ExtGpu::PxGpuRadixSort&lt; T &gt;</a>
 , <a class="el" href="classExtGpu_1_1PxGpuScan.html#aea15a95df635eecbddde4f9ee63b78ec">ExtGpu::PxGpuScan</a>
 , <a class="el" href="classExtGpu_1_1PxKernelLauncher.html#a6983d0df72a81538120152bf1642bc5f">ExtGpu::PxKernelLauncher</a>
-, <a class="el" href="classExtGpu_1_1PxParticleClothBuffers.html#aadc889149413336e76611b5314f73b05">ExtGpu::PxParticleClothBuffers</a>
+, <a class="el" href="classExtGpu_1_1PxParticleClothBufferHelper.html#ac2f4294708bb6ab7e5b1bd135c0ac495">ExtGpu::PxParticleClothBufferHelper</a>
 , <a class="el" href="classExtGpu_1_1PxParticleClothCooker.html#ae49a4bc7e4bec5a22b9a5d221eb5db8d">ExtGpu::PxParticleClothCooker</a>
-, <a class="el" href="classExtGpu_1_1PxParticleRigidBuffers.html#a7f2afb7e903dcd25a0bf2f9c794ab443">ExtGpu::PxParticleRigidBuffers</a>
-, <a class="el" href="classExtGpu_1_1PxParticleVolumeBuffers.html#ab477d3eb7c77247f50171b46d3b04e89">ExtGpu::PxParticleVolumeBuffers</a>
+, <a class="el" href="classExtGpu_1_1PxParticleRigidBufferHelper.html#ad3040927f1e0875c4e25e5ed3ae0fab1">ExtGpu::PxParticleRigidBufferHelper</a>
+, <a class="el" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html#a208e6965f7a456e0e37bf52df9ae1502">ExtGpu::PxParticleVolumeBufferHelper</a>
 , <a class="el" href="classExtGpu_1_1PxSparseGridBuilder.html#a8252601b2dbe2f4e6de4cc677a30805a">ExtGpu::PxSparseGridBuilder</a>
 , <a class="el" href="classPxActor.html#a589a4e70ef83b583ee6a4fc5c7767762">PxActor</a>
 , <a class="el" href="classPxAggregate.html#a4e49bed771f4c7804dfac6882c2af273">PxAggregate</a>
@@ -278,6 +278,7 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 , <a class="el" href="classPxLightCpuTask.html#a7c6baea4c824d11a81f1114c3f9b00ea">PxLightCpuTask</a>
 , <a class="el" href="classPxObstacleContext.html#aaf653d99de6f092896cc1baa2a4e99c2">PxObstacleContext</a>
 , <a class="el" href="classPxOmniPvd.html#af8ee14dc5b538127ab3595310cdd9f71">PxOmniPvd</a>
+, <a class="el" href="classPxParticleBuffer.html#acfc70ac64f6cd173dccfd4b432dc9b26">PxParticleBuffer</a>
 , <a class="el" href="classPxParticleClothPreProcessor.html#a94c7489c05c77cf851e9a649befd2603">PxParticleClothPreProcessor</a>
 , <a class="el" href="classPxPhysics.html#a795e11d0e5ed6ac50af9c656f6a67e37">PxPhysics</a>
 , <a class="el" href="classPxPruningStructure.html#a1075ac464928c4f97d98e4f287b33182">PxPruningStructure</a>
@@ -298,7 +299,6 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 , <a class="el" href="classPxTaskManager.html#a27cbc0729fd7ba0c966a475fd22bdb25">PxTaskManager</a>
 , <a class="el" href="classPxTetrahedronMesh.html#af8f8e24694738e144f77aeeb3f32ae57">PxTetrahedronMesh</a>
 , <a class="el" href="classPxTriangleMesh.html#a168cc0000372c63857d128d04f1d32fa">PxTriangleMesh</a>
-, <a class="el" href="classPxUserParticleBuffer.html#a1d5c98f349b8b61b36a9b5b02f2690e2">PxUserParticleBuffer</a>
 , <a class="el" href="classPxVehicleDrivableSurfaceToTireFrictionPairs.html#a9068e2dae3d8693743da87a62e7ad918">PxVehicleDrivableSurfaceToTireFrictionPairs</a>
 , <a class="el" href="classPxVehicleWheels.html#a47f6215d5555890bef75e38668596522">PxVehicleWheels</a>
 </li>
@@ -309,10 +309,10 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 : <a class="el" href="classPxCollectionExt.html#a88b829ff0266f6ff3cead1dd7da9785c">PxCollectionExt</a>
 </li>
 <li>remapOutput
-: <a class="el" href="structPxParticleClothOutput.html#ac86897dafb689574a77ddb2109ac5e2b">PxParticleClothOutput</a>
+: <a class="el" href="structPxPartitionedParticleCloth.html#a2eea5fa21ab68e1a59c03240d8c5512a">PxPartitionedParticleCloth</a>
 </li>
 <li>remapOutputSize
-: <a class="el" href="structPxParticleClothOutput.html#a26668841e8ff969975663bcef8dd1691">PxParticleClothOutput</a>
+: <a class="el" href="structPxPartitionedParticleCloth.html#ae094403e0d0d95cbe4afc803b2eba898">PxPartitionedParticleCloth</a>
 </li>
 <li>remeshTriangleMesh()
 : <a class="el" href="classPxTetMaker.html#a9f09d6cc468ad109ff29c9efd96f4a63">PxTetMaker</a>
@@ -349,22 +349,22 @@ $(document).ready(function(){initNavTree('functions_r.html','');});
 : <a class="el" href="classPxObstacleContext.html#a510860474c575bee92967958d4068afa">PxObstacleContext</a>
 </li>
 <li>removeParticleAndDiffuseBuffer()
-: <a class="el" href="classPxParticleSystem.html#a564034f57d41b3271aaa4bebcdfa6d85">PxParticleSystem</a>
+: <a class="el" href="classPxParticleSystem.html#a3391d5dd985eb985799f444d731296ef">PxParticleSystem</a>
 </li>
 <li>removeParticleAttachment()
 : <a class="el" href="classPxSoftBody.html#ae362061ccf427420adad2670cddecfa0">PxSoftBody</a>
 </li>
 <li>removeParticleBuffer()
-: <a class="el" href="classPxParticleSystem.html#af2bc744037c8a11b99ffde239f8b0729">PxParticleSystem</a>
+: <a class="el" href="classPxParticleSystem.html#ad1dd58955d2635af9cda4510bbe6b547">PxParticleSystem</a>
 </li>
 <li>removeParticleClothBuffer()
-: <a class="el" href="classPxPBDParticleSystem.html#af5ee60b857fb2c8e7c2e795a5cb0c9da">PxPBDParticleSystem</a>
+: <a class="el" href="classPxPBDParticleSystem.html#a78e35358f761e015069178c2697ce712">PxPBDParticleSystem</a>
 </li>
 <li>removeParticleFilter()
-: <a class="el" href="classPxSoftBody.html#aff81deff4280d6fc3dc3076e0d76224d">PxSoftBody</a>
+: <a class="el" href="classPxSoftBody.html#a4513c65348d23ac90b5c8f4876887d1f">PxSoftBody</a>
 </li>
 <li>removeParticleRigidBuffer()
-: <a class="el" href="classPxPBDParticleSystem.html#ab390a96e85574f42bd5685cd0ef6258a">PxPBDParticleSystem</a>
+: <a class="el" href="classPxPBDParticleSystem.html#a15d867956e55d92b325a6f63e576e287">PxPBDParticleSystem</a>
 </li>
 <li>removeParticleSystem()
 : <a class="el" href="classPxScene.html#ab2ee7f97bf35c81b78a404d0e939cae9">PxScene</a>

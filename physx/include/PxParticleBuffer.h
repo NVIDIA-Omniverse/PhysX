@@ -31,9 +31,13 @@
 /** \addtogroup physics
 @{ */
 
-#include "PxPhysXConfig.h"
+#include "common/PxPhysXCommonConfig.h"
+
 #include "PxParticleSystemFlag.h"
+
 #include "foundation/PxBounds3.h"
+#include "foundation/PxSimpleTypes.h"
+#include "foundation/PxVec4.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -51,126 +55,102 @@ struct PxParticleRigidAttachment;
 
 /**
 \brief Particle volume structure. Used to track the bounding volume of a user-specified set of particles. The particles are required
-to be laid out contiguously within the same PxUserParticleBuffer.
+to be laid out contiguously within the same PxParticleBuffer.
 */
 PX_ALIGN_PREFIX(16)
 struct PxParticleVolume
 {
 	PxBounds3	bound;					//!< The current bounds of the particles contained in this PxParticleVolume.
-	PxU32		particleIndicesOffset;	//!< The index into the particle list of the PxUserParticleBuffer for the first particle of this volume.
+	PxU32		particleIndicesOffset;	//!< The index into the particle list of the PxParticleBuffer for the first particle of this volume.
 	PxU32		numParticles;			//!< The number of particles contained in this PxParticleVolume.
 } PX_ALIGN_SUFFIX(16);
 
 
 /**
-\brief The shared base class for all particle user buffers, can be instantiated directly to specify granular and fluid particles.
+\brief The shared base class for all particle buffers, can be instantiated directly to specify granular and fluid particles.
 
 See PxPhysics::createParticleBuffer.
 
-A particle user buffer is a container that specifies per-particle attributes of a set of particles that will be used during the simulation 
+A particle buffer is a container that specifies per-particle attributes of a set of particles that will be used during the simulation 
 of a particle system. It exposes direct access to the underlying GPU buffers and is independent of the scene and particle system. Particle
-user buffers can be added/removed from a particle system at any time between simulation steps, and transferred from one particle system to another.
+buffers can be added/removed from a particle system at any time between simulation steps, and transferred from one particle system to another.
 */
-class PxUserParticleBuffer
+class PxParticleBuffer
 {
 public:
 
 	/**
-	\brief Set positions and inverse masses for this user particle buffer.
-	\param[in] pos A pointer to a device buffer containing the positions and inverse mass packed as PxVec4(pos.x, pos.y, pos.z, inverseMass).
-	*/
-	virtual void				setPositionInvMasses(PxVec4* pos) = 0;
-
-	/**
-	\brief Get positions and inverse masses for this user particle buffer.
+	\brief Get positions and inverse masses for this particle buffer.
 	\return A pointer to a device buffer containing the positions and inverse mass packed as PxVec4(pos.x, pos.y, pos.z, inverseMass).
 	*/
 	virtual PxVec4*				getPositionInvMasses() const = 0;
 
 	/**
-	\brief Set the number of active particles for this user particle buffer.
+	\brief Get velocities for this particle buffer.
+	\return A pointer to a device buffer containing the velocities packed as PxVec4(vel.x, vel.y, vel.z, 0.0f).
+	*/
+	virtual PxVec4*				getVelocities() const = 0;
+
+	/**
+	\brief Get phases for this particle buffer.
+
+	See PxParticlePhase
+
+	\return A pointer to a device buffer containing the per-particle phases for this particle buffer.
+	*/
+	virtual PxU32*				getPhases() const = 0;
+
+	/**
+	\brief Get particle volumes for this particle buffer.
+
+	See PxParticleVolume
+
+	\return A pointer to a device buffer containing the PxParticleVolume s for this particle buffer.
+	*/
+	virtual PxParticleVolume*	getParticleVolumes() const = 0;
+
+	/**
+	\brief Set the number of active particles for this particle buffer.
 	\param[in] nbActiveParticles The number of active particles.
 
-	The number of active particles can be <= PxUserParticleBuffer::getMaxParticles(). The particle system will simulate the first
-	x particles in the PxUserParticleBuffer, where x is the number of active particles.
+	The number of active particles can be <= PxParticleBuffer::getMaxParticles(). The particle system will simulate the first
+	x particles in the PxParticleBuffer, where x is the number of active particles.
 	*/
 	virtual void				setNbActiveParticles(const PxU32 nbActiveParticles) = 0;
 
 	/**
-	\brief Get the number of active particles for this user particle buffer.
+	\brief Get the number of active particles for this particle buffer.
 	\return The number of active particles.
 	*/
 	virtual PxU32				getNbActiveParticles() const = 0;
 
 	/**
-	\brief Get the maximum number particles this user particle buffer can hold.
+	\brief Get the maximum number particles this particle buffer can hold.
 
-	The maximum number of particles is specified when creating a PxUserParticleBuffer. See PxPhysics::createParticleBuffer.
+	The maximum number of particles is specified when creating a PxParticleBuffer. See PxPhysics::createParticleBuffer.
 
 	\return The maximum number of particles.
 	*/
 	virtual PxU32				getMaxParticles() const = 0;
 
 	/**
-	\brief Set velocities for this user particle buffer.
-	\param[in] vel A pointer to a device buffer containing the velocities packed as PxVec4(vel.x, vel.y, vel.z, 0.0f).
-	*/
-	virtual void				setVelocities(PxVec4* vel) = 0;
-
-	/**
-	\brief Get velocities for this user particle buffer.
-	\return A pointer to a device buffer containing the velocities packed as PxVec4(vel.x, vel.y, vel.z, 0.0f).
-	*/
-	virtual PxVec4*				getVelocities() const = 0;
-
-	/**
-	\brief Set per-particle phase for this user particle buffer.
-
-	See PxParticlePhase.
-
-	\param[in] phase A pointer to a device buffer containing the per-particle phases.
-	*/
-	virtual void				setPhase(PxU32* phase) = 0;
-
-	/**
-	\brief Get phases for this user particle buffer.
-	\return A pointer to a device buffer containing the per-particle phases for this particle buffer.
-	*/
-	virtual PxU32*				getPhase() const = 0;
-
-	/**
-	\brief Set the PxParticleVolumes for this user particle buffer.
-
-	See PxParticleVolume.
-
-	\param[in] volumes A pointer to a device buffer containing the PxParticleVolumes.
-	*/
-	virtual void				setParticleVolumes(PxParticleVolume* volumes) = 0;
-
-	/**
-	\brief Get particle volumes for this user particle buffer.
-	\return A pointer to a device buffer containing the PxParticleVolume s for this particle buffer.
-	*/
-	virtual PxParticleVolume*	getParticleVolumes() const = 0;
-
-	/**
-	\brief Get the number of particle volumes in this user particle buffer.
+	\brief Get the number of particle volumes in this particle buffer.
 	\return The number of PxParticleVolume s for this particle buffer.
 	*/
 	virtual PxU32				getNbParticleVolumes() const = 0;
 
 	/**
-	\brief Set the number of PxParticleVolumes for this user particle buffer.
-	\param[in] nbParticleVolumes The number of particle volumes in this user particle buffer.
+	\brief Set the number of PxParticleVolumes for this particle buffer.
+	\param[in] nbParticleVolumes The number of particle volumes in this particle buffer.
 	*/
 	virtual void				setNbParticleVolumes(const PxU32 nbParticleVolumes) = 0;
 
 	/**
-	\brief Get the maximum number of particle volumes this user particle buffer can hold.
+	\brief Get the maximum number of particle volumes this particle buffer can hold.
 
 	See PxParticleVolume.
 
-	\return The maximum number of particle volumes this user particle buffer can hold.
+	\return The maximum number of particle volumes this particle buffer can hold.
 	*/
 	virtual PxU32				getMaxParticleVolumes() const = 0;
 
@@ -185,7 +165,7 @@ public:
 	virtual void				setRigidFilters(PxParticleRigidFilterPair* filters, PxU32 nbFilters) = 0;
 
 	/**
-	\brief Set the particle-rigid body attachments for particles in this user particle buffer.
+	\brief Set the particle-rigid body attachments for particles in this particle buffer.
 
 	See PxParticleRigidAttachment
 
@@ -195,10 +175,10 @@ public:
 	virtual void				setRigidAttachments(PxParticleRigidAttachment* attachments, PxU32 nbAttachments) = 0;
 
 	/**
-	\brief Get the start index for the first particle of this user particle buffer in the complete list of
+	\brief Get the start index for the first particle of this particle buffer in the complete list of
 	particles of the particle system this buffer is used in.
 
-	The return value is only correct if the user particle buffer is assigned to a particle system and at least
+	The return value is only correct if the particle buffer is assigned to a particle system and at least
 	one call to simulate() has been performed.
 
 	\return The index of the first particle in the complete particle list.
@@ -206,7 +186,7 @@ public:
 	virtual PxU32				getFlatListStartIndex() const = 0;
 
 	/**
-	\brief Raise dirty flags on this user particle buffer to communicate that the corresponding data has been updated
+	\brief Raise dirty flags on this particle buffer to communicate that the corresponding data has been updated
 	by the user.
 	\param[in] flags The flag corresponding to the data that is dirty.
 
@@ -220,7 +200,7 @@ public:
 	virtual void				release() = 0;
 
 	/**
-	\brief Cleanup helper used in case a particle system is released before the user particle buffers have been removed.
+	\brief Cleanup helper used in case a particle system is released before the particle buffers have been removed.
 	*/
 	virtual void				onParticleSystemDestroy() = 0;
 
@@ -235,17 +215,17 @@ public:
 	PxU32						bufferIndex;
 
 	/**
-	\brief Unique index that does not change over the lifetime of a PxUserParticleBuffer.
+	\brief Unique index that does not change over the lifetime of a PxParticleBuffer.
 	*/
 	const PxU32					bufferUniqueId;
 
 protected:
 
-	virtual						~PxUserParticleBuffer() { }
-	PX_INLINE 					PxUserParticleBuffer(PxU32 uniqueId) : bufferIndex(0xffffffff), bufferUniqueId(uniqueId){}
+	virtual						~PxParticleBuffer() { }
+	PX_INLINE 					PxParticleBuffer(PxU32 uniqueId) : bufferIndex(0xffffffff), bufferUniqueId(uniqueId){}
 
 private:
-	PX_NOCOPY(PxUserParticleBuffer)
+	PX_NOCOPY(PxParticleBuffer)
 };
 
 /**
@@ -292,11 +272,11 @@ public:
 };
 
 /**
-\brief A user particle buffer used to simulate diffuse particles.
+\brief A particle buffer used to simulate diffuse particles.
 
 See PxPhysics::createParticleAndDiffuseBuffer.
 */
-class PxUserParticleAndDiffuseBuffer : public PxUserParticleBuffer
+class PxParticleAndDiffuseBuffer : public PxParticleBuffer
 {
 public:
 
@@ -342,11 +322,11 @@ public:
 
 protected:
 
-	virtual 						~PxUserParticleAndDiffuseBuffer() {}
-	PX_INLINE 						PxUserParticleAndDiffuseBuffer(PxU32 uniqueId) : PxUserParticleBuffer(uniqueId){}
+	virtual 						~PxParticleAndDiffuseBuffer() {}
+	PX_INLINE 						PxParticleAndDiffuseBuffer(PxU32 uniqueId) : PxParticleBuffer(uniqueId){}
 
 private:
-	PX_NOCOPY(PxUserParticleAndDiffuseBuffer)
+	PX_NOCOPY(PxParticleAndDiffuseBuffer)
 };
 
 /**
@@ -363,11 +343,11 @@ struct PX_ALIGN_PREFIX(8) PxParticleSpring
 } PX_ALIGN_SUFFIX(8);
 
 /**
-\brief Particle cloth structure. Holds information about a single piece of cloth that is part of a PxUserParticleClothBuffer.
+\brief Particle cloth structure. Holds information about a single piece of cloth that is part of a PxParticleClothBuffer.
 */
 struct PxParticleCloth
 {
-	PxU32	startVertexIndex;	//!< Index of the first particle of this cloth in the position/velocity buffers of the parent PxUserParticleClothBuffer
+	PxU32	startVertexIndex;	//!< Index of the first particle of this cloth in the position/velocity buffers of the parent PxParticleClothBuffer
 	PxU32	numVertices;		//!< The number of particles of this piece of cloth
 	PxReal	clothBlendScale;	//!< Used internally.
 	PxReal	restVolume;			//!< The rest volume of this piece of cloth, used for inflatable simulation.
@@ -383,7 +363,7 @@ struct PxParticleCloth
 };
 
 /**
-\brief Structure to describe the set of particle cloths in the same PxUserParticleClothBuffer. Used an input for the cloth preprocessing.
+\brief Structure to describe the set of particle cloths in the same PxParticleClothBuffer. Used an input for the cloth preprocessing.
 */
 struct PxParticleClothDesc
 {
@@ -403,18 +383,18 @@ struct PxParticleClothDesc
 };
 
 /**
-\brief Structure to describe the output of the particle cloth preprocessing. Used as an input to specify cloth data for a PxUserParticleClothBuffer.
+\brief Structure to describe the output of the particle cloth preprocessing. Used as an input to specify cloth data for a PxParticleClothBuffer.
 All the pointers point to pinned host memory.
 
 See PxParticleClothPreProcessor
 */
-struct PX_PHYSX_CORE_API PxParticleClothOutput
+struct PX_PHYSX_CORE_API PxPartitionedParticleCloth
 {
 	PxU32*						accumulatedSpringsPerPartitions;	//!< The number of springs in each partition. Size: numPartitions.
 	PxU32*						accumulatedCopiesPerParticles;		//!< Start index for each particle in the accumulation buffer. Size: numParticles.
 	PxU32*						remapOutput;						//!< Index of the next copy of this particle in the next partition, or in the accumulation buffer. Size: numSprings * 2.
 	PxParticleSpring*			orderedSprings;						//!< Springs ordered by partition. Size: numSprings.
-	PxU32*						sortedClothStartIndices;			//!< The first particle index into the position buffer of the PxUserParticleClothBuffer for each cloth. Cloths are sorted by start particle index. Size: numCloths.
+	PxU32*						sortedClothStartIndices;			//!< The first particle index into the position buffer of the PxParticleClothBuffer for each cloth. Cloths are sorted by start particle index. Size: numCloths.
 	PxParticleCloth*			cloths;								//!< The PxParticleCloth s sorted by start particle index.
 
 	PxU32						remapOutputSize;					//!< Size of remapOutput.
@@ -425,106 +405,88 @@ struct PX_PHYSX_CORE_API PxParticleClothOutput
 
 	PxCudaContextManager* 		mCudaManager;						//!< A cuda context manager.
 
-	PxParticleClothOutput();
-	~PxParticleClothOutput();
+	PxPartitionedParticleCloth();
+	~PxPartitionedParticleCloth();
 
 	/**
-	\brief allocate all the buffers for this PxParticleClothOutput.
+	\brief allocate all the buffers for this PxPartitionedParticleCloth.
 	 
-	\param[in] nbParticles the number of particles this PxParticleClothOutput will be generated for.
+	\param[in] nbParticles the number of particles this PxPartitionedParticleCloth will be generated for.
 	\param[in] cudaManager a cuda context manager.
 	*/
 	void allocateBuffers(PxU32 nbParticles, PxCudaContextManager* cudaManager);
 };
 
 /**
-\brief A user particle buffer used to simulate particle cloth.
+\brief A particle buffer used to simulate particle cloth.
 
 See PxPhysics::createParticleClothBuffer.
 */
-class PxUserParticleClothBuffer : public PxUserParticleBuffer
+class PxParticleClothBuffer : public PxParticleBuffer
 {
 public:
 
 	/**
-	\brief Set rest positions for this user particle buffer.
-	\param[in] pos A pointer to a device buffer containing the rest positions packed as PxVec4(pos.x, pos.y, pos.z, 0.0f).
-	*/
-	virtual void				setRestPositions(PxVec4* pos) = 0;
-
-	/**
-	\brief Get rest positions for this user particle buffer.
+	\brief Get rest positions for this particle buffer.
 	\return A pointer to a device buffer containing the rest positions packed as PxVec4(pos.x, pos.y, pos.z, 0.0f).
 	*/
 	virtual PxVec4*				getRestPositions() = 0;
 
 	/**
-	\brief Set triangle indices for this user particle buffer.
-	\param[in] triangleIndices A pointer to a device buffer containing triangle indices for this cloth buffer. 3 consecutive PxU32 specify the 3 particle positions that make up a triangle.
-	*/
-	virtual void				setTriangles(PxU32* triangleIndices) = 0;
-
-	/**
-	\brief Get the triangle indices for this user particle buffer.
+	\brief Get the triangle indices for this particle buffer.
 	\return A pointer to a device buffer containing the triangle indices for this cloth buffer.
 	*/
 	virtual PxU32*				getTriangles() const = 0;
 
 	/**
-	\brief Set the number of triangles for this user particle buffer.
-	\param[in] nbTriangles The number of triangles for this user particle cloth buffer.
+	\brief Set the number of triangles for this particle buffer.
+	\param[in] nbTriangles The number of triangles for this particle cloth buffer.
 	*/
 	virtual void				setNbTriangles(PxU32 nbTriangles) = 0;
 
 	/**
-	\brief Get the number of triangles for this user particle buffer.
+	\brief Get the number of triangles for this particle buffer.
 	\return The number triangles for this cloth buffer.
 	*/
 	virtual PxU32				getNbTriangles() const = 0;
 
 	/**
-	\brief Get the number of springs in this user particle buffer.
+	\brief Get the number of springs in this particle buffer.
 	\return The number of springs in this cloth buffer.
 	*/
 	virtual PxU32				getNbSprings() const = 0;
 
 	/**
-	\brief Get the springs for this user particle buffer.
+	\brief Get the springs for this particle buffer.
 	\return A pointer to a device buffer containing the springs for this cloth buffer.
 	*/
 	virtual PxParticleSpring*	getSprings() = 0;
 
 	/**
-	\brief Set cloths for this user particle buffer.
-	\param[in] cloths A pointer to a PxParticleClothOutput.
+	\brief Set cloths for this particle buffer.
+	\param[in] cloths A pointer to a PxPartitionedParticleCloth.
 
-	See PxParticleClothOutput, PxParticleClothPreProcessor
+	See PxPartitionedParticleCloth, PxParticleClothPreProcessor
 	*/
-	virtual void				setCloths(PxParticleClothOutput& cloths) = 0;
+	virtual void				setCloths(PxPartitionedParticleCloth& cloths) = 0;
 
 protected:
 
-	virtual						~PxUserParticleClothBuffer() {}
-	PX_INLINE 					PxUserParticleClothBuffer(PxU32 uniqueId) : PxUserParticleBuffer(uniqueId){}
+	virtual						~PxParticleClothBuffer() {}
+	PX_INLINE 					PxParticleClothBuffer(PxU32 uniqueId) : PxParticleBuffer(uniqueId){}
 
 private:
-	PX_NOCOPY(PxUserParticleClothBuffer)
+	PX_NOCOPY(PxParticleClothBuffer)
 };
 
 /**
-\brief A user particle buffer used to simulate rigid bodies using shape matching with particles.
+\brief A particle buffer used to simulate rigid bodies using shape matching with particles.
 
 See PxPhysics::createParticleRigidBuffer.
 */
-class PxUserParticleRigidBuffer : public PxUserParticleBuffer
+class PxParticleRigidBuffer : public PxParticleBuffer
 {
 public:
-	/**
-	\brief Set the particle indices of the first particle for each shape matched rigid body.
-	\param[in] offsets Pointer to a device buffer containing the list of particle start indices of each shape matched rigid body.
-	*/
-	virtual void	setRigidOffsets(const PxU32* offsets) = 0;
-
 	/**
 	\brief Get the particle indices of the first particle for each shape matched rigid body.
 	\return A device buffer containing the list of particle start indices of each shape matched rigid body.
@@ -532,25 +494,13 @@ public:
 	virtual PxU32*	getRigidOffsets() const = 0;
 
 	/**
-	\brief Set the stiffness coefficient for all shape-matched rigid bodies in this buffer.
+	\brief Get the stiffness coefficients for all shape matched rigid bodies in this buffer.
 
 	Stiffness must be in the range [0, 1].
 
-	\param[in] coefficients A pointer to a device buffer containing the stiffness coefficient for each rigid body.
-	*/
-	virtual void	setRigidCoefficients(const PxReal* coefficients) = 0;
-
-	/**
-	\brief Get the stiffness coefficients for all shape matched rigid bodies in this buffer.
 	\return A device buffer containing the list of stiffness coefficients for each rigid body.
 	*/
 	virtual PxReal*	getRigidCoefficients() const = 0;
-
-	/**
-	\brief Set the local position of each particle relative to the rigid body's center of mass.
-	\param[in] localPositions A pointer to a device buffer containing the local positions.
-	*/
-	virtual void	setRigidLocalPositions(PxVec4* localPositions) = 0;
 
 	/**
 	\brief Get the local position of each particle relative to the rigid body's center of mass.
@@ -559,43 +509,25 @@ public:
 	virtual PxVec4*	getRigidLocalPositions() const = 0;
 
 	/**
-	\brief Set the world-space translation of each rigid body's center of mass. 
-	\param[in] translation A pointer to a device buffer containing the world-space translation for all shape-matched rigid bodies in this buffer. 
-	*/
-	virtual void	setRigidTranslations(const PxVec4* translation) = 0;
-
-	/**
 	\brief Get the world-space translations for all rigid bodies in this buffer. 
 	\return A pointer to a device buffer containing the world-space translations for all shape-matched rigid bodies in this buffer. 
 	 */
 	virtual PxVec4*	getRigidTranslations() const = 0;
-
-	/**
-	\brief Set the world-space rotation of every shape-matched rigid body in this buffer.
-
-	Rotations are specified as quaternions.
-
-	\param[in] rotations A pointer to a device buffer containing the world-space rotation for every shape-matched rigid body in this buffer. 
-	 */
-	virtual void	setRigidRotations(const PxVec4* rotations) = 0;
 	
 	/**
 	\brief Get the world-space rotation of every shape-matched rigid body in this buffer.
+
+	Rotations are specified as quaternions.
+
 	\return A pointer to a device buffer containing the world-space rotation for every shape-matched rigid body in this buffer.
 	*/
 	virtual PxVec4*	getRigidRotations() const = 0;
 
 	/**
-	\brief Set the local space normals for each particle relative to the shape of the corresponding rigid body.
+	\brief Get the local space normals for each particle relative to the shape of the corresponding rigid body.
 
 	The 4th component of every PxVec4 should be the negative signed distance of the particle inside its shape.
-	 
-	\param[in] localNormals A pointer to a device buffer containing the local-space normals for each particle packed as PxVec4(x,y,z,dist).
-	*/
-	virtual void	setRigidLocalNormals(PxVec4* localNormals) = 0;
 
-	/**
-	\brief Set the local space normals for each particle relative to the shape of the corresponding rigid body.
 	\return A pointer to a device buffer containing the local-space normals for each particle. 
 	 */
 	virtual PxVec4*	getRigidLocalNormals() const = 0;
@@ -614,11 +546,11 @@ public:
 
 protected:
 
-	virtual			~PxUserParticleRigidBuffer() {}
-	PX_INLINE 		PxUserParticleRigidBuffer(PxU32 uniqueId) : PxUserParticleBuffer(uniqueId){}
+	virtual			~PxParticleRigidBuffer() {}
+	PX_INLINE 		PxParticleRigidBuffer(PxU32 uniqueId) : PxParticleBuffer(uniqueId){}
 
 private:
-	PX_NOCOPY(PxUserParticleRigidBuffer)
+	PX_NOCOPY(PxParticleRigidBuffer)
 };
 
 /**
@@ -626,9 +558,9 @@ private:
 
 Preprocessing is done by calling partitionSprings() on an instance of this class. This will allocate the memory in the 
 output object, partition the springs and fill all the members of the ouput object. The output can then be passed without 
-any further modifications to PxUserParticleClothBuffer::setCloths().
+any further modifications to PxParticleClothBuffer::setCloths().
 
-See PxCreateParticleClothPreprocessor, PxParticleClothDesc, PxParticleClothOutput
+See PxCreateParticleClothPreprocessor, PxParticleClothDesc, PxPartitionedParticleCloth
 */
 class PxParticleClothPreProcessor
 {
@@ -642,9 +574,9 @@ public:
 	/**
 	\brief Partition the spring constraints for particle cloth simulation.
 	\param[in] clothDesc Reference to a valid PxParticleClothDesc.
-	\param[in] output Reference to a PxParticleClothOutput object. This is the output of the preprocessing and should be passed to a PxUserParticleClothBuffer.
+	\param[in] output Reference to a PxPartitionedParticleCloth object. This is the output of the preprocessing and should be passed to a PxParticleClothBuffer.
 	*/
-	virtual void	partitionSprings(const PxParticleClothDesc& clothDesc, PxParticleClothOutput& output) = 0;
+	virtual void	partitionSprings(const PxParticleClothDesc& clothDesc, PxPartitionedParticleCloth& output) = 0;
 
 protected:
 	virtual			~PxParticleClothPreProcessor(){}
@@ -664,7 +596,7 @@ protected:
 \brief Create a particle cloth preprocessor.
 \param[in] cudaContextManager A cuda context manager.
 
-See PxParticleClothDesc, PxParticleClothOutput.
+See PxParticleClothDesc, PxPartitionedParticleCloth.
 */
 PX_C_EXPORT PX_PHYSX_CORE_API physx::PxParticleClothPreProcessor* PX_CALL_CONV PxCreateParticleClothPreProcessor(physx::PxCudaContextManager* cudaContextManager);
 

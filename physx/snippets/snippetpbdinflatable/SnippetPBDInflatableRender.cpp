@@ -47,7 +47,7 @@ extern void stepPhysics(bool interactive);
 extern void cleanupPhysics(bool interactive);
 extern void keyPress(unsigned char key, const PxTransform& camera);
 extern PxPBDParticleSystem* getParticleSystem(); 
-extern PxUserParticleClothBuffer* getUserClothBuffer();
+extern PxParticleClothBuffer* getUserClothBuffer();
 
 
 namespace
@@ -61,7 +61,7 @@ void onBeforeRenderParticles()
 	PxPBDParticleSystem* particleSystem = getParticleSystem();
 	if (particleSystem) 
 	{
-		PxUserParticleClothBuffer* userBuffer = getUserClothBuffer();
+		PxParticleClothBuffer* userBuffer = getUserClothBuffer();
 		PxVec4* positions = userBuffer->getPositionInvMasses();
 		const PxU32 numParticles = userBuffer->getNbActiveParticles();
 
@@ -97,7 +97,7 @@ void allocParticleBuffers()
 	PxGetPhysics().getScenes(&scene, 1);
 	PxCudaContextManager* cudaContexManager = scene->getCudaContextManager();
 
-	PxUserParticleClothBuffer* userBuffer = getUserClothBuffer();
+	PxParticleClothBuffer* userBuffer = getUserClothBuffer();
 
 	PxU32 maxParticles = userBuffer->getMaxParticles();
 

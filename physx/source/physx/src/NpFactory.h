@@ -133,7 +133,7 @@ public:
 	static		void									destroyInstance();
 	static		void									registerArticulations();
 	static		void									registerArticulationRCs();
-	static		void									onParticleBufferRelease(PxUserParticleBuffer* buffer);
+	static		void									onParticleBufferRelease(PxParticleBuffer* buffer);
 
 				void									release();
 
@@ -219,16 +219,16 @@ public:
 #endif
 
 				//Particle buffers
-				PxUserParticleBuffer*					createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager);
+				PxParticleBuffer*						createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager);
 
 				//Diffuse Particle buffers
-				PxUserParticleAndDiffuseBuffer*			createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager);
+				PxParticleAndDiffuseBuffer*				createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager);
 
 				//Particle cloth buffers
-				PxUserParticleClothBuffer*				createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager);
+				PxParticleClothBuffer*					createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager);
 
 				//Particle rigid buffers
-				PxUserParticleRigidBuffer*				createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager);
+				PxParticleRigidBuffer*					createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager);
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 				// HairSystem
@@ -275,8 +275,8 @@ public:
 				void									onArticulationRelease(PxArticulationReducedCoordinate*);
 				void									onShapeRelease(PxShape*);
 
-				void									addParticleBuffer(PxUserParticleBuffer* buffer, bool lock = true);
-				void									onParticleBufferReleaseInternal(PxUserParticleBuffer* buffer);
+				void									addParticleBuffer(PxParticleBuffer* buffer, bool lock = true);
+				void									onParticleBufferReleaseInternal(PxParticleBuffer* buffer);
 
 				NpConnectorArray*						acquireConnectorArray();
 				void									releaseConnectorArray(NpConnectorArray*);
@@ -300,7 +300,7 @@ private:
 				PxHashSet<PxConstraint*>						mConstraintTracking;
 				PxHashSet<PxActor*>								mActorTracking;				
 				PxCoalescedHashSet<PxShape*>					mShapeTracking;
-				PxHashSet<PxUserParticleBuffer*>				mParticleBufferTracking;
+				PxHashSet<PxParticleBuffer*>				mParticleBufferTracking;
 
 				PxPool2<NpRigidDynamic, 4096>			mRigidDynamicPool;
 				PxMutex									mRigidDynamicPoolLock;

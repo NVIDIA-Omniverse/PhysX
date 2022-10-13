@@ -42,9 +42,6 @@ namespace physx
 {
 #endif
 
-// Exposing the ParticleSystem API. Run API meta data generation in Tools/PhysXMetaDataGenerator when changing.
-#define PX_USE_PARTICLE_SYSTEM_API 1
-
 class PxPhysics;
 class PxShape;
 

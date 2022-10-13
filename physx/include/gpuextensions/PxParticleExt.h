@@ -97,24 +97,24 @@ struct PxParticleRigidDesc
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
-\brief Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to PxPaticleSystem.
+\brief Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to PxParticleClothBuffer.
 */
-class PxParticleClothBuffers
+class PxParticleClothBufferHelper
 {
 public:
 	virtual void release() = 0;
 
-	virtual PxU32 getMaxCloths() const = 0;		//!< \return The maximum number of cloths this PxParticleClothBuffers can hold.
-	virtual PxU32 getNumCloths() const = 0;		//!< \return The current number of cloths in this PxParticleClothBuffers. 
-	virtual PxU32 getMaxSprings() const = 0;	//!< \return The maximum number of springs this PxParticleClothBuffers can hold.
-	virtual PxU32 getNumSprings() const = 0;	//!< \return The current number of springs in this PxParticleClothBuffers.
-	virtual PxU32 getMaxTriangles() const = 0;  //!< \return The maximum number of triangles this PxParticleClothBuffers can hold.
-	virtual PxU32 getNumTriangles() const = 0;	//!< \return The current number of triangles in this PxParticleClothBuffers.
-	virtual PxU32 getMaxParticles() const = 0;	//!< \return The maximum number of particles this PxParticleClothBuffers can hold.
-	virtual PxU32 getNumParticles() const = 0;	//!< \return The current number of particles in this PxParticleClothBuffers.
+	virtual PxU32 getMaxCloths() const = 0;		//!< \return The maximum number of cloths this PxParticleClothBufferHelper can hold.
+	virtual PxU32 getNumCloths() const = 0;		//!< \return The current number of cloths in this PxParticleClothBufferHelper. 
+	virtual PxU32 getMaxSprings() const = 0;	//!< \return The maximum number of springs this PxParticleClothBufferHelper can hold.
+	virtual PxU32 getNumSprings() const = 0;	//!< \return The current number of springs in this PxParticleClothBufferHelper.
+	virtual PxU32 getMaxTriangles() const = 0;  //!< \return The maximum number of triangles this PxParticleClothBufferHelper can hold.
+	virtual PxU32 getNumTriangles() const = 0;	//!< \return The current number of triangles in this PxParticleClothBufferHelper.
+	virtual PxU32 getMaxParticles() const = 0;	//!< \return The maximum number of particles this PxParticleClothBufferHelper can hold.
+	virtual PxU32 getNumParticles() const = 0;	//!< \return The current number of particles in this PxParticleClothBufferHelper.
 
 	/**
-	\brief Adds a PxParticleCloth to this PxParticleClothBuffers instance.
+	\brief Adds a PxParticleCloth to this PxParticleClothBufferHelper instance.
 	
 	\param[in] particleCloth The PxParticleCloth to be added.
 	\param[in] triangles A pointer to the triangles
@@ -131,9 +131,9 @@ public:
 		const PxParticleSpring* springs, const PxU32 numSprings, const PxVec4* restPositions, const PxU32 numParticles) = 0;
 
 	/**
-	\brief Adds a cloth to this PxParticleClothBuffers instance.
+	\brief Adds a cloth to this PxParticleClothBufferHelper instance.
 
-	Adds a cloth to this PxParticleClothBuffers instance. With this method the relevant parameters for inflatable simulation
+	Adds a cloth to this PxParticleClothBufferHelper instance. With this method the relevant parameters for inflatable simulation
 	(restVolume, pressure) can be set directly.
 
 	\param[in] blendScale This should be 1.f / (numPartitions + 1) if the springs are partitioned by the user. Otherwise this will be set during spring partitioning.
@@ -154,7 +154,7 @@ public:
 		const PxVec4* restPositions, const PxU32 numParticles) = 0;
 
 	/**
-	\brief Returns a PxParticleClothDesc for this PxParticleClothBuffers instance to be used for spring partitioning.
+	\brief Returns a PxParticleClothDesc for this PxParticleClothBufferHelper instance to be used for spring partitioning.
 
 	\return the PxParticleClothDesc.
 
@@ -163,41 +163,41 @@ public:
 	virtual PxParticleClothDesc& getParticleClothDesc() = 0;
 
 protected:
-	virtual ~PxParticleClothBuffers() {}
+	virtual ~PxParticleClothBufferHelper() {}
 };
 
 
 /**
-\brief Helper struct that holds information about a specific mesh in a PxParticleVolumeBuffers.
+\brief Helper struct that holds information about a specific mesh in a PxParticleVolumeBufferHelper.
 */
 struct PxParticleVolumeMesh
 {
-	PxU32 startIndex;	//!< The index of the first triangle of this mesh in the triangle array of the PxParticleVolumeBuffers instance.
+	PxU32 startIndex;	//!< The index of the first triangle of this mesh in the triangle array of the PxParticleVolumeBufferHelper instance.
 	PxU32 count;		//!< The number of triangles of this mesh.
 };
 
 /**
-\brief Helper class to manage communicating PxParticleVolumes data to PxPaticleSystem.
+\brief Helper class to manage communicating PxParticleVolumes data to PxParticleBuffer.
 */
-class PxParticleVolumeBuffers
+class PxParticleVolumeBufferHelper
 {
 public:
 	virtual void release() = 0;
 
-	virtual PxU32 getMaxVolumes() const = 0;	//!< \return The maximum number of PxParticleVolume this PxParticleVolumeBuffers instance can hold.
-	virtual PxU32 getNumVolumes() const = 0;	//!< \return The current number of PxParticleVolume in this PxParticleVolumeBuffers instance.
-	virtual PxU32 getMaxTriangles() const = 0;	//!< \return The maximum number of triangles this PxParticleVolumeBuffers instance can hold.
-	virtual PxU32 getNumTriangles() const = 0;  //!< \return The current number of triangles in this PxParticleVolumeBuffers instance.
+	virtual PxU32 getMaxVolumes() const = 0;	//!< \return The maximum number of PxParticleVolume this PxParticleVolumeBufferHelper instance can hold.
+	virtual PxU32 getNumVolumes() const = 0;	//!< \return The current number of PxParticleVolume in this PxParticleVolumeBufferHelper instance.
+	virtual PxU32 getMaxTriangles() const = 0;	//!< \return The maximum number of triangles this PxParticleVolumeBufferHelper instance can hold.
+	virtual PxU32 getNumTriangles() const = 0;  //!< \return The current number of triangles in this PxParticleVolumeBufferHelper instance.
 
-	virtual PxParticleVolume* getParticleVolumes() = 0;				//!< \return A pointer to the PxParticleVolume s of this PxParticleVolumeBuffers instance.
-	virtual PxParticleVolumeMesh* getParticleVolumeMeshes() = 0;	//!< \return A pointer to the PxParticleVolumeMesh structs describing the PxParticleVolumes of this PxParticleVolumeBuffers instance.
-	virtual PxU32* getTriangles() = 0;								//!< \return A pointer to the triangle indices in this PxParticleVolumeBuffers instance.
+	virtual PxParticleVolume* getParticleVolumes() = 0;				//!< \return A pointer to the PxParticleVolume s of this PxParticleVolumeBufferHelper instance.
+	virtual PxParticleVolumeMesh* getParticleVolumeMeshes() = 0;	//!< \return A pointer to the PxParticleVolumeMesh structs describing the PxParticleVolumes of this PxParticleVolumeBufferHelper instance.
+	virtual PxU32* getTriangles() = 0;								//!< \return A pointer to the triangle indices in this PxParticleVolumeBufferHelper instance.
 
 	/**
 	\brief Adds a PxParticleVolume with a PxParticleVolumeMesh
 
 	\param[in] volume The PxParticleVolume to be added.
-	\param[in] volumeMesh A PxParticleVolumeMesh that describes the volumes to be added. startIndex is the index into the triangle list of the PxParticleVolumeBuffers instance. 
+	\param[in] volumeMesh A PxParticleVolumeMesh that describes the volumes to be added. startIndex is the index into the triangle list of the PxParticleVolumeBufferHelper instance. 
 	\param[in] triangles A pointer to the triangle indices of the PxParticleVolume to be added.
 	\param[in] numTriangles The number of triangles of the PxParticleVolume to be added.
 	*/
@@ -206,30 +206,30 @@ public:
 	/**
 	\brief Adds a volume
 
-	\param[in] particleOffset The index of the first particle of the cloth that maps to this volume in the PxParticleClothBuffers instance.
-	\param[in] numParticles The number of particles of the cloth that maps to this volume in the PxParticleClothBuffers instance.
+	\param[in] particleOffset The index of the first particle of the cloth that maps to this volume in the PxParticleClothBufferHelper instance.
+	\param[in] numParticles The number of particles of the cloth that maps to this volume in the PxParticleClothBufferHelper instance.
 	\param[in] triangles A pointer to the triangle indices of this volume.
 	\param[in] numTriangles The number of triangles in this volume.
 	*/
 	virtual void addVolume(const PxU32 particleOffset, const PxU32 numParticles, const PxU32* triangles, const PxU32 numTriangles) = 0;
 
 protected:
-	virtual ~PxParticleVolumeBuffers() {}
+	virtual ~PxParticleVolumeBufferHelper() {}
 };
 
 
 /**
 \brief Helper class to manage PxParticleRigidDesc buffers used for communicating particle based rigids to PxPaticleSystem.
 */
-class PxParticleRigidBuffers
+class PxParticleRigidBufferHelper
 {
 public:
 	virtual void release() = 0;
 
-	virtual PxU32 getMaxRigids() const = 0;		//!< \return The maximum number of rigids this PxParticleRigidBuffers instance can hold.
-	virtual PxU32 getNumRigids() const = 0;		//!< \return The current number of rigids in this PxParticleRigidBuffers instance.
-	virtual PxU32 getMaxParticles() const = 0;  //!< \return The maximum number of particles this PxParticleRigidBuffers instance can hold.
-	virtual PxU32 getNumParticles() const = 0;  //!< \return The current number of particles in this PxParticleRigidBuffers instance.
+	virtual PxU32 getMaxRigids() const = 0;		//!< \return The maximum number of rigids this PxParticleRigidBufferHelper instance can hold.
+	virtual PxU32 getNumRigids() const = 0;		//!< \return The current number of rigids in this PxParticleRigidBufferHelper instance.
+	virtual PxU32 getMaxParticles() const = 0;  //!< \return The maximum number of particles this PxParticleRigidBufferHelper instance can hold.
+	virtual PxU32 getNumParticles() const = 0;  //!< \return The current number of particles in this PxParticleRigidBufferHelper instance.
 
 	/**
 	\brief Adds a rigid.
@@ -252,7 +252,7 @@ public:
 	virtual PxParticleRigidDesc& getParticleRigidDesc() = 0;
 
 protected:
-	virtual ~PxParticleRigidBuffers() {}
+	virtual ~PxParticleRigidBufferHelper() {}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -268,7 +268,7 @@ class PxParticleAttachmentBuffer : public PxUserAllocated
 	PxArray<PxRigidActor*> mNewReferencedBodies;
 	PxArray<PxRigidActor*> mDestroyedRefrencedBodies;
 
-	PxUserParticleBuffer& mParticleBuffer;
+	PxParticleBuffer& mParticleBuffer;
 
 	PxParticleRigidAttachment* mDeviceAttachments;
 	PxParticleRigidFilterPair* mDeviceFilters;
@@ -285,7 +285,7 @@ class PxParticleAttachmentBuffer : public PxUserAllocated
 
 public:
 
-	PxParticleAttachmentBuffer(PxUserParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
+	PxParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
 
 	~PxParticleAttachmentBuffer();
 
@@ -299,88 +299,88 @@ public:
 };
 
 /**
-\brief Creates a PxRigidBuffers helper.
+\brief Creates a PxParticleRigidBufferHelper.
 
 \param[in] maxRigids The maximum number of rigids this PxParticleRigidsBuffers instance should hold.
-\param[in] maxParticles The maximum number of particles this PxParticleRigidBuffers instance should hold.
+\param[in] maxParticles The maximum number of particles this PxParticleRigidBufferHelper instance should hold.
 \param[in] cudaContextManager A pointer to a PxCudaContextManager.
 
-\return A pointer to the new PxParticleRigidBuffers.
+\return A pointer to the new PxParticleRigidBufferHelper.
 */
-PxParticleRigidBuffers* 				PxCreateParticleRigidBuffers(PxU32 maxRigids, PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
+PxParticleRigidBufferHelper* 			PxCreateParticleRigidBufferHelper(PxU32 maxRigids, PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
 
 /**
-\brief Creates a PxParticleClothBuffers helper.
+\brief Creates a PxParticleClothBufferHelper helper.
 
-\param[in] maxCloths The maximum number of cloths this PxParticleClothBuffers should hold.
-\param[in] maxTriangles The maximum number of triangles this PxParticleClothBuffers should hold. 
-\param[in] maxSprings The maximum number of springs this PxParticleClothBuffers should hold.
-\param[in] maxParticles The maximum number of particles this PxParticleClothBuffers should hold.
+\param[in] maxCloths The maximum number of cloths this PxParticleClothBufferHelper should hold.
+\param[in] maxTriangles The maximum number of triangles this PxParticleClothBufferHelper should hold. 
+\param[in] maxSprings The maximum number of springs this PxParticleClothBufferHelper should hold.
+\param[in] maxParticles The maximum number of particles this PxParticleClothBufferHelper should hold.
 \param[in] cudaContextManager A pointer to a PxCudaContextManager.
 
-\return A pointer to the PxParticleClothBuffers that was created.
+\return A pointer to the PxParticleClothBufferHelper that was created.
 */
-PxParticleClothBuffers* 				PxCreateParticleClothBuffers(const PxU32 maxCloths, const PxU32 maxTriangles, const PxU32 maxSprings, const PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
+PxParticleClothBufferHelper* 			PxCreateParticleClothBufferHelper(const PxU32 maxCloths, const PxU32 maxTriangles, const PxU32 maxSprings, const PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
 
 /**
-\brief Creates a PxParticleVolumeBuffers helper.
+\brief Creates a PxParticleVolumeBufferHelper.
 
-\param[in] maxVolumes The maximum number of PxParticleVolume s this PxParticleVolumeBuffers instance should hold.
-\param[in] maxTriangles The maximum number of triangles this PxParticleVolumeBuffers instance should hold.
+\param[in] maxVolumes The maximum number of PxParticleVolume s this PxParticleVolumeBufferHelper instance should hold.
+\param[in] maxTriangles The maximum number of triangles this PxParticleVolumeBufferHelper instance should hold.
 \param[in] cudaContextManager A pointer to a PxCudaContextManager.
 
-\return A pointer to the new PxParticleVolumeBuffers.
+\return A pointer to the new PxParticleVolumeBufferHelper.
 */
-PxParticleVolumeBuffers* 				PxCreateParticleVolumeBuffers(PxU32 maxVolumes, PxU32 maxTriangles, PxCudaContextManager* cudaContextManager);
+PxParticleVolumeBufferHelper* 			PxCreateParticleVolumeBufferHelper(PxU32 maxVolumes, PxU32 maxTriangles, PxCudaContextManager* cudaContextManager);
 
 /**
 \brief Creates a particle attachment buffer
 
-\param[in] userBuffer The particle user buffer that contains particles that should get attached to something
+\param[in] particleBuffer The particle buffer that contains particles that should get attached to something
 \param[in] particleSystem The particle system that is used to simulate the userBuffer
 \return An attachment buffer ready to use
 */
-PxParticleAttachmentBuffer*				PxCreateParticleAttachmentBuffer(PxUserParticleBuffer& userBuffer, PxParticleSystem& particleSystem);
+PxParticleAttachmentBuffer*				PxCreateParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
 
 /**
-\brief Creates and populates a user particle buffer
+\brief Creates and populates a particle buffer
 
 \param[in] desc The particle buffer descriptor
 \param[in] cudaContextManager A cuda context manager
-\return A fully populated user particle buffer ready to use
+\return A fully populated particle buffer ready to use
 */
-PxUserParticleBuffer*					PxCreateAndPopulateParticleBuffer(const ExtGpu::PxParticleBufferDesc& desc, PxCudaContextManager* cudaContextManager);
+PxParticleBuffer*						PxCreateAndPopulateParticleBuffer(const ExtGpu::PxParticleBufferDesc& desc, PxCudaContextManager* cudaContextManager);
 		
 /**
-\brief Creates and populates a user particle buffer that includes support for diffuse particles
+\brief Creates and populates a particle buffer that includes support for diffuse particles
 
 \param[in] desc The particle buffer descriptor
 \param[in] cudaContextManager A cuda context manager
-\return A fully populated user particle buffer ready to use
+\return A fully populated particle buffer ready to use
 */
-PxUserParticleAndDiffuseBuffer*			PxCreateAndPopulateParticleAndDiffuseBuffer(const ExtGpu::PxParticleAndDiffuseBufferDesc& desc, PxCudaContextManager* cudaContextManager);
+PxParticleAndDiffuseBuffer*				PxCreateAndPopulateParticleAndDiffuseBuffer(const ExtGpu::PxParticleAndDiffuseBufferDesc& desc, PxCudaContextManager* cudaContextManager);
 
 /**
-\brief Creates and populates a user particle cloth buffer
+\brief Creates and populates a particle cloth buffer
 
 \param[in] desc The particle buffer descriptor
 \param[in] clothDesc The cloth descriptor
 \param[out] output A cloth output object to further configure the behavior of the cloth
 \param[in] cudaContextManager A cuda context manager
-\return A fully populated user particle cloth buffer ready to use
+\return A fully populated particle cloth buffer ready to use
 */
-PxUserParticleClothBuffer*				PxCreateAndPopulateParticleClothBuffer(const ExtGpu::PxParticleBufferDesc& desc, const PxParticleClothDesc& clothDesc,
-											PxParticleClothOutput& output, PxCudaContextManager* cudaContextManager);
+PxParticleClothBuffer*					PxCreateAndPopulateParticleClothBuffer(const ExtGpu::PxParticleBufferDesc& desc, const PxParticleClothDesc& clothDesc,
+											PxPartitionedParticleCloth& output, PxCudaContextManager* cudaContextManager);
 
 /**
-\brief Creates and populates a user particle rigid buffer. Particle rigids are particles that try to keep their relative positions. They are a bit commpressible similar to softbodies.
+\brief Creates and populates a particle rigid buffer. Particle rigids are particles that try to keep their relative positions. They are a bit commpressible similar to softbodies.
 
 \param[in] desc The particle buffer descriptor
 \param[in] rigidDesc The rigid descriptor
 \param[in] cudaContextManager A cuda context manager
-\return A fully populated user particle rigid buffer ready to use
+\return A fully populated particle rigid buffer ready to use
 */
-PxUserParticleRigidBuffer*				PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::PxParticleBufferDesc& desc, const ExtGpu::PxParticleRigidDesc& rigidDesc,
+PxParticleRigidBuffer*					PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::PxParticleBufferDesc& desc, const ExtGpu::PxParticleRigidDesc& rigidDesc,
 											PxCudaContextManager* cudaContextManager);
 
 } // namespace ExtGpu

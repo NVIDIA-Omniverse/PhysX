@@ -56,7 +56,7 @@ static PxScene*						gScene				= NULL;
 static PxMaterial*					gMaterial			= NULL;
 static PxPvd*						gPvd				= NULL;
 static PxPBDParticleSystem*			gParticleSystem		= NULL;
-static PxUserParticleClothBuffer*	gUserClothBuffer	= NULL;
+static PxParticleClothBuffer*	gUserClothBuffer	= NULL;
 static bool							gIsRunning			= true;
 
 
@@ -239,8 +239,8 @@ static void initInflatable(PxArray<PxVec3>& verts, PxArray<PxU32>& indices, cons
 		phases[v] = particlePhase;
 	}
 
-	PxParticleVolumeBuffers* volumeBuffers = PxCreateParticleVolumeBuffers(1, numTriangles, cudaContextManager); //Volumes are optional. They are used to accelerate scene queries, e. g. to support picking.
-	PxParticleClothBuffers* clothBuffers = PxCreateParticleClothBuffers(1, numTriangles, numSprings, numParticles, cudaContextManager);
+	PxParticleVolumeBufferHelper* volumeBuffers = PxCreateParticleVolumeBufferHelper(1, numTriangles, cudaContextManager); //Volumes are optional. They are used to accelerate scene queries, e. g. to support picking.
+	PxParticleClothBufferHelper* clothBuffers = PxCreateParticleClothBufferHelper(1, numTriangles, numSprings, numParticles, cudaContextManager);
 
 	clothBuffers->addCloth(0.0f, cooker->getMeshVolume(), pressure, triangles, numTriangles, springs.begin(), numSprings, positionInvMass, numParticles);
 	volumeBuffers->addVolume(0, numParticles, triangles, numTriangles);
@@ -258,7 +258,7 @@ static void initInflatable(PxArray<PxVec3>& verts, PxArray<PxU32>& indices, cons
 
 	PxParticleClothPreProcessor* clothPreProcessor = PxCreateParticleClothPreProcessor(cudaContextManager);
 
-	PxParticleClothOutput output;
+	PxPartitionedParticleCloth output;
 	const PxParticleClothDesc& clothDesc = clothBuffers->getParticleClothDesc();
 	clothPreProcessor->partitionSprings(clothDesc, output);
 	clothPreProcessor->release();
@@ -275,7 +275,7 @@ PxPBDParticleSystem* getParticleSystem()
 	return gParticleSystem;
 }
 
-PxUserParticleClothBuffer* getUserClothBuffer()
+PxParticleClothBuffer* getUserClothBuffer()
 {
 	return gUserClothBuffer;
 }

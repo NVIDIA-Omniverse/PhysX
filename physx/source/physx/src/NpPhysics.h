@@ -217,10 +217,10 @@ public:
 	virtual		PxU32				getNbBVHs() const;
 	virtual		PxU32				getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
 
-	virtual		PxUserParticleBuffer*			createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContexManager);
-	virtual		PxUserParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContexManager);
-	virtual		PxUserParticleClothBuffer*		createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContexManager);
-	virtual		PxUserParticleRigidBuffer*		createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContexManager);
+	virtual		PxParticleBuffer*			createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContexManager);
+	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContexManager);
+	virtual		PxParticleClothBuffer*		createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContexManager);
+	virtual		PxParticleRigidBuffer*		createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContexManager);
 
 #if PX_SUPPORT_GPU_PHYSX
 	void							registerPhysXIndicatorGpuClient();

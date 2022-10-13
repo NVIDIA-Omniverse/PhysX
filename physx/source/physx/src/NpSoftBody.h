@@ -99,10 +99,10 @@ namespace physx
 		PX_FORCE_INLINE	Sc::SoftBodyCore&		getCore()			{ return mCore; }
 		static PX_FORCE_INLINE size_t			getCoreOffset()		{ return PX_OFFSET_OF_RT(NpSoftBody, mCore); }
 
-		virtual		void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
-		virtual		void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
+		virtual		void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
+		virtual		void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
 
-		virtual		PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric);
+		virtual		PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric);
 		virtual		void				removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle);
 
 		virtual		void				addRigidFilter(PxRigidActor* actor, PxU32 vertId);

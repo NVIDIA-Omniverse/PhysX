@@ -66,14 +66,14 @@ namespace physx
 
 			void initializeLLCoreData(PxU32 maxParticles, PxU32 maxNeighborhood);	
 
-			void addParticleBuffer(PxUserParticleBuffer* particleBuffer);
-			void removeParticleBuffer(PxUserParticleBuffer* particleBuffer);
-			void addParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer);
-			void removeParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer);
-			void addParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer);
-			void removeParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer);
-			void addParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer);
-			void removeParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer);
+			void addParticleBuffer(PxParticleBuffer* particleBuffer);
+			void removeParticleBuffer(PxParticleBuffer* particleBuffer);
+			void addParticleClothBuffer(PxParticleClothBuffer* clothBuffer);
+			void removeParticleClothBuffer(PxParticleClothBuffer* clothBuffer);
+			void addParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer);
+			void removeParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer);
+			void addParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer);
+			void removeParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer);
 
 
 			void setPeriodicBoundary(const PxVec3& boundary) { mLLCore.periodicBoundary = boundary; }

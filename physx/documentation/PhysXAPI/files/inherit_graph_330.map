@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structPxParticleBufferFlag.html" title="Identifies dirty particle buffers that need to be updated in the particle system. ..." alt="" coords="5,5,145,32"/>
+<area shape="rect" id="node1" href="$classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ..." alt="" coords="5,56,120,83"/>
+<area shape="rect" id="node2" href="$classPxParticleAndDiffuseBuffer.html" title="A particle buffer used to simulate diffuse particles. " alt="" coords="168,5,345,32"/>
+<area shape="rect" id="node3" href="$classPxParticleClothBuffer.html" title="A particle buffer used to simulate particle cloth. " alt="" coords="184,56,329,83"/>
+<area shape="rect" id="node4" href="$classPxParticleRigidBuffer.html" title="A particle buffer used to simulate rigid bodies using shape matching with particles. " alt="" coords="185,107,329,133"/>
 </map>

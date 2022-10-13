@@ -31,12 +31,17 @@
 /** \addtogroup physics
 @{ */
 
+#include "foundation/PxSimpleTypes.h"
+#include "foundation/PxVec3.h"
+
 #include "PxParticleSystem.h"
+#include "PxParticlePhase.h"
 
 #if !PX_DOXYGEN
 namespace physx
 {
 #endif
+
 	/**
 		Common material properties for particles.
 		Accessed by either integration or particle-rigid collisions
@@ -67,112 +72,109 @@ namespace physx
 {
 #endif
 
-	class PxNeighborhoodIterator
+class PxNeighborhoodIterator
+{
+	const PxU32* PX_RESTRICT mCollisionIndex;
+	PxU32 mMaxParticles;
+public:
+	PX_CUDA_CALLABLE PxNeighborhoodIterator(const PxU32* PX_RESTRICT collisionIndex, const PxU32 maxParticles) :
+		mCollisionIndex(collisionIndex), mMaxParticles(maxParticles)
 	{
-		const PxU32* PX_RESTRICT mCollisionIndex;
-		PxU32 mMaxParticles;
-	public:
-		PX_CUDA_CALLABLE PxNeighborhoodIterator(const PxU32* PX_RESTRICT collisionIndex, const PxU32 maxParticles) :
-			mCollisionIndex(collisionIndex), mMaxParticles(maxParticles)
-		{
-		}
+	}
 
-		PX_CUDA_CALLABLE PxU32 getNextIndex()
-		{
-			PxU32 result = *mCollisionIndex;
-			mCollisionIndex += mMaxParticles;
-			return result;
-		}
-
-		PX_INLINE PxNeighborhoodIterator(const PxNeighborhoodIterator& params)
-		{
-			mCollisionIndex = params.mCollisionIndex;
-			mMaxParticles = params.mMaxParticles;
-		}
-
-		PX_INLINE void operator = (const PxNeighborhoodIterator& params)
-		{
-			mCollisionIndex = params.mCollisionIndex;
-			mMaxParticles = params.mMaxParticles;
-		}
-	};
-
-	struct PxGpuParticleData
+	PX_CUDA_CALLABLE PxU32 getNextIndex()
 	{
-		PxVec3	mPeriod;
+		PxU32 result = *mCollisionIndex;
+		mCollisionIndex += mMaxParticles;
+		return result;
+	}
 
-		PxU32	mGridSizeX;
-		PxU32	mGridSizeY;
-		PxU32	mGridSizeZ;
-
-		PxReal	mParticleContactDistance;
-		PxReal	mParticleContactDistanceInv;
-		PxReal	mParticleContactDistanceSq;
-
-		PxU32	mNumParticles;
-		PxU32	mMaxParticles;
-		PxU32	mMaxNeighborhood;
-		PxU32	mMaxDiffuseParticles;
-		PxU32	mNumParticleBuffers;
-	};
-
-	class PxGpuParticleSystem
+	PX_INLINE PxNeighborhoodIterator(const PxNeighborhoodIterator& params)
 	{
-	public:
-		PX_FORCE_INLINE PxU32 getNumCells() { return mCommonData.mGridSizeX * mCommonData.mGridSizeY * mCommonData.mGridSizeZ; }
-		/*
-			** Unsorted particle state buffers **
-		*/
-		//GPU pointer to unsorted particle positions
-		float4* mUnsortedPositions_InvMass;
-		//GPU pointer to unsorted particle velocities
-		float4*	mUnsortedVelocities;
-		//GPU pointer to unsorted particle phase array
-		PxU32*	mUnsortedPhaseArray;
+		mCollisionIndex = params.mCollisionIndex;
+		mMaxParticles = params.mMaxParticles;
+	}
+
+	PX_INLINE void operator = (const PxNeighborhoodIterator& params)
+	{
+		mCollisionIndex = params.mCollisionIndex;
+		mMaxParticles = params.mMaxParticles;
+	}
+};
+
+struct PxGpuParticleData
+{
+	PxVec3	mPeriod;
+
+	PxU32	mGridSizeX;
+	PxU32	mGridSizeY;
+	PxU32	mGridSizeZ;
+
+	PxReal	mParticleContactDistance;
+	PxReal	mParticleContactDistanceInv;
+	PxReal	mParticleContactDistanceSq;
+
+	PxU32	mNumParticles;
+	PxU32	mMaxParticles;
+	PxU32	mMaxNeighborhood;
+	PxU32	mMaxDiffuseParticles;
+	PxU32	mNumParticleBuffers;
+};
+
+class PxGpuParticleSystem
+{
+public:
+	PX_FORCE_INLINE PxU32 getNumCells() { return mCommonData.mGridSizeX * mCommonData.mGridSizeY * mCommonData.mGridSizeZ; }
+	/*
+		** Unsorted particle state buffers **
+	*/
+	//GPU pointer to unsorted particle positions
+	float4* mUnsortedPositions_InvMass;
+	//GPU pointer to unsorted particle velocities
+	float4*	mUnsortedVelocities;
+	//GPU pointer to unsorted particle phase array
+	PxU32*	mUnsortedPhaseArray;
 
 
-		/*
-			** Sorted particle state buffers. Sorted by hash table **
-		*/
-		//GPU pointer to sorted particle positions
-		float4* mSortedPositions_InvMass;
-		//GPU pointer to sorted particle velocities
-		float4* mSortedVelocities;
-		//GPU pointer to sorted particle phase array
-		PxU32*	mSortedPhaseArray;
+	/*
+		** Sorted particle state buffers. Sorted by hash table **
+	*/
+	//GPU pointer to sorted particle positions
+	float4* mSortedPositions_InvMass;
+	//GPU pointer to sorted particle velocities
+	float4* mSortedVelocities;
+	//GPU pointer to sorted particle phase array
+	PxU32*	mSortedPhaseArray;
 
 
-		/*
-			** Mappings to/from sorted particle states**
-		*/
+	/*
+		** Mappings to/from sorted particle states**
+	*/
 
-		//GPU pointer to the mapping from unsortedParticle ID to sorted particle ID
-		PxU32* mUnsortedToSortedMapping;
-		//GPU pointer to the mapping from sorted particle ID to unsorted particle ID
-		PxU32* mSortedToUnsortedMapping;
+	//GPU pointer to the mapping from unsortedParticle ID to sorted particle ID
+	PxU32* mUnsortedToSortedMapping;
+	//GPU pointer to the mapping from sorted particle ID to unsorted particle ID
+	PxU32* mSortedToUnsortedMapping;
 
-		/*
-			** Neighborhood information**
-		*/
+	/*
+		** Neighborhood information**
+	*/
 
-		//Per-particle neighborhood count
-		PxU32*	mParticleSelfCollisionCount;
-		//Set of sorted particle indices per neighbor
-		PxU32*	mCollisionIndex;
+	//Per-particle neighborhood count
+	PxU32*	mParticleSelfCollisionCount;
+	//Set of sorted particle indices per neighbor
+	PxU32*	mCollisionIndex;
 
-		PxsParticleMaterialData*		mParticleMaterials;
+	PxsParticleMaterialData*		mParticleMaterials;
 
-		PxGpuParticleData mCommonData;
+	PxGpuParticleData mCommonData;
 
 
-		PX_CUDA_CALLABLE PxNeighborhoodIterator getIterator(const PxU32 particleId) const
-		{
-			return PxNeighborhoodIterator(mCollisionIndex + particleId, mCommonData.mMaxParticles);
-		}
-
-	};
-
-	
+	PX_CUDA_CALLABLE PxNeighborhoodIterator getIterator(const PxU32 particleId) const
+	{
+		return PxNeighborhoodIterator(mCollisionIndex + particleId, mCommonData.mMaxParticles);
+	}
+};
 
 #if !PX_DOXYGEN
 } // namespace physx

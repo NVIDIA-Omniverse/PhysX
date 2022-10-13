@@ -50,7 +50,7 @@ namespace physx
 	class PxTetrahedronMesh;
 	class PxSoftBodyAuxData;
 	class PxFEMCloth;
-	class PxUserParticleBuffer;
+	class PxParticleBuffer;
 
 	/**
 	\brief The maximum tetrahedron index supported in the model.
@@ -398,21 +398,21 @@ namespace physx
 		\brief Creates a collision filter between a particle and a tetrahedron in the soft body's collision mesh.
 
 		\param[in] particlesystem The particle system used for the collision filter
-		\param[in] buffer The PxUserParticleBuffer to which the particle belongs to.
+		\param[in] buffer The PxParticleBuffer to which the particle belongs to.
 		\param[in] particleId The particle whose collisions with the tetrahedron in the soft body are filtered.
 		\param[in] tetId The tetradedron in the soft body that is filtered. If tetId is PX_MAX_TETID, this particle will filter against all tetrahedra in this soft body
 		*/
-		virtual		void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
+		virtual		void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
 		
 		/**
 		\brief Removes a collision filter between a particle and a tetrahedron in the soft body's collision mesh.
 
 		\param[in] particlesystem The particle system used for the collision filter
-		\param[in] buffer The PxUserParticleBuffer to which the particle belongs to.
+		\param[in] buffer The PxParticleBuffer to which the particle belongs to.
 		\param[in] particleId The particle whose collisions with the tetrahedron in the soft body are filtered.
 		\param[in] tetId The tetrahedron in the soft body is filtered.
 		*/
-		virtual		void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
+		virtual		void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
 		
 		/**
 		\brief Creates an attachment between a particle and a soft body.
@@ -420,13 +420,13 @@ namespace physx
 		The soft body keeps track of these attachments but the particle system does not.
 
 		\param[in] particlesystem The particle system used for the attachment
-		\param[in] buffer The PxUserParticleBuffer to which the particle belongs to.
+		\param[in] buffer The PxParticleBuffer to which the particle belongs to.
 		\param[in] particleId The particle that is attached to a tetrahedron in the soft body's collision mesh.
 		\param[in] tetId The tetrahedron in the soft body's collision mesh to attach the particle to.
 		\param[in] barycentric The barycentric coordinates of the particle attachment position with respect to the tetrahedron specified with tetId.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
-		virtual		PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric) = 0;
+		virtual		PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric) = 0;
 		
 		
 		/**

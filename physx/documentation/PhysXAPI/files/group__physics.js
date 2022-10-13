@@ -1019,32 +1019,28 @@ var group__physics =
       [ "numParticles", "structPxParticleVolume.html#afabd5155556861861c50ff2e9223c5b0", null ],
       [ "particleIndicesOffset", "structPxParticleVolume.html#ac0e16cad31ea210c3e2f3d4660c71ce0", null ]
     ] ],
-    [ "PxUserParticleBuffer", "classPxUserParticleBuffer.html", [
-      [ "~PxUserParticleBuffer", "classPxUserParticleBuffer.html#aa9e09974c74ce61430cdff9dcc92962c", null ],
-      [ "PxUserParticleBuffer", "classPxUserParticleBuffer.html#a1603a5f016b7168a996ede3823e0195f", null ],
-      [ "getFlatListStartIndex", "classPxUserParticleBuffer.html#a6ae6b3912463556149fc284afc5d5083", null ],
-      [ "getMaxParticles", "classPxUserParticleBuffer.html#a6224d6ac8882d8a9d685cde8bdf70235", null ],
-      [ "getMaxParticleVolumes", "classPxUserParticleBuffer.html#a26a5f3ef084c05d5c6c2e5e20f26606e", null ],
-      [ "getNbActiveParticles", "classPxUserParticleBuffer.html#a8b45d5dc8cf03dafcb19d61d5099fc67", null ],
-      [ "getNbParticleVolumes", "classPxUserParticleBuffer.html#a880b338e3cc9584ee68cb7b572dbc59e", null ],
-      [ "getParticleVolumes", "classPxUserParticleBuffer.html#ac1915c6122b0c5eb22b8cd776b010ad1", null ],
-      [ "getPhase", "classPxUserParticleBuffer.html#a4c23aa4e15acd4084cd5003e1a19578f", null ],
-      [ "getPositionInvMasses", "classPxUserParticleBuffer.html#ac8703ec378cac2288f8750eb7d49bb7b", null ],
-      [ "getVelocities", "classPxUserParticleBuffer.html#a2effeaf2c04c22c32289f0cdb812e528", null ],
-      [ "onParticleSystemDestroy", "classPxUserParticleBuffer.html#a6f69c02a16d47bbd607e875b946ec4a6", null ],
-      [ "raiseFlags", "classPxUserParticleBuffer.html#af7a3cc563cf67f32e20cd919f527ad4c", null ],
-      [ "release", "classPxUserParticleBuffer.html#a1d5c98f349b8b61b36a9b5b02f2690e2", null ],
-      [ "setInternalData", "classPxUserParticleBuffer.html#abe668cb8af3e975c1fda0e5326839921", null ],
-      [ "setNbActiveParticles", "classPxUserParticleBuffer.html#a0e0da778cc0ba3b5d2b59fa4ddd7cf3c", null ],
-      [ "setNbParticleVolumes", "classPxUserParticleBuffer.html#a4c388fef48414643e6008d0f91635163", null ],
-      [ "setParticleVolumes", "classPxUserParticleBuffer.html#a024e39d6671b96c04f1aa95c91c67dfb", null ],
-      [ "setPhase", "classPxUserParticleBuffer.html#aeaf0c52111f71d7c390855b23037daec", null ],
-      [ "setPositionInvMasses", "classPxUserParticleBuffer.html#a073884971f9b82aba03b9adc4d4deaa8", null ],
-      [ "setRigidAttachments", "classPxUserParticleBuffer.html#a127edc47f89b4f4e51dee8f6169b07c2", null ],
-      [ "setRigidFilters", "classPxUserParticleBuffer.html#a87d6e9f9bce51e4a14e374cb86f5134f", null ],
-      [ "setVelocities", "classPxUserParticleBuffer.html#a9afa7089d0e6b4c7a80697e385d5b423", null ],
-      [ "bufferIndex", "classPxUserParticleBuffer.html#a4c7375397dadcbe3a8cd0c95032fbb84", null ],
-      [ "bufferUniqueId", "classPxUserParticleBuffer.html#ac6d7f7ec4ab4d527d1248399de416180", null ]
+    [ "PxParticleBuffer", "classPxParticleBuffer.html", [
+      [ "~PxParticleBuffer", "classPxParticleBuffer.html#a2050d6156f6f3184c1a73ca9a27a9d60", null ],
+      [ "PxParticleBuffer", "classPxParticleBuffer.html#aab41f093acf891f58484b768e04b29de", null ],
+      [ "getFlatListStartIndex", "classPxParticleBuffer.html#a3860edc57500574bb32e084cc6de0170", null ],
+      [ "getMaxParticles", "classPxParticleBuffer.html#aad04ba4216d35be64ab866a0d88355c5", null ],
+      [ "getMaxParticleVolumes", "classPxParticleBuffer.html#a10e85e4bdb5025b61213ef58f9c8c1da", null ],
+      [ "getNbActiveParticles", "classPxParticleBuffer.html#a70c9259af415e0575dfbe3d1bbbe3fa9", null ],
+      [ "getNbParticleVolumes", "classPxParticleBuffer.html#ac2cd698a1bc5b0f7afc4ab1e3d97aad4", null ],
+      [ "getParticleVolumes", "classPxParticleBuffer.html#a833089c02de4d46a26c3da97c966f8f5", null ],
+      [ "getPhases", "classPxParticleBuffer.html#a57a5788b1e2d0b57f22e8db685d4a523", null ],
+      [ "getPositionInvMasses", "classPxParticleBuffer.html#ac3f169d913db71b6a22748c8fb98c802", null ],
+      [ "getVelocities", "classPxParticleBuffer.html#afb9f45f9db3a39befd49b0ba7ed91061", null ],
+      [ "onParticleSystemDestroy", "classPxParticleBuffer.html#ad201b911d34014ccbddca5437e0ae93a", null ],
+      [ "raiseFlags", "classPxParticleBuffer.html#a4d41be31677838590e6bb4989c7b2637", null ],
+      [ "release", "classPxParticleBuffer.html#acfc70ac64f6cd173dccfd4b432dc9b26", null ],
+      [ "setInternalData", "classPxParticleBuffer.html#a12ab6b38ecf13b4518fb5108ea61bb66", null ],
+      [ "setNbActiveParticles", "classPxParticleBuffer.html#a0308cc27fafc35823dfe6b47d0ae8b4f", null ],
+      [ "setNbParticleVolumes", "classPxParticleBuffer.html#abd2328404d4ba7094fe9dd7ace0a421f", null ],
+      [ "setRigidAttachments", "classPxParticleBuffer.html#a8da5aebbccd79eeb1b119cbeb698c0fb", null ],
+      [ "setRigidFilters", "classPxParticleBuffer.html#a832b3cdc2fad0005eb84a5fc19df7ca9", null ],
+      [ "bufferIndex", "classPxParticleBuffer.html#ab6c50b08cd02e12342a6de678fd2f2ed", null ],
+      [ "bufferUniqueId", "classPxParticleBuffer.html#a7031415ca4bfe62ee55ecd8421e975c2", null ]
     ] ],
     [ "PxDiffuseParticleParams", "classPxDiffuseParticleParams.html", [
       [ "PxDiffuseParticleParams", "classPxDiffuseParticleParams.html#ad583fb2ec00c6dc92d0ec31e6b61ac8e", null ],
@@ -1060,15 +1056,15 @@ var group__physics =
       [ "threshold", "classPxDiffuseParticleParams.html#a8ba526ef8415efd663aec0ca5676cbda", null ],
       [ "useAccurateVelocity", "classPxDiffuseParticleParams.html#ad4d23e09d52d4e9496c3b6df1fe9384e", null ]
     ] ],
-    [ "PxUserParticleAndDiffuseBuffer", "classPxUserParticleAndDiffuseBuffer.html", [
-      [ "~PxUserParticleAndDiffuseBuffer", "classPxUserParticleAndDiffuseBuffer.html#aca8949ef0ee4a6df656f38595ae1ab99", null ],
-      [ "PxUserParticleAndDiffuseBuffer", "classPxUserParticleAndDiffuseBuffer.html#a83a052b536e8c474caa456bd1ac6b0a8", null ],
-      [ "getDiffuseParticleParams", "classPxUserParticleAndDiffuseBuffer.html#a1bae75739be4c0bcbf499a4e802dc984", null ],
-      [ "getDiffusePositionLifeTime", "classPxUserParticleAndDiffuseBuffer.html#a2d845128f4810f63b3910fb823eba9b2", null ],
-      [ "getMaxDiffuseParticles", "classPxUserParticleAndDiffuseBuffer.html#a7682f37ed6f7db8d2b0514d1cc8f29f4", null ],
-      [ "getNbActiveDiffuseParticles", "classPxUserParticleAndDiffuseBuffer.html#a908748f0b7d70dc7ffbc9a97345b0699", null ],
-      [ "setDiffuseParticleParams", "classPxUserParticleAndDiffuseBuffer.html#aeeb8735ce9d1072560f26abda8840b86", null ],
-      [ "setMaxActiveDiffuseParticles", "classPxUserParticleAndDiffuseBuffer.html#a908bda8c1e4dc2f499ce0d1a535a2931", null ]
+    [ "PxParticleAndDiffuseBuffer", "classPxParticleAndDiffuseBuffer.html", [
+      [ "~PxParticleAndDiffuseBuffer", "classPxParticleAndDiffuseBuffer.html#aedfb9f28e6a274cf7093955bd2955e8b", null ],
+      [ "PxParticleAndDiffuseBuffer", "classPxParticleAndDiffuseBuffer.html#a1384418817f2b3b3b2e26c0f8ea3d9e7", null ],
+      [ "getDiffuseParticleParams", "classPxParticleAndDiffuseBuffer.html#ae66e84ae4026bf2b56e8ded77acc55bf", null ],
+      [ "getDiffusePositionLifeTime", "classPxParticleAndDiffuseBuffer.html#a817e74e6af7ace9eb51eee8b30c304bf", null ],
+      [ "getMaxDiffuseParticles", "classPxParticleAndDiffuseBuffer.html#ade4ea22860622702e1e7df8da5de0d40", null ],
+      [ "getNbActiveDiffuseParticles", "classPxParticleAndDiffuseBuffer.html#af1a372b0614591b902541d0b9caf58b1", null ],
+      [ "setDiffuseParticleParams", "classPxParticleAndDiffuseBuffer.html#a4776d20ed69b70048cd2e2cf5eb9eb99", null ],
+      [ "setMaxActiveDiffuseParticles", "classPxParticleAndDiffuseBuffer.html#a7b02da71025e879973729f97f6e5a43e", null ]
     ] ],
     [ "PxParticleCloth", "structPxParticleCloth.html", [
       [ "operator<", "structPxParticleCloth.html#acdacce8a7bcdb27181fc5e75baaa36f8", null ],
@@ -1095,57 +1091,49 @@ var group__physics =
       [ "springs", "structPxParticleClothDesc.html#ac2d2439674e7a7919fab6f8edd4a39d9", null ],
       [ "triangles", "structPxParticleClothDesc.html#ad7fa1886c5caced6a5bc82e953e3cf1b", null ]
     ] ],
-    [ "PxParticleClothOutput", "structPxParticleClothOutput.html", [
-      [ "PxParticleClothOutput", "structPxParticleClothOutput.html#a4df2a204e78e1e4960fdb9df9b988e23", null ],
-      [ "~PxParticleClothOutput", "structPxParticleClothOutput.html#aaa0a17e028d54f654e6059ddb035edc9", null ],
-      [ "allocateBuffers", "structPxParticleClothOutput.html#a951e920ff7ea5aad59371c7f8c3e61b1", null ],
-      [ "accumulatedCopiesPerParticles", "structPxParticleClothOutput.html#a960d2fe82144c365a40fa6aa2c54b745", null ],
-      [ "accumulatedSpringsPerPartitions", "structPxParticleClothOutput.html#a5bdfad39c1374022225be1b7ffd5e5a9", null ],
-      [ "cloths", "structPxParticleClothOutput.html#a53444f3452d98e548a6e9d6a6de4923a", null ],
-      [ "maxSpringsPerPartition", "structPxParticleClothOutput.html#a774efb9c26e96486c34fd6b08b047864", null ],
-      [ "mCudaManager", "structPxParticleClothOutput.html#ad025be976b5b0a54a1e5288ebaf89fa6", null ],
-      [ "nbCloths", "structPxParticleClothOutput.html#a9cf515bfd35e68fd8e176c2f1aac0b51", null ],
-      [ "nbPartitions", "structPxParticleClothOutput.html#a9120a7fe4564096bff439024aee5b5de", null ],
-      [ "nbSprings", "structPxParticleClothOutput.html#a0d01776cae55517a5b97a74b908f2313", null ],
-      [ "orderedSprings", "structPxParticleClothOutput.html#a1470cd24cf672a4ac34c63a36fbb7a7f", null ],
-      [ "remapOutput", "structPxParticleClothOutput.html#ac86897dafb689574a77ddb2109ac5e2b", null ],
-      [ "remapOutputSize", "structPxParticleClothOutput.html#a26668841e8ff969975663bcef8dd1691", null ],
-      [ "sortedClothStartIndices", "structPxParticleClothOutput.html#ac7dca1719b02415354371783bb66f062", null ]
+    [ "PxPartitionedParticleCloth", "structPxPartitionedParticleCloth.html", [
+      [ "PxPartitionedParticleCloth", "structPxPartitionedParticleCloth.html#ad4fd2ed0a9705326e0aacbec442cbc59", null ],
+      [ "~PxPartitionedParticleCloth", "structPxPartitionedParticleCloth.html#a5a6ce90528032e49609ee354150972ab", null ],
+      [ "allocateBuffers", "structPxPartitionedParticleCloth.html#a6bf8aad3420f7dda63935302c0d39fba", null ],
+      [ "accumulatedCopiesPerParticles", "structPxPartitionedParticleCloth.html#ad6c0956bc2d5788f4563d56468b12c30", null ],
+      [ "accumulatedSpringsPerPartitions", "structPxPartitionedParticleCloth.html#a0627b15c7ccd8025229671724a1ddce3", null ],
+      [ "cloths", "structPxPartitionedParticleCloth.html#a626ac670450d7b8d76b4abf17c021b70", null ],
+      [ "maxSpringsPerPartition", "structPxPartitionedParticleCloth.html#a7279d9ac213f2996d64613b0c2786f84", null ],
+      [ "mCudaManager", "structPxPartitionedParticleCloth.html#a862925dcfdbcd65f6dec972d572a9ac2", null ],
+      [ "nbCloths", "structPxPartitionedParticleCloth.html#a335b5e8db1a7ba2aaea3211f60ab4382", null ],
+      [ "nbPartitions", "structPxPartitionedParticleCloth.html#a0164164d463910c7e492902036cadc4a", null ],
+      [ "nbSprings", "structPxPartitionedParticleCloth.html#a798aa3757ccd75924daf5036576dbdde", null ],
+      [ "orderedSprings", "structPxPartitionedParticleCloth.html#acf9cabafbba175b23f4622c4727e54ba", null ],
+      [ "remapOutput", "structPxPartitionedParticleCloth.html#a2eea5fa21ab68e1a59c03240d8c5512a", null ],
+      [ "remapOutputSize", "structPxPartitionedParticleCloth.html#ae094403e0d0d95cbe4afc803b2eba898", null ],
+      [ "sortedClothStartIndices", "structPxPartitionedParticleCloth.html#a4de4a3e7bbd5106f752a825e9e3e9352", null ]
     ] ],
-    [ "PxUserParticleClothBuffer", "classPxUserParticleClothBuffer.html", [
-      [ "~PxUserParticleClothBuffer", "classPxUserParticleClothBuffer.html#ab81737a9872c1466cc0f14f9ec2a809a", null ],
-      [ "PxUserParticleClothBuffer", "classPxUserParticleClothBuffer.html#ac72a3975ab6e1c3025ffd62f92ba873d", null ],
-      [ "getNbSprings", "classPxUserParticleClothBuffer.html#a3b76acded4d4be94d82cd1be0f29dc21", null ],
-      [ "getNbTriangles", "classPxUserParticleClothBuffer.html#ab6ff939873d4cd2511b56ad2293ca43d", null ],
-      [ "getRestPositions", "classPxUserParticleClothBuffer.html#a6e6fc54933a9865dceae75bddce16d4d", null ],
-      [ "getSprings", "classPxUserParticleClothBuffer.html#afe0735070f30262ef68cd19b0edd6ebd", null ],
-      [ "getTriangles", "classPxUserParticleClothBuffer.html#aa2d26b726d17ddf01bc4eb63dedeef84", null ],
-      [ "setCloths", "classPxUserParticleClothBuffer.html#a5b15c033b836bfeb6394ed2e2e4d1e5f", null ],
-      [ "setNbTriangles", "classPxUserParticleClothBuffer.html#a4838706ff8020360c343b89112f10a98", null ],
-      [ "setRestPositions", "classPxUserParticleClothBuffer.html#ac0523e628802849eae679349abce4edf", null ],
-      [ "setTriangles", "classPxUserParticleClothBuffer.html#a0d76ef2f3e2831ef6fb4ab944e6f0247", null ]
+    [ "PxParticleClothBuffer", "classPxParticleClothBuffer.html", [
+      [ "~PxParticleClothBuffer", "classPxParticleClothBuffer.html#a291d2636222d6c712bf4c8fe5d49368d", null ],
+      [ "PxParticleClothBuffer", "classPxParticleClothBuffer.html#afdbde105d64a2a3dcb4187cd5bd393d3", null ],
+      [ "getNbSprings", "classPxParticleClothBuffer.html#aa6488ba60d6a8068376b5df1b48aeb3d", null ],
+      [ "getNbTriangles", "classPxParticleClothBuffer.html#a268a9af619bbcf0b157f72ba77f9da98", null ],
+      [ "getRestPositions", "classPxParticleClothBuffer.html#a5d094e90cd333f670cd83fc0aa9de759", null ],
+      [ "getSprings", "classPxParticleClothBuffer.html#a65b3e3736a131d4f079c919f4d10a27f", null ],
+      [ "getTriangles", "classPxParticleClothBuffer.html#acdf0ccca3b2363718b46b3a0f06d702e", null ],
+      [ "setCloths", "classPxParticleClothBuffer.html#a13a2e549c7faefe9b7d18dedfa713685", null ],
+      [ "setNbTriangles", "classPxParticleClothBuffer.html#a46f11d5faaa3b94dfc16b419f0784724", null ]
     ] ],
-    [ "PxUserParticleRigidBuffer", "classPxUserParticleRigidBuffer.html", [
-      [ "~PxUserParticleRigidBuffer", "classPxUserParticleRigidBuffer.html#ad7ae9f96347b1be48cf6620308d55cfc", null ],
-      [ "PxUserParticleRigidBuffer", "classPxUserParticleRigidBuffer.html#a2f61b69d18976b724d6415fb2cb7654a", null ],
-      [ "getNbRigids", "classPxUserParticleRigidBuffer.html#af32602caa22096978f5338ee7e0dd0ce", null ],
-      [ "getRigidCoefficients", "classPxUserParticleRigidBuffer.html#a3784e370f3c17e2b07fb58f59ed70dcc", null ],
-      [ "getRigidLocalNormals", "classPxUserParticleRigidBuffer.html#a71a49ea30ee3ab48c1ccd5de72d0e477", null ],
-      [ "getRigidLocalPositions", "classPxUserParticleRigidBuffer.html#a558fa54e5be029ec420f27fccf9e6713", null ],
-      [ "getRigidOffsets", "classPxUserParticleRigidBuffer.html#a193fb0ec0f7c2a213ec9136b940d55d3", null ],
-      [ "getRigidRotations", "classPxUserParticleRigidBuffer.html#a1809fbc132c55b0f2db524798ed5663e", null ],
-      [ "getRigidTranslations", "classPxUserParticleRigidBuffer.html#ad6c6dd304db4e498bd4d513246ac31b6", null ],
-      [ "setNbRigids", "classPxUserParticleRigidBuffer.html#ab93d182a3cdf99da3dceb1822e80b816", null ],
-      [ "setRigidCoefficients", "classPxUserParticleRigidBuffer.html#a34936b2ab346af45bae3f32583947b35", null ],
-      [ "setRigidLocalNormals", "classPxUserParticleRigidBuffer.html#a16f72d7b7173712ff5f18bc013fa5dfd", null ],
-      [ "setRigidLocalPositions", "classPxUserParticleRigidBuffer.html#a1dec3afa907d3b6893b02cf54ef2f224", null ],
-      [ "setRigidOffsets", "classPxUserParticleRigidBuffer.html#a58980017e7d1b3c9ef43ab4af18f03ab", null ],
-      [ "setRigidRotations", "classPxUserParticleRigidBuffer.html#a6edf53c1035b8dbdbc65be1f51e9c7fe", null ],
-      [ "setRigidTranslations", "classPxUserParticleRigidBuffer.html#a075b678a44f68b3a6198b2007f824d7c", null ]
+    [ "PxParticleRigidBuffer", "classPxParticleRigidBuffer.html", [
+      [ "~PxParticleRigidBuffer", "classPxParticleRigidBuffer.html#a681ac22cb5239b0e59c123bbc09b27b3", null ],
+      [ "PxParticleRigidBuffer", "classPxParticleRigidBuffer.html#a75c0787b01230595e8e640c181c6cc6a", null ],
+      [ "getNbRigids", "classPxParticleRigidBuffer.html#a25a138b605731e82bf45c6bdf4861eef", null ],
+      [ "getRigidCoefficients", "classPxParticleRigidBuffer.html#ae8fed5d9eccd698da9f84f98c475848c", null ],
+      [ "getRigidLocalNormals", "classPxParticleRigidBuffer.html#a0ab24b48a23165cfe2730c6917f63fc0", null ],
+      [ "getRigidLocalPositions", "classPxParticleRigidBuffer.html#a7f70a8824020ed9e096cd967cc50ed66", null ],
+      [ "getRigidOffsets", "classPxParticleRigidBuffer.html#aea28d3f2bfe2e3785eaa139d622b6499", null ],
+      [ "getRigidRotations", "classPxParticleRigidBuffer.html#a5409451b910a238d8502245d9221bcb5", null ],
+      [ "getRigidTranslations", "classPxParticleRigidBuffer.html#a4fb093bc8de8453eff180b395b8b931c", null ],
+      [ "setNbRigids", "classPxParticleRigidBuffer.html#a893821cfbb2061db6989cf32d5150915", null ]
     ] ],
     [ "PxParticleClothPreProcessor", "classPxParticleClothPreProcessor.html", [
       [ "~PxParticleClothPreProcessor", "classPxParticleClothPreProcessor.html#afb832a2c299e388f7c67d6b537f2f312", null ],
-      [ "partitionSprings", "classPxParticleClothPreProcessor.html#ae32960fcfbfdde5be50c2aba07f77f06", null ],
+      [ "partitionSprings", "classPxParticleClothPreProcessor.html#a257824eb21cc13c4a933c2f90a048370", null ],
       [ "release", "classPxParticleClothPreProcessor.html#a94c7489c05c77cf851e9a649befd2603", null ]
     ] ],
     [ "PxsParticleMaterialData", "structPxsParticleMaterialData.html", [
@@ -1171,6 +1159,24 @@ var group__physics =
       [ "setFriction", "classPxParticleMaterial.html#a3c1ed442ae330c7d657dc1fc6195e180", null ],
       [ "setGravityScale", "classPxParticleMaterial.html#a1ae0dc821d38f5439a327a9548c97212", null ]
     ] ],
+    [ "PxParticlePhaseFlag", "structPxParticlePhaseFlag.html", [
+      [ "Enum", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66", [
+        [ "eParticlePhaseGroupMask", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a866a95b7abd212ea49bc0e5d70c458c7", null ],
+        [ "eParticlePhaseFlagsMask", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a57b599102a97f2cfc0970050299a9498", null ],
+        [ "eParticlePhaseSelfCollide", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a868285e7379756d32f98d95d23a88ad5", null ],
+        [ "eParticlePhaseSelfCollideFilter", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a30609ed8dc8847e15d764c430925aad9", null ],
+        [ "eParticlePhaseFluid", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a309ba3c1e1f1a17f4b07b4ce8d0f48ff", null ]
+      ] ]
+    ] ],
+    [ "PxParticlePhase", "classPxParticlePhase.html", [
+      [ "~PxParticlePhase", "classPxParticlePhase.html#a1b07fe1627c7602b6dbc81cffa6e7b30", null ],
+      [ "getFlags", "classPxParticlePhase.html#a8f6cc04b11a154cd3bf0809686d85797", null ],
+      [ "getGroupId", "classPxParticlePhase.html#a6f2fc219b6889d2b52484f2f76b42185", null ],
+      [ "getMaterial", "classPxParticlePhase.html#a8690ca9a68848ec50b7826c6fca5c076", null ],
+      [ "setFlag", "classPxParticlePhase.html#add6faeb295c31b87acf395179dd651b5", null ],
+      [ "setFlags", "classPxParticlePhase.html#a99b7fdef7093cde29ff33494b5fffd67", null ],
+      [ "setMaterial", "classPxParticlePhase.html#a95365272ffeeac72b4f57f8ef2ce67d4", null ]
+    ] ],
     [ "PxParticleSolverType", "structPxParticleSolverType.html", [
       [ "Enum", "structPxParticleSolverType.html#a343f8511949480ec8dca071672f05421", [
         [ "ePBD", "structPxParticleSolverType.html#a343f8511949480ec8dca071672f05421a8d558d488e82e472e4bec148fb035c6d", null ],
@@ -1190,15 +1196,6 @@ var group__physics =
       [ "onBegin", "classPxParticleSystemCallback.html#abdf993b090a5da59eb583b25b82f31c9", null ],
       [ "onPostSolve", "classPxParticleSystemCallback.html#a16ff52f5c6585a648418372537192ffd", null ]
     ] ],
-    [ "PxParticlePhaseFlag", "structPxParticlePhaseFlag.html", [
-      [ "Enum", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66", [
-        [ "eParticlePhaseGroupMask", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a866a95b7abd212ea49bc0e5d70c458c7", null ],
-        [ "eParticlePhaseFlagsMask", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a57b599102a97f2cfc0970050299a9498", null ],
-        [ "eParticlePhaseSelfCollide", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a868285e7379756d32f98d95d23a88ad5", null ],
-        [ "eParticlePhaseSelfCollideFilter", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a30609ed8dc8847e15d764c430925aad9", null ],
-        [ "eParticlePhaseFluid", "structPxParticlePhaseFlag.html#ac3cc01ecbfdfbd5f46e65f5311e28a66a309ba3c1e1f1a17f4b07b4ce8d0f48ff", null ]
-      ] ]
-    ] ],
     [ "PxParticleFlag", "structPxParticleFlag.html", [
       [ "Enum", "structPxParticleFlag.html#a289f88fd89d3d5224d74e5a72c7eee28", [
         [ "eDISABLE_SELF_COLLISION", "structPxParticleFlag.html#a289f88fd89d3d5224d74e5a72c7eee28a54b97885da2d846a50ce7f5832808ab6", null ],
@@ -1206,21 +1203,12 @@ var group__physics =
         [ "eFULL_DIFFUSE_ADVECTION", "structPxParticleFlag.html#a289f88fd89d3d5224d74e5a72c7eee28a90f7d1bca3f1288da1ea755cf32e3052", null ]
       ] ]
     ] ],
-    [ "PxParticlePhase", "classPxParticlePhase.html", [
-      [ "~PxParticlePhase", "classPxParticlePhase.html#a1b07fe1627c7602b6dbc81cffa6e7b30", null ],
-      [ "getFlags", "classPxParticlePhase.html#a8f6cc04b11a154cd3bf0809686d85797", null ],
-      [ "getGroupId", "classPxParticlePhase.html#a6f2fc219b6889d2b52484f2f76b42185", null ],
-      [ "getMaterial", "classPxParticlePhase.html#a8690ca9a68848ec50b7826c6fca5c076", null ],
-      [ "setFlag", "classPxParticlePhase.html#add6faeb295c31b87acf395179dd651b5", null ],
-      [ "setFlags", "classPxParticlePhase.html#a99b7fdef7093cde29ff33494b5fffd67", null ],
-      [ "setMaterial", "classPxParticlePhase.html#a95365272ffeeac72b4f57f8ef2ce67d4", null ]
-    ] ],
     [ "PxParticleSystem", "classPxParticleSystem.html", [
       [ "~PxParticleSystem", "classPxParticleSystem.html#a718ff09317aacfd68666e0f1104b2c2d", null ],
       [ "PxParticleSystem", "classPxParticleSystem.html#afd52afc4a8cff4049dc6a7db67c6d75f", null ],
       [ "PxParticleSystem", "classPxParticleSystem.html#a0ccb6322e44707a5384912d0a0fd6003", null ],
-      [ "addParticleAndDiffuseBuffer", "classPxParticleSystem.html#a5a5dd51f1d408326809c3173db4f1e44", null ],
-      [ "addParticleBuffer", "classPxParticleSystem.html#a484fbb4efdab086f9cac374f045be4e5", null ],
+      [ "addParticleAndDiffuseBuffer", "classPxParticleSystem.html#a568d56db66b6a734cd5ce2c8c16569e0", null ],
+      [ "addParticleBuffer", "classPxParticleSystem.html#a7fae6da3b5c6d03654c5e37d2a34a659", null ],
       [ "addRigidAttachment", "classPxParticleSystem.html#a4ec1feb3bff8dd3bc3b98e3e6980ed2a", null ],
       [ "enableCCD", "classPxParticleSystem.html#a551929714045660d666d9ebf9050faea", null ],
       [ "getContactOffset", "classPxParticleSystem.html#a68777bf661027a915c8cf3a2475969f8", null ],
@@ -1237,8 +1225,8 @@ var group__physics =
       [ "getSimulationFilterData", "classPxParticleSystem.html#a19a15f69266cf34ab2cd534c882a3dee", null ],
       [ "getSolidRestOffset", "classPxParticleSystem.html#a67cf9dac62283e817d798f7f973d5b3d", null ],
       [ "getSolverIterationCounts", "classPxParticleSystem.html#a6fcc064927b3ba16ed87e61bfd3b321e", null ],
-      [ "removeParticleAndDiffuseBuffer", "classPxParticleSystem.html#a564034f57d41b3271aaa4bebcdfa6d85", null ],
-      [ "removeParticleBuffer", "classPxParticleSystem.html#af2bc744037c8a11b99ffde239f8b0729", null ],
+      [ "removeParticleAndDiffuseBuffer", "classPxParticleSystem.html#a3391d5dd985eb985799f444d731296ef", null ],
+      [ "removeParticleBuffer", "classPxParticleSystem.html#ad1dd58955d2635af9cda4510bbe6b547", null ],
       [ "removeRigidAttachment", "classPxParticleSystem.html#a82078eb2455b6691d288ff12905772e4", null ],
       [ "setContactOffset", "classPxParticleSystem.html#a2eb6600eb1c28222fd137e69fb4803ec", null ],
       [ "setMaxDepenetrationVelocity", "classPxParticleSystem.html#ad882f95cf5e9e6290490e58e02ed4a84", null ],
@@ -1252,25 +1240,6 @@ var group__physics =
       [ "setSimulationFilterData", "classPxParticleSystem.html#a695e42c061843a540aa277f85d09bd34", null ],
       [ "setSolidRestOffset", "classPxParticleSystem.html#ac528dc53054b95361c177e00c60d877d", null ],
       [ "setSolverIterationCounts", "classPxParticleSystem.html#a2b3568868503b6351118aaf67b84c17b", null ]
-    ] ],
-    [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html", [
-      [ "~PxPBDParticleSystem", "classPxPBDParticleSystem.html#ae84ae9367633383c3016e912c40eb662", null ],
-      [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html#a7ba914e685feda4fb3a12109ef0e785b", null ],
-      [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html#ac386df0921f905c481f2c4cbc14fef35", null ],
-      [ "addParticleClothBuffer", "classPxPBDParticleSystem.html#a100b2eb3e2e811de5bb0a4b6b22e1c41", null ],
-      [ "addParticleRigidBuffer", "classPxPBDParticleSystem.html#ab3a5c493517913be5153f95270e9819b", null ],
-      [ "createPhase", "classPxPBDParticleSystem.html#a1bfc3b3c8cd0447d5b3d4bb2b9ae4b3b", null ],
-      [ "getFluidBoundaryDensityScale", "classPxPBDParticleSystem.html#a9ccbddd165fbeb7f80b3d4c84d3f8e5b", null ],
-      [ "getFluidRestOffset", "classPxPBDParticleSystem.html#ad1dc45656419b18d51863f5ae4d2fec7", null ],
-      [ "getWind", "classPxPBDParticleSystem.html#a5a94c2b09a447f201e5f387526747954", null ],
-      [ "removeParticleClothBuffer", "classPxPBDParticleSystem.html#af5ee60b857fb2c8e7c2e795a5cb0c9da", null ],
-      [ "removeParticleRigidBuffer", "classPxPBDParticleSystem.html#ab390a96e85574f42bd5685cd0ef6258a", null ],
-      [ "setFluidBoundaryDensityScale", "classPxPBDParticleSystem.html#abb213276f893353cc88ccf9bb5f0ca69", null ],
-      [ "setFluidRestOffset", "classPxPBDParticleSystem.html#a7eb12c46c3b72b85f26ca5ca0bde0b18", null ],
-      [ "setGridSizeX", "classPxPBDParticleSystem.html#a75a0b227afa62dc083b7e1f4790c1ff9", null ],
-      [ "setGridSizeY", "classPxPBDParticleSystem.html#a9c2cb3834b7ab5df8a28121a5d96add0", null ],
-      [ "setGridSizeZ", "classPxPBDParticleSystem.html#a78e553f0d2c5c9f1c42eecb31c7e5e4c", null ],
-      [ "setWind", "classPxPBDParticleSystem.html#a25dd3d94c74c8bd96e02589ae091a103", null ]
     ] ],
     [ "PxPBDMaterial", "classPxPBDMaterial.html", [
       [ "PxPBDMaterial", "classPxPBDMaterial.html#aba50e4885b58932eb6f5a4ef8dcd2cd8", null ],
@@ -1304,6 +1273,25 @@ var group__physics =
       [ "getConcreteTypeName", "classPxCustomMaterial.html#aca50a5839580cd02b33a700a54e3647b", null ],
       [ "isKindOf", "classPxCustomMaterial.html#a330a8b6aaa34f7582c3b0440387accb9", null ]
     ] ],
+    [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html", [
+      [ "~PxPBDParticleSystem", "classPxPBDParticleSystem.html#ae84ae9367633383c3016e912c40eb662", null ],
+      [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html#a7ba914e685feda4fb3a12109ef0e785b", null ],
+      [ "PxPBDParticleSystem", "classPxPBDParticleSystem.html#ac386df0921f905c481f2c4cbc14fef35", null ],
+      [ "addParticleClothBuffer", "classPxPBDParticleSystem.html#af0d6834197c2147ac1b8df8b062807d6", null ],
+      [ "addParticleRigidBuffer", "classPxPBDParticleSystem.html#a0cbe031e6da0129df775032ec8caaaec", null ],
+      [ "createPhase", "classPxPBDParticleSystem.html#a1bfc3b3c8cd0447d5b3d4bb2b9ae4b3b", null ],
+      [ "getFluidBoundaryDensityScale", "classPxPBDParticleSystem.html#a9ccbddd165fbeb7f80b3d4c84d3f8e5b", null ],
+      [ "getFluidRestOffset", "classPxPBDParticleSystem.html#ad1dc45656419b18d51863f5ae4d2fec7", null ],
+      [ "getWind", "classPxPBDParticleSystem.html#a5a94c2b09a447f201e5f387526747954", null ],
+      [ "removeParticleClothBuffer", "classPxPBDParticleSystem.html#a78e35358f761e015069178c2697ce712", null ],
+      [ "removeParticleRigidBuffer", "classPxPBDParticleSystem.html#a15d867956e55d92b325a6f63e576e287", null ],
+      [ "setFluidBoundaryDensityScale", "classPxPBDParticleSystem.html#abb213276f893353cc88ccf9bb5f0ca69", null ],
+      [ "setFluidRestOffset", "classPxPBDParticleSystem.html#a7eb12c46c3b72b85f26ca5ca0bde0b18", null ],
+      [ "setGridSizeX", "classPxPBDParticleSystem.html#a75a0b227afa62dc083b7e1f4790c1ff9", null ],
+      [ "setGridSizeY", "classPxPBDParticleSystem.html#a9c2cb3834b7ab5df8a28121a5d96add0", null ],
+      [ "setGridSizeZ", "classPxPBDParticleSystem.html#a78e553f0d2c5c9f1c42eecb31c7e5e4c", null ],
+      [ "setWind", "classPxPBDParticleSystem.html#a25dd3d94c74c8bd96e02589ae091a103", null ]
+    ] ],
     [ "PxPhysics", "classPxPhysics.html", [
       [ "~PxPhysics", "classPxPhysics.html#a5d2cea62dd20865d8c13b8d07bd6fb60", null ],
       [ "createAggregate", "classPxPhysics.html#a3e4f229f2b269c7c09696e7e80013af8", null ],
@@ -1317,10 +1305,10 @@ var group__physics =
       [ "createFEMSoftBodyMaterial", "classPxPhysics.html#ad3b8078510ef31d9fcb321e970da0ee2", null ],
       [ "createHeightField", "classPxPhysics.html#a1806546c22306e8d44b7ff7719fbcc99", null ],
       [ "createMaterial", "classPxPhysics.html#a35c1965ae47b24e119c6a2d8ce25477e", null ],
-      [ "createParticleAndDiffuseBuffer", "classPxPhysics.html#aa9a6f4f38041e9a811c9ff316c7efbdf", null ],
-      [ "createParticleBuffer", "classPxPhysics.html#af68e55010f699df2c282ccb641cc5f70", null ],
-      [ "createParticleClothBuffer", "classPxPhysics.html#afbb9d696a9032fdb5a21130bad57dbf4", null ],
-      [ "createParticleRigidBuffer", "classPxPhysics.html#a73a6be38a97305f05b6ed23d05b9be56", null ],
+      [ "createParticleAndDiffuseBuffer", "classPxPhysics.html#ad4b8c788276fbf44ed7d122fbcbc34a1", null ],
+      [ "createParticleBuffer", "classPxPhysics.html#a9463f30a5e71eff6c0774899c019bef0", null ],
+      [ "createParticleClothBuffer", "classPxPhysics.html#ab0b24d8360cd6fe8ec509cab4b654597", null ],
+      [ "createParticleRigidBuffer", "classPxPhysics.html#a5df47a8fae8366447d47197ad63fb6a4", null ],
       [ "createPBDMaterial", "classPxPhysics.html#a98d7ca0b8d34aa56c4a77a2041a10111", null ],
       [ "createPBDParticleSystem", "classPxPhysics.html#af805a15eefe0ef5236aa1fcf340535a9", null ],
       [ "createPruningStructure", "classPxPhysics.html#a5c62ebf74c105e7ecf3eaba6949a42fa", null ],
@@ -2113,8 +2101,8 @@ var group__physics =
       [ "~PxSoftBody", "classPxSoftBody.html#a58604fd5ee8a1faa33f26f3d65274ab4", null ],
       [ "PxSoftBody", "classPxSoftBody.html#ae647450793991c7dbd8eecc25c44ef0f", null ],
       [ "PxSoftBody", "classPxSoftBody.html#a7132e0100a6a246ed1a490d54455511f", null ],
-      [ "addParticleAttachment", "classPxSoftBody.html#a96113202efee6d65dd28201a4d9a74f1", null ],
-      [ "addParticleFilter", "classPxSoftBody.html#a930e0678f1d98df6c11a987720552743", null ],
+      [ "addParticleAttachment", "classPxSoftBody.html#a6642f021a6183f1a186507ea121c099d", null ],
+      [ "addParticleFilter", "classPxSoftBody.html#ad9dc27b112525604e1834e24289408a2", null ],
       [ "addRigidAttachment", "classPxSoftBody.html#a5f2c784d3079a0f2316141c55c2ddd35", null ],
       [ "addRigidFilter", "classPxSoftBody.html#a095cdd9f23631f1cd40aeb1863096e27", null ],
       [ "addSoftBodyAttachment", "classPxSoftBody.html#a9823e81b8a0bdff3fe9518abeca0f55e", null ],
@@ -2147,7 +2135,7 @@ var group__physics =
       [ "readData", "classPxSoftBody.html#a08cf419e841151d0ce25ae99b08761d7", null ],
       [ "release", "classPxSoftBody.html#a9f125fff89033d1f57c4fc62eb341257", null ],
       [ "removeParticleAttachment", "classPxSoftBody.html#ae362061ccf427420adad2670cddecfa0", null ],
-      [ "removeParticleFilter", "classPxSoftBody.html#aff81deff4280d6fc3dc3076e0d76224d", null ],
+      [ "removeParticleFilter", "classPxSoftBody.html#a4513c65348d23ac90b5c8f4876887d1f", null ],
       [ "removeRigidAttachment", "classPxSoftBody.html#a7dc6f89028db451c6318317362bd8357", null ],
       [ "removeRigidFilter", "classPxSoftBody.html#a83d084b9be28d36e2b60ed31c6ff7a01", null ],
       [ "removeSoftBodyAttachment", "classPxSoftBody.html#aecbad2a586d0f0e89a665f12f0f443bd", null ],
@@ -2284,7 +2272,6 @@ var group__physics =
     [ "PX_MAX_TETID", "group__physics.html#gad493d6810dee9604135b76393eb7c501", null ],
     [ "PX_SIZE_OF", "group__physics.html#ga59c318a035d7a555f3e2188d757059bf", null ],
     [ "PX_STORE_METADATA", "group__physics.html#gaffbcca4cdc677e1e2fe5cf379146727e", null ],
-    [ "PX_USE_PARTICLE_SYSTEM_API", "group__physics.html#ga4bbe5f9e9d6c0dc6c9a030201bcc4bdd", null ],
     [ "PXC_CONTACT_NO_FACE_INDEX", "group__physics.html#gad7d63e592ac0d23d42e12e10572039fe", null ],
     [ "Px1DConstraintFlags", "group__physics.html#gaa03d6d79255886721c3e1a946b5a805f", null ],
     [ "PxActorCacheFlags", "group__physics.html#gae82234413be03824926beb1b638cbea5", null ],

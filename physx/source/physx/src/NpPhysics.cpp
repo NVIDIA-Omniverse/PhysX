@@ -1463,22 +1463,22 @@ PxU32 NpPhysics::getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PxUserParticleBuffer* NpPhysics::createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContexManager)
+PxParticleBuffer* NpPhysics::createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContexManager)
 {
 	return NpFactory::getInstance().createParticleBuffer(maxParticles, maxVolumes, cudaContexManager);
 }
 
-PxUserParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContexManager)
+PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContexManager)
 {
 	return NpFactory::getInstance().createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, cudaContexManager);
 }
 
-PxUserParticleClothBuffer* NpPhysics::createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContexManager)
+PxParticleClothBuffer* NpPhysics::createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContexManager)
 {
 	return NpFactory::getInstance().createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContexManager);
 }
 
-PxUserParticleRigidBuffer* NpPhysics::createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContexManager)
+PxParticleRigidBuffer* NpPhysics::createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContexManager)
 {
 	return NpFactory::getInstance().createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, cudaContexManager);
 }

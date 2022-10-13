@@ -70,6 +70,9 @@ typedef PX_DEPRECATED PxBVH PxBVHStructure;
 
 class PxGpuDispatcher;
 
+class PxParticleClothBuffer;
+class PxParticleRigidBuffer;
+
 /**
 \brief Abstract singleton factory class used for instancing objects in the Physics SDK.
 
@@ -707,11 +710,11 @@ public:
 	\param[in] maxParticles The max number of particles
 	\param[in] maxVolumes The max number of volumes
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
-	\return PxUserParticleBuffer instance
+	\return PxParticleBuffer instance
 
-	@see PxUserParticleBuffer
+	@see PxParticleBuffer
 	*/
-	virtual		PxUserParticleBuffer*			createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContextManager) = 0;
+	virtual		PxParticleBuffer*			createParticleBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, PxCudaContextManager* cudaContextManager) = 0;
 
 	/**
 	\brief Create diffuse buffer for fluid dynamic with diffuse particles
@@ -719,11 +722,11 @@ public:
 	\param[in] maxVolumes The max number of volumes
 	\param[in] maxDiffuseParticles The max number of diffuse particles
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
-	\return PxUserParticleAndDiffuseBuffer instance
+	\return PxParticleAndDiffuseBuffer instance
 
-	@see PxUserParticleAndDiffuseBuffer
+	@see PxParticleAndDiffuseBuffer
 	*/
-	virtual		PxUserParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager) = 0;
+	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager) = 0;
 
 	/**
 	\brief Create cloth buffer
@@ -733,11 +736,11 @@ public:
 	\param[in] maxNumTriangles The max number of triangles for aerodynamics
 	\param[in] maxNumSprings The max number of springs to connect particles
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
-	\return PxUserParticleClothBuffer instance
+	\return PxParticleClothBuffer instance
 
-	@see PxUserParticleClothBuffer
+	@see PxParticleClothBuffer
 	*/
-	virtual		PxUserParticleClothBuffer*		createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager) = 0;
+	virtual		PxParticleClothBuffer*		createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager) = 0;
 	
 	/**
 	\brief Create rigid buffer for shape matching rigid bodies
@@ -745,11 +748,11 @@ public:
 	\param[in] maxNumVolumes The max number of volumes
 	\param[in] maxNumRigids The max number of shape matching rigid bodies
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
-	\return PxUserParticleRigidBuffer instance
+	\return PxParticleRigidBuffer instance
 
-	@see PxUserParticleRigidBuffer
+	@see PxParticleRigidBuffer
 	*/
-	virtual		PxUserParticleRigidBuffer*		createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager) = 0;
+	virtual		PxParticleRigidBuffer*		createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager) = 0;
 
 	//@}
 	/** @name Materials

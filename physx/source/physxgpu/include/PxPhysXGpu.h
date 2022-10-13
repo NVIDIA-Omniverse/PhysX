@@ -35,7 +35,6 @@
 #include "common/PxPhysXCommonConfig.h"
 #include "PxSceneDesc.h"
 #include "PxBuffer.h"
-#include "PxParticleSystem.h"
 
 namespace physx
 {
@@ -52,6 +51,10 @@ class PxsHeapMemoryAllocatorManager;
 class PxsSimulationController;
 class PxsSimulationControllerCallback;
 class PxDelayLoadHook;
+class PxParticleBuffer;
+class PxParticleAndDiffuseBuffer;
+class PxParticleClothBuffer;
+class PxParticleRigidBuffer;
 
 struct PxvSimStats;
 
@@ -102,10 +105,10 @@ public:
 	virtual PxBuffer* createBuffer(PxU64 byteSize, PxBufferType::Enum bufferType, PxCudaContextManager* cudaContexManager, PxU64* memStat) = 0;
 	virtual	PxBuffer* createBuffer(PxU64 byteSyte, PxBufferType::Enum type, PxCudaContextManager* contextManager, PxU64* memStat, PxsHeapMemoryAllocatorManager* heapMemoryManager, void* stream) = 0;
 
-	virtual PxUserParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxUserParticleBuffer* buffer)) = 0;
-	virtual PxUserParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxUserParticleBuffer* buffer)) = 0;
-	virtual PxUserParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxUserParticleBuffer* buffer)) = 0;
-	virtual PxUserParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxUserParticleBuffer* buffer)) = 0;
+	virtual PxParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
+	virtual PxParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
+	virtual PxParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
+	virtual PxParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
 	
 	virtual void resizeBuffer(PxBuffer* buffer, PxU64 byteSize) = 0;
 

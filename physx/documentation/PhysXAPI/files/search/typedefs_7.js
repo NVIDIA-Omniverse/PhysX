@@ -83,7 +83,7 @@ var searchData=
   ['pxpairflags',['PxPairFlags',['../group__physics.html#gacacbeccf757e60dbf45089ef382681d9',1,'PxFiltering.h']]],
   ['pxparticlebufferflags',['PxParticleBufferFlags',['../PxParticleSystemFlag_8h.html#a40ee49464d092e80c734711ba65feb25',1,'PxParticleSystemFlag.h']]],
   ['pxparticleflags',['PxParticleFlags',['../group__physics.html#ga477a6cb9995a5ccd7992beae5e8cdf89',1,'PxParticleSystem.h']]],
-  ['pxparticlephaseflags',['PxParticlePhaseFlags',['../group__physics.html#ga777c7706ccaff3d193fdbce6c1d5d6f4',1,'PxParticleSystem.h']]],
+  ['pxparticlephaseflags',['PxParticlePhaseFlags',['../group__physics.html#ga777c7706ccaff3d193fdbce6c1d5d6f4',1,'PxParticlePhase.h']]],
   ['pxphysicsinsertioncallback',['PxPhysicsInsertionCallback',['../group__common.html#ga0923562adcabd0ddae10c7499757880f',1,'PxInsertionCallback.h']]],
   ['pxpinnedarray',['PxPinnedArray',['../PxPinnedArray_8h.html#ab8cb035f6ad68545052c61d3552fbd3b',1,'PxPinnedArray.h']]],
   ['pxprismaticjointflags',['PxPrismaticJointFlags',['../group__extensions.html#gaf683a32f0fc263a83be447fac2879dac',1,'PxPrismaticJoint.h']]],

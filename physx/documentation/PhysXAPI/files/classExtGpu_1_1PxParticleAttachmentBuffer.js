@@ -1,6 +1,6 @@
 var classExtGpu_1_1PxParticleAttachmentBuffer =
 [
-    [ "PxParticleAttachmentBuffer", "classExtGpu_1_1PxParticleAttachmentBuffer.html#ac5caa0efa42dbedb14ad3f8e4e6aad77", null ],
+    [ "PxParticleAttachmentBuffer", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a213f1c1793043f9ef29d4653d052cbb1", null ],
     [ "~PxParticleAttachmentBuffer", "classExtGpu_1_1PxParticleAttachmentBuffer.html#abed4125aadabc386365b69f95adcf613", null ],
     [ "addRigidAttachment", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a5fb42b82f6fc128d2953e89d88b6d6e7", null ],
     [ "addRigidFilter", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a7548d372f1911b06ba264496bbfe7fd4", null ],
@@ -17,7 +17,7 @@ var classExtGpu_1_1PxParticleAttachmentBuffer =
     [ "mNewReferencedBodies", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a4505657a5e1edc47b183f572d9611a68", null ],
     [ "mNumDeviceAttachments", "classExtGpu_1_1PxParticleAttachmentBuffer.html#afd1fcd9123b03485a919b6f3b09303cb", null ],
     [ "mNumDeviceFilters", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a6621f42a3e73ef208831c04ed31fa941", null ],
-    [ "mParticleBuffer", "classExtGpu_1_1PxParticleAttachmentBuffer.html#a1b122426106359ede4951bf993f064f7", null ],
+    [ "mParticleBuffer", "classExtGpu_1_1PxParticleAttachmentBuffer.html#ae022c30eaa056366e389fa7149a29902", null ],
     [ "mParticleSystem", "classExtGpu_1_1PxParticleAttachmentBuffer.html#abb9d07dbb2e4650d8e740ef6c7de596e", null ],
     [ "mReferencedBodies", "classExtGpu_1_1PxParticleAttachmentBuffer.html#af66c88c7dafb83825974b393280c92b0", null ]
 ];

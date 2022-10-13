@@ -38,7 +38,6 @@
 #include "../snippetcommon/SnippetPrint.h"
 #include "../snippetcommon/SnippetPVD.h"
 #include "../snippetutils/SnippetUtils.h"
-#include "PxParticleGpu.h"
 
 #include "gpuextensions/PxIsosurfaceExtraction.h"
 #include "gpuextensions/PxAnisotropy.h"
@@ -53,15 +52,15 @@ using namespace physx;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation = NULL;
-static PxPhysics*				gPhysics = NULL;
-static PxDefaultCpuDispatcher*	gDispatcher = NULL;
-static PxScene*					gScene = NULL;
-static PxMaterial*				gMaterial = NULL;
-static PxPvd*					gPvd = NULL;
-static PxPBDParticleSystem*		gParticleSystem = NULL;
-static PxUserParticleBuffer*	gUserParticleBuffer = NULL;
-static bool						gIsRunning = true;
+static PxFoundation*			gFoundation 		= NULL;
+static PxPhysics*				gPhysics 			= NULL;
+static PxDefaultCpuDispatcher*	gDispatcher 		= NULL;
+static PxScene*					gScene 				= NULL;
+static PxMaterial*				gMaterial 			= NULL;
+static PxPvd*					gPvd 				= NULL;
+static PxPBDParticleSystem*		gParticleSystem 	= NULL;
+static PxParticleBuffer*		gParticleBuffer 	= NULL;
+static bool						gIsRunning 			= true;
 
 
 PxRigidDynamic* movingWall;
@@ -311,8 +310,8 @@ static PxReal initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ
 	bufferDesc.velocities = velocity;
 	bufferDesc.phases = phase;
 
-	gUserParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleBuffer(bufferDesc, cudaContextManager);
-	gParticleSystem->addParticleBuffer(gUserParticleBuffer);
+	gParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleBuffer(bufferDesc, cudaContextManager);
+	gParticleSystem->addParticleBuffer(gParticleBuffer);
 
 	return particleSpacing;
 }
@@ -322,9 +321,9 @@ PxPBDParticleSystem* getParticleSystem()
 	return gParticleSystem;
 }
 
-PxUserParticleBuffer* getUserParticleBuffer()
+PxParticleBuffer* getParticleBuffer()
 {
-	return gUserParticleBuffer;
+	return gParticleBuffer;
 }
 
 void addKinematicBox(PxVec3 boxSize, PxVec3 boxCenter)

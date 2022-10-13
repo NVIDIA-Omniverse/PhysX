@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxTriangleMeshAnalysisResult.html" title="These flags indicate what kind of deficiencies a triangle mesh has and describe if the mesh is consid..." alt="" coords="5,5,208,32"/>
+<area shape="rect" id="node1" href="$classPxTriangle.html" title="Triangle class. " alt="" coords="5,5,88,32"/>
+<area shape="rect" id="node2" href="$classPxTrianglePadded.html" title="A padded version of PxTriangle, to safely load its data using SIMD. " alt="" coords="136,5,263,32"/>
 </map>

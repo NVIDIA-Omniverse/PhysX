@@ -101,9 +101,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a94c7489c05c77cf851e9a649befd2603"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxParticleClothPreProcessor.html#a94c7489c05c77cf851e9a649befd2603">release</a> ()=0</td></tr>
 <tr class="memdesc:a94c7489c05c77cf851e9a649befd2603"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release this object and deallocate all the memory.  <a href="#a94c7489c05c77cf851e9a649befd2603">More...</a><br /></td></tr>
 <tr class="separator:a94c7489c05c77cf851e9a649befd2603"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae32960fcfbfdde5be50c2aba07f77f06"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxParticleClothPreProcessor.html#ae32960fcfbfdde5be50c2aba07f77f06">partitionSprings</a> (const <a class="el" href="structPxParticleClothDesc.html">PxParticleClothDesc</a> &amp;clothDesc, <a class="el" href="structPxParticleClothOutput.html">PxParticleClothOutput</a> &amp;output)=0</td></tr>
-<tr class="memdesc:ae32960fcfbfdde5be50c2aba07f77f06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Partition the spring constraints for particle cloth simulation.  <a href="#ae32960fcfbfdde5be50c2aba07f77f06">More...</a><br /></td></tr>
-<tr class="separator:ae32960fcfbfdde5be50c2aba07f77f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a257824eb21cc13c4a933c2f90a048370"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxParticleClothPreProcessor.html#a257824eb21cc13c4a933c2f90a048370">partitionSprings</a> (const <a class="el" href="structPxParticleClothDesc.html">PxParticleClothDesc</a> &amp;clothDesc, <a class="el" href="structPxPartitionedParticleCloth.html">PxPartitionedParticleCloth</a> &amp;output)=0</td></tr>
+<tr class="memdesc:a257824eb21cc13c4a933c2f90a048370"><td class="mdescLeft">&#160;</td><td class="mdescRight">Partition the spring constraints for particle cloth simulation.  <a href="#a257824eb21cc13c4a933c2f90a048370">More...</a><br /></td></tr>
+<tr class="separator:a257824eb21cc13c4a933c2f90a048370"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -112,8 +112,8 @@ Protected Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Preprocessor to prepare particle cloths for simulation. </p>
-<p>Preprocessing is done by calling <a class="el" href="classPxParticleClothPreProcessor.html#ae32960fcfbfdde5be50c2aba07f77f06" title="Partition the spring constraints for particle cloth simulation. ">partitionSprings()</a> on an instance of this class. This will allocate the memory in the output object, partition the springs and fill all the members of the ouput object. The output can then be passed without any further modifications to <a class="el" href="classPxUserParticleClothBuffer.html#a5b15c033b836bfeb6394ed2e2e4d1e5f" title="Set cloths for this user particle buffer. ">PxUserParticleClothBuffer::setCloths()</a>.</p>
-<p>See PxCreateParticleClothPreprocessor, <a class="el" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxUserParticleClothBuffer. Used an input for the cloth preprocessing. ">PxParticleClothDesc</a>, <a class="el" href="structPxParticleClothOutput.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo...">PxParticleClothOutput</a> </p>
+<p>Preprocessing is done by calling <a class="el" href="classPxParticleClothPreProcessor.html#a257824eb21cc13c4a933c2f90a048370" title="Partition the spring constraints for particle cloth simulation. ">partitionSprings()</a> on an instance of this class. This will allocate the memory in the output object, partition the springs and fill all the members of the ouput object. The output can then be passed without any further modifications to <a class="el" href="classPxParticleClothBuffer.html#a13a2e549c7faefe9b7d18dedfa713685" title="Set cloths for this particle buffer. ">PxParticleClothBuffer::setCloths()</a>.</p>
+<p>See PxCreateParticleClothPreprocessor, <a class="el" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxParticleClothBuffer. Used an input for the cloth preprocessing. ">PxParticleClothDesc</a>, <a class="el" href="structPxPartitionedParticleCloth.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo...">PxPartitionedParticleCloth</a> </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="afb832a2c299e388f7c67d6b537f2f312"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afb832a2c299e388f7c67d6b537f2f312">&#9670;&nbsp;</a></span>~PxParticleClothPreProcessor()</h2>
@@ -141,8 +141,8 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae32960fcfbfdde5be50c2aba07f77f06"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae32960fcfbfdde5be50c2aba07f77f06">&#9670;&nbsp;</a></span>partitionSprings()</h2>
+<a id="a257824eb21cc13c4a933c2f90a048370"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a257824eb21cc13c4a933c2f90a048370">&#9670;&nbsp;</a></span>partitionSprings()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -159,7 +159,7 @@ Protected Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structPxParticleClothOutput.html">PxParticleClothOutput</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structPxPartitionedParticleCloth.html">PxPartitionedParticleCloth</a> &amp;&#160;</td>
           <td class="paramname"><em>output</em>&#160;</td>
         </tr>
         <tr>
@@ -178,8 +178,8 @@ Protected Member Functions</h2></td></tr>
 <p>Partition the spring constraints for particle cloth simulation. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">clothDesc</td><td>Reference to a valid <a class="el" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxUserParticleClothBuffer. Used an input for the cloth preprocessing. ">PxParticleClothDesc</a>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">output</td><td>Reference to a <a class="el" href="structPxParticleClothOutput.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo...">PxParticleClothOutput</a> object. This is the output of the preprocessing and should be passed to a <a class="el" href="classPxUserParticleClothBuffer.html" title="A user particle buffer used to simulate particle cloth. ">PxUserParticleClothBuffer</a>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">clothDesc</td><td>Reference to a valid <a class="el" href="structPxParticleClothDesc.html" title="Structure to describe the set of particle cloths in the same PxParticleClothBuffer. Used an input for the cloth preprocessing. ">PxParticleClothDesc</a>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">output</td><td>Reference to a <a class="el" href="structPxPartitionedParticleCloth.html" title="Structure to describe the output of the particle cloth preprocessing. Used as an input to specify clo...">PxPartitionedParticleCloth</a> object. This is the output of the preprocessing and should be passed to a <a class="el" href="classPxParticleClothBuffer.html" title="A particle buffer used to simulate particle cloth. ">PxParticleClothBuffer</a>. </td></tr>
   </table>
   </dd>
 </dl>

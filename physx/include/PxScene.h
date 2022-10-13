@@ -52,12 +52,10 @@ namespace physx
 #endif
 
 class PxConstraint;
-class PxMaterial;
 class PxSimulationEventCallback;
 class PxPhysics;
 class PxAggregate;
 class PxRenderBuffer;
-class PxBaseMaterial;
 
 struct PxContactPairHeader;
 
@@ -1906,17 +1904,17 @@ class PxScene : public PxSceneSQSystem
 	virtual		PxgDynamicsMemoryConfig getGpuDynamicsConfig() const = 0;
 
 	/**
-	\brief Apply user-provided data to particle user buffers.
+	\brief Apply user-provided data to particle buffers.
 
-	This function should be used if the particle buffer flags are already on the device. Otherwise, use PxUserParticleBuffer::raiseFlags()
+	This function should be used if the particle buffer flags are already on the device. Otherwise, use PxParticleBuffer::raiseFlags()
 	from the CPU.
 
-	This assumes the data has been changed directly in the PxUserParticleBuffer.
+	This assumes the data has been changed directly in the PxParticleBuffer.
 
 	\param[in] indices User-provided index buffer that indexes into the BufferIndexPair and flags list.
-	\param[in] bufferIndexPair User-provided index pair buffer specifying the unique id and GPU particle system for each PxUserParticleBuffer. See PxGpuParticleBufferIndexPair.
+	\param[in] bufferIndexPair User-provided index pair buffer specifying the unique id and GPU particle system for each PxParticleBuffer. See PxGpuParticleBufferIndexPair.
 	\param[in] flags Flags to mark what data needs to be updated. See PxParticleBufferFlags. 
-	\param[in] nbUpdatedBuffers The number of user particle buffers to update.
+	\param[in] nbUpdatedBuffers The number of particle buffers to update.
 	\param[in] waitEvent User-provided event for the particle stream to wait for data.
 	\param[in] signalEvent User-provided event for the particle stream to signal when the data read from the user buffer has completed.
 	*/

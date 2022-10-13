@@ -485,21 +485,25 @@ var hierarchy =
     [ "PxPair< F, S >", "classPxPair.html", null ],
     [ "PxPairFilteringMode", "structPxPairFilteringMode.html", null ],
     [ "PxPairFlag", "structPxPairFlag.html", null ],
+    [ "PxParticleBuffer", "classPxParticleBuffer.html", [
+      [ "PxParticleAndDiffuseBuffer", "classPxParticleAndDiffuseBuffer.html", null ],
+      [ "PxParticleClothBuffer", "classPxParticleClothBuffer.html", null ],
+      [ "PxParticleRigidBuffer", "classPxParticleRigidBuffer.html", null ]
+    ] ],
     [ "ExtGpu::PxParticleBufferDesc", "structExtGpu_1_1PxParticleBufferDesc.html", [
       [ "ExtGpu::PxParticleAndDiffuseBufferDesc", "structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html", null ]
     ] ],
     [ "PxParticleBufferFlag", "structPxParticleBufferFlag.html", null ],
     [ "PxParticleCloth", "structPxParticleCloth.html", null ],
-    [ "ExtGpu::PxParticleClothBuffers", "classExtGpu_1_1PxParticleClothBuffers.html", null ],
+    [ "ExtGpu::PxParticleClothBufferHelper", "classExtGpu_1_1PxParticleClothBufferHelper.html", null ],
     [ "ExtGpu::PxParticleClothConstraint", "structExtGpu_1_1PxParticleClothConstraint.html", null ],
     [ "ExtGpu::PxParticleClothCooker", "classExtGpu_1_1PxParticleClothCooker.html", null ],
     [ "PxParticleClothDesc", "structPxParticleClothDesc.html", null ],
-    [ "PxParticleClothOutput", "structPxParticleClothOutput.html", null ],
     [ "PxParticleClothPreProcessor", "classPxParticleClothPreProcessor.html", null ],
     [ "PxParticleFlag", "structPxParticleFlag.html", null ],
     [ "PxParticlePhase", "classPxParticlePhase.html", null ],
     [ "PxParticlePhaseFlag", "structPxParticlePhaseFlag.html", null ],
-    [ "ExtGpu::PxParticleRigidBuffers", "classExtGpu_1_1PxParticleRigidBuffers.html", null ],
+    [ "ExtGpu::PxParticleRigidBufferHelper", "classExtGpu_1_1PxParticleRigidBufferHelper.html", null ],
     [ "ExtGpu::PxParticleRigidDesc", "structExtGpu_1_1PxParticleRigidDesc.html", null ],
     [ "PxParticleRigidFilterPair", "structPxParticleRigidFilterPair.html", [
       [ "PxParticleRigidAttachment", "structPxParticleRigidAttachment.html", null ]
@@ -507,8 +511,9 @@ var hierarchy =
     [ "PxParticleSolverType", "structPxParticleSolverType.html", null ],
     [ "PxParticleSystemCallback", "classPxParticleSystemCallback.html", null ],
     [ "PxParticleVolume", "structPxParticleVolume.html", null ],
-    [ "ExtGpu::PxParticleVolumeBuffers", "classExtGpu_1_1PxParticleVolumeBuffers.html", null ],
+    [ "ExtGpu::PxParticleVolumeBufferHelper", "classExtGpu_1_1PxParticleVolumeBufferHelper.html", null ],
     [ "ExtGpu::PxParticleVolumeMesh", "structExtGpu_1_1PxParticleVolumeMesh.html", null ],
+    [ "PxPartitionedParticleCloth", "structPxPartitionedParticleCloth.html", null ],
     [ "PxPhysics", "classPxPhysics.html", null ],
     [ "PxPlane", "classPxPlane.html", null ],
     [ "PxPrismaticJointFlag", "structPxPrismaticJointFlag.html", null ],
@@ -716,11 +721,6 @@ var hierarchy =
       [ "PxThreadT< Alloc >", "classPxThreadT.html", null ]
     ] ],
     [ "PxUserControllerHitReport", "classPxUserControllerHitReport.html", null ],
-    [ "PxUserParticleBuffer", "classPxUserParticleBuffer.html", [
-      [ "PxUserParticleAndDiffuseBuffer", "classPxUserParticleAndDiffuseBuffer.html", null ],
-      [ "PxUserParticleClothBuffer", "classPxUserParticleClothBuffer.html", null ],
-      [ "PxUserParticleRigidBuffer", "classPxUserParticleRigidBuffer.html", null ]
-    ] ],
     [ "PxVec2T< Type >", "classPxVec2T.html", null ],
     [ "PxVec3T< Type >", "classPxVec3T.html", null ],
     [ "PxVec3T< float >", "classPxVec3T.html", [
@@ -923,8 +923,8 @@ var hierarchy =
     [ "physx::aos::VecCrossV", "structphysx_1_1aos_1_1VecCrossV.html", null ],
     [ "aos::VecI16V", "structaos_1_1VecI16V.html", null ],
     [ "aos::VecI32V", "structaos_1_1VecI32V.html", null ],
-    [ "aos::VecShiftV", "structaos_1_1VecShiftV.html", null ],
     [ "physx::aos::VecShiftV", "structphysx_1_1aos_1_1VecShiftV.html", null ],
+    [ "aos::VecShiftV", "structaos_1_1VecShiftV.html", null ],
     [ "aos::VecU16V", "structaos_1_1VecU16V.html", null ],
     [ "aos::VecU32V", "structaos_1_1VecU32V.html", null ],
     [ "PxBitMapBase< PxAllocator >::XOR", "structPxBitMapBase_1_1XOR.html", null ],

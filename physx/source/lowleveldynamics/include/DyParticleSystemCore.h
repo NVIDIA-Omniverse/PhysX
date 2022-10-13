@@ -96,7 +96,7 @@ namespace physx
 		
 			PxArray<PxU16>			mPhaseGroupToMaterialHandle;
 
-			PX_FORCE_INLINE void addParticleBuffer(PxUserParticleBuffer* particleBuffer)
+			PX_FORCE_INLINE void addParticleBuffer(PxParticleBuffer* particleBuffer)
 			{
 				if (particleBuffer->bufferIndex == 0xffffffff)
 				{
@@ -111,7 +111,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void removeParticleBuffer(PxUserParticleBuffer* particleBuffer)
+			PX_FORCE_INLINE void removeParticleBuffer(PxParticleBuffer* particleBuffer)
 			{
 				const PxU32 index = particleBuffer->bufferIndex;
 
@@ -126,7 +126,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void addParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer) 
+			PX_FORCE_INLINE void addParticleClothBuffer(PxParticleClothBuffer* clothBuffer) 
 			{ 
 				if (clothBuffer->bufferIndex == 0xffffffff)
 				{
@@ -141,7 +141,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void removeParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer)
+			PX_FORCE_INLINE void removeParticleClothBuffer(PxParticleClothBuffer* clothBuffer)
 			{
 				const PxU32 index = clothBuffer->bufferIndex;
 
@@ -156,7 +156,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void addParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+			PX_FORCE_INLINE void addParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 			{
 				if (rigidBuffer->bufferIndex == 0xffffffff)
 				{
@@ -171,7 +171,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void removeParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+			PX_FORCE_INLINE void removeParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 			{
 				const PxU32 index = rigidBuffer->bufferIndex;
 
@@ -187,7 +187,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void addParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseParticleBuffer)
+			PX_FORCE_INLINE void addParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseParticleBuffer)
 			{
 				if (diffuseParticleBuffer->bufferIndex == 0xffffffff)
 				{
@@ -202,7 +202,7 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE void removeParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseParticleBuffer)
+			PX_FORCE_INLINE void removeParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseParticleBuffer)
 			{
 				const PxU32 index = diffuseParticleBuffer->bufferIndex;
 
@@ -220,10 +220,10 @@ namespace physx
 
 			PxU32 getNumUserBuffers() const { return mParticleBuffers.size() + mClothBuffers.size() + mRigidBuffers.size() + mParticleAndDiffuseBuffers.size(); }
 			//device
-			PxArray<PxUserParticleBuffer*>				mParticleBuffers;
-			PxArray<PxUserParticleClothBuffer*>			mClothBuffers;
-			PxArray<PxUserParticleRigidBuffer*>			mRigidBuffers;
-			PxArray<PxUserParticleAndDiffuseBuffer*>	mParticleAndDiffuseBuffers;
+			PxArray<PxParticleBuffer*>				mParticleBuffers;
+			PxArray<PxParticleClothBuffer*>			mClothBuffers;
+			PxArray<PxParticleRigidBuffer*>			mRigidBuffers;
+			PxArray<PxParticleAndDiffuseBuffer*>	mParticleAndDiffuseBuffers;
 
 			bool							mParticleBufferUpdate;
 			bool							mClothBufferUpdate;

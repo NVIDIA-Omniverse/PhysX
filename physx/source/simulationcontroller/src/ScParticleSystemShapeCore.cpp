@@ -116,42 +116,42 @@ ParticleSystemShapeCore::~ParticleSystemShapeCore()
 {
 }
 
-void ParticleSystemShapeCore::addParticleBuffer(PxUserParticleBuffer* particleBuffer)
+void ParticleSystemShapeCore::addParticleBuffer(PxParticleBuffer* particleBuffer)
 {
 	mLLCore.addParticleBuffer(particleBuffer);
 }
 
-void ParticleSystemShapeCore::removeParticleBuffer(PxUserParticleBuffer* particleBuffer)
+void ParticleSystemShapeCore::removeParticleBuffer(PxParticleBuffer* particleBuffer)
 {
 	mLLCore.removeParticleBuffer(particleBuffer);
 }
 
-void ParticleSystemShapeCore::addParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer)
+void ParticleSystemShapeCore::addParticleClothBuffer(PxParticleClothBuffer* clothBuffer)
 {
 	mLLCore.addParticleClothBuffer(clothBuffer);
 }
 
-void ParticleSystemShapeCore::removeParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer)
+void ParticleSystemShapeCore::removeParticleClothBuffer(PxParticleClothBuffer* clothBuffer)
 {
 	mLLCore.removeParticleClothBuffer(clothBuffer);
 }
 
-void ParticleSystemShapeCore::addParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+void ParticleSystemShapeCore::addParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 {
 	mLLCore.addParticleRigidBuffer(rigidBuffer);
 }
 
-void ParticleSystemShapeCore::removeParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer)
+void ParticleSystemShapeCore::removeParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer)
 {
 	mLLCore.removeParticleRigidBuffer(rigidBuffer);
 }
 
-void ParticleSystemShapeCore::addParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer)
+void ParticleSystemShapeCore::addParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer)
 {
 	mLLCore.addParticleAndDiffuseBuffer(diffuseBuffer);
 }
 
-void ParticleSystemShapeCore::removeParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer)
+void ParticleSystemShapeCore::removeParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer)
 {
 	mLLCore.removeParticleAndDiffuseBuffer(diffuseBuffer);
 }

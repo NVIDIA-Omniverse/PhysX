@@ -526,7 +526,7 @@ namespace physx
 		return mName;
 	}
 
-	void NpSoftBody::addParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
+	void NpSoftBody::addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpSoftBody::addParticleFilter: Illegal to call while simulation is running.");
@@ -538,7 +538,7 @@ namespace physx
 		mCore.addParticleFilter(&core, particleId, buffer ? buffer->bufferUniqueId : 0, tetId);
 	}
 
-	void NpSoftBody::removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
+	void NpSoftBody::removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpSoftBody::removeParticleFilter: Illegal to call while simulation is running.");
@@ -550,7 +550,7 @@ namespace physx
 		mCore.removeParticleFilter(&core, particleId, buffer ? buffer->bufferUniqueId : 0, tetId);
 	}
 
-	PxU32 NpSoftBody::addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxUserParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric)
+	PxU32 NpSoftBody::addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpSoftBody::addParticleAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);

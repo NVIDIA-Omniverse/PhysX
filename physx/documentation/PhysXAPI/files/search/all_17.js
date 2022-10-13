@@ -5,7 +5,7 @@ var searchData=
   ['waitforever',['waitForever',['../classPxSyncImpl.html#ae150f1ea7426adb5a01c00778cede629',1,'PxSyncImpl::waitForever()'],['../classPxSyncT.html#a13d8d24548d82241b28a389f91208aa3',1,'PxSyncT::waitForever()']]],
   ['waitforquit',['waitForQuit',['../classPxThreadImpl.html#a7ae2e6ad292b0d1e3764437efc464d5c',1,'PxThreadImpl::waitForQuit()'],['../classPxThreadT.html#a527a7d708a38c422383625e8c3cc4cab',1,'PxThreadT::waitForQuit()']]],
   ['wakecounterresetvalue',['wakeCounterResetValue',['../classPxSceneDesc.html#a79e2c9c06f711272a48d7f07451117b7',1,'PxSceneDesc']]],
-  ['wakeup',['wakeup',['../structPxVehicleConcurrentUpdateData.html#a279c8653c02f6ff3131082f4500d0bad',1,'PxVehicleConcurrentUpdateData::wakeup()'],['../classPxArticulationReducedCoordinate.html#a48f00a3365ed0140df7fc58b6a09a170',1,'PxArticulationReducedCoordinate::wakeUp()'],['../classPxRigidDynamic.html#a4f1b9e9f437d8b8f27a6e9c2d9ea22fd',1,'PxRigidDynamic::wakeUp()']]],
+  ['wakeup',['wakeUp',['../classPxArticulationReducedCoordinate.html#a48f00a3365ed0140df7fc58b6a09a170',1,'PxArticulationReducedCoordinate::wakeUp()'],['../classPxRigidDynamic.html#a4f1b9e9f437d8b8f27a6e9c2d9ea22fd',1,'PxRigidDynamic::wakeUp()'],['../structPxVehicleConcurrentUpdateData.html#a279c8653c02f6ff3131082f4500d0bad',1,'PxVehicleConcurrentUpdateData::wakeup()']]],
   ['wheel0',['wheel0',['../structPxVehicleAntiRollForceParams.html#a62b31bd5a379e12d282a83de945d1796',1,'PxVehicleAntiRollForceParams']]],
   ['wheel1',['wheel1',['../structPxVehicleAntiRollForceParams.html#a8b9882651dcf4255f1abba72f1b9059e',1,'PxVehicleAntiRollForceParams']]],
   ['wheelattachment',['wheelAttachment',['../structPxVehicleSuspensionParams.html#a13b371c452676da5b436ec5c9e171118',1,'PxVehicleSuspensionParams']]],

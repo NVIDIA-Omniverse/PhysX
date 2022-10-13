@@ -1,15 +1,5 @@
 var NAVTREEINDEX42 =
 {
-"structPxDebugLine.html":[2,1,12],
-"structPxDebugLine.html#a0b133bb95ca5efd511edaf9d1e2fca68":[2,1,12,4],
-"structPxDebugLine.html#a10269eccc2fe05978ff765aca850c2c4":[2,1,12,0],
-"structPxDebugLine.html#a32f832e125b4e64656707b86e4133ba7":[2,1,12,1],
-"structPxDebugLine.html#a4fb36a713850435e5fbfff8aa64399f5":[2,1,12,2],
-"structPxDebugLine.html#ab1b459f6b3ae5653c5577f2bb9dca994":[2,1,12,3],
-"structPxDebugPoint.html":[2,1,11],
-"structPxDebugPoint.html#a819caec76aaea19eb13d6eeda6390d32":[2,1,11,2],
-"structPxDebugPoint.html#af675d73fa342d67d973b532950401b62":[2,1,11,1],
-"structPxDebugPoint.html#afbafc4862a38a0db581d2382ead4296a":[2,1,11,0],
 "structPxDebugText.html":[2,1,14],
 "structPxDebugText.html#a3d263f21a8ed41bebda87ab9729f5df8":[2,1,14,0],
 "structPxDebugText.html#a5ca6de83a63fce8200feb44f0b403abe":[2,1,14,3],
@@ -249,5 +239,15 @@ var NAVTREEINDEX42 =
 "structPxGjkQueryExt_1_1ConvexMeshSupport.html#a63bf0784651c31cf551c8aaee0287166":[3,0,244,3,3],
 "structPxGjkQueryExt_1_1ConvexMeshSupport.html#a75123e34a1a086b8477f860e2d915371":[3,0,244,3,4],
 "structPxGjkQueryExt_1_1ConvexMeshSupport.html#a756901c126c68b89a78d49e4f74abe18":[3,0,244,3,5],
-"structPxGjkQueryExt_1_1ConvexMeshSupport.html#a8c898840fc5a6c4b9aa8055ade0892ce":[3,0,244,3,8]
+"structPxGjkQueryExt_1_1ConvexMeshSupport.html#a8c898840fc5a6c4b9aa8055ade0892ce":[3,0,244,3,8],
+"structPxGjkQueryExt_1_1ConvexMeshSupport.html#abac35cb9df1f1b6900512f96dfbced38":[3,0,244,3,7],
+"structPxGjkQueryExt_1_1ConvexMeshSupport.html#ae54c6f08230fbc5354ff9f6760801162":[3,0,244,3,2],
+"structPxGjkQueryExt_1_1SphereSupport.html":[3,0,244,4],
+"structPxGjkQueryExt_1_1SphereSupport.html#a009b71a7824afcf5d0b5a8ad003f27ab":[3,0,244,4,5],
+"structPxGjkQueryExt_1_1SphereSupport.html#a1f9c2f25a15897690c0269fd23a345ad":[3,0,244,4,1],
+"structPxGjkQueryExt_1_1SphereSupport.html#a44b21125d449d4c0b58be5302411466a":[3,0,244,4,0],
+"structPxGjkQueryExt_1_1SphereSupport.html#aa4cec0d0af28e304b3aabc3e9ac749d2":[3,0,244,4,3],
+"structPxGjkQueryExt_1_1SphereSupport.html#aa850d928e0306bf71a12e6a611459408":[3,0,244,4,2],
+"structPxGjkQueryExt_1_1SphereSupport.html#ae353f2a7bacabb45ddaaa05c6db8ab3d":[3,0,244,4,4],
+"structPxGjkQuery_1_1Support.html":[3,0,243,0]
 };

@@ -1,3 +1,14 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxRawAllocator.html" title="PxRawAllocator" alt="" coords="5,5,120,32"/>
+<area shape="rect" id="node1" href="$structPxQueryThreadContext.html" title="A per&#45;thread context passed to low&#45;level query functions. " alt="" coords="5,97,163,124"/>
+<area shape="rect" id="node2" href="$structPxHitCallback.html" title="This callback class facilitates reporting scene query hits (intersections) to the user..." alt="" coords="224,5,396,32"/>
+<area shape="rect" id="node4" href="$structPxHitCallback.html" title="PxHitCallback\&lt; PxOverlap\lHit \&gt;" alt="" coords="223,57,397,98"/>
+<area shape="rect" id="node7" href="$structPxHitCallback.html" title="PxHitCallback\&lt; PxRaycast\lHit \&gt;" alt="" coords="220,122,400,163"/>
+<area shape="rect" id="node10" href="$structPxHitCallback.html" title="PxHitCallback\&lt; PxSweepHit \&gt;" alt="" coords="211,188,409,215"/>
+<area shape="rect" id="node3" href="$structPxHitBuffer.html" title="Returns scene query hits (intersections) to the user in a preallocated buffer. " alt="" coords="475,5,630,32"/>
+<area shape="rect" id="node5" href="$structPxHitBuffer.html" title="PxHitBuffer\&lt; PxOverlapHit \&gt;" alt="" coords="459,64,646,91"/>
+<area shape="rect" id="node6" href="$structPxOverlapBufferN.html" title="Returns touching overlap hits to the user in a fixed size array embedded in the buffer class..." alt="" coords="699,64,855,91"/>
+<area shape="rect" id="node8" href="$structPxHitBuffer.html" title="PxHitBuffer\&lt; PxRaycastHit \&gt;" alt="" coords="457,129,648,156"/>
+<area shape="rect" id="node9" href="$structPxRaycastBufferN.html" title="Returns touching raycast hits to the user in a fixed size array embedded in the buffer class..." alt="" coords="696,129,857,156"/>
+<area shape="rect" id="node11" href="$structPxHitBuffer.html" title="PxHitBuffer\&lt; PxSweepHit \&gt;" alt="" coords="461,188,644,215"/>
+<area shape="rect" id="node12" href="$structPxSweepBufferN.html" title="Returns touching sweep hits to the user in a fixed size array embedded in the buffer class..." alt="" coords="701,188,853,215"/>
 </map>

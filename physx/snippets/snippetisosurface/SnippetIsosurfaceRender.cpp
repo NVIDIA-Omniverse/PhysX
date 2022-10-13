@@ -50,7 +50,7 @@ extern void stepPhysics(bool interactive);
 extern void cleanupPhysics(bool interactive);
 extern void keyPress(unsigned char key, const PxTransform& camera);
 extern PxPBDParticleSystem* getParticleSystem();
-extern PxUserParticleBuffer* getUserParticleBuffer();
+extern PxParticleBuffer* getParticleBuffer();
 
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -81,7 +81,7 @@ namespace
 		PxPBDParticleSystem* particleSystem = getParticleSystem();
 		if (particleSystem)
 		{
-			PxUserParticleBuffer* userBuffer = getUserParticleBuffer();
+			PxParticleBuffer* userBuffer = getParticleBuffer();
 			PxVec4* positions = userBuffer->getPositionInvMasses();
 		
 			const PxU32 numParticles = userBuffer->getNbActiveParticles();

@@ -43,11 +43,14 @@
 #include "NpArticulationTendon.h"
 #include "NpAggregate.h"
 
+#include "PxvGlobals.h"
+
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpParticleSystem.h"
 #include "NpSoftBody.h"
 #include "NpFEMCloth.h"
 #include "NpHairSystem.h"
+#include "PxPhysXGpu.h"
 #endif
 
 #if PX_SUPPORT_OMNI_PVD
@@ -188,12 +191,12 @@ void NpFactory::addArticulation(PxArticulationReducedCoordinate* npArticulation,
 	OMNI_PVD_NOTIFY_ADD(npArticulation);
 }
 
-void NpFactory::addParticleBuffer(PxUserParticleBuffer* buffer, bool lock)
+void NpFactory::addParticleBuffer(PxParticleBuffer* buffer, bool lock)
 {
 	addToTracking(mParticleBufferTracking, buffer, mTrackingMutex, lock);
 }
 
-void NpFactory::onParticleBufferReleaseInternal(PxUserParticleBuffer* buffer)
+void NpFactory::onParticleBufferReleaseInternal(PxParticleBuffer* buffer)
 {
 	PxMutex::ScopedLock lock(mTrackingMutex);
 	mParticleBufferTracking.erase(buffer);
@@ -536,7 +539,7 @@ void NpFactory::releaseCustomParticleSystemToPool(PxCustomParticleSystem& partic
 #endif
 /////////////////////////////////////////////////////////////////////////////// Particle Buffers
 
-PxUserParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)
+PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)
 {
 	if(!cudaContextManager)
 		return NULL;
@@ -545,7 +548,7 @@ PxUserParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 
 	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
 	PX_ASSERT(physxGpu);
 
-	PxUserParticleBuffer* buffer = physxGpu->createParticleBuffer(maxParticles, maxVolumes, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
+	PxParticleBuffer* buffer = physxGpu->createParticleBuffer(maxParticles, maxVolumes, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
 	addParticleBuffer(buffer);
 	return buffer;
 #else
@@ -556,7 +559,7 @@ PxUserParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 
 #endif
 }
 
-PxUserParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
+PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(const PxU32 maxParticles, const PxU32 maxVolumes, const PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
 {
 	if(!cudaContextManager)
 		return NULL;
@@ -565,7 +568,7 @@ PxUserParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(const 
 	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
 	PX_ASSERT(physxGpu);
 
-	PxUserParticleAndDiffuseBuffer* diffuseBuffer = physxGpu->createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
+	PxParticleAndDiffuseBuffer* diffuseBuffer = physxGpu->createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
 	addParticleBuffer(diffuseBuffer);
 	return diffuseBuffer;
 #else
@@ -577,7 +580,7 @@ PxUserParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(const 
 #endif
 }
 
-PxUserParticleClothBuffer* NpFactory::createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)
+PxParticleClothBuffer* NpFactory::createParticleClothBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumCloths, const PxU32 maxNumTriangles, const PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)
 {
 	if(!cudaContextManager)
 		return NULL;
@@ -586,7 +589,7 @@ PxUserParticleClothBuffer* NpFactory::createParticleClothBuffer(const PxU32 maxP
 	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
 	PX_ASSERT(physxGpu);
 
-	PxUserParticleClothBuffer* clothBuffer = physxGpu->createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
+	PxParticleClothBuffer* clothBuffer = physxGpu->createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
 	addParticleBuffer(clothBuffer);
 	return clothBuffer;
 #else
@@ -600,7 +603,7 @@ PxUserParticleClothBuffer* NpFactory::createParticleClothBuffer(const PxU32 maxP
 #endif
 }
 
-PxUserParticleRigidBuffer* NpFactory::createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)
+PxParticleRigidBuffer* NpFactory::createParticleRigidBuffer(const PxU32 maxParticles, const PxU32 maxNumVolumes, const PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)
 {
 	if(!cudaContextManager)
 		return NULL;
@@ -609,7 +612,7 @@ PxUserParticleRigidBuffer* NpFactory::createParticleRigidBuffer(const PxU32 maxP
 	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
 	PX_ASSERT(physxGpu);
 
-	PxUserParticleRigidBuffer* rigidBuffer = physxGpu->createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
+	PxParticleRigidBuffer* rigidBuffer = physxGpu->createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
 	addParticleBuffer(rigidBuffer);
 	return rigidBuffer;
 #else
@@ -621,7 +624,7 @@ PxUserParticleRigidBuffer* NpFactory::createParticleRigidBuffer(const PxU32 maxP
 #endif
 }
 
-void NpFactory::onParticleBufferRelease(PxUserParticleBuffer* buffer)
+void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
 {
 	NpFactory::getInstance().onParticleBufferReleaseInternal(buffer);
 }

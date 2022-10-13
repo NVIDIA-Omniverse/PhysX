@@ -1,7 +1,11 @@
 var NAVTREEINDEX13 =
 {
-"classExtGpu_1_1PxParticleVolumeBuffers.html#af33ba525a7b3c5db969df69efb711ec2":[3,0,1,15,2],
-"classExtGpu_1_1PxParticleVolumeBuffers.html#af626ced86945ceb0f5da14386519c429":[3,0,1,15,1],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#aa06708bad7858945bd9a1b1c21007585":[3,0,1,15,3],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#ab596379fbdf125a8a67587b4c8151850":[3,0,1,15,4],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#ad180382c16df7c46c13f77efefde5e7c":[3,0,1,15,1],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#ae9d67816063536951257580bc56bc847":[3,0,1,15,8],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#af5f48e378044ac906d2bcc0124354d52":[3,0,1,15,0],
+"classExtGpu_1_1PxParticleVolumeBufferHelper.html#af83e125764a4567815874dab4ca73f45":[3,0,1,15,5],
 "classExtGpu_1_1PxSparseGridBuilder.html":[3,0,1,17],
 "classExtGpu_1_1PxSparseGridBuilder.html#a03ff7eba1173e5f5d77c3bab8b42e0d6":[3,0,1,17,37],
 "classExtGpu_1_1PxSparseGridBuilder.html#a0601018e6d137a58db8212c2447fcba7":[3,0,1,17,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX13 =
 "classPxArticulationReducedCoordinate.html#a06c63c7cdea1998f8975aa1618302216":[2,2,21,37],
 "classPxArticulationReducedCoordinate.html#a08860cc7b7ab55fa70dc91d7b2e21e4f":[2,2,21,71],
 "classPxArticulationReducedCoordinate.html#a08a58ac2a98d339c0fcab0e69f6761e0":[2,2,21,8],
-"classPxArticulationReducedCoordinate.html#a0bb151ca74c7b28404386def8b1597be":[2,2,21,69],
-"classPxArticulationReducedCoordinate.html#a0eb36b4e092c322893c811f1e7c85b4d":[2,2,21,6],
-"classPxArticulationReducedCoordinate.html#a10d36a5ac6bb414b2240774cabdc4695":[2,2,21,68],
-"classPxArticulationReducedCoordinate.html#a137dc271e475b4f1c632b7587153a1ba":[2,2,21,27],
-"classPxArticulationReducedCoordinate.html#a14ba468aa421f07e82cc3207bb53d5c8":[2,2,21,49]
+"classPxArticulationReducedCoordinate.html#a0bb151ca74c7b28404386def8b1597be":[2,2,21,69]
 };

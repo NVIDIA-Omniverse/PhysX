@@ -226,18 +226,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa2d7568af77542b7df20575f5b1c7832"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxBuffer.html">PxBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#aa2d7568af77542b7df20575f5b1c7832">createBuffer</a> (<a class="el" href="group__foundation.html#gafa6be92d904a227b2d07298034476b3a">PxU64</a> byteSize, <a class="el" href="structPxBufferType.html#a1f70d33bdd0827e7f5367b5316041bde">PxBufferType::Enum</a> bufferType, PxCudaContextManager *cudaContextManager)=0</td></tr>
 <tr class="memdesc:aa2d7568af77542b7df20575f5b1c7832"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a buffer for reading and writing data across host and device memory spaces.  <a href="#aa2d7568af77542b7df20575f5b1c7832">More...</a><br /></td></tr>
 <tr class="separator:aa2d7568af77542b7df20575f5b1c7832"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af68e55010f699df2c282ccb641cc5f70"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#af68e55010f699df2c282ccb641cc5f70">createParticleBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxVolumes, PxCudaContextManager *cudaContextManager)=0</td></tr>
-<tr class="memdesc:af68e55010f699df2c282ccb641cc5f70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create particle buffer for fluid/granular material.  <a href="#af68e55010f699df2c282ccb641cc5f70">More...</a><br /></td></tr>
-<tr class="separator:af68e55010f699df2c282ccb641cc5f70"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9a6f4f38041e9a811c9ff316c7efbdf"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxUserParticleAndDiffuseBuffer.html">PxUserParticleAndDiffuseBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#aa9a6f4f38041e9a811c9ff316c7efbdf">createParticleAndDiffuseBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxDiffuseParticles, PxCudaContextManager *cudaContextManager)=0</td></tr>
-<tr class="memdesc:aa9a6f4f38041e9a811c9ff316c7efbdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create diffuse buffer for fluid dynamic with diffuse particles.  <a href="#aa9a6f4f38041e9a811c9ff316c7efbdf">More...</a><br /></td></tr>
-<tr class="separator:aa9a6f4f38041e9a811c9ff316c7efbdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afbb9d696a9032fdb5a21130bad57dbf4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxUserParticleClothBuffer.html">PxUserParticleClothBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#afbb9d696a9032fdb5a21130bad57dbf4">createParticleClothBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumCloths, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumTriangles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumSprings, PxCudaContextManager *cudaContextManager)=0</td></tr>
-<tr class="memdesc:afbb9d696a9032fdb5a21130bad57dbf4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create cloth buffer.  <a href="#afbb9d696a9032fdb5a21130bad57dbf4">More...</a><br /></td></tr>
-<tr class="separator:afbb9d696a9032fdb5a21130bad57dbf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73a6be38a97305f05b6ed23d05b9be56"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxUserParticleRigidBuffer.html">PxUserParticleRigidBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#a73a6be38a97305f05b6ed23d05b9be56">createParticleRigidBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumRigids, PxCudaContextManager *cudaContextManager)=0</td></tr>
-<tr class="memdesc:a73a6be38a97305f05b6ed23d05b9be56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create rigid buffer for shape matching rigid bodies.  <a href="#a73a6be38a97305f05b6ed23d05b9be56">More...</a><br /></td></tr>
-<tr class="separator:a73a6be38a97305f05b6ed23d05b9be56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9463f30a5e71eff6c0774899c019bef0"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#a9463f30a5e71eff6c0774899c019bef0">createParticleBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxVolumes, PxCudaContextManager *cudaContextManager)=0</td></tr>
+<tr class="memdesc:a9463f30a5e71eff6c0774899c019bef0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create particle buffer for fluid/granular material.  <a href="#a9463f30a5e71eff6c0774899c019bef0">More...</a><br /></td></tr>
+<tr class="separator:a9463f30a5e71eff6c0774899c019bef0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4b8c788276fbf44ed7d122fbcbc34a1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#ad4b8c788276fbf44ed7d122fbcbc34a1">createParticleAndDiffuseBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxDiffuseParticles, PxCudaContextManager *cudaContextManager)=0</td></tr>
+<tr class="memdesc:ad4b8c788276fbf44ed7d122fbcbc34a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create diffuse buffer for fluid dynamic with diffuse particles.  <a href="#ad4b8c788276fbf44ed7d122fbcbc34a1">More...</a><br /></td></tr>
+<tr class="separator:ad4b8c788276fbf44ed7d122fbcbc34a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0b24d8360cd6fe8ec509cab4b654597"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#ab0b24d8360cd6fe8ec509cab4b654597">createParticleClothBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumCloths, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumTriangles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumSprings, PxCudaContextManager *cudaContextManager)=0</td></tr>
+<tr class="memdesc:ab0b24d8360cd6fe8ec509cab4b654597"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create cloth buffer.  <a href="#ab0b24d8360cd6fe8ec509cab4b654597">More...</a><br /></td></tr>
+<tr class="separator:ab0b24d8360cd6fe8ec509cab4b654597"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5df47a8fae8366447d47197ad63fb6a4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#a5df47a8fae8366447d47197ad63fb6a4">createParticleRigidBuffer</a> (const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxParticles, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumVolumes, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> maxNumRigids, PxCudaContextManager *cudaContextManager)=0</td></tr>
+<tr class="memdesc:a5df47a8fae8366447d47197ad63fb6a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create rigid buffer for shape matching rigid bodies.  <a href="#a5df47a8fae8366447d47197ad63fb6a4">More...</a><br /></td></tr>
+<tr class="separator:a5df47a8fae8366447d47197ad63fb6a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Materials</div></td></tr>
 <tr class="memitem:a35c1965ae47b24e119c6a2d8ce25477e"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classPxMaterial.html">PxMaterial</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPxPhysics.html#a35c1965ae47b24e119c6a2d8ce25477e">createMaterial</a> (<a class="el" href="group__foundation.html#gaebdd95ca9e4baca8d6ad390b0902d352">PxReal</a> staticFriction, <a class="el" href="group__foundation.html#gaebdd95ca9e4baca8d6ad390b0902d352">PxReal</a> dynamicFriction, <a class="el" href="group__foundation.html#gaebdd95ca9e4baca8d6ad390b0902d352">PxReal</a> restitution)=0</td></tr>
 <tr class="memdesc:a35c1965ae47b24e119c6a2d8ce25477e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new material with default properties.  <a href="#a35c1965ae47b24e119c6a2d8ce25477e">More...</a><br /></td></tr>
@@ -825,8 +825,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aa9a6f4f38041e9a811c9ff316c7efbdf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa9a6f4f38041e9a811c9ff316c7efbdf">&#9670;&nbsp;</a></span>createParticleAndDiffuseBuffer()</h2>
+<a id="ad4b8c788276fbf44ed7d122fbcbc34a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4b8c788276fbf44ed7d122fbcbc34a1">&#9670;&nbsp;</a></span>createParticleAndDiffuseBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -835,7 +835,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classPxUserParticleAndDiffuseBuffer.html">PxUserParticleAndDiffuseBuffer</a>* PxPhysics::createParticleAndDiffuseBuffer </td>
+          <td class="memname">virtual <a class="el" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a>* PxPhysics::createParticleAndDiffuseBuffer </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td>
           <td class="paramname"><em>maxParticles</em>, </td>
@@ -881,13 +881,13 @@ Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxUserParticleAndDiffuseBuffer.html" title="A user particle buffer used to simulate diffuse particles. ">PxUserParticleAndDiffuseBuffer</a> instance</dd></dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxUserParticleAndDiffuseBuffer.html" title="A user particle buffer used to simulate diffuse particles. ">PxUserParticleAndDiffuseBuffer</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxParticleAndDiffuseBuffer.html" title="A particle buffer used to simulate diffuse particles. ">PxParticleAndDiffuseBuffer</a> instance</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxParticleAndDiffuseBuffer.html" title="A particle buffer used to simulate diffuse particles. ">PxParticleAndDiffuseBuffer</a> </dd></dl>
 
 </div>
 </div>
-<a id="af68e55010f699df2c282ccb641cc5f70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af68e55010f699df2c282ccb641cc5f70">&#9670;&nbsp;</a></span>createParticleBuffer()</h2>
+<a id="a9463f30a5e71eff6c0774899c019bef0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9463f30a5e71eff6c0774899c019bef0">&#9670;&nbsp;</a></span>createParticleBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -896,7 +896,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a>* PxPhysics::createParticleBuffer </td>
+          <td class="memname">virtual <a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a>* PxPhysics::createParticleBuffer </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td>
           <td class="paramname"><em>maxParticles</em>, </td>
@@ -935,13 +935,13 @@ Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a> instance</dd></dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular...">PxUserParticleBuffer</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a> instance</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ...">PxParticleBuffer</a> </dd></dl>
 
 </div>
 </div>
-<a id="afbb9d696a9032fdb5a21130bad57dbf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afbb9d696a9032fdb5a21130bad57dbf4">&#9670;&nbsp;</a></span>createParticleClothBuffer()</h2>
+<a id="ab0b24d8360cd6fe8ec509cab4b654597"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0b24d8360cd6fe8ec509cab4b654597">&#9670;&nbsp;</a></span>createParticleClothBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -950,7 +950,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classPxUserParticleClothBuffer.html">PxUserParticleClothBuffer</a>* PxPhysics::createParticleClothBuffer </td>
+          <td class="memname">virtual <a class="el" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a>* PxPhysics::createParticleClothBuffer </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td>
           <td class="paramname"><em>maxParticles</em>, </td>
@@ -1010,13 +1010,13 @@ Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxUserParticleClothBuffer.html" title="A user particle buffer used to simulate particle cloth. ">PxUserParticleClothBuffer</a> instance</dd></dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxUserParticleClothBuffer.html" title="A user particle buffer used to simulate particle cloth. ">PxUserParticleClothBuffer</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxParticleClothBuffer.html" title="A particle buffer used to simulate particle cloth. ">PxParticleClothBuffer</a> instance</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxParticleClothBuffer.html" title="A particle buffer used to simulate particle cloth. ">PxParticleClothBuffer</a> </dd></dl>
 
 </div>
 </div>
-<a id="a73a6be38a97305f05b6ed23d05b9be56"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73a6be38a97305f05b6ed23d05b9be56">&#9670;&nbsp;</a></span>createParticleRigidBuffer()</h2>
+<a id="a5df47a8fae8366447d47197ad63fb6a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5df47a8fae8366447d47197ad63fb6a4">&#9670;&nbsp;</a></span>createParticleRigidBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1025,7 +1025,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classPxUserParticleRigidBuffer.html">PxUserParticleRigidBuffer</a>* PxPhysics::createParticleRigidBuffer </td>
+          <td class="memname">virtual <a class="el" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a>* PxPhysics::createParticleRigidBuffer </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a>&#160;</td>
           <td class="paramname"><em>maxParticles</em>, </td>
@@ -1071,8 +1071,8 @@ Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxUserParticleRigidBuffer.html" title="A user particle buffer used to simulate rigid bodies using shape matching with particles. ">PxUserParticleRigidBuffer</a> instance</dd></dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxUserParticleRigidBuffer.html" title="A user particle buffer used to simulate rigid bodies using shape matching with particles. ">PxUserParticleRigidBuffer</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classPxParticleRigidBuffer.html" title="A particle buffer used to simulate rigid bodies using shape matching with particles. ">PxParticleRigidBuffer</a> instance</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classPxParticleRigidBuffer.html" title="A particle buffer used to simulate rigid bodies using shape matching with particles. ">PxParticleRigidBuffer</a> </dd></dl>
 
 </div>
 </div>

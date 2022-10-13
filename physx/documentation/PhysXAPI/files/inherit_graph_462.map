@@ -1,26 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$classphysx_1_1PxArray.html" title="physx::PxArray\&lt; T,\l Alloc \&gt;" alt="" coords="218,865,353,906"/>
-<area shape="rect" id="node3" href="$classphysx_1_1PxPoolBase.html" title="physx::PxPoolBase\&lt;\l T, Alloc \&gt;" alt="" coords="213,630,358,671"/>
-<area shape="rect" id="node6" href="$classphysx_1_1PxSListT.html" title="physx::PxSListT\&lt; Alloc \&gt;" alt="" coords="200,931,371,957"/>
-<area shape="rect" id="node7" href="$classphysx_1_1PxArray.html" title="physx::PxArray\&lt; void\l *, Alloc \&gt;" alt="" coords="212,982,359,1023"/>
-<area shape="rect" id="node8" href="$classPxMutexT.html" title="PxMutexT\&lt; Alloc \&gt;" alt="" coords="218,696,353,723"/>
-<area shape="rect" id="node9" href="$classPxScopedPointer.html" title="PxScopedPointer\&lt; T,\l Alloc \&gt;" alt="" coords="212,747,359,789"/>
-<area shape="rect" id="node10" href="$classPxSyncT.html" title="PxSyncT\&lt; Alloc \&gt;" alt="" coords="221,813,349,840"/>
-<area shape="rect" id="node11" href="$classPxThreadT.html" title="PxThreadT\&lt; Alloc \&gt;" alt="" coords="217,579,354,605"/>
-<area shape="rect" id="node4" href="$classphysx_1_1PxPool.html" title="physx::PxPool\&lt; T, Alloc \&gt;" alt="" coords="465,608,639,635"/>
-<area shape="rect" id="node5" href="$classphysx_1_1PxPool2.html" title="physx::PxPool2\&lt; T,\l slabSize, Alloc \&gt;" alt="" coords="483,659,621,701"/>
-<area shape="rect" id="node12" href="$classPxRunnable.html" title="PxRunnable" alt="" coords="19,579,111,605"/>
-<area shape="rect" id="node13" href="$classPxUserAllocated.html" title="PxUserAllocated" alt="" coords="5,325,124,352"/>
-<area shape="rect" id="node14" href="$classExtGpu_1_1PxKernelWrangler.html" title="ExtGpu::PxKernelWrangler" alt="" coords="196,56,375,83"/>
-<area shape="rect" id="node15" href="$classExtGpu_1_1PxParticleAttachmentBuffer.html" title="Holds user&#45;defined attachment data to attach particles to other bodies. " alt="" coords="185,107,386,149"/>
-<area shape="rect" id="node16" href="$classPxBitMapBase.html" title="PxBitMapBase\&lt; PxAllocator \&gt;" alt="" coords="185,173,385,200"/>
-<area shape="rect" id="node17" href="$classPxCollisionMeshMappingData.html" title="Contains information about how to update the collision mesh&#39;s vertices given a deformed simulation te..." alt="" coords="188,224,383,251"/>
-<area shape="rect" id="node18" href="$classPxCollisionTetrahedronMeshData.html" title="Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData. " alt="" coords="178,275,393,301"/>
-<area shape="rect" id="node19" href="$classPxPoissonSampler.html" title="Sampler to generate Poisson Samples locally on a triangle mesh or a shape. For every local addition o..." alt="" coords="219,325,352,352"/>
-<area shape="rect" id="node21" href="$classPxSimulationTetrahedronMeshData.html" title="Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData. " alt="" coords="172,376,399,403"/>
-<area shape="rect" id="node22" href="$classPxSocket.html" title="PxSocket" alt="" coords="246,427,325,453"/>
-<area shape="rect" id="node23" href="$classPxSoftBodyCollisionData.html" title="Stores data to accelerate collision detection of a tetrahedral mesh. " alt="" coords="202,477,369,504"/>
-<area shape="rect" id="node24" href="$classPxSoftBodySimulationData.html" title="Stores data to compute and store the state of a deformed tetrahedral mesh. " alt="" coords="196,528,375,555"/>
-<area shape="rect" id="node25" href="$classPxTetrahedronMeshData.html" title="Contains raw geometry information describing the tetmesh&#39;s vertices and its elements (tetrahedra) ..." alt="" coords="203,5,368,32"/>
-<area shape="rect" id="node20" href="$classPxTriangleMeshPoissonSampler.html" title="Sampler to generate Poisson Samples on a triangle mesh. " alt="" coords="447,325,657,352"/>
+<area shape="rect" id="node1" href="$structPxUnConst.html" title="PxUnConst\&lt; T \&gt;" alt="" coords="5,5,124,32"/>
 </map>

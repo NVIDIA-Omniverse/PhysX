@@ -20,7 +20,7 @@ var searchData=
   ['clientid',['clientID',['../classPxControllerDesc.html#a1178d777435fbb8d26f9fcdc26674a84',1,'PxControllerDesc']]],
   ['climbingmode',['climbingMode',['../classPxCapsuleControllerDesc.html#a89888e84bf3091c6c3e7818732864674',1,'PxCapsuleControllerDesc']]],
   ['clothblendscale',['clothBlendScale',['../structPxParticleCloth.html#aa63f15229b7415d5d7b2c4d0da40a4f5',1,'PxParticleCloth']]],
-  ['cloths',['cloths',['../structPxParticleClothDesc.html#aa3d4995f245cc3088c61d2a9481c0599',1,'PxParticleClothDesc::cloths()'],['../structPxParticleClothOutput.html#a53444f3452d98e548a6e9d6a6de4923a',1,'PxParticleClothOutput::cloths()']]],
+  ['cloths',['cloths',['../structPxParticleClothDesc.html#aa3d4995f245cc3088c61d2a9481c0599',1,'PxParticleClothDesc::cloths()'],['../structPxPartitionedParticleCloth.html#a626ac670450d7b8d76b4abf17c021b70',1,'PxPartitionedParticleCloth::cloths()']]],
   ['clutch',['clutch',['../structPxVehicleEngineDriveTransmissionCommandState.html#aa74d64c323559415f3128e532be7b38c',1,'PxVehicleEngineDriveTransmissionCommandState']]],
   ['clutchslip',['clutchSlip',['../structPxVehicleClutchSlipState.html#a3a29eeb6038331f135ad2ad204c9a94e',1,'PxVehicleClutchSlipState']]],
   ['cmasslocalposepos',['cMassLocalPosePos',['../structPxGpuActorProperties.html#a58cceb883b8422b3ced7090320b13202',1,'PxGpuActorProperties']]],

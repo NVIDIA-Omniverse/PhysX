@@ -54,7 +54,7 @@ static PxScene*						gScene				= NULL;
 static PxMaterial*					gMaterial			= NULL;
 static PxPvd*						gPvd				= NULL;
 static PxPBDParticleSystem*			gParticleSystem		= NULL;
-static PxUserParticleClothBuffer*	gUserClothBuffer	= NULL;
+static PxParticleClothBuffer*	gUserClothBuffer	= NULL;
 static bool							gIsRunning			= true;
 
 PxRigidDynamic* sphere;
@@ -145,7 +145,7 @@ static void initCloth(const PxU32 numX, const PxU32 numZ, const PxVec3& position
 	// Create particles and add them to the particle system
 	const PxU32 particlePhase = particleSystem->createPhase(defaultMat, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseSelfCollideFilter | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
 
-	PxParticleClothBuffers* clothBuffers = PxCreateParticleClothBuffers(1, numTriangles, numSprings, numParticles, cudaContextManager);
+	PxParticleClothBufferHelper* clothBuffers = PxCreateParticleClothBufferHelper(1, numTriangles, numSprings, numParticles, cudaContextManager);
 
 	PxPinnedHostMemoryPointer<PxU32> phaseBuf(cudaContextManager, numParticles);
 	PxPinnedHostMemoryPointer<PxVec4> positionInvMassBuf(cudaContextManager, numParticles);
@@ -227,7 +227,7 @@ static void initCloth(const PxU32 numX, const PxU32 numZ, const PxVec3& position
 	const PxParticleClothDesc& clothDesc = clothBuffers->getParticleClothDesc();
 	PxParticleClothPreProcessor* clothPreProcessor = PxCreateParticleClothPreProcessor(cudaContextManager);
 
-	PxParticleClothOutput output;
+	PxPartitionedParticleCloth output;
 	clothPreProcessor->partitionSprings(clothDesc, output);
 	clothPreProcessor->release();
 
@@ -242,7 +242,7 @@ PxPBDParticleSystem* getParticleSystem()
 	return gParticleSystem;
 }
 
-PxUserParticleClothBuffer* getUserClothBuffer()
+PxParticleClothBuffer* getUserClothBuffer()
 {
 	return gUserClothBuffer;
 }

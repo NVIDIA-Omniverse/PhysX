@@ -1,15 +1,5 @@
 var NAVTREEINDEX47 =
 {
-"structPxVehicleComponentSequence.html#a4aa807550e0332bf24f7c5d7ea1f6b1d":[2,11,61,10],
-"structPxVehicleComponentSequence.html#a6dc35cebdf7c453c8ed92c388fd39d18":[2,11,61,5],
-"structPxVehicleComponentSequence.html#a77251addbd87822ecf317d43dd41e26e":[2,11,61,13],
-"structPxVehicleComponentSequence.html#a78f8a1dc20f3a7c8fbb5f42859c562c3":[2,11,61,17],
-"structPxVehicleComponentSequence.html#a8b1970f1998e7d1fbc749b4752d96b8f":[2,11,61,15],
-"structPxVehicleComponentSequence.html#a8cc5e8bc74a04a178f1746e33d722ae9":[2,11,61,12],
-"structPxVehicleComponentSequence.html#a9d55b6bbf0aeae5f881250a17d02f613":[2,11,61,11],
-"structPxVehicleComponentSequence.html#abefce484b1ee01ba3156faee971c717a":[2,11,61,8],
-"structPxVehicleComponentSequence.html#ac4ea16bb77df2678af9c2893ab82ab76":[2,11,61,18],
-"structPxVehicleComponentSequence.html#ae8b5cbb9f15e41f376fcd15aee16d670a9b80f9c7a9db4400419c63b81393ffde":[2,11,61,4],
 "structPxVehicleComponentSequence.html#ae8b5cbb9f15e41f376fcd15aee16d670aeafc9b5c0d466abc289902f32d1d15ad":[2,11,61,3],
 "structPxVehicleComponentSequence.html#af2935f650354286b8323233ce40497fb":[2,11,61,19],
 "structPxVehicleComponentSequenceLimits.html":[2,11,60],
@@ -249,5 +239,15 @@ var NAVTREEINDEX47 =
 "structPxVehiclePhysXMaterialFrictionParams.html":[2,11,56],
 "structPxVehiclePhysXMaterialFrictionParams.html#a28c467490112daf3b48f2af01c1ec38f":[2,11,56,0],
 "structPxVehiclePhysXMaterialFrictionParams.html#a293ddcb22f5dd55561828402ee8f5e4a":[2,11,56,2],
-"structPxVehiclePhysXMaterialFrictionParams.html#a6e2cdb46d3f0ce215394eea6e9a5ab42":[2,11,56,3]
+"structPxVehiclePhysXMaterialFrictionParams.html#a6e2cdb46d3f0ce215394eea6e9a5ab42":[2,11,56,3],
+"structPxVehiclePhysXMaterialFrictionParams.html#ad3e236b3b30d529584636d37d7975c9c":[2,11,56,1],
+"structPxVehiclePhysXRoadGeometryQueryParams.html":[2,11,54],
+"structPxVehiclePhysXRoadGeometryQueryParams.html#a0cc7572956d706e809d7420b8018b07c":[2,11,54,1],
+"structPxVehiclePhysXRoadGeometryQueryParams.html#a25567b1fd09c928d2fbf1dceee7dd037":[2,11,54,0],
+"structPxVehiclePhysXRoadGeometryQueryParams.html#a34763bf7d771a3410058a42cab6539b3":[2,11,54,4],
+"structPxVehiclePhysXRoadGeometryQueryParams.html#aec3f34f321eeb45956265876e2dcd094":[2,11,54,2],
+"structPxVehiclePhysXRoadGeometryQueryParams.html#af75a46f16fea2023b6885ad31224f628":[2,11,54,3],
+"structPxVehiclePhysXRoadGeometryQueryState.html":[2,11,57],
+"structPxVehiclePhysXRoadGeometryQueryState.html#a1591f32f55bb7279eb0140d0e2d661fb":[2,11,57,2],
+"structPxVehiclePhysXRoadGeometryQueryState.html#a410b3e2dd4c58aaa8d437b73a5d38efc":[2,11,57,3]
 };

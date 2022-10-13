@@ -78,7 +78,7 @@ void renderLoop()
 {
 	sCamera = new Snippets::Camera(PxVec3(50.0f, 50.0f, 50.0f), PxVec3(-0.502444f, -0.442113f, -0.743025f));
 	
-	Snippets::setupDefault("PhysX Snippet RaycastCCD", sCamera, keyPress, renderCallback, exitCallback);
+	Snippets::setupDefault("PhysX Snippet CCD", sCamera, keyPress, renderCallback, exitCallback);
 
 	initPhysics(true);
 	glutMainLoop();

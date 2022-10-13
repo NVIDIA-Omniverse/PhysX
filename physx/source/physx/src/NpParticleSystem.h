@@ -29,28 +29,55 @@
 #ifndef NP_PARTICLE_SYSTEM_H
 #define NP_PARTICLE_SYSTEM_H
 
-#include "PxParticleSystem.h"
-#include "PxParticleBuffer.h"
-#include "ScParticleSystemCore.h"
-#include "NpActorTemplate.h"
-#include "DyParticleSystem.h"
-#include "ScParticleSystemSim.h"
-#include "PxvGlobals.h"
-#include "PxsSimulationController.h"
-#include "PxPhysXGpu.h"
-#include "PxParticleMaterial.h"
+#include "foundation/PxBounds3.h"
+#include "foundation/PxErrors.h"
+#include "foundation/PxSimpleTypes.h"
+#include "foundation/PxUserAllocated.h"
+#include "foundation/PxVec3.h"
 
+#include "common/PxBase.h"
+#include "common/PxRenderOutput.h"
+
+#include "PxActor.h"
+#include "PxFiltering.h"
+#include "PxParticleBuffer.h"
+#include "PxParticlePhase.h"
+#include "PxParticleSolverType.h"
+#include "PxParticleSystem.h"
+#include "PxPBDParticleSystem.h"
+#include "PxPBDMaterial.h"
+#include "PxSceneDesc.h"
+#include "PxSparseGridParams.h"
+
+#include "DyParticleSystem.h"
+
+#include "NpActor.h"
+#include "NpActorTemplate.h"
+#include "NpBase.h"
+
+#include "ScParticleSystemSim.h"
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #include "PxCustomParticleSystem.h"
 #include "PxFLIPParticleSystem.h"
+#include "PxFLIPMaterial.h"
 #include "PxMPMParticleSystem.h"
+#include "PxMPMMaterial.h"
 #endif
 
 namespace physx
 {
 	class NpScene;
-	class NpShape;
+
+	class PxCudaContextManager;
+	class PxParticleMaterial;
+	class PxRigidActor;
+	class PxSerializationContext;
+
+	namespace Sc
+	{
+		class ParticleSystemSim;
+	}
 
 	class NpParticlePhase : public PxParticlePhase
 	{
@@ -228,7 +255,7 @@ namespace physx
 			return mCore.getPeriodicBoundary();
 		}
 
-		virtual void addParticleBuffer(PxUserParticleBuffer* userBuffer)
+		virtual void addParticleBuffer(PxParticleBuffer* userBuffer)
 		{
 			NP_WRITE_CHECK(NpBase::getNpScene());
 			PX_CHECK_AND_RETURN(NpBase::getNpScene() != NULL, "NpParticleSystem::addParticleBuffer: this function cannot be called when the particle system is not inserted into the scene!");
@@ -236,12 +263,12 @@ namespace physx
 			mCore.getShapeCore().addParticleBuffer(userBuffer);
 		}
 
-		virtual void removeParticleBuffer(PxUserParticleBuffer* userBuffer)
+		virtual void removeParticleBuffer(PxParticleBuffer* userBuffer)
 		{
 			mCore.getShapeCore().removeParticleBuffer(userBuffer);
 		}
 
-		virtual void addParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer)
+		virtual void addParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer)
 		{
 			NP_WRITE_CHECK(NpBase::getNpScene());
 			PX_CHECK_AND_RETURN(NpBase::getNpScene() != NULL, "NpParticleSystem::addDiffuseBuffer: this function cannot be called when the particle system is not inserted into the scene!");
@@ -249,7 +276,7 @@ namespace physx
 			mCore.getShapeCore().addParticleAndDiffuseBuffer(diffuseBuffer);
 		}
 
-		virtual void removeParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* diffuseBuffer)
+		virtual void removeParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* diffuseBuffer)
 		{
 			mCore.getShapeCore().removeParticleAndDiffuseBuffer(diffuseBuffer);
 		}
@@ -439,7 +466,7 @@ namespace physx
 
 		virtual	void release();
 
-		virtual void partitionSprings(const PxParticleClothDesc& clothDesc, PxParticleClothOutput& output) PX_OVERRIDE;
+		virtual void partitionSprings(const PxParticleClothDesc& clothDesc, PxPartitionedParticleCloth& output) PX_OVERRIDE;
 
 	private:
 		PxU32 computeSpringPartition(const PxParticleSpring& springs, const PxU32 partitionStartIndex, PxU32* partitionProgresses);
@@ -497,11 +524,11 @@ namespace physx
 		virtual PxActorType::Enum	getType() const { return PxActorType::ePBD_PARTICLESYSTEM; }
 
 
-		virtual void				addParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer);
-		virtual void				removeParticleClothBuffer(PxUserParticleClothBuffer* clothBuffer);
+		virtual void				addParticleClothBuffer(PxParticleClothBuffer* clothBuffer);
+		virtual void				removeParticleClothBuffer(PxParticleClothBuffer* clothBuffer);
 
-		virtual	void				addParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer);
-		virtual void				removeParticleRigidBuffer(PxUserParticleRigidBuffer* rigidBuffer);
+		virtual	void				addParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer);
+		virtual void				removeParticleRigidBuffer(PxParticleRigidBuffer* rigidBuffer);
 
 		virtual void				addRigidAttachment(PxRigidActor* actor);
 		virtual void				removeRigidAttachment(PxRigidActor* actor);

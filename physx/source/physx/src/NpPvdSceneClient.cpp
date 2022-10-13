@@ -30,6 +30,7 @@
 #include "common/PxProfileZone.h"
 #include "common/PxRenderBuffer.h"
 #include "PxParticleSystem.h"
+#include "PxPBDParticleSystem.h"
 //#include "PxFLIPParticleSystem.h"
 //#include "PxMPMParticleSystem.h"
 //#include "PxCustomParticleSystem.h"

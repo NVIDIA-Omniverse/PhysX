@@ -16,7 +16,7 @@ var searchData=
   ['onobjectoutofbounds',['onObjectOutOfBounds',['../classPxBroadPhaseCallback.html#ab7aa03ff4a741400562bd5787a7aaca0',1,'PxBroadPhaseCallback::onObjectOutOfBounds(PxShape &amp;shape, PxActor &amp;actor)=0'],['../classPxBroadPhaseCallback.html#aa5dd0f892825c46619939a11caae5620',1,'PxBroadPhaseCallback::onObjectOutOfBounds(PxAggregate &amp;aggregate)=0']]],
   ['onobstaclehit',['onObstacleHit',['../classPxUserControllerHitReport.html#ab806ae70badbece00c364a37951cd9b1',1,'PxUserControllerHitReport']]],
   ['onoriginshift',['onOriginShift',['../classPxConstraintConnector.html#a668fc9420f8dee64887f9d7dad97ed5f',1,'PxConstraintConnector::onOriginShift()'],['../classPxVehicleConstraintConnector.html#a3d81eb4e13c0e77f881e4e89406453d9',1,'PxVehicleConstraintConnector::onOriginShift()']]],
-  ['onparticlesystemdestroy',['onParticleSystemDestroy',['../classPxUserParticleBuffer.html#a6f69c02a16d47bbd607e875b946ec4a6',1,'PxUserParticleBuffer']]],
+  ['onparticlesystemdestroy',['onParticleSystemDestroy',['../classPxParticleBuffer.html#ad201b911d34014ccbddca5437e0ae93a',1,'PxParticleBuffer']]],
   ['onpostsolve',['onPostSolve',['../classPxParticleSystemCallback.html#a16ff52f5c6585a648418372537192ffd',1,'PxParticleSystemCallback']]],
   ['onrefcountzero',['onRefCountZero',['../classPxRefCounted.html#a3f3a71766b60f7eed3c384655b017040',1,'PxRefCounted']]],
   ['onrelease',['onRelease',['../classPxDeletionListener.html#a76fa5705a41d0996d0f31c591f4f049c',1,'PxDeletionListener']]],

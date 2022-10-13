@@ -1,8 +1,8 @@
 var searchData=
 [
   ['a',['a',['../structPxPackValidation.html#aa2ff9e4c23eeb6b7285e5571deb71535',1,'PxPackValidation']]],
-  ['accumulatedcopiesperparticles',['accumulatedCopiesPerParticles',['../structPxParticleClothOutput.html#a960d2fe82144c365a40fa6aa2c54b745',1,'PxParticleClothOutput']]],
-  ['accumulatedspringsperpartitions',['accumulatedSpringsPerPartitions',['../structPxParticleClothOutput.html#a5bdfad39c1374022225be1b7ffd5e5a9',1,'PxParticleClothOutput']]],
+  ['accumulatedcopiesperparticles',['accumulatedCopiesPerParticles',['../structPxPartitionedParticleCloth.html#ad6c0956bc2d5788f4563d56468b12c30',1,'PxPartitionedParticleCloth']]],
+  ['accumulatedspringsperpartitions',['accumulatedSpringsPerPartitions',['../structPxPartitionedParticleCloth.html#a0627b15c7ccd8025229671724a1ddce3',1,'PxPartitionedParticleCloth']]],
   ['accuracymode',['accuracyMode',['../structPxVehicleClutchParams.html#a6a4891d57340c1a9166dd6e1d3310e7a',1,'PxVehicleClutchParams']]],
   ['active',['active',['../structPxBroadPhaseRegionInfo.html#afa7f75372a0790a528002b288cf105ee',1,'PxBroadPhaseRegionInfo']]],
   ['activeautoboxgearshift',['activeAutoboxGearShift',['../structPxVehicleAutoboxState.html#a435e8c5e47fa6a8d9d1a1e47d20dc23a',1,'PxVehicleAutoboxState']]],

@@ -31,8 +31,11 @@
 /** \addtogroup physics
 @{ */
 
+#include "foundation/PxSimpleTypes.h"
+
 #include "PxActor.h"
 #include "PxFiltering.h"
+
 #include "cudamanager/PxCudaTypes.h"
 
 #if !PX_DOXYGEN
@@ -46,15 +49,10 @@ namespace physx
 #endif
 
 class PxCudaContextManager;
-class PxParticleMaterial;
-
 class PxGpuParticleSystem;
-class PxDiffuseParticleParams;
 
-class PxUserParticleBuffer;
-class PxUserParticleAndDiffuseBuffer;
-class PxUserParticleClothBuffer;
-class PxUserParticleRigidBuffer;
+class PxParticleBuffer;
+class PxParticleAndDiffuseBuffer;
 
 /**
 \brief Container to hold a pair of corresponding device and host pointers. These pointers should point to GPU / CPU mirrors of the same data, but 
@@ -110,26 +108,6 @@ public:
 };
 
 /**
-\brief Identifies per-particle behavior for PxParticleSystem.
-
-See PxPBDParticleSystem::createPhase().
-*/
-struct PxParticlePhaseFlag
-{
-	enum Enum
-	{
-		eParticlePhaseGroupMask = 0x000fffff,			//!< Bits [ 0, 19] represent the particle group for controlling collisions
-		eParticlePhaseFlagsMask = 0xfff00000,			//!< Bits [20, 23] hold flags about how the particle behave 
-
-		eParticlePhaseSelfCollide = 1 << 20,			//!< If set this particle will interact with particles of the same group
-		eParticlePhaseSelfCollideFilter = 1 << 21,		//!< If set this particle will ignore collisions with particles closer than the radius in the rest pose, this flag should not be specified unless valid rest positions have been specified using setRestParticles()
-		eParticlePhaseFluid = 1 << 22					//!< If set this particle will generate fluid density constraints for its overlapping neighbors
-	};
-};
-
-typedef PxFlags<PxParticlePhaseFlag::Enum, PxU32> PxParticlePhaseFlags;
-
-/**
 \brief Flags which control the behaviour of a particle system.
 
 See PxParticleSystem::setParticleFlag(), PxParticleSystem::setParticleFlags(), PxParticleSystem::getParticleFlags()
@@ -145,65 +123,6 @@ struct PxParticleFlag
 };
 
 typedef PxFlags<PxParticleFlag::Enum, PxU32> PxParticleFlags;
-
-
-/**
-\brief A per particle identifier to define the particles behavior, its group and to reference a material
-*/
-class PxParticlePhase
-{
-public:
-	/**
-	\brief Set phase flags
-
-	Allows to control self collision, etc.
-
-	\param[in] flags The filter flags
-	*/
-	virtual void					setFlags(PxParticlePhaseFlags flags) = 0;
-	
-	/**
-	\brief Set phase flag
-
-	Allows to control self collision etc.
-
-	\param[in] flag The flag to set
-	\param[in] enabled The new value of the flag
-	*/
-	virtual void					setFlag(PxParticlePhaseFlag::Enum flag, bool enabled) = 0;
-	
-	/**
-	\brief Retrieves the phase flags
-
-	\return The phase flags
-	*/
-	virtual PxParticlePhaseFlags	getFlags() const = 0;
-	
-	/**
-	\brief Returns the group id
-
-	\return The group id
-	*/
-	virtual PxU32					getGroupId() const = 0;
-
-	/**
-	\brief Returns the pointer to the material used by this phase
-
-	\return The material pointer
-	*/
-	virtual PxParticleMaterial*		getMaterial() const = 0;
-	
-	/**
-	\brief Sets the material associated referenced by this phase
-
-	\param[in] material The pointer to the material that should be used by this phase	
-	*/
-	virtual void					setMaterial(PxParticleMaterial* material) = 0;
-
-protected:
-
-	virtual							~PxParticlePhase() {}
-};
 
 /**
 \brief The shared base class for all particle systems
@@ -475,27 +394,27 @@ public:
 
 	/**
 	\brief Add an existing particle buffer for fluid/granular material to the particle system
-	\param[in] particleBuffer a PxUserParticleBuffer*.
+	\param[in] particleBuffer a PxParticleBuffer*.
 	*/
-	virtual		void				addParticleBuffer(PxUserParticleBuffer* particleBuffer) = 0;
+	virtual		void				addParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
 
 	/**
 	\brief Remove particle buffer for fluid/granular material from particle system
-	\param[in] particleBuffer a PxUserParticleBuffer*.
+	\param[in] particleBuffer a PxParticleBuffer*.
 	*/
-	virtual		void				removeParticleBuffer(PxUserParticleBuffer* particleBuffer) = 0;
+	virtual		void				removeParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
 
 	/**
 	\brief Add a diffuse buffer for fluid dynamic with diffuse particle to the particle system
-	\param[in] particleAndDiffuseBuffer a PxUserParticleAndDiffuseBuffer*.
+	\param[in] particleAndDiffuseBuffer a PxParticleAndDiffuseBuffer*.
 	*/
-	virtual		void				addParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* particleAndDiffuseBuffer) = 0;
+	virtual		void				addParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* particleAndDiffuseBuffer) = 0;
 	
 	/**
 	\brief Remove diffuse buffer for fluid dynamic with diffuse particle from particle system
-	\param[in] particleAndDiffuseBuffer a PxUserParticleAndDiffuseBuffer*.
+	\param[in] particleAndDiffuseBuffer a PxParticleAndDiffuseBuffer*.
 	*/
-	virtual		void				removeParticleAndDiffuseBuffer(PxUserParticleAndDiffuseBuffer* particleAndDiffuseBuffer) = 0;
+	virtual		void				removeParticleAndDiffuseBuffer(PxParticleAndDiffuseBuffer* particleAndDiffuseBuffer) = 0;
 
 	/**
 	\brief Returns the GPU particle system index.
@@ -511,131 +430,6 @@ protected:
 	PX_INLINE						PxParticleSystem(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
 };
 
-
-/**
-\brief A particle system that uses the position based dynamics solver
-
-The position based dynamics solver for particle systems supports several behaviors like
-fluid, cloth, inflatables etc. 
-
-*/
-class PxPBDParticleSystem : public PxParticleSystem
-{
-public:
-
-	virtual								~PxPBDParticleSystem() {}
-
-
-	/**
-	\brief Creates combined particle flag with particle material and particle phase flags.
-	
-	\param[in] material A material instance to associate with the new particle group.
-	\param[in] flags The particle phase flags.
-	\return The combined particle group index and phase flags.
-
-	See PxParticlePhaseFlag()
-	*/
-	virtual		PxU32					createPhase(PxPBDMaterial* material, const PxParticlePhaseFlags flags) = 0;
-
-	
-	/**
-	\brief Set wind direction and intensity
-
-	\param[in] wind The wind direction and intensity
-	*/
-	virtual		void					setWind(const PxVec3& wind) = 0;
-
-	/**
-	\brief Retrieves the wind direction and intensity.
-
-	\return The wind direction and intensity
-	*/
-	virtual		PxVec3					getWind() const = 0;
-
-	/**
-	\brief Set the fluid boundary density scale
-
-	Defines how strong of a contribution the boundary (typically a rigid surface) should have on a fluid particle's density.
-
-	\param[in] fluidBoundaryDensityScale  <b>Range:</b> (0.0, 1.0)
-	*/
-	virtual		void					setFluidBoundaryDensityScale(const PxReal fluidBoundaryDensityScale) = 0;
-
-	/**
-	\brief Return the fluid boundary density scale
-	\return the fluid boundary density scale
-
-	See setFluidBoundaryDensityScale()
-	*/
-	virtual		PxReal					getFluidBoundaryDensityScale() const = 0;
-
-
-	/**
-	\brief Set the fluid rest offset
-
-	Two fluid particles will come to rest at a distance equal to twice the fluidRestOffset value.
-
-	\param[in] fluidRestOffset  <b>Range:</b> (0, particleContactOffset)
-	*/
-	virtual		void				setFluidRestOffset(const PxReal fluidRestOffset) = 0;
-
-	/**
-	\brief Return the fluid rest offset
-	\return the fluid rest offset
-
-	See setFluidRestOffset()
-	*/
-	virtual		PxReal				getFluidRestOffset() const = 0;
-
-
-	/**
-	\brief Set the particle system grid size x dimension
-
-	\param[in] gridSizeX x dimension in the particle grid
-	*/
-	virtual		void					setGridSizeX(const PxU32 gridSizeX) = 0;
-
-	/**
-	\brief Set the particle system grid size y dimension
-
-	\param[in] gridSizeY y dimension in the particle grid
-	*/
-	virtual		void					setGridSizeY(const PxU32 gridSizeY) = 0;
-
-	/**
-	\brief Set the particle system grid size z dimension
-
-	\param[in] gridSizeZ z dimension in the particle grid
-	*/
-	virtual		void					setGridSizeZ(const PxU32 gridSizeZ) = 0;
-
-	/**
-	\brief Add an existing cloth buffer to the particle system
-	\param[in] particleClothBuffer a PxUserParticleClothBuffer*.
-	*/
-	virtual		void					addParticleClothBuffer(PxUserParticleClothBuffer* particleClothBuffer) = 0;
-
-	/**
-	\brief Remove cloth buffer from particle system
-	\param[in] particleClothBuffer a PxUserParticleClothBuffer*.
-	*/
-	virtual		void					removeParticleClothBuffer(PxUserParticleClothBuffer* particleClothBuffer) = 0;
-
-	/**
-	\brief Add an existing rigid buffer to the particle system
-	\param[in] particleRigidBuffer a PxUserParticleRigidBuffer*.
-	*/
-	virtual		void					addParticleRigidBuffer(PxUserParticleRigidBuffer* particleRigidBuffer) = 0;
-
-	/**
-	\brief Remove rigid buffer from particle system
-	\param[in] particleRigidBuffer a PxUserParticleRigidBuffer*.
-	*/
-	virtual		void					removeParticleRigidBuffer(PxUserParticleRigidBuffer* particleRigidBuffer) = 0;
-	
-	PX_INLINE							PxPBDParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxParticleSystem(concreteType, baseFlags) {}
-	PX_INLINE							PxPBDParticleSystem(PxBaseFlags baseFlags) : PxParticleSystem(baseFlags) {}
-};
 
 #if PX_VC
 #pragma warning(pop)

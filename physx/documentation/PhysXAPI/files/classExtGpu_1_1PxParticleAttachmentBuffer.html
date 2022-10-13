@@ -113,19 +113,19 @@ Collaboration diagram for ExtGpu::PxParticleAttachmentBuffer:</div>
 <area shape="rect" id="node4" href="structPxParticleRigidFilterPair.html" title="Struct for storing a particle/vertex &#45; rigid filter pair with comparison operators. " alt="" coords="545,64,708,91"/>
 <area shape="rect" id="node5" href="structPxConeLimitParams.html" title="Compressed form of cone limit parameters. " alt="" coords="556,185,697,212"/>
 <area shape="rect" id="node6" href="classPxVec4T.html" title="PxVec4T\&lt; float \&gt;" alt="" coords="284,149,407,176"/>
-<area shape="rect" id="node7" href="classPxHashMap.html" title="PxHashMap\&lt; PxRigidActor\l *, PxU32 \&gt;" alt="" coords="823,175,1004,217"/>
-<area shape="rect" id="node9" href="classPxParticleSystem.html" title="The shared base class for all particle systems. " alt="" coords="850,241,977,268"/>
-<area shape="rect" id="node10" href="classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="592,332,661,359"/>
-<area shape="rect" id="node11" href="classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="311,332,379,359"/>
-<area shape="rect" id="node12" href="classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,325,159,366"/>
-<area shape="rect" id="node13" href="classPxUserParticleBuffer.html" title="The shared base class for all particle user buffers, can be instantiated directly to specify granular..." alt="" coords="842,292,985,319"/>
+<area shape="rect" id="node7" href="classPxParticleBuffer.html" title="The shared base class for all particle buffers, can be instantiated directly to specify granular and ..." alt="" coords="856,175,971,201"/>
+<area shape="rect" id="node8" href="classPxHashMap.html" title="PxHashMap\&lt; PxRigidActor\l *, PxU32 \&gt;" alt="" coords="823,231,1004,273"/>
+<area shape="rect" id="node10" href="classPxParticleSystem.html" title="The shared base class for all particle systems. " alt="" coords="850,307,977,333"/>
+<area shape="rect" id="node11" href="classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="592,332,661,359"/>
+<area shape="rect" id="node12" href="classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="311,332,379,359"/>
+<area shape="rect" id="node13" href="classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,325,159,366"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac5caa0efa42dbedb14ad3f8e4e6aad77"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#ac5caa0efa42dbedb14ad3f8e4e6aad77">PxParticleAttachmentBuffer</a> (<a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> &amp;particleBuffer, <a class="el" href="classPxParticleSystem.html">PxParticleSystem</a> &amp;particleSystem)</td></tr>
-<tr class="separator:ac5caa0efa42dbedb14ad3f8e4e6aad77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a213f1c1793043f9ef29d4653d052cbb1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#a213f1c1793043f9ef29d4653d052cbb1">PxParticleAttachmentBuffer</a> (<a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> &amp;particleBuffer, <a class="el" href="classPxParticleSystem.html">PxParticleSystem</a> &amp;particleSystem)</td></tr>
+<tr class="separator:a213f1c1793043f9ef29d4653d052cbb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abed4125aadabc386365b69f95adcf613"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#abed4125aadabc386365b69f95adcf613">~PxParticleAttachmentBuffer</a> ()</td></tr>
 <tr class="separator:abed4125aadabc386365b69f95adcf613"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fb42b82f6fc128d2953e89d88b6d6e7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#a5fb42b82f6fc128d2953e89d88b6d6e7">addRigidAttachment</a> (<a class="el" href="classPxRigidActor.html">PxRigidActor</a> *rigidBody, const <a class="el" href="group__foundation.html#gacce5749db3dcfb916e98c253374264ed">PxU32</a> particleID, const <a class="el" href="group__foundation.html#gae91c92d849735e5ef8906ccfd6fc1f20">PxVec3</a> &amp;localPose, <a class="el" href="structPxConeLimitedConstraint.html">PxConeLimitedConstraint</a> *coneLimit=NULL)</td></tr>
@@ -178,8 +178,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a4505657a5e1edc47b183f572d9611a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d865697082c149fa35adfa936662589"><td class="memItemLeft" align="right" valign="top">PxArray&lt; <a class="el" href="classPxRigidActor.html">PxRigidActor</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#a9d865697082c149fa35adfa936662589">mDestroyedRefrencedBodies</a></td></tr>
 <tr class="separator:a9d865697082c149fa35adfa936662589"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b122426106359ede4951bf993f064f7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#a1b122426106359ede4951bf993f064f7">mParticleBuffer</a></td></tr>
-<tr class="separator:a1b122426106359ede4951bf993f064f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae022c30eaa056366e389fa7149a29902"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#ae022c30eaa056366e389fa7149a29902">mParticleBuffer</a></td></tr>
+<tr class="separator:ae022c30eaa056366e389fa7149a29902"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a712a16e580f35b9cde810c46674899"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structPxParticleRigidAttachment.html">PxParticleRigidAttachment</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#a3a712a16e580f35b9cde810c46674899">mDeviceAttachments</a></td></tr>
 <tr class="separator:a3a712a16e580f35b9cde810c46674899"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa79e593a3731882a36ff0c666f386b18"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structPxParticleRigidFilterPair.html">PxParticleRigidFilterPair</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExtGpu_1_1PxParticleAttachmentBuffer.html#aa79e593a3731882a36ff0c666f386b18">mDeviceFilters</a></td></tr>
@@ -198,8 +198,8 @@ Private Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Holds user-defined attachment data to attach particles to other bodies. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ac5caa0efa42dbedb14ad3f8e4e6aad77"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac5caa0efa42dbedb14ad3f8e4e6aad77">&#9670;&nbsp;</a></span>PxParticleAttachmentBuffer()</h2>
+<a id="a213f1c1793043f9ef29d4653d052cbb1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a213f1c1793043f9ef29d4653d052cbb1">&#9670;&nbsp;</a></span>PxParticleAttachmentBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -207,7 +207,7 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="memname">ExtGpu::PxParticleAttachmentBuffer::PxParticleAttachmentBuffer </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a> &amp;&#160;</td>
           <td class="paramname"><em>particleBuffer</em>, </td>
         </tr>
         <tr>
@@ -607,8 +607,8 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a1b122426106359ede4951bf993f064f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1b122426106359ede4951bf993f064f7">&#9670;&nbsp;</a></span>mParticleBuffer</h2>
+<a id="ae022c30eaa056366e389fa7149a29902"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae022c30eaa056366e389fa7149a29902">&#9670;&nbsp;</a></span>mParticleBuffer</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -617,7 +617,7 @@ Private Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPxUserParticleBuffer.html">PxUserParticleBuffer</a>&amp; ExtGpu::PxParticleAttachmentBuffer::mParticleBuffer</td>
+          <td class="memname"><a class="el" href="classPxParticleBuffer.html">PxParticleBuffer</a>&amp; ExtGpu::PxParticleAttachmentBuffer::mParticleBuffer</td>
         </tr>
       </table>
   </td>
