@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSolverBodyData &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSolverBodyData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsolverbodydata">
+<span id="exhale-struct-struct-px-solver-body-data"></span><h1>PxSolverBodyData<a class="headerlink" href="#pxsolverbodydata" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#file-include-solver-pxsolverdefs-h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv416PxSolverBodyData">
+<span id="_CPPv316PxSolverBodyData"></span><span id="_CPPv216PxSolverBodyData"></span><span id="PxSolverBodyData"></span><span class="target" id="struct_px_solver_body_data"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSolverBodyData</span></span></span><a class="headerlink" href="#_CPPv416PxSolverBodyData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Struct that the solver uses to store the state and other properties of a body. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSolverBodyData15projectVelocityERK6PxVec3RK6PxVec3">
+<span id="_CPPv3NK16PxSolverBodyData15projectVelocityERK6PxVec3RK6PxVec3"></span><span id="_CPPv2NK16PxSolverBodyData15projectVelocityERK6PxVec3RK6PxVec3"></span><span id="PxSolverBodyData::projectVelocity__PxVec3CR.PxVec3CRC"></span><span class="target" id="struct_px_solver_body_data_1aada18dd2de20f34becb945ffbdfa1855"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">projectVelocity</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ang</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSolverBodyData15projectVelocityERK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData14linearVelocityE">
+<span id="_CPPv3N16PxSolverBodyData14linearVelocityE"></span><span id="_CPPv2N16PxSolverBodyData14linearVelocityE"></span><span id="PxSolverBodyData::linearVelocity__PxVec3"></span><span class="target" id="struct_px_solver_body_data_1adae85709fdc8be62461a44316ba38228"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linearVelocity</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData14linearVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>12 Pre-solver linear velocity </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData7invMassE">
+<span id="_CPPv3N16PxSolverBodyData7invMassE"></span><span id="_CPPv2N16PxSolverBodyData7invMassE"></span><span id="PxSolverBodyData::invMass__PxReal"></span><span class="target" id="struct_px_solver_body_data_1a668762cdcd8004c19e033952be2206b6"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invMass</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData7invMassE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>16 inverse mass </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData15angularVelocityE">
+<span id="_CPPv3N16PxSolverBodyData15angularVelocityE"></span><span id="_CPPv2N16PxSolverBodyData15angularVelocityE"></span><span id="PxSolverBodyData::angularVelocity__PxVec3"></span><span class="target" id="struct_px_solver_body_data_1a2ab7bc060f7946ae4f3bb1da17018326"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angularVelocity</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData15angularVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>28 Pre-solver angular velocity </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData15reportThresholdE">
+<span id="_CPPv3N16PxSolverBodyData15reportThresholdE"></span><span id="_CPPv2N16PxSolverBodyData15reportThresholdE"></span><span id="PxSolverBodyData::reportThreshold__PxReal"></span><span class="target" id="struct_px_solver_body_data_1a74e634af20acbf0a37246a5ec44f2248"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reportThreshold</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData15reportThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>32 contact force threshold </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData14sqrtInvInertiaE">
+<span id="_CPPv3N16PxSolverBodyData14sqrtInvInertiaE"></span><span id="_CPPv2N16PxSolverBodyData14sqrtInvInertiaE"></span><span id="PxSolverBodyData::sqrtInvInertia__PxMat33"></span><span class="target" id="struct_px_solver_body_data_1aeaab06a3dfac94c9ccde5e40f966f8af"></span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sqrtInvInertia</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData14sqrtInvInertiaE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>68 inverse inertia in world space </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData12penBiasClampE">
+<span id="_CPPv3N16PxSolverBodyData12penBiasClampE"></span><span id="_CPPv2N16PxSolverBodyData12penBiasClampE"></span><span id="PxSolverBodyData::penBiasClamp__PxReal"></span><span class="target" id="struct_px_solver_body_data_1ade2d671c9125af9907938a425f6b9af2"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">penBiasClamp</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData12penBiasClampE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>72 the penetration bias clamp </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData9nodeIndexE">
+<span id="_CPPv3N16PxSolverBodyData9nodeIndexE"></span><span id="_CPPv2N16PxSolverBodyData9nodeIndexE"></span><span id="PxSolverBodyData::nodeIndex__PxU32"></span><span class="target" id="struct_px_solver_body_data_1ac01024b5307ea57e79c7891d89906296"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nodeIndex</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData9nodeIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>76 the node idx of this solverBodyData. Used by solver to reference between solver bodies and island bodies. Not required by immediate mode </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData17maxContactImpulseE">
+<span id="_CPPv3N16PxSolverBodyData17maxContactImpulseE"></span><span id="_CPPv2N16PxSolverBodyData17maxContactImpulseE"></span><span id="PxSolverBodyData::maxContactImpulse__PxReal"></span><span class="target" id="struct_px_solver_body_data_1ac974d6181623739bdc087b02c1dd311b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxContactImpulse</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData17maxContactImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>80 the max contact impulse </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData10body2WorldE">
+<span id="_CPPv3N16PxSolverBodyData10body2WorldE"></span><span id="_CPPv2N16PxSolverBodyData10body2WorldE"></span><span id="PxSolverBodyData::body2World__PxTransform"></span><span class="target" id="struct_px_solver_body_data_1a1d32e78a191473936a6693b40185ad91"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">body2World</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData10body2WorldE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>108 the body’s transform </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSolverBodyData3padE">
+<span id="_CPPv3N16PxSolverBodyData3padE"></span><span id="_CPPv2N16PxSolverBodyData3padE"></span><span id="PxSolverBodyData::pad__PxU16"></span><span class="target" id="struct_px_solver_body_data_1aa406db65fc9a3a26764ffb91dbbad1b7"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pad</span></span></span><a class="headerlink" href="#_CPPv4N16PxSolverBodyData3padE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>112 pad </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

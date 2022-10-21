@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleTankDriveDifferentialStateComponent &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleTankDriveDifferentialStateComponent</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicletankdrivedifferentialstatecomponent">
+<span id="exhale-class-class-px-vehicle-tank-drive-differential-state-component"></span><h1>PxVehicleTankDriveDifferentialStateComponent<a class="headerlink" href="#pxvehicletankdrivedifferentialstatecomponent" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainComponents.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetraincomponents-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainComponents.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxVehicleComponent</span></code> (<a class="reference internal" href="class_px_vehicle_component.html#exhale-class-class-px-vehicle-component"><span class="std std-ref">PxVehicleComponent</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv444PxVehicleTankDriveDifferentialStateComponent">
+<span id="_CPPv344PxVehicleTankDriveDifferentialStateComponent"></span><span id="_CPPv244PxVehicleTankDriveDifferentialStateComponent"></span><span id="PxVehicleTankDriveDifferentialStateComponent"></span><span class="target" id="class_px_vehicle_tank_drive_differential_state_component"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialStateComponent</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_vehicle_component.html#_CPPv418PxVehicleComponent" title="PxVehicleComponent"><span class="n"><span class="pre">PxVehicleComponent</span></span></a><a class="headerlink" href="#_CPPv444PxVehicleTankDriveDifferentialStateComponent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the per wheel drive torque split of a tank drive differential. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__vehicle2_1gaa736dbc887b3b1583b0899776a5d9c59.html#group__vehicle2_1gaa736dbc887b3b1583b0899776a5d9c59"><span class="std std-ref">PxVehicleDifferentialStateUpdate</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N44PxVehicleTankDriveDifferentialStateComponent44PxVehicleTankDriveDifferentialStateComponentEv">
+<span id="_CPPv3N44PxVehicleTankDriveDifferentialStateComponent44PxVehicleTankDriveDifferentialStateComponentEv"></span><span id="_CPPv2N44PxVehicleTankDriveDifferentialStateComponent44PxVehicleTankDriveDifferentialStateComponentEv"></span><span id="PxVehicleTankDriveDifferentialStateComponent::PxVehicleTankDriveDifferentialStateComponent"></span><span class="target" id="class_px_vehicle_tank_drive_differential_state_component_1a28dfd46eaa5563ba61877c3321919668"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialStateComponent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N44PxVehicleTankDriveDifferentialStateComponent44PxVehicleTankDriveDifferentialStateComponentEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N44PxVehicleTankDriveDifferentialStateComponentD0Ev">
+<span id="_CPPv3N44PxVehicleTankDriveDifferentialStateComponentD0Ev"></span><span id="_CPPv2N44PxVehicleTankDriveDifferentialStateComponentD0Ev"></span><span id="PxVehicleTankDriveDifferentialStateComponent::~PxVehicleTankDriveDifferentialStateComponent"></span><span class="target" id="class_px_vehicle_tank_drive_differential_state_component_1a90f8c92dcb9f580a93d42f036a8a7b9a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxVehicleTankDriveDifferentialStateComponent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N44PxVehicleTankDriveDifferentialStateComponentD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N44PxVehicleTankDriveDifferentialStateComponent45getDataForTankDriveDifferentialStateComponentERPK24PxVehicleAxleDescriptionRPK42PxVehicleTankDriveTransmissionCommandStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsERPK36PxVehicleTankDriveDifferentialParamsRP26PxVehicleDifferentialStateRP34PxVehicleWheelConstraintGroupState">
+<span id="_CPPv3N44PxVehicleTankDriveDifferentialStateComponent45getDataForTankDriveDifferentialStateComponentERPK24PxVehicleAxleDescriptionRPK42PxVehicleTankDriveTransmissionCommandStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsERPK36PxVehicleTankDriveDifferentialParamsRP26PxVehicleDifferentialStateRP34PxVehicleWheelConstraintGroupState"></span><span id="_CPPv2N44PxVehicleTankDriveDifferentialStateComponent45getDataForTankDriveDifferentialStateComponentERPK24PxVehicleAxleDescriptionRPK42PxVehicleTankDriveTransmissionCommandStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsERPK36PxVehicleTankDriveDifferentialParamsRP26PxVehicleDifferentialStateRP34PxVehicleWheelConstraintGroupState"></span><span id="PxVehicleTankDriveDifferentialStateComponent::getDataForTankDriveDifferentialStateComponent__PxVehicleAxleDescriptionCPR.PxVehicleTankDriveTransmissionCommandStateCPR.PxVehicleArrayData:PxVehicleWheelParamsC:R.PxVehicleTankDriveDifferentialParamsCPR.PxVehicleDifferentialStatePR.PxVehicleWheelConstraintGroupStatePR"></span><span class="target" id="class_px_vehicle_tank_drive_differential_state_component_1a482fcf94f75406a618d43988d4857297"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDataForTankDriveDifferentialStateComponent</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDescription</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_tank_drive_transmission_command_state.html#_CPPv442PxVehicleTankDriveTransmissionCommandState" title="PxVehicleTankDriveTransmissionCommandState"><span class="n"><span class="pre">PxVehicleTankDriveTransmissionCommandState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transmissionCommands</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_params.html#_CPPv420PxVehicleWheelParams" title="PxVehicleWheelParams"><span class="n"><span class="pre">PxVehicleWheelParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_tank_drive_differential_params.html#_CPPv436PxVehicleTankDriveDifferentialParams" title="PxVehicleTankDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">differentialParams</span></span>, <a class="reference internal" href="struct_px_vehicle_differential_state.html#_CPPv426PxVehicleDifferentialState" title="PxVehicleDifferentialState"><span class="n"><span class="pre">PxVehicleDifferentialState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">differentialState</span></span>, <a class="reference internal" href="struct_px_vehicle_wheel_constraint_group_state.html#_CPPv434PxVehicleWheelConstraintGroupState" title="PxVehicleWheelConstraintGroupState"><span class="n"><span class="pre">PxVehicleWheelConstraintGroupState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">constraintGroupState</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N44PxVehicleTankDriveDifferentialStateComponent45getDataForTankDriveDifferentialStateComponentERPK24PxVehicleAxleDescriptionRPK42PxVehicleTankDriveTransmissionCommandStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsERPK36PxVehicleTankDriveDifferentialParamsRP26PxVehicleDifferentialStateRP34PxVehicleWheelConstraintGroupState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Provide vehicle data items for this component. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axleDescription</strong> – <strong>[out]</strong> identifies the wheels on each axle. </p></li>
+<li><p><strong>transmissionCommands</strong> – <strong>[out]</strong> specifies the values of the thrust controllers that divert torque to the tank tracks. </p></li>
+<li><p><strong>wheelParams</strong> – <strong>[out]</strong> is an array describing the radius of each wheel. </p></li>
+<li><p><strong>differentialParams</strong> – <strong>[out]</strong> describes the operation of the tank differential by specifying the default torque split between all wheels connected to the differential and by specifying the wheels coupled to each tank track. </p></li>
+<li><p><strong>differentialState</strong> – <strong>[out]</strong> stores the instantaneous torque split between all wheels arising from the difference between the thrust controllers. </p></li>
+<li><p><strong>constraintGroupState</strong> – <strong>[out]</strong> stores the groups of wheels that are connected by sharing a tank track. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N44PxVehicleTankDriveDifferentialStateComponent6updateEK6PxRealRK26PxVehicleSimulationContext">
+<span id="_CPPv3N44PxVehicleTankDriveDifferentialStateComponent6updateEK6PxRealRK26PxVehicleSimulationContext"></span><span id="_CPPv2N44PxVehicleTankDriveDifferentialStateComponent6updateEK6PxRealRK26PxVehicleSimulationContext"></span><span id="PxVehicleTankDriveDifferentialStateComponent::update__PxRealC.PxVehicleSimulationContextCR"></span><span class="target" id="class_px_vehicle_tank_drive_differential_state_component_1ad6e8b619aa5e2957b0350670ba6a5d7b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_simulation_context.html#_CPPv426PxVehicleSimulationContext" title="PxVehicleSimulationContext"><span class="n"><span class="pre">PxVehicleSimulationContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">context</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N44PxVehicleTankDriveDifferentialStateComponent6updateEK6PxRealRK26PxVehicleSimulationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Update function for a vehicle component. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_vehicle_component_sequence.html#struct_px_vehicle_component_sequence"><span class="std std-ref">PxVehicleComponentSequence</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep size to use for the update step. </p></li>
+<li><p><strong>context</strong> – <strong>[in]</strong> Vehicle simulation context holding global data or data that usually applies to a large group of vehicles. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if subsequent components in a sequence should get updated, false if the sequence should be aborted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxControllerFilters &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxControllerFilters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontrollerfilters">
+<span id="exhale-class-class-px-controller-filters"></span><h1>PxControllerFilters<a class="headerlink" href="#pxcontrollerfilters" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxController.h.html#file-include-characterkinematic-pxcontroller-h"><span class="std std-ref">include/characterkinematic/PxController.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxControllerFilters">
+<span id="_CPPv319PxControllerFilters"></span><span id="_CPPv219PxControllerFilters"></span><span id="PxControllerFilters"></span><span class="target" id="class_px_controller_filters"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerFilters</span></span></span><a class="headerlink" href="#_CPPv419PxControllerFilters" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filtering data for “move” call. </p>
+<p>This class contains all filtering-related parameters for the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController::move()</span></a> call.</p>
+<p>Collisions between a CCT and the world are filtered using the mFilterData, mFilterCallback and mFilterFlags members. These parameters are internally passed to <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene::overlap()</span></a> to find objects touched by the CCT. Please refer to the <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene::overlap()</span></a> documentation for details.</p>
+<p>Collisions between a CCT and another CCT are filtered using the mCCTFilterCallback member. If this filter callback is not defined, none of the CCT-vs-CCT collisions are filtered, and each CCT will collide against all other CCTs.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController.move()</span></a> <a class="reference internal" href="class_px_controller_filter_callback.html#class_px_controller_filter_callback"><span class="std std-ref">PxControllerFilterCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> and <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98467f45e717fa0f52652f52b0ff9798"><span class="std std-ref">PxQueryFlag::eNO_BLOCK</span></a> are ignored in mFilterFlags.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerFilters19PxControllerFiltersEPK12PxFilterDataP21PxQueryFilterCallbackP26PxControllerFilterCallback">
+<span id="_CPPv3N19PxControllerFilters19PxControllerFiltersEPK12PxFilterDataP21PxQueryFilterCallbackP26PxControllerFilterCallback"></span><span id="_CPPv2N19PxControllerFilters19PxControllerFiltersEPK12PxFilterDataP21PxQueryFilterCallbackP26PxControllerFilterCallback"></span><span id="PxControllerFilters::PxControllerFilters__PxFilterDataCP.PxQueryFilterCallbackP.PxControllerFilterCallbackP"></span><span class="target" id="class_px_controller_filters_1a6950acdcaf89ed64397fa5bd63ef6e46"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerFilters</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cb</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="class_px_controller_filter_callback.html#_CPPv426PxControllerFilterCallback" title="PxControllerFilterCallback"><span class="n"><span class="pre">PxControllerFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cctFilterCb</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxControllerFilters19PxControllerFiltersEPK12PxFilterDataP21PxQueryFilterCallbackP26PxControllerFilterCallback" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerFilters11mFilterDataE">
+<span id="_CPPv3N19PxControllerFilters11mFilterDataE"></span><span id="_CPPv2N19PxControllerFilters11mFilterDataE"></span><span id="PxControllerFilters::mFilterData__PxFilterDataCP"></span><span class="target" id="class_px_controller_filters_1acf5e6d944353328cb490c7627c697a82"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mFilterData</span></span></span><a class="headerlink" href="#_CPPv4N19PxControllerFilters11mFilterDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Data for internal <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> structure. Passed to <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene::overlap()</span></a> call. This can be NULL, in which case a default <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> is used. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerFilters15mFilterCallbackE">
+<span id="_CPPv3N19PxControllerFilters15mFilterCallbackE"></span><span id="_CPPv2N19PxControllerFilters15mFilterCallbackE"></span><span id="PxControllerFilters::mFilterCallback__PxQueryFilterCallbackP"></span><span class="target" id="class_px_controller_filters_1ae7ac0b3c1356b19fbe66db9309e181c8"></span><a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mFilterCallback</span></span></span><a class="headerlink" href="#_CPPv4N19PxControllerFilters15mFilterCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Custom filter logic (can be NULL). Passed to <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene::overlap()</span></a> call. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerFilters12mFilterFlagsE">
+<span id="_CPPv3N19PxControllerFilters12mFilterFlagsE"></span><span id="_CPPv2N19PxControllerFilters12mFilterFlagsE"></span><span id="PxControllerFilters::mFilterFlags__PxQueryFlags"></span><span class="target" id="class_px_controller_filters_1a9281f07b97b88a5720d30282b97e086d"></span><a class="reference internal" href="typedef_group__scenequery_1gaacf083b040f6c841644782282171bd61.html#_CPPv412PxQueryFlags" title="PxQueryFlags"><span class="n"><span class="pre">PxQueryFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mFilterFlags</span></span></span><a class="headerlink" href="#_CPPv4N19PxControllerFilters12mFilterFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags for internal <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> structure. Passed to <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene::overlap()</span></a> call. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxControllerFilters18mCCTFilterCallbackE">
+<span id="_CPPv3N19PxControllerFilters18mCCTFilterCallbackE"></span><span id="_CPPv2N19PxControllerFilters18mCCTFilterCallbackE"></span><span id="PxControllerFilters::mCCTFilterCallback__PxControllerFilterCallbackP"></span><span class="target" id="class_px_controller_filters_1acb0784a5f9495abad851ac52f313ee3f"></span><a class="reference internal" href="class_px_controller_filter_callback.html#_CPPv426PxControllerFilterCallback" title="PxControllerFilterCallback"><span class="n"><span class="pre">PxControllerFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mCCTFilterCallback</span></span></span><a class="headerlink" href="#_CPPv4N19PxControllerFilters18mCCTFilterCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>CCT-vs-CCT filter callback. If NULL, all CCT-vs-CCT collisions are kept. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

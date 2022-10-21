@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleAxleDescription &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleAxleDescription</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicleaxledescription">
+<span id="exhale-struct-struct-px-vehicle-axle-description"></span><h1>PxVehicleAxleDescription<a class="headerlink" href="#pxvehicleaxledescription" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_PxVehicleParams.h.html#file-include-vehicle2-pxvehicleparams-h"><span class="std std-ref">include/vehicle2/PxVehicleParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv424PxVehicleAxleDescription">
+<span id="_CPPv324PxVehicleAxleDescription"></span><span id="_CPPv224PxVehicleAxleDescription"></span><span id="PxVehicleAxleDescription"></span><span class="target" id="struct_px_vehicle_axle_description"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></span><a class="headerlink" href="#_CPPv424PxVehicleAxleDescription" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription12setToDefaultEv">
+<span id="_CPPv3N24PxVehicleAxleDescription12setToDefaultEv"></span><span id="_CPPv2N24PxVehicleAxleDescription12setToDefaultEv"></span><span id="PxVehicleAxleDescription::setToDefault"></span><span class="target" id="struct_px_vehicle_axle_description_1ad9d9324eb528a5eb8d07c5b0871346da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription7addAxleEK5PxU32PCK5PxU32">
+<span id="_CPPv3N24PxVehicleAxleDescription7addAxleEK5PxU32PCK5PxU32"></span><span id="_CPPv2N24PxVehicleAxleDescription7addAxleEK5PxU32PCK5PxU32"></span><span id="PxVehicleAxleDescription::addAxle__PxU32C.PxU32CPC"></span><span class="target" id="struct_px_vehicle_axle_description_1a035df7da691f2dbb31fbefead13f1427"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addAxle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbWheelsOnAxle</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wheelIdsOnAxle</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription7addAxleEK5PxU32PCK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add an axle to the vehicle by specifying the number of wheels on the axle and an array of wheel ids specifying each wheel on the axle. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbWheelsOnAxle</strong> – <strong>[in]</strong> is the number of wheels on the axle to be added. </p></li>
+<li><p><strong>wheelIdsOnAxle</strong> – <strong>[in]</strong> is an array of wheel ids specifying all the wheels on the axle to be added. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription10getNbAxlesEv">
+<span id="_CPPv3NK24PxVehicleAxleDescription10getNbAxlesEv"></span><span id="_CPPv2NK24PxVehicleAxleDescription10getNbAxlesEv"></span><span id="PxVehicleAxleDescription::getNbAxlesC"></span><span class="target" id="struct_px_vehicle_axle_description_1a0c0b47972ae529d4f60c2dccf966a64f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbAxles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription10getNbAxlesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of axles on the vehicle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_axle_description_1a9460264486a8b5f10c4c3e9f0580c01f"><span class="std std-ref">getNbWheelsOnAxle()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of axles. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription17getNbWheelsOnAxleEK5PxU32">
+<span id="_CPPv3NK24PxVehicleAxleDescription17getNbWheelsOnAxleEK5PxU32"></span><span id="_CPPv2NK24PxVehicleAxleDescription17getNbWheelsOnAxleEK5PxU32"></span><span id="PxVehicleAxleDescription::getNbWheelsOnAxle__PxU32CC"></span><span class="target" id="struct_px_vehicle_axle_description_1a9460264486a8b5f10c4c3e9f0580c01f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbWheelsOnAxle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription17getNbWheelsOnAxleEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of wheels on the ith axle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_axle_description_1a12b86944718138649feec3130770d804"><span class="std std-ref">getWheelOnAxle()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> specifies the axle to be queried for its wheel count. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The number of wheels on the specified axle. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription14getWheelOnAxleEK5PxU32K5PxU32">
+<span id="_CPPv3NK24PxVehicleAxleDescription14getWheelOnAxleEK5PxU32K5PxU32"></span><span id="_CPPv2NK24PxVehicleAxleDescription14getWheelOnAxleEK5PxU32K5PxU32"></span><span id="PxVehicleAxleDescription::getWheelOnAxle__PxU32C.PxU32CC"></span><span class="target" id="struct_px_vehicle_axle_description_1a12b86944718138649feec3130770d804"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWheelOnAxle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">j</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription14getWheelOnAxleEK5PxU32K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the wheel id of the jth wheel on the ith axle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_axle_description_1a9460264486a8b5f10c4c3e9f0580c01f"><span class="std std-ref">getNbWheelsOnAxle()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>j</strong> – <strong>[in]</strong> specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified axle. </p></li>
+<li><p><strong>i</strong> – <strong>[in]</strong> specifies the axle to be queried. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The wheel id of the jth wheel on the ith axle. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription11getNbWheelsEv">
+<span id="_CPPv3NK24PxVehicleAxleDescription11getNbWheelsEv"></span><span id="_CPPv2NK24PxVehicleAxleDescription11getNbWheelsEv"></span><span id="PxVehicleAxleDescription::getNbWheelsC"></span><span class="target" id="struct_px_vehicle_axle_description_1aced1a63db57a9ede068835ee405dc915"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbWheels</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription11getNbWheelsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of wheels on the vehicle. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of wheels. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription7getAxleEK5PxU32">
+<span id="_CPPv3NK24PxVehicleAxleDescription7getAxleEK5PxU32"></span><span id="_CPPv2NK24PxVehicleAxleDescription7getAxleEK5PxU32"></span><span id="PxVehicleAxleDescription::getAxle__PxU32CC"></span><span class="target" id="struct_px_vehicle_axle_description_1a84f66798090860c60395b654a6c51a29"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAxle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">wheelId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription7getAxleEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the axle of a specified wheel. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wheelId</strong> – <strong>[in]</strong> is the wheel whose axle is to be queried. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The axle of the specified wheel. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleAxleDescription7isValidEv">
+<span id="_CPPv3NK24PxVehicleAxleDescription7isValidEv"></span><span id="_CPPv2NK24PxVehicleAxleDescription7isValidEv"></span><span id="PxVehicleAxleDescription::isValidC"></span><span class="target" id="struct_px_vehicle_axle_description_1a776735cb0396b7618f83b6b8bf93cef7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleAxleDescription7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription7nbAxlesE">
+<span id="_CPPv3N24PxVehicleAxleDescription7nbAxlesE"></span><span id="_CPPv2N24PxVehicleAxleDescription7nbAxlesE"></span><span id="PxVehicleAxleDescription::nbAxles__PxU32"></span><span class="target" id="struct_px_vehicle_axle_description_1aacf1cb290db1ce6751256518d17f68ca"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbAxles</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription7nbAxlesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of axles on the vehicle. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription15nbWheelsPerAxleE">
+<span id="_CPPv3N24PxVehicleAxleDescription15nbWheelsPerAxleE"></span><span id="_CPPv2N24PxVehicleAxleDescription15nbWheelsPerAxleE"></span><span id="PxVehicleAxleDescription::nbWheelsPerAxle__PxU32A"></span><span class="target" id="struct_px_vehicle_axle_description_1a531ddb8f54789749d20a6560c7725f59"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheelsPerAxle</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum13eMAX_NB_AXLESE" title="PxVehicleLimits::eMAX_NB_AXLES"><span class="n"><span class="pre">eMAX_NB_AXLES</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription15nbWheelsPerAxleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels on each axle. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription14axleToWheelIdsE">
+<span id="_CPPv3N24PxVehicleAxleDescription14axleToWheelIdsE"></span><span id="_CPPv2N24PxVehicleAxleDescription14axleToWheelIdsE"></span><span id="PxVehicleAxleDescription::axleToWheelIds__PxU32A"></span><span class="target" id="struct_px_vehicle_axle_description_1aa373e715f9873250bcf0ff075e92d3fc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">axleToWheelIds</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum13eMAX_NB_AXLESE" title="PxVehicleLimits::eMAX_NB_AXLES"><span class="n"><span class="pre">eMAX_NB_AXLES</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription14axleToWheelIdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of wheel ids for the ith axle begins at wheelIdsInAxleOrder[axleToWheelIds[i]]. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription19wheelIdsInAxleOrderE">
+<span id="_CPPv3N24PxVehicleAxleDescription19wheelIdsInAxleOrderE"></span><span id="_CPPv2N24PxVehicleAxleDescription19wheelIdsInAxleOrderE"></span><span id="PxVehicleAxleDescription::wheelIdsInAxleOrder__PxU32A"></span><span class="target" id="struct_px_vehicle_axle_description_1af0fabed08f02ac4ac44919a143a1e4b8"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wheelIdsInAxleOrder</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription19wheelIdsInAxleOrderE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of all wheel ids on the vehicle. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleAxleDescription8nbWheelsE">
+<span id="_CPPv3N24PxVehicleAxleDescription8nbWheelsE"></span><span id="_CPPv2N24PxVehicleAxleDescription8nbWheelsE"></span><span id="PxVehicleAxleDescription::nbWheels__PxU32"></span><span class="target" id="struct_px_vehicle_axle_description_1a1c51fb63dc99265489b30a3b5e8bee5c"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheels</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleAxleDescription8nbWheelsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels on the vehicle. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

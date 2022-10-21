@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Startup and Shutdown &mdash; omni.flowsdk 105.1.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/pygments_dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme-switcher-general.css" type="text/css" />
+      <link rel="stylesheet" href="_static/omni-style-dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/api-styles-dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/mermaid-init.js"></script>
+        <script src="_static/theme-setter.js"></script>
+        <script src="_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="_static/version.js"></script>
+        <script src="_static/social-media.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Simulation" href="Simulation.html" />
+    <link rel="prev" title="Building" href="Building.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+<a href="index.html">
+  <img src="_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Building.html">Building</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">omni.flowsdk</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Startup and Shutdown</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="startup-and-shutdown">
+<h1>Startup and Shutdown<a class="headerlink" href="#startup-and-shutdown" title="Permalink to this headline"></a></h1>
+<section id="loading-the-flow-library">
+<h2>Loading the Flow Library<a class="headerlink" href="#loading-the-flow-library" title="Permalink to this headline"></a></h2>
+<p>To start using the Flow library, first the DLL/so must be loaded and symbols for root interfaces resolved.
+Then some NvFlowContext implementation must be provided, in this case the default Vulkan implementation is used.
+Once there is a context, then the grid can be created and parameter streaming initialized.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>void printError(const char* str, void* userdata);
+
+NvFlowLoader loader = {};
+NvFlowContextInterface contextInterface = {};
+
+NvFlowDeviceManager* deviceManager = nullptr;
+NvFlowDevice* device = nullptr;
+NvFlowDeviceQueue* deviceQueue = nullptr;
+
+NvFlowGrid* grid = nullptr;
+NvFlowGridParamsNamed* gridParamsNamed = nullptr;
+
+NvFlowLoaderInit(&amp;loader, printError, nullptr);
+
+if (!loader.module_nvflow || !loader.module_nvflowext)
+{
+	printf(&quot;FlowLoader init() failed!!!\n&quot;);
+	return false;
+}
+
+// initialize compute/graphics
+{
+	NvFlowBool32 validation = NV_FLOW_TRUE;
+
+	deviceManager = loader.deviceInterface.createDeviceManager(validation, nullptr, 0u);
+
+	NvFlowDeviceDesc deviceDesc = {};
+	deviceDesc.deviceIndex = deviceIdx;
+	deviceDesc.enableExternalUsage = cudaInteropEnabled;
+	deviceDesc.logPrint = logPrint;
+
+	device = loader.deviceInterface.createDevice(deviceManager, &amp;deviceDesc);
+
+	deviceQueue = loader.deviceInterface.getDeviceQueue(device);
+
+	NvFlowContextInterface_duplicate(&amp;contextInterface, loader.deviceInterface.getContextInterface(deviceQueue));
+}
+
+NvFlowContext* context = loader.deviceInterface.getContext(deviceQueue);
+
+// initialize grid
+{
+	NvFlowGridDesc gridDesc = NvFlowGridDesc_default;
+
+	if (maxBlocks &gt; 0u)
+	{
+		gridDesc.maxLocations = maxBlocks;
+	}
+
+	grid = loader.gridInterface.createGrid(&amp;contextInterface, context, &amp;loader.opList, &amp;loader.extOpList, &amp;gridDesc);
+	gridParamsNamed = loader.gridParamsInterface.createGridParamsNamed(&quot;flowUsd&quot;);
+}
+</pre></div>
+</div>
+</section>
+<section id="shutting-down">
+<h2>Shutting Down<a class="headerlink" href="#shutting-down" title="Permalink to this headline"></a></h2>
+<p>Shutting down is similar to initialization, with the caveat that GPU work should be flushed before waiting for completion.
+The wait idle before destroyGrid maximizes the resources destroyGrid can safely release.
+The flush and waitIdle makes sure any deferred resource release is processed before destroyDevice.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// wait idle
+{
+	loader.deviceInterface.waitIdle(deviceQueue);
+}
+
+// safe to release any interop buffers here
+
+// destroy grid
+{
+	NvFlowContext* context = loader.deviceInterface.getContext(deviceQueue);
+
+	loader.gridInterface.destroyGrid(context, grid);
+	loader.gridParamsInterface.destroyGridParamsNamed(gridParamsNamed);
+}
+
+// wait idle
+{
+	NvFlowUint64 flushedFrameID = 0u;
+	loader.deviceInterface.flush(deviceQueue, &amp;flushedFrameID, nullptr, nullptr);
+
+	loader.deviceInterface.waitIdle(deviceQueue);
+}
+
+// destroy compute/graphics
+{
+	loader.deviceInterface.destroyDevice(deviceManager, device);
+	loader.deviceInterface.destroyDeviceManager(deviceManager);
+}
+
+NvFlowLoaderDestroy(&amp;loader);
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 01, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

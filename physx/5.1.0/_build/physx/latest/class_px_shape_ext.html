@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxShapeExt &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxShapeExt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxshapeext">
+<span id="exhale-class-class-px-shape-ext"></span><h1>PxShapeExt<a class="headerlink" href="#pxshapeext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxShapeExt.h.html#file-include-extensions-pxshapeext-h"><span class="std std-ref">include/extensions/PxShapeExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv410PxShapeExt">
+<span id="_CPPv310PxShapeExt"></span><span id="_CPPv210PxShapeExt"></span><span id="PxShapeExt"></span><span class="target" id="class_px_shape_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShapeExt</span></span></span><a class="headerlink" href="#_CPPv410PxShapeExt" title="Permalink to this definition"></a><br /></dt>
+<dd><p>utility functions for use with <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxShapeExt13getGlobalPoseERK7PxShapeRK12PxRigidActor">
+<span id="_CPPv3N10PxShapeExt13getGlobalPoseERK7PxShapeRK12PxRigidActor"></span><span id="_CPPv2N10PxShapeExt13getGlobalPoseERK7PxShapeRK12PxRigidActor"></span><span id="PxShapeExt::getGlobalPose__PxShapeCR.PxRigidActorCR"></span><span class="target" id="class_px_shape_ext_1a65af9856cc7862701612030dcdc4d028"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGlobalPose</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxShapeExt13getGlobalPoseERK7PxShapeRK12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the world space pose of the shape. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape for which to get the global pose. </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor to which the shape is attached</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Global pose of shape. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxShapeExt7raycastERK7PxShapeRK12PxRigidActorRK6PxVec3RK6PxVec36PxReal10PxHitFlags5PxU32P12PxRaycastHit">
+<span id="_CPPv3N10PxShapeExt7raycastERK7PxShapeRK12PxRigidActorRK6PxVec3RK6PxVec36PxReal10PxHitFlags5PxU32P12PxRaycastHit"></span><span id="_CPPv2N10PxShapeExt7raycastERK7PxShapeRK12PxRigidActorRK6PxVec3RK6PxVec36PxReal10PxHitFlags5PxU32P12PxRaycastHit"></span><span id="PxShapeExt::raycast__PxShapeCR.PxRigidActorCR.PxVec3CR.PxVec3CR.PxReal.PxHitFlags.PxU32.PxRaycastHitP"></span><span class="target" id="class_px_shape_ext_1ae952b2326ce3dc4fc280492d5c31b71c"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rayOrigin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rayDir</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxDist</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxHits</span></span>, <a class="reference internal" href="struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><span class="n"><span class="pre">PxRaycastHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rayHits</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxShapeExt7raycastERK7PxShapeRK12PxRigidActorRK6PxVec3RK6PxVec36PxReal10PxHitFlags5PxU32P12PxRaycastHit" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast test against the shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> PxTransform </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> the shape </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> the actor to which the shape is attached </p></li>
+<li><p><strong>rayOrigin</strong> – <strong>[in]</strong> The origin of the ray to test the geometry object against </p></li>
+<li><p><strong>rayDir</strong> – <strong>[in]</strong> The direction of the ray to test the geometry object against </p></li>
+<li><p><strong>maxDist</strong> – <strong>[in]</strong> Maximum ray length </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specify which properties per hit should be computed and written to result hit array. Combination of <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags </p></li>
+<li><p><strong>maxHits</strong> – <strong>[in]</strong> max number of returned hits = size of ‘rayHits’ buffer </p></li>
+<li><p><strong>rayHits</strong> – <strong>[out]</strong> Raycast hits information </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of hits between the ray and the shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxShapeExt7overlapERK7PxShapeRK12PxRigidActorRK10PxGeometryRK11PxTransform">
+<span id="_CPPv3N10PxShapeExt7overlapERK7PxShapeRK12PxRigidActorRK10PxGeometryRK11PxTransform"></span><span id="_CPPv2N10PxShapeExt7overlapERK7PxShapeRK12PxRigidActorRK10PxGeometryRK11PxTransform"></span><span id="PxShapeExt::overlap__PxShapeCR.PxRigidActorCR.PxGeometryCR.PxTransformCR"></span><span class="target" id="class_px_shape_ext_1ac9719eb96de014ca901bd2efbd784dc0"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">otherGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">otherGeomPose</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxShapeExt7overlapERK7PxShapeRK12PxRigidActorRK10PxGeometryRK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Test overlap between the shape and a geometry object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> PxTransform </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> the shape </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> the actor to which the shape is attached </p></li>
+<li><p><strong>otherGeom</strong> – <strong>[in]</strong> The other geometry object to test overlap with </p></li>
+<li><p><strong>otherGeomPose</strong> – <strong>[in]</strong> Pose of the other geometry object </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the shape overlaps the geometry object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxShapeExt5sweepERK7PxShapeRK12PxRigidActorRK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformR10PxSweepHit10PxHitFlags">
+<span id="_CPPv3N10PxShapeExt5sweepERK7PxShapeRK12PxRigidActorRK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformR10PxSweepHit10PxHitFlags"></span><span id="_CPPv2N10PxShapeExt5sweepERK7PxShapeRK12PxRigidActorRK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformR10PxSweepHit10PxHitFlags"></span><span id="PxShapeExt::sweep__PxShapeCR.PxRigidActorCR.PxVec3CR.PxRealC.PxGeometryCR.PxTransformCR.PxSweepHitR.PxHitFlags"></span><span class="target" id="class_px_shape_ext_1af3a6b48d25f4e7096234a52fbe84fb17"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">otherGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">otherGeomPose</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sweepHit</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxShapeExt5sweepERK7PxShapeRK12PxRigidActorRK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformR10PxSweepHit10PxHitFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep a geometry object against the shape. </p>
+<p>Currently only box, sphere, capsule and convex mesh shapes are supported, i.e. the swept geometry object must be one of those types.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> PxTransform <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> the shape </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> the actor to which the shape is attached </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction along which the geometry object should be swept. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. </p></li>
+<li><p><strong>otherGeom</strong> – <strong>[in]</strong> The geometry object to sweep against the shape </p></li>
+<li><p><strong>otherGeomPose</strong> – <strong>[in]</strong> Pose of the geometry object </p></li>
+<li><p><strong>sweepHit</strong> – <strong>[out]</strong> The sweep hit information. Only valid if this method returns true. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specify which properties per hit should be computed and written to result hit array. Combination of <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the swept geometry object hits the shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxShapeExt14getWorldBoundsERK7PxShapeRK12PxRigidActorf">
+<span id="_CPPv3N10PxShapeExt14getWorldBoundsERK7PxShapeRK12PxRigidActorf"></span><span id="_CPPv2N10PxShapeExt14getWorldBoundsERK7PxShapeRK12PxRigidActorf"></span><span id="PxShapeExt::getWorldBounds__PxShapeCR.PxRigidActorCR.float"></span><span class="target" id="class_px_shape_ext_1a899a0b64605cd1c0f64ec5357b2c78a7"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWorldBounds</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.01f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxShapeExt14getWorldBoundsERK7PxShapeRK12PxRigidActorf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the axis aligned bounding box enclosing the shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> the shape </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> the actor to which the shape is attached </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> Scale factor for computed world bounds. Box extents are multiplied by this value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The shape’s bounding box.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

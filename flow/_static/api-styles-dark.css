@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+
+/**
+ * CSS variables for API signature styling.
+ *
+ * These define styles in a way that function signatures produced by Sphinx will apply similar results for Python, C++,
+ * or any other language supported by Sphinx.
+ */
+html[data-theme='dark']
+{
+    --api-signature-font-style-light: 300;
+    --api-signature-parameter-name-color: #FCFCFC;
+    --api-signature-parameter-name-font-style: normal;
+    --api-signature-parameter-symbol-color: var(--sd-color-tabs-label-inactive);
+    --api-signature-parameter-default-value-color: var(--sd-color-tabs-label-inactive);
+}
+
+/**
+ * Python function parameter name.
+ */
+/*
+div > dl.py > dt > em.sig-param > span.n > span.pre,
+div > dl.py > dt > span.pre
+*/
+html[data-theme='dark'] dl.py em.sig-param > span.n > span.pre
+{
+    color: var(--api-signature-parameter-name-color);
+    font-style: var(--api-signature-parameter-name-font-style);
+}

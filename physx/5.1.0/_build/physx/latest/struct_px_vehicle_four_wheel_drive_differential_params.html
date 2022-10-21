@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleFourWheelDriveDifferentialParams &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleFourWheelDriveDifferentialParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclefourwheeldrivedifferentialparams">
+<span id="exhale-struct-struct-px-vehicle-four-wheel-drive-differential-params"></span><h1>PxVehicleFourWheelDriveDifferentialParams<a class="headerlink" href="#pxvehiclefourwheeldrivedifferentialparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainParams.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainparams-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainParams.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxVehicleMultiWheelDriveDifferentialParams</span></code> (<a class="reference internal" href="struct_px_vehicle_multi_wheel_drive_differential_params.html#exhale-struct-struct-px-vehicle-multi-wheel-drive-differential-params"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv441PxVehicleFourWheelDriveDifferentialParams">
+<span id="_CPPv341PxVehicleFourWheelDriveDifferentialParams"></span><span id="_CPPv241PxVehicleFourWheelDriveDifferentialParams"></span><span id="PxVehicleFourWheelDriveDifferentialParams"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleFourWheelDriveDifferentialParams</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_multi_wheel_drive_differential_params.html#_CPPv442PxVehicleMultiWheelDriveDifferentialParams" title="PxVehicleMultiWheelDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleMultiWheelDriveDifferentialParams</span></span></a><a class="headerlink" href="#_CPPv441PxVehicleFourWheelDriveDifferentialParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p><a class="reference internal" href="#struct_px_vehicle_four_wheel_drive_differential_params"><span class="std std-ref">PxVehicleFourWheelDriveDifferentialParams</span></a> specifies the wheels that are to receive drive torque from the differential and the division of torque between the wheels that are connected to the differential. </p>
+<p>Additionally, it specifies the biases and strength of a limited slip differential that operates on two wheels specified as front wheels and two wheels specified as rear wheels. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12setToDefaultEv">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams12setToDefaultEv"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams12setToDefaultEv"></span><span id="PxVehicleFourWheelDriveDifferentialParams::setToDefault"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1ace18efd12bd631014cc244c80f908580"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK41PxVehicleFourWheelDriveDifferentialParams7isValidERK24PxVehicleAxleDescription">
+<span id="_CPPv3NK41PxVehicleFourWheelDriveDifferentialParams7isValidERK24PxVehicleAxleDescription"></span><span id="_CPPv2NK41PxVehicleFourWheelDriveDifferentialParams7isValidERK24PxVehicleAxleDescription"></span><span id="PxVehicleFourWheelDriveDifferentialParams::isValid__PxVehicleAxleDescriptionCRC"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a7c20cb90cc875a512682d39af89e78f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK41PxVehicleFourWheelDriveDifferentialParams7isValidERK24PxVehicleAxleDescription" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK41PxVehicleFourWheelDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK41PxVehicleFourWheelDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK41PxVehicleFourWheelDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleFourWheelDriveDifferentialParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a07844632335e810d9d3343588211906a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv441PxVehicleFourWheelDriveDifferentialParams" title="PxVehicleFourWheelDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleFourWheelDriveDifferentialParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK41PxVehicleFourWheelDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams13frontWheelIdsE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams13frontWheelIdsE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams13frontWheelIdsE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::frontWheelIds__PxU32A"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1ab733678950f25d348eec60135341464c"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frontWheelIds</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams13frontWheelIdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The ids of the two wheels considered by the differential to be the front pair. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When the ratio of the rotational speeds of the front wheels exceeds frontBias, drive torque is diverted so that the ratio approaches the value specified by frontTarget. When the bias is not breached, the drive torque is specified by the corresponding entries in <a class="reference internal" href="struct_px_vehicle_tank_drive_differential_params.html#struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams::torqueRatios</span></a>. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12rearWheelIdsE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams12rearWheelIdsE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams12rearWheelIdsE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::rearWheelIds__PxU32A"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a2853ab809d60ba160f5debf0a6b32fb6"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rearWheelIds</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12rearWheelIdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The ids of the two wheels considered by the differential to be the rear pair. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When the ratio of the rotational speeds of the rear wheels exceeds rearBias, drive torque is diverted so that the ratio approaches the value specified by rearTarget. When the bias is not breached, the drive torque is specified by the corresponding entries in <a class="reference internal" href="struct_px_vehicle_tank_drive_differential_params.html#struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams::torqueRatios</span></a>. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams9frontBiasE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams9frontBiasE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams9frontBiasE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::frontBias__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a41c54ec17e8e3e3be0c1735d37a324e6"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frontBias</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams9frontBiasE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter frontBias specifies the maximum angular speed ratio of the two front wheels specified by frontWheelIds[2]. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If frontBias has value 0.0, the differential will not try to enforce any relationship between the rotational speeds of the two front wheels. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If frontBias has value 0.0, the torque split between the front wheels is specified by the array torqueRatios. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frontBias must have value 0.0 (deactivated limited slip) or be greater than 1.0 (activated limited slip) or be equal to 1.0 (locked axle). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If frontBias has value greater than or equal to 1.0 then the array frontWheelIds must be specified and the corresponding entries of the isConnected[] array must be set true. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If frontBias has value greater than or equal to 1.0 then frontTarget must also be specified. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A locked axle may be achieved by setting frontBias and frontTarget to 1.0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A limited slip differential may be achieved by setting frontBias &gt; 1.0 and frontBias &gt; frontTarget &gt; 1.0. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams11frontTargetE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams11frontTargetE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams11frontTargetE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::frontTarget__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1aabb901db78ddad658a13b5be89242590"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frontTarget</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams11frontTargetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter frontTarget specifies the target rotational speed ratio of the two front wheels in the event that the ratio exceeds frontBias and frontBias is configured for an activated limited slip or locked axle. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frontTarget must be less than frontBias and greater than 1.0 to implement a limited slip differential. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Set frontTarget and frontBias to 1.0 to implement a locked axle. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams8rearBiasE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams8rearBiasE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams8rearBiasE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::rearBias__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a5e63abcffdd8f8b7f8ccfb638888b578"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rearBias</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams8rearBiasE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter rearBias specifies the maximum angular speed ratio of the two rear wheels specified by rearWheelIds[2]. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If rearBias has value 0.0, the differential will not try to enforce any relationship between the rotational speeds of the two rear wheels. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If rearBias has value 0.0, the torque split between the rear wheels is specified by the array torqueRatios. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>rearBias must have value 0.0 (deactivated limited slip) or be greater than 1.0 (activated limited slip) or be equal to 1.0 (locked axle). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If rearBias has value greater than or equal to 1.0 then the array rearWheelIds must be specified and the corresponding entries of the isConnected[] array must be set true. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If rearBias has value greater than or equal to 1.0 then rearTarget must also be specified. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A locked axle may be achieved by setting rearBias and rearTarget to 1.0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A limited slip differential may be achieved by setting rearBias &gt; 1.0 and rearBias &gt; rearTarget &gt; 1.0 </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams10rearTargetE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams10rearTargetE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams10rearTargetE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::rearTarget__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a3a1cd426f23bfba5931e5d49aadd606d"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rearTarget</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams10rearTargetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter rearTarget specifies the target rotational speed ratio of the two rear wheels in the event that the ratio exceeds rearBias and rearBias is configured for an activated limited slip or locked axle. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>rearTarget must be less than rearBias and greater than 1.0 to implement a limited slip differential. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Set rearTarget and rearBias to 1.0 to implement a locked axle. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams10centerBiasE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams10centerBiasE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams10centerBiasE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::centerBias__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1ae9e79ca3f055aeb179832adf4373a055"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">centerBias</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams10centerBiasE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter centerBias specifies the maximum angular speed ratio of the sum of the two front wheels and the sum of the two rear wheels, as specified by frontWheelIds[2] and rearWheelIds[2]. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If centerBias has value 0.0, the differential will not try to enforce any relationship between the rotational speeds of the front and rear wheels. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If centerBias has value 0.0, the torque split between the front and rear rear wheels is specified by the array torqueRatios. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>centerBias must have value 0.0 (deactivated limited slip) or be greater than 1.0 (activated limited slip) or be equal to 1.0 (locked). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If centerBias has value greater than or equal to 1.0 then the arrays frontWheelIds and rearWheelIds must be specified and the corresponding entries of the isConnected[] array must be set true. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If centerBias has value greater than or equal to 1.0 then centerTarget must also be specified. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A locked front/rear differential may be achieved by setting centerBias and centerTarget to 1.0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A limited slip differential may be achieved by setting centerBias &gt; 1.0 and centerBias &gt; centerTarget &gt; 1.0 </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12centerTargetE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams12centerTargetE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams12centerTargetE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::centerTarget__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1aea153c783c49e9c13a9d2f897902e318"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">centerTarget</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12centerTargetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter centerTarget specifies the target rotational speed ratio of the sum of the two front wheels and the sum of the two rear wheels in the event that the ratio exceeds centerBias and centerBias is configured for an activated limited slip. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>centerTarget must be less than centerBias and greater than 1.0 to implement a limited slip differential. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Set centerTarget and centerBias to 1.0 to implement a locked differential. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams4rateE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams4rateE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams4rateE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::rate__PxReal"></span><span class="target" id="struct_px_vehicle_four_wheel_drive_differential_params_1a6332362f1f6e75caee5bfc839991555c"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rate</span></span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams4rateE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The parameter rate specifies how quickly the ratio of rotational speeds approaches the target rotational speed ratio. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>strength must be in range [0,PX_VEHICLE_FOUR_WHEEL_DIFF_MAXIMUM_STRENGTH]. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The ratio of rotational speeds is decremented each update by rate*dt until the ratio is equal to the target ratio. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of 0 will result in a deactivated limited slip. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of PX_VEHICLE_FOUR_WHEEL_DIFF_MAXIMUM_STRENGTH will result in instantaneous correction of the rotational speed ratios. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12torqueRatiosE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams12torqueRatiosE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams12torqueRatiosE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::torqueRatios__PxRealA"></span><span class="target" id="struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">torqueRatios</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams12torqueRatiosE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>torqueRatios describes the fraction of torque delivered to each wheel through the differential. </p>
+<p><strong>Range:</strong> [1, -1]</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels not connected to the differential must receive zero torque. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to the differential may receive a non-zero torque. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The sum of the absolute of the ratios of all wheels must equal to 1.0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A negative torque ratio simulates a wheel with negative gearing applied.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N41PxVehicleFourWheelDriveDifferentialParams19aveWheelSpeedRatiosE">
+<span id="_CPPv3N41PxVehicleFourWheelDriveDifferentialParams19aveWheelSpeedRatiosE"></span><span id="_CPPv2N41PxVehicleFourWheelDriveDifferentialParams19aveWheelSpeedRatiosE"></span><span id="PxVehicleFourWheelDriveDifferentialParams::aveWheelSpeedRatios__PxRealA"></span><span class="target" id="struct_px_vehicle_multi_wheel_drive_differential_params_1af0197f643a732b9cf1e09a52c9dd56f6"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">aveWheelSpeedRatios</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N41PxVehicleFourWheelDriveDifferentialParams19aveWheelSpeedRatiosE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>aveWheelSpeedRatios describes the contribution of each wheel to the average wheel speed measured at the clutch. </p>
+<p><strong>Range:</strong> [0, 1]</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels not connected to the differential do not contribute to the average wheel speed measured at the clutch. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to the differential may delivere a non-zero contribution to the average wheel speed measured at the clutch. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The sum of all ratios of all wheels must equal to 1.0.</p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

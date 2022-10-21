@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxDeserializationContext &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxDeserializationContext</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxdeserializationcontext">
+<span id="exhale-class-class-px-deserialization-context"></span><h1>PxDeserializationContext<a class="headerlink" href="#pxdeserializationcontext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxSerialFramework.h.html#file-include-common-pxserialframework-h"><span class="std std-ref">include/common/PxSerialFramework.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv424PxDeserializationContext">
+<span id="_CPPv324PxDeserializationContext"></span><span id="_CPPv224PxDeserializationContext"></span><span id="PxDeserializationContext"></span><span class="target" id="class_px_deserialization_context"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDeserializationContext</span></span></span><a class="headerlink" href="#_CPPv424PxDeserializationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Binary deserialization context class. </p>
+<p>This class is used to resolve references and access extra data during deserialization. It is mainly used by the serialization framework. Except for custom serializable types, users should not have to worry about it.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context"><span class="std std-ref">PxSerializationContext</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxDeserializationContext16resolveReferenceE5PxU326size_t">
+<span id="_CPPv3NK24PxDeserializationContext16resolveReferenceE5PxU326size_t"></span><span id="_CPPv2NK24PxDeserializationContext16resolveReferenceE5PxU326size_t"></span><span id="PxDeserializationContext::resolveReference__PxU32.sC"></span><span class="target" id="class_px_deserialization_context_1ab190b79866da182afa6f3f23f48d1d37"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">resolveReference</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">kind</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">reference</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK24PxDeserializationContext16resolveReferenceE5PxU326size_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves a pointer to a deserialized <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object given a corresponding deserialized reference value. </p>
+<p>This method is assumed to be called in the implementation of <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a> in order to update reference values on deserialization.</p>
+<p>To update a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> reference the corresponding deserialized pointer value needs to be provided in order to retrieve the location of the corresponding deserialized <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object. (<a class="reference internal" href="#class_px_deserialization_context_1a155f00275087cb2faf4819bca9d21989"><span class="std std-ref">PxDeserializationContext::translatePxBase</span></a> simplifies this common case).</p>
+<p>For other kinds of references the reverence values need to be updated by deduction given the corresponding <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> instance.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context_1ade8ef3b58a16bab4f4cbd3c04a891817"><span class="std std-ref">PxSerializationContext::registerReference</span></a>, <a class="reference internal" href="define_group__common_1ga8cd51251f2e11c3b6598b96f32e400f8.html#group__common_1ga8cd51251f2e11c3b6598b96f32e400f8"><span class="std std-ref">PX_SERIAL_REF_KIND_PXBASE</span></a>, <a class="reference internal" href="define_group__common_1ga27914dcd6d0448671eebfeca012cd0b5.html#group__common_1ga27914dcd6d0448671eebfeca012cd0b5"><span class="std std-ref">PX_SERIAL_REF_KIND_MATERIAL_IDX</span></a>, <a class="reference internal" href="#class_px_deserialization_context_1a155f00275087cb2faf4819bca9d21989"><span class="std std-ref">translatePxBase</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kind</strong> – <strong>[in]</strong> What kind of reference this is (PX_SERIAL_REF_KIND_PXBASE, PX_SERIAL_REF_KIND_MATERIAL_IDX or custom kind) </p></li>
+<li><p><strong>reference</strong> – <strong>[in]</strong> Deserialized reference value </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object associated with the reference value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN24PxDeserializationContext15translatePxBaseEvRP1T">
+<span id="_CPPv3I0EN24PxDeserializationContext15translatePxBaseERP1T"></span><span id="_CPPv2I0EN24PxDeserializationContext15translatePxBaseERP1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_deserialization_context_1a155f00275087cb2faf4819bca9d21989"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translatePxBase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN24PxDeserializationContext15translatePxBaseEvRP1T" title="PxDeserializationContext::translatePxBase::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">base</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN24PxDeserializationContext15translatePxBaseEvRP1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Helper function to update <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> pointer on deserialization. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_deserialization_context_1ab190b79866da182afa6f3f23f48d1d37"><span class="std std-ref">resolveReference</span></a>, <a class="reference internal" href="define_group__common_1ga8cd51251f2e11c3b6598b96f32e400f8.html#group__common_1ga8cd51251f2e11c3b6598b96f32e400f8"><span class="std std-ref">PX_SERIAL_REF_KIND_PXBASE</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxDeserializationContext8readNameERPKc">
+<span id="_CPPv3N24PxDeserializationContext8readNameERPKc"></span><span id="_CPPv2N24PxDeserializationContext8readNameERPKc"></span><span id="PxDeserializationContext::readName__cCPR"></span><span class="target" id="class_px_deserialization_context_1a8b6cf84acecf4b924bb71f1198553a37"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">readName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxDeserializationContext8readNameERPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Helper function to read a name from the extra data during deserialization. </p>
+<p>This function is assumed to be called within the implementation of <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context_1a1a708961bc536693395826a6bc11a8f6"><span class="std std-ref">PxSerializationContext::writeName</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN24PxDeserializationContext13readExtraDataEP1T5PxU32">
+<span id="_CPPv3I0EN24PxDeserializationContext13readExtraDataE5PxU32"></span><span id="_CPPv2I0EN24PxDeserializationContext13readExtraDataE5PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_deserialization_context_1ad696a19506117d3df5fd00d674566c35"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN24PxDeserializationContext13readExtraDataEP1T5PxU32" title="PxDeserializationContext::readExtraData::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">readExtraData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN24PxDeserializationContext13readExtraDataEP1T5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Function to read extra data during deserialization. </p>
+<p>This function is assumed to be called within the implementation of <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context_1a2cb3cc1613a70406c2bf89ec53035a22"><span class="std std-ref">PxSerializationContext::writeData</span></a>, <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0_5PxU32EN24PxDeserializationContext13readExtraDataEP1T5PxU32">
+<span id="_CPPv3I0_5PxU32EN24PxDeserializationContext13readExtraDataE5PxU32"></span><span id="_CPPv2I0_5PxU32EN24PxDeserializationContext13readExtraDataE5PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">alignment</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_deserialization_context_1a5e737f484f47a4c1159fff7329f9c791"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_5PxU32EN24PxDeserializationContext13readExtraDataEP1T5PxU32" title="PxDeserializationContext::readExtraData::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">readExtraData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0_5PxU32EN24PxDeserializationContext13readExtraDataEP1T5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Function to read extra data during deserialization optionally aligning the extra data stream before reading. </p>
+<p>This function is assumed to be called within the implementation of <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context_1a2cb3cc1613a70406c2bf89ec53035a22"><span class="std std-ref">PxSerializationContext::writeData</span></a>, <a class="reference internal" href="#class_px_deserialization_context_1a9e103e3cfabe19a3b3e2de10267b661d"><span class="std std-ref">PxDeserializationContext::alignExtraData</span></a>, <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxDeserializationContext14alignExtraDataE5PxU32">
+<span id="_CPPv3N24PxDeserializationContext14alignExtraDataE5PxU32"></span><span id="_CPPv2N24PxDeserializationContext14alignExtraDataE5PxU32"></span><span id="PxDeserializationContext::alignExtraData__PxU32"></span><span class="target" id="class_px_deserialization_context_1a9e103e3cfabe19a3b3e2de10267b661d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">alignExtraData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alignment</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">16</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxDeserializationContext14alignExtraDataE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Function to align the extra data stream to a power of 2 alignment. </p>
+<p>This function is assumed to be called within the implementation of <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context_1ae7f457df7bd10b3c78e969b9b8744568"><span class="std std-ref">PxSerializationContext::alignData</span></a>, <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"><span class="std std-ref">PxSerializer::createObject</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxDeserializationContext24PxDeserializationContextEv">
+<span id="_CPPv3N24PxDeserializationContext24PxDeserializationContextEv"></span><span id="_CPPv2N24PxDeserializationContext24PxDeserializationContextEv"></span><span id="PxDeserializationContext::PxDeserializationContext"></span><span class="target" id="class_px_deserialization_context_1a18007433a2cc90ef8ccf4353fb8b123d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDeserializationContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxDeserializationContext24PxDeserializationContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxDeserializationContextD0Ev">
+<span id="_CPPv3N24PxDeserializationContextD0Ev"></span><span id="_CPPv2N24PxDeserializationContextD0Ev"></span><span id="PxDeserializationContext::~PxDeserializationContext"></span><span class="target" id="class_px_deserialization_context_1a2299e472c6c4dc486cbd08385efd31d9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxDeserializationContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N24PxDeserializationContextD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxDeserializationContext17mExtraDataAddressE">
+<span id="_CPPv3N24PxDeserializationContext17mExtraDataAddressE"></span><span id="_CPPv2N24PxDeserializationContext17mExtraDataAddressE"></span><span id="PxDeserializationContext::mExtraDataAddress__PxU8P"></span><span class="target" id="class_px_deserialization_context_1a91c4d17f9b7f7acd3cd7a119fe701939"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mExtraDataAddress</span></span></span><a class="headerlink" href="#_CPPv4N24PxDeserializationContext17mExtraDataAddressE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

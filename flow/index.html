@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>omni.flowsdk: NVIDIA Flow Documentation &mdash; omni.flowsdk 105.1.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/pygments_dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme-switcher-general.css" type="text/css" />
+      <link rel="stylesheet" href="_static/omni-style-dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/api-styles-dark.css" type="text/css" />
+      <link rel="stylesheet" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/mermaid-init.js"></script>
+        <script src="_static/theme-setter.js"></script>
+        <script src="_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="_static/version.js"></script>
+        <script src="_static/social-media.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="Overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+<a href="index.html">
+  <img src="_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="Overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Building.html">Building</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">omni.flowsdk</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>NVIDIA Flow Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omni-flowsdk-nvidia-flow-documentation">
+<h1>NVIDIA Flow Documentation<a class="headerlink" href="#omni-flowsdk-nvidia-flow-documentation" title="Permalink to this headline"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>NVIDIA Flow is a realtime sparse voxel fluid simulation.
+It includes a combustion model for the creation of fire and smoke effects.
+The simulation runs on GPU and is implemented in HLSL.</p>
+<p>Flow by default dynamically allocates 32x16x16 voxel blocks based on emitters and feedback from the simulation.
+There is no bounding box limiting allocation, so the domain is only limited by 32-bit precision and the configurable maximum blocks in the pool.</p>
+<section id="flow-context">
+<h3>Flow Context<a class="headerlink" href="#flow-context" title="Permalink to this headline"></a></h3>
+<p>Flow provides shader bytecode targeted for Vulkan and DX12 (DX11 might work, but is not tested).
+The NvFlowContext interface provides a very high level abstraction to allow the Flow simulation to request GPU resources.
+This high level interface provides the needed flexibility to work in many different implementations based on Vulkan/DX12.
+Implementations can even choose behave completely asynchronous. The provided NvFlowContextOpt is an example of this.
+A default Vulkan implementation is provided, and includes support for interop using shared buffers and semaphores.</p>
+<p>Latency is described using getCurrentFrame() and getLastFrameCompleted().
+This allows for arbitrarily high latency, with the caveat higher latency can lead to more resource allocation calls.</p>
+</section>
+<section id="flow-reflection">
+<h3>Flow Reflection<a class="headerlink" href="#flow-reflection" title="Permalink to this headline"></a></h3>
+<p>Flow includes builtin reflection for all simulation parameters.
+This reduces maintenance on integrations, and allows new parameters to be exposed while maintaining binary compatibility.
+Parameters are stored in C style POD structs, and reflection information is provided for each struct with the suffix convention {struct_name}_NvFlowReflectDatatype.
+Default values are also provided, with {struct_name}_default naming convention.</p>
+<p>In addition to the low level NvFlowReflect system, NvFlowDatabase is provided as an optional/reference utility for the traversal of the reflection data.
+NvFlowDatabase also includes versioning, designed to allow Flow parameters to be updated one thread asynchronous to another thread reading an older snapshot.
+This is useful for systems that have a dedicated rendering thread.
+Versioning uses the same mechanism as NvFlowContext, tracking a latest version and a min active version to avoid freeing data that might still be needed.</p>
+<p>The NvFlowGridParams provides a registry of the supported Flow types. It also serves as a thread safe pipe for sending Flow parameters from one thread to another.
+It includes management of the version numbers used by NvFlowDatabase.</p>
+</section>
+<section id="flow-operators">
+<h3>Flow Operators<a class="headerlink" href="#flow-operators" title="Permalink to this headline"></a></h3>
+<p>NvFlowOp provides a standard interface for different components of the Flow simulation.
+Combined with the reflection system, it enables Flow operator to be dynamically exposed to a node graph.
+At the same time, it also provides a straightforward C interface, allowing for compile time graphs to be created.</p>
+</section>
+<section id="flow-sparse">
+<h3>Flow Sparse<a class="headerlink" href="#flow-sparse" title="Permalink to this headline"></a></h3>
+<p>NvFlowSparse serves as the foundation for management of Flow blocks. It accepts an unsorted list of integer block locations and allocates blocks while also enforcing a maximum number of locations.
+It builds the structured needed to then accelerate access to the active blocks. It also includes support for building NanoVDB structures for fast export.</p>
+</section>
+<section id="flow-grid">
+<h3>Flow Grid<a class="headerlink" href="#flow-grid" title="Permalink to this headline"></a></h3>
+<p>Flow Grid serves as the default container connecting NvFlowOp and NvFlowSparse together to form a complete simulation, with optional rendering.
+It is generally called by the rendering thread, since calls in this interface produces many NvFlowContext calls.
+Also included is the NvFlowGridOp layer, this embeds NvFlowContextOp in order to reduce total VRAM usage by analyzing the graph in NvFlowGrid.</p>
+</section>
+</section>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 01, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

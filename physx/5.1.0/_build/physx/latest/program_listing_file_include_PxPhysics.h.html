@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Listing for include/PxPhysics.h &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Program Listing for include/PxPhysics.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="program-listing-for-include-pxphysics-h">
+<span id="program-listing-file-include-pxphysics-h"></span><h1>Program Listing for include/PxPhysics.h<a class="headerlink" href="#program-listing-for-include-pxphysics-h" title="Permalink to this headline"></a></h1>
+<p>↰ Return to documentation for <a class="reference internal" href="file_include_PxPhysics.h.html#file-include-pxphysics-h"><span class="std std-ref">include/PxPhysics.h</span></a></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_PHYSICS_H</span>
+<span class="cp">#define PX_PHYSICS_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysXConfig.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxDeletionListener.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxTransform.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxShape.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxAggregate.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxBuffer.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxParticleSystem.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxPreprocessor.h&quot;</span><span class="cp"></span>
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxFEMCloth.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxHairSystem.h&quot;</span><span class="cp"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxScene</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxSceneDesc</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxTolerancesScale</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxPvd</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxOmniPvd</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxInsertionCallback</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxRigidActor</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxConstraintConnector</span><span class="p">;</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintShaderTable</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxGeometry</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxFoundation</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxPruningStructure</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxBVH</span><span class="p">;</span><span class="w"></span>
+<span class="k">typedef</span><span class="w"> </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PxBVH</span><span class="w"> </span><span class="n">PxBVHStructure</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleClothBuffer</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleRigidBuffer</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxSoftBodyMesh</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxPhysics</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxPhysics</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">release</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFoundation</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">getFoundation</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxOmniPvd</span><span class="o">*</span><span class="w"> </span><span class="nf">getOmniPvd</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxAggregate</span><span class="o">*</span><span class="w"> </span><span class="nf">createAggregate</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxActor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxShape</span><span class="p">,</span><span class="w"> </span><span class="n">PxAggregateFilterHint</span><span class="w"> </span><span class="n">filterHint</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PxAggregate</span><span class="o">*</span><span class="w"> </span><span class="n">createAggregate</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxActor</span><span class="p">,</span><span class="w"> </span><span class="n">PxAggregateFilterHint</span><span class="w"> </span><span class="n">filterHint</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">createAggregate</span><span class="p">(</span><span class="n">maxActor</span><span class="p">,</span><span class="w"> </span><span class="n">PX_MAX_U32</span><span class="p">,</span><span class="w"> </span><span class="n">filterHint</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTolerancesScale</span><span class="o">&amp;</span><span class="w"> </span><span class="n">getTolerancesScale</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxTriangleMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">createTriangleMesh</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbTriangleMeshes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getTriangleMeshes</span><span class="p">(</span><span class="n">PxTriangleMesh</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxTetrahedronMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">createTetrahedronMesh</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxSoftBodyMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">createSoftBodyMesh</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbTetrahedronMeshes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getTetrahedronMeshes</span><span class="p">(</span><span class="n">PxTetrahedronMesh</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxHeightField</span><span class="o">*</span><span class="w"> </span><span class="nf">createHeightField</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbHeightFields</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getHeightFields</span><span class="p">(</span><span class="n">PxHeightField</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxConvexMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">createConvexMesh</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbConvexMeshes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getConvexMeshes</span><span class="p">(</span><span class="n">PxConvexMesh</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxBVH</span><span class="o">*</span><span class="w"> </span><span class="nf">createBVH</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxBVH</span><span class="o">*</span><span class="w">    </span><span class="n">createBVHStructure</span><span class="p">(</span><span class="n">PxInputStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">stream</span><span class="p">)</span><span class="w"></span>
+<span class="w">                                            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                                </span><span class="k">return</span><span class="w"> </span><span class="n">createBVH</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span><span class="w"></span>
+<span class="w">                                            </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">getNbBVHs</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w">     </span><span class="n">getNbBVHStructures</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">                                            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                                </span><span class="k">return</span><span class="w"> </span><span class="n">getNbBVHs</span><span class="p">();</span><span class="w"></span>
+<span class="w">                                            </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">getBVHs</span><span class="p">(</span><span class="n">PxBVH</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">getBVHStructures</span><span class="p">(</span><span class="n">PxBVHStructure</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">                                        </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                            </span><span class="k">return</span><span class="w"> </span><span class="n">getBVHs</span><span class="p">(</span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">startIndex</span><span class="p">);</span><span class="w"></span>
+<span class="w">                                        </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">createScene</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxSceneDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sceneDesc</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbScenes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getScenes</span><span class="p">(</span><span class="n">PxScene</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="nf">createRigidStatic</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="nf">createRigidDynamic</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxPruningStructure</span><span class="o">*</span><span class="w"> </span><span class="nf">createPruningStructure</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="k">const</span><span class="o">*</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbActors</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="k">const</span><span class="w"> </span><span class="n">PxMaterial</span><span class="o">&amp;</span><span class="w"> </span><span class="n">material</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">materialPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">const_cast</span><span class="o">&lt;</span><span class="n">PxMaterial</span><span class="o">*&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">isExclusive</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="k">const</span><span class="w"> </span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">&amp;</span><span class="w"> </span><span class="n">material</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">materialPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">const_cast</span><span class="o">&lt;</span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">*&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">isExclusive</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="k">const</span><span class="w"> </span><span class="n">PxFEMClothMaterial</span><span class="o">&amp;</span><span class="w"> </span><span class="n">material</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxFEMClothMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">materialPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">const_cast</span><span class="o">&lt;</span><span class="n">PxFEMClothMaterial</span><span class="o">*&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">isExclusive</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxMaterial</span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">materials</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">materialCount</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="nf">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">materials</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">materialCount</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="nf">createShape</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxFEMClothMaterial</span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">materials</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">materialCount</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="kt">bool</span><span class="w"> </span><span class="n">isExclusive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbShapes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getShapes</span><span class="p">(</span><span class="n">PxShape</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxConstraint</span><span class="o">*</span><span class="w"> </span><span class="nf">createConstraint</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor0</span><span class="p">,</span><span class="w"> </span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor1</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintConnector</span><span class="o">&amp;</span><span class="w"> </span><span class="n">connector</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxConstraintShaderTable</span><span class="o">&amp;</span><span class="w"> </span><span class="n">shaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">dataSize</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxArticulationReducedCoordinate</span><span class="o">*</span><span class="w"> </span><span class="nf">createArticulationReducedCoordinate</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFEMCloth</span><span class="o">*</span><span class="w"> </span><span class="nf">createFEMCloth</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="nf">createSoftBody</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxHairSystem</span><span class="o">*</span><span class="w"> </span><span class="nf">createHairSystem</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="nf">createPBDParticleSystem</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNeighborhood</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">96</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFLIPParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="nf">createFLIPParticleSystem</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxMPMParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="nf">createMPMParticleSystem</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxCustomParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="nf">createCustomParticleSystem</span><span class="p">(</span><span class="n">PxCudaContextManager</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNeighborhood</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxBuffer</span><span class="o">*</span><span class="w"> </span><span class="nf">createBuffer</span><span class="p">(</span><span class="n">PxU64</span><span class="w"> </span><span class="n">byteSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxBufferType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">bufferType</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w"> </span><span class="nf">createParticleBuffer</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleAndDiffuseBuffer</span><span class="o">*</span><span class="w"> </span><span class="nf">createParticleAndDiffuseBuffer</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxDiffuseParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleClothBuffer</span><span class="o">*</span><span class="w"> </span><span class="nf">createParticleClothBuffer</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumCloths</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumSprings</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleRigidBuffer</span><span class="o">*</span><span class="w"> </span><span class="nf">createParticleRigidBuffer</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxNumRigids</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">staticFriction</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dynamicFriction</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restitution</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaterials</span><span class="p">(</span><span class="n">PxMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createFEMSoftBodyMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">youngs</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">poissons</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dynamicFriction</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbFEMSoftBodyMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getFEMSoftBodyMaterials</span><span class="p">(</span><span class="n">PxFEMSoftBodyMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFEMClothMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createFEMClothMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">youngs</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">poissons</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dynamicFriction</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbFEMClothMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getFEMClothMaterials</span><span class="p">(</span><span class="n">PxFEMClothMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxPBDMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createPBDMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">friction</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">adhesion</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">viscosity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">vorticityConfinement</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">surfaceTension</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">cohesion</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lift</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">drag</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">cflCoefficient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">gravityScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbPBDMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getPBDMaterials</span><span class="p">(</span><span class="n">PxPBDMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFLIPMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createFLIPMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">friction</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">adhesion</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">viscosity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">gravityScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbFLIPMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getFLIPMaterials</span><span class="p">(</span><span class="n">PxFLIPMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxMPMMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createMPMMaterial</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">friction</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">damping</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">adhesion</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">isPlastic</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">youngsModulus</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">poissons</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">hardening</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">criticalCompression</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">criticalStretch</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tensileDamageSensitivity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">compressiveDamageSensitivity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">attractiveForceResidual</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">gravityScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNbMPMMaterials</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMPMMaterials</span><span class="p">(</span><span class="n">PxMPMMaterial</span><span class="o">**</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxCustomMaterial</span><span class="o">*</span><span class="w"> </span><span class="nf">createCustomMaterial</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">gpuBuffer</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">registerDeletionListener</span><span class="p">(</span><span class="n">PxDeletionListener</span><span class="o">&amp;</span><span class="w"> </span><span class="n">observer</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxDeletionEventFlags</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deletionEvents</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">restrictedObjectSet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">unregisterDeletionListener</span><span class="p">(</span><span class="n">PxDeletionListener</span><span class="o">&amp;</span><span class="w"> </span><span class="n">observer</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">registerDeletionListenerObjects</span><span class="p">(</span><span class="n">PxDeletionListener</span><span class="o">&amp;</span><span class="w"> </span><span class="n">observer</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxBase</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="o">*</span><span class="w"> </span><span class="n">observables</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">observableCount</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">unregisterDeletionListenerObjects</span><span class="p">(</span><span class="n">PxDeletionListener</span><span class="o">&amp;</span><span class="w"> </span><span class="n">observer</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxBase</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="o">*</span><span class="w"> </span><span class="n">observables</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">observableCount</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxInsertionCallback</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">getPhysicsInsertionCallback</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="p">};</span><span class="w"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PX_CALL_CONV</span><span class="w"> </span><span class="n">PxRegisterArticulationsReducedCoordinate</span><span class="p">(</span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">&amp;</span><span class="w"> </span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PX_CALL_CONV</span><span class="w"> </span><span class="n">PxRegisterHeightFields</span><span class="p">(</span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">&amp;</span><span class="w"> </span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_DEPRECATED</span><span class="w"> </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">PX_CALL_CONV</span><span class="w"> </span><span class="n">PxCreateBasePhysics</span><span class="p">(</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxU32</span><span class="w"> </span><span class="n">version</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxFoundation</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foundation</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                    </span><span class="k">const</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxTolerancesScale</span><span class="o">&amp;</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                    </span><span class="kt">bool</span><span class="w"> </span><span class="n">trackOutstandingAllocations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPvd</span><span class="o">*</span><span class="w"> </span><span class="n">pvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxOmniPvd</span><span class="o">*</span><span class="w"> </span><span class="n">omniPvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">physx</span><span class="o">::</span><span class="n">PxU32</span><span class="w"> </span><span class="n">version</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">physx</span><span class="o">::</span><span class="n">PxFoundation</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foundation</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="k">const</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxTolerancesScale</span><span class="o">&amp;</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="kt">bool</span><span class="w"> </span><span class="n">trackOutstandingAllocations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPvd</span><span class="o">*</span><span class="w"> </span><span class="n">pvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">physx</span><span class="o">::</span><span class="n">PxOmniPvd</span><span class="o">*</span><span class="w"> </span><span class="n">omniPvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateBasePhysics</span><span class="p">(</span><span class="n">version</span><span class="p">,</span><span class="w"> </span><span class="n">foundation</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"> </span><span class="n">trackOutstandingAllocations</span><span class="p">,</span><span class="w"> </span><span class="n">pvd</span><span class="p">,</span><span class="w"> </span><span class="n">omniPvd</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">physics</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxRegisterArticulationsReducedCoordinate</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxRegisterHeightFields</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">physics</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+<span class="cp">#ifdef __clang__</span>
+<span class="cp">#pragma clang diagnostic push</span>
+<span class="cp">#pragma clang diagnostic ignored &quot;-Wreturn-type-c-linkage&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">&amp;</span><span class="w"> </span><span class="n">PX_CALL_CONV</span><span class="w"> </span><span class="n">PxGetPhysics</span><span class="p">();</span><span class="w"></span>
+
+<span class="cp">#ifdef __clang__</span>
+<span class="cp">#pragma clang diagnostic pop</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

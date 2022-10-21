@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxJointAngularLimitPair &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxJointAngularLimitPair</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxjointangularlimitpair">
+<span id="exhale-class-class-px-joint-angular-limit-pair"></span><h1>PxJointAngularLimitPair<a class="headerlink" href="#pxjointangularlimitpair" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxJointLimit.h.html#file-include-extensions-pxjointlimit-h"><span class="std std-ref">include/extensions/PxJointLimit.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxJointLimitParameters</span></code> (<a class="reference internal" href="class_px_joint_limit_parameters.html#exhale-class-class-px-joint-limit-parameters"><span class="std std-ref">PxJointLimitParameters</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv423PxJointAngularLimitPair">
+<span id="_CPPv323PxJointAngularLimitPair"></span><span id="_CPPv223PxJointAngularLimitPair"></span><span id="PxJointAngularLimitPair"></span><span class="target" id="class_px_joint_angular_limit_pair"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxJointAngularLimitPair</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_joint_limit_parameters.html#_CPPv422PxJointLimitParameters" title="PxJointLimitParameters"><span class="n"><span class="pre">PxJointLimitParameters</span></span></a><a class="headerlink" href="#_CPPv423PxJointAngularLimitPair" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxReal6PxReal">
+<span id="_CPPv3N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxReal6PxReal"></span><span id="_CPPv2N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxReal6PxReal"></span><span id="PxJointAngularLimitPair::PxJointAngularLimitPair__PxReal.PxReal.PxReal"></span><span class="target" id="class_px_joint_angular_limit_pair_1a4a1e4c6c8f90a53c5d399fd6b206b65c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxJointAngularLimitPair</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lowerLimit</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">upperLimit</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactDist_deprecated</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>construct an angular hard limit pair. </p>
+<p>The lower value must be less than the upper value.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_joint_limit_parameters.html#class_px_joint_limit_parameters"><span class="std std-ref">PxJointLimitParameters</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerLimit</strong> – <strong>[in]</strong> The lower angle of the limit </p></li>
+<li><p><strong>upperLimit</strong> – <strong>[in]</strong> The upper angle of the limit </p></li>
+<li><p><strong>contactDist_deprecated</strong> – <strong>[in]</strong> The distance from the limit at which it becomes active. Default is the lesser of 0.1 radians, and 0.49 * (upperLimit - lowerLimit). This is deprecated in PhysX 5.1.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxRealRK8PxSpring">
+<span id="_CPPv3N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxRealRK8PxSpring"></span><span id="_CPPv2N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxRealRK8PxSpring"></span><span id="PxJointAngularLimitPair::PxJointAngularLimitPair__PxReal.PxReal.PxSpringCR"></span><span class="target" id="class_px_joint_angular_limit_pair_1a02ae4ad9d22a8d163cfd197669c3c83e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxJointAngularLimitPair</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lowerLimit</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">upperLimit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_spring.html#_CPPv48PxSpring" title="PxSpring"><span class="n"><span class="pre">PxSpring</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">spring</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair23PxJointAngularLimitPairE6PxReal6PxRealRK8PxSpring" title="Permalink to this definition"></a><br /></dt>
+<dd><p>construct an angular soft limit pair. </p>
+<p>The lower value must be less than the upper value.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_joint_limit_parameters.html#class_px_joint_limit_parameters"><span class="std std-ref">PxJointLimitParameters</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerLimit</strong> – <strong>[in]</strong> The lower angle of the limit </p></li>
+<li><p><strong>upperLimit</strong> – <strong>[in]</strong> The upper angle of the limit </p></li>
+<li><p><strong>spring</strong> – <strong>[in]</strong> The stiffness and damping of the limit spring</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxJointAngularLimitPair7isValidEv">
+<span id="_CPPv3NK23PxJointAngularLimitPair7isValidEv"></span><span id="_CPPv2NK23PxJointAngularLimitPair7isValidEv"></span><span id="PxJointAngularLimitPair::isValidC"></span><span class="target" id="class_px_joint_angular_limit_pair_1aa9545d78710ec62d679aa7280b1ca5e4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxJointAngularLimitPair7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the limit is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK23PxJointAngularLimitPair6isSoftEv">
+<span id="_CPPv3NK23PxJointAngularLimitPair6isSoftEv"></span><span id="_CPPv2NK23PxJointAngularLimitPair6isSoftEv"></span><span id="PxJointAngularLimitPair::isSoftC"></span><span class="target" id="class_px_joint_limit_parameters_1aefb27b8b72beee4c6398501e563653a5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSoft</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK23PxJointAngularLimitPair6isSoftEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair5upperE">
+<span id="_CPPv3N23PxJointAngularLimitPair5upperE"></span><span id="_CPPv2N23PxJointAngularLimitPair5upperE"></span><span id="PxJointAngularLimitPair::upper__PxReal"></span><span class="target" id="class_px_joint_angular_limit_pair_1ae346ef11f736245ef7ca8994e6d1492e"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">upper</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair5upperE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>the range of the limit. </p>
+<p>The upper limit must be no lower than the lower limit.</p>
+<p><strong>Unit:</strong> Angular: Radians <strong>Range:</strong> See the joint on which the limit is used for details<strong>Default:</strong> lower = -PI/2, upper = PI/2 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair5lowerE">
+<span id="_CPPv3N23PxJointAngularLimitPair5lowerE"></span><span id="_CPPv2N23PxJointAngularLimitPair5lowerE"></span><span id="PxJointAngularLimitPair::lower__PxReal"></span><span class="target" id="class_px_joint_angular_limit_pair_1a663e01d9ca54d0068649c6dd88a3ab83"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lower</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair5lowerE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair11restitutionE">
+<span id="_CPPv3N23PxJointAngularLimitPair11restitutionE"></span><span id="_CPPv2N23PxJointAngularLimitPair11restitutionE"></span><span id="PxJointAngularLimitPair::restitution__PxReal"></span><span class="target" id="class_px_joint_limit_parameters_1acf208a0f1e54fb8e9219af1e0357d4a9"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Controls the amount of bounce when the joint hits a limit. </p>
+<p>A restitution value of 1.0 causes the joint to bounce back with the velocity which it hit the limit. A value of zero causes the joint to stop dead.</p>
+<p>In situations where the joint has many locked DOFs (e.g. 5) the restitution may not be applied correctly. This is due to a limitation in the solver which causes the restitution velocity to become zero as the solver enforces constraints on the other DOFs.</p>
+<p>This limitation applies to both angular and linear limits, however it is generally most apparent with limited angular DOFs. Disabling joint projection and increasing the solver iteration count may improve this behavior to some extent.</p>
+<p>Also, combining soft joint limits with joint drives driving against those limits may affect stability.</p>
+<p><strong>Range:</strong> [0,1]<strong>Default:</strong> 0.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair15bounceThresholdE">
+<span id="_CPPv3N23PxJointAngularLimitPair15bounceThresholdE"></span><span id="_CPPv2N23PxJointAngularLimitPair15bounceThresholdE"></span><span id="PxJointAngularLimitPair::bounceThreshold__PxReal"></span><span class="target" id="class_px_joint_limit_parameters_1a82e6ed96bd05d01b7459d8200f16df9f"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bounceThreshold</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair15bounceThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>determines the minimum impact velocity which will cause the joint to bounce </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair9stiffnessE">
+<span id="_CPPv3N23PxJointAngularLimitPair9stiffnessE"></span><span id="_CPPv2N23PxJointAngularLimitPair9stiffnessE"></span><span id="PxJointAngularLimitPair::stiffness__PxReal"></span><span class="target" id="class_px_joint_limit_parameters_1a7431e7b65a92dd7fafc386c6a159a22c"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stiffness</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair9stiffnessE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>if greater than zero, the limit is soft, i.e. </p>
+<p>a spring pulls the joint back to the limit</p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair7dampingE">
+<span id="_CPPv3N23PxJointAngularLimitPair7dampingE"></span><span id="_CPPv2N23PxJointAngularLimitPair7dampingE"></span><span id="PxJointAngularLimitPair::damping__PxReal"></span><span class="target" id="class_px_joint_limit_parameters_1aac6d185cfc3adea24cdb943cf893beac"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damping</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair7dampingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>if spring is greater than zero, this is the damping of the limit spring </p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxJointAngularLimitPair26contactDistance_deprecatedE">
+<span id="_CPPv3N23PxJointAngularLimitPair26contactDistance_deprecatedE"></span><span id="_CPPv2N23PxJointAngularLimitPair26contactDistance_deprecatedE"></span><span id="PxJointAngularLimitPair::contactDistance_deprecated__PxReal"></span><span class="target" id="class_px_joint_limit_parameters_1a4200648a55b96da1fa0308e53ef2ee5a"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactDistance_deprecated</span></span></span><a class="headerlink" href="#_CPPv4N23PxJointAngularLimitPair26contactDistance_deprecatedE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The distance inside the limit value at which the limit will be considered to be active by the solver. </p>
+<p>As this value is made larger, the limit becomes active more quickly. It thus becomes less likely to violate the extents of the limit, but more expensive.</p>
+<p>The contact distance should be less than the limit angle or distance, and in the case of a pair limit, less than half the distance between the upper and lower bounds. Exceeding this value will result in the limit being active all the time.</p>
+<p>Making this value too small can result in jitter around the limit.</p>
+<p><strong>Default:</strong> depends on the joint</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1ae6b06e75ab03222d301a15e14c5ac467"><span class="std std-ref">PxPhysics::getTolerancesScale()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is deprecated in PhysX 5.1</p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

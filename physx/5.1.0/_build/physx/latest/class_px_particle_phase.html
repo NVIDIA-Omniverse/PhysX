@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxParticlePhase &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxParticlePhase</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxparticlephase">
+<span id="exhale-class-class-px-particle-phase"></span><h1>PxParticlePhase<a class="headerlink" href="#pxparticlephase" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticlePhase.h.html#file-include-pxparticlephase-h"><span class="std std-ref">include/PxParticlePhase.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxParticlePhase">
+<span id="_CPPv315PxParticlePhase"></span><span id="_CPPv215PxParticlePhase"></span><span id="PxParticlePhase"></span><span class="target" id="class_px_particle_phase"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticlePhase</span></span></span><a class="headerlink" href="#_CPPv415PxParticlePhase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A per particle identifier to define the particles behavior, its group and to reference a material. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticlePhase8setFlagsE20PxParticlePhaseFlags">
+<span id="_CPPv3N15PxParticlePhase8setFlagsE20PxParticlePhaseFlags"></span><span id="_CPPv2N15PxParticlePhase8setFlagsE20PxParticlePhaseFlags"></span><span id="PxParticlePhase::setFlags__PxParticlePhaseFlags"></span><span class="target" id="class_px_particle_phase_1a99b7fdef7093cde29ff33494b5fffd67"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__physics_1ga777c7706ccaff3d193fdbce6c1d5d6f4.html#_CPPv420PxParticlePhaseFlags" title="PxParticlePhaseFlags"><span class="n"><span class="pre">PxParticlePhaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxParticlePhase8setFlagsE20PxParticlePhaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set phase flags. </p>
+<p>Allows to control self collision, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> The filter flags </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticlePhase7setFlagEN19PxParticlePhaseFlag4EnumEb">
+<span id="_CPPv3N15PxParticlePhase7setFlagEN19PxParticlePhaseFlag4EnumEb"></span><span id="_CPPv2N15PxParticlePhase7setFlagEN19PxParticlePhaseFlag4EnumEb"></span><span id="PxParticlePhase::setFlag__PxParticlePhaseFlag::Enum.b"></span><span class="target" id="class_px_particle_phase_1add6faeb295c31b87acf395179dd651b5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_particle_phase_flag.html#_CPPv419PxParticlePhaseFlag" title="PxParticlePhaseFlag"><span class="n"><span class="pre">PxParticlePhaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_particle_phase_flag.html#_CPPv4N19PxParticlePhaseFlag4EnumE" title="PxParticlePhaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enabled</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxParticlePhase7setFlagEN19PxParticlePhaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set phase flag. </p>
+<p>Allows to control self collision etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to set </p></li>
+<li><p><strong>enabled</strong> – <strong>[in]</strong> The new value of the flag </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticlePhase8getFlagsEv">
+<span id="_CPPv3NK15PxParticlePhase8getFlagsEv"></span><span id="_CPPv2NK15PxParticlePhase8getFlagsEv"></span><span id="PxParticlePhase::getFlagsC"></span><span class="target" id="class_px_particle_phase_1a8f6cc04b11a154cd3bf0809686d85797"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga777c7706ccaff3d193fdbce6c1d5d6f4.html#_CPPv420PxParticlePhaseFlags" title="PxParticlePhaseFlags"><span class="n"><span class="pre">PxParticlePhaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxParticlePhase8getFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the phase flags. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The phase flags </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticlePhase10getGroupIdEv">
+<span id="_CPPv3NK15PxParticlePhase10getGroupIdEv"></span><span id="_CPPv2NK15PxParticlePhase10getGroupIdEv"></span><span id="PxParticlePhase::getGroupIdC"></span><span class="target" id="class_px_particle_phase_1a6f2fc219b6889d2b52484f2f76b42185"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGroupId</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxParticlePhase10getGroupIdEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the group id. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The group id </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticlePhase11getMaterialEv">
+<span id="_CPPv3NK15PxParticlePhase11getMaterialEv"></span><span id="_CPPv2NK15PxParticlePhase11getMaterialEv"></span><span id="PxParticlePhase::getMaterialC"></span><span class="target" id="class_px_particle_phase_1a8690ca9a68848ec50b7826c6fca5c076"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_particle_material.html#_CPPv418PxParticleMaterial" title="PxParticleMaterial"><span class="n"><span class="pre">PxParticleMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getMaterial</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxParticlePhase11getMaterialEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the pointer to the material used by this phase. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The material pointer </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticlePhase11setMaterialEP18PxParticleMaterial">
+<span id="_CPPv3N15PxParticlePhase11setMaterialEP18PxParticleMaterial"></span><span id="_CPPv2N15PxParticlePhase11setMaterialEP18PxParticleMaterial"></span><span id="PxParticlePhase::setMaterial__PxParticleMaterialP"></span><span class="target" id="class_px_particle_phase_1a95365272ffeeac72b4f57f8ef2ce67d4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaterial</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_particle_material.html#_CPPv418PxParticleMaterial" title="PxParticleMaterial"><span class="n"><span class="pre">PxParticleMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">material</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxParticlePhase11setMaterialEP18PxParticleMaterial" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the material associated referenced by this phase. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>material</strong> – <strong>[in]</strong> The pointer to the material that should be used by this phase </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticlePhaseD0Ev">
+<span id="_CPPv3N15PxParticlePhaseD0Ev"></span><span id="_CPPv2N15PxParticlePhaseD0Ev"></span><span id="PxParticlePhase::~PxParticlePhase"></span><span class="target" id="class_px_particle_phase_1a1b07fe1627c7602b6dbc81cffa6e7b30"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxParticlePhase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxParticlePhaseD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

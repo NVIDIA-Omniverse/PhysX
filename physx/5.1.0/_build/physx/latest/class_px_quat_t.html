@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxQuatT &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxQuatT</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxquatt">
+<span id="exhale-class-class-px-quat-t"></span><h1>PxQuatT<a class="headerlink" href="#pxquatt" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_Px.h.html#file-include-foundation-px-h"><span class="std std-ref">include/foundation/Px.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E7PxQuatT">
+<span id="_CPPv3I0E7PxQuatT"></span><span id="_CPPv2I0E7PxQuatT"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Type</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_quat_t"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><a class="headerlink" href="#_CPPv4I0E7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is a quaternion class. </p>
+<p>For more information on quaternion mathematics consult a mathematics source on complex numbers. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTEv">
+<span id="_CPPv3N7PxQuatT7PxQuatTEv"></span><span id="_CPPv2N7PxQuatT7PxQuatTEv"></span><span id="PxQuatT::PxQuatT"></span><span class="target" id="class_px_quat_t_1a65c6bea1160240f441201719975bb0a6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor, does not do any initialization. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTE10PxIDENTITY">
+<span id="_CPPv3N7PxQuatT7PxQuatTE10PxIDENTITY"></span><span id="_CPPv2N7PxQuatT7PxQuatTE10PxIDENTITY"></span><span id="PxQuatT::PxQuatT__PxIDENTITY"></span><span class="target" id="class_px_quat_t_1a1c1ee7dfc633b88df1b1ca60e3147353"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="enum_group__foundation_1ga70160ca5bbafef277790b3e0f12baf38.html#_CPPv410PxIDENTITY" title="PxIDENTITY"><span class="n"><span class="pre">PxIDENTITY</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTE10PxIDENTITY" title="Permalink to this definition"></a><br /></dt>
+<dd><p>identity constructor </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTE4Type">
+<span id="_CPPv3N7PxQuatT7PxQuatTE4Type"></span><span id="_CPPv2N7PxQuatT7PxQuatTE4Type"></span><span id="PxQuatT::PxQuatT__Type"></span><span class="target" id="class_px_quat_t_1a314d66029ab0a6cfa95470f69f1c1ecf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor from a scalar: sets the real part w to the scalar value, and the imaginary parts (x,y,z) to zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTE4Type4Type4Type4Type">
+<span id="_CPPv3N7PxQuatT7PxQuatTE4Type4Type4Type4Type"></span><span id="_CPPv2N7PxQuatT7PxQuatTE4Type4Type4Type4Type"></span><span id="PxQuatT::PxQuatT__Type.Type.Type.Type"></span><span class="target" id="class_px_quat_t_1aa5f88c5f6f9527526b337fb1c9b29e77"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nx</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">ny</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nz</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nw</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTE4Type4Type4Type4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+<p>Take note of the order of the elements! </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTE4TypeRK7PxVec3TI4TypeE">
+<span id="_CPPv3N7PxQuatT7PxQuatTE4TypeRK7PxVec3TI4TypeE"></span><span id="_CPPv2N7PxQuatT7PxQuatTE4TypeRK7PxVec3TI4TypeE"></span><span id="PxQuatT::PxQuatT__Type.PxVec3T:Type:CR"></span><span class="target" id="class_px_quat_t_1a1be343933f692fcd16d83f2780ff20f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">angleRadians</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitAxis</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTE4TypeRK7PxVec3TI4TypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates from angle-axis representation. </p>
+<p>Axis must be normalized!</p>
+<p>Angle is in radians!</p>
+<p><strong>Unit:</strong> Radians </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTERK7PxQuatT">
+<span id="_CPPv3N7PxQuatT7PxQuatTERK7PxQuatT"></span><span id="_CPPv2N7PxQuatT7PxQuatTERK7PxQuatT"></span><span id="PxQuatT::PxQuatT__PxQuatTCR"></span><span class="target" id="class_px_quat_t_1a8560adcdfd91a528b25e6b21db9af541"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxQuatT7PxQuatTERK7PxQuatT" title="PxQuatT::PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy ctor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT7PxQuatTERK8PxMat33TI4TypeE">
+<span id="_CPPv3N7PxQuatT7PxQuatTERK8PxMat33TI4TypeE"></span><span id="_CPPv2N7PxQuatT7PxQuatTERK8PxMat33TI4TypeE"></span><span id="PxQuatT::PxQuatT__PxMat33T:Type:CR"></span><span class="target" id="group__foundation_1ga7d5a2a31f954b3581176b55b9fd97323"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQuatT</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">m</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT7PxQuatTERK8PxMat33TI4TypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates from orientation matrix. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>m</strong> – <strong>[in]</strong> Rotation matrix to extract quaternion from. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT10isIdentityEv">
+<span id="_CPPv3NK7PxQuatT10isIdentityEv"></span><span id="_CPPv2NK7PxQuatT10isIdentityEv"></span><span id="PxQuatT::isIdentityC"></span><span class="target" id="class_px_quat_t_1a10cf891069708adc945ee33d3cb82904"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isIdentity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT10isIdentityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if quat is identity </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT8isFiniteEv">
+<span id="_CPPv3NK7PxQuatT8isFiniteEv"></span><span id="_CPPv2NK7PxQuatT8isFiniteEv"></span><span id="PxQuatT::isFiniteC"></span><span class="target" id="class_px_quat_t_1aa5d0e2d3f66d21c80c1159b06560ce38"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isFinite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT8isFiniteEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if all elements are finite (not NAN or INF, etc.) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT6isUnitEv">
+<span id="_CPPv3NK7PxQuatT6isUnitEv"></span><span id="_CPPv2NK7PxQuatT6isUnitEv"></span><span id="PxQuatT::isUnitC"></span><span class="target" id="class_px_quat_t_1a6a0449276b8b824bfd386942492214f3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isUnit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT6isUnitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and magnitude is close to unit </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT6isSaneEv">
+<span id="_CPPv3NK7PxQuatT6isSaneEv"></span><span id="_CPPv2NK7PxQuatT6isSaneEv"></span><span id="PxQuatT::isSaneC"></span><span class="target" id="class_px_quat_t_1a90f78f555d5d7827a4224c71cdc5dc83"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSane</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT6isSaneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and magnitude is reasonably close to unit to allow for some accumulation of error vs isValid </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTeqERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatTeqERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatTeqERK7PxQuatT"></span><span id="PxQuatT::eq-operator__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1a4c8608090c3cc6805a34001ba8c29b85"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTeqERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the two quaternions are exactly equal </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT20toRadiansAndUnitAxisER4TypeR7PxVec3TI4TypeE">
+<span id="_CPPv3NK7PxQuatT20toRadiansAndUnitAxisER4TypeR7PxVec3TI4TypeE"></span><span id="_CPPv2NK7PxQuatT20toRadiansAndUnitAxisER4TypeR7PxVec3TI4TypeE"></span><span id="PxQuatT::toRadiansAndUnitAxis__TypeR.PxVec3T:Type:RC"></span><span class="target" id="class_px_quat_t_1af6aba2b1b71f4f798cd9abec6b61f7be"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">toRadiansAndUnitAxis</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angle</span></span>, <a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axis</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT20toRadiansAndUnitAxisER4TypeR7PxVec3TI4TypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>converts this quaternion to angle-axis representation </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT8getAngleEv">
+<span id="_CPPv3NK7PxQuatT8getAngleEv"></span><span id="_CPPv2NK7PxQuatT8getAngleEv"></span><span id="PxQuatT::getAngleC"></span><span class="target" id="class_px_quat_t_1a3dce2cd160b261792045362cb9bda876"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT8getAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the angle between this quat and the identity quaternion. </p>
+<p><strong>Unit:</strong> Radians </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT8getAngleERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatT8getAngleERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatT8getAngleERK7PxQuatT"></span><span id="PxQuatT::getAngle__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1ae0b6dd1fa8f8c851c04bdcdec20d8c9f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAngle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT8getAngleERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the angle between this quat and the argument. </p>
+<p><strong>Unit:</strong> Radians </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT16magnitudeSquaredEv">
+<span id="_CPPv3NK7PxQuatT16magnitudeSquaredEv"></span><span id="_CPPv2NK7PxQuatT16magnitudeSquaredEv"></span><span id="PxQuatT::magnitudeSquaredC"></span><span class="target" id="class_px_quat_t_1ab15a543ef04c8c35f4371a49fef457f4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitudeSquared</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT16magnitudeSquaredEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is the squared 4D vector length, should be 1 for unit quaternions. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT3dotERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatT3dotERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatT3dotERK7PxQuatT"></span><span id="PxQuatT::dot__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1a8421b088a516b7bd6077d767969b2d9d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dot</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT3dotERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns the scalar product of this and other. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT13getNormalizedEv">
+<span id="_CPPv3NK7PxQuatT13getNormalizedEv"></span><span id="_CPPv2NK7PxQuatT13getNormalizedEv"></span><span id="PxQuatT::getNormalizedC"></span><span class="target" id="class_px_quat_t_1a45178a0e76b6728aa8b63507eae7f56b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNormalized</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT13getNormalizedEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT9magnitudeEv">
+<span id="_CPPv3NK7PxQuatT9magnitudeEv"></span><span id="_CPPv2NK7PxQuatT9magnitudeEv"></span><span id="PxQuatT::magnitudeC"></span><span class="target" id="class_px_quat_t_1ac33118a3fa208d930d0ca8b4035ddfbd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitude</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT9magnitudeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT9normalizeEv">
+<span id="_CPPv3N7PxQuatT9normalizeEv"></span><span id="_CPPv2N7PxQuatT9normalizeEv"></span><span id="PxQuatT::normalize"></span><span class="target" id="class_px_quat_t_1a65015de947b92ba312d0f182a97b3292"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normalize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatT9normalizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>maps to the closest unit quaternion. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT12getConjugateEv">
+<span id="_CPPv3NK7PxQuatT12getConjugateEv"></span><span id="_CPPv2NK7PxQuatT12getConjugateEv"></span><span id="PxQuatT::getConjugateC"></span><span class="target" id="class_px_quat_t_1a66d50e33eb5f1971ba57a119ad6a3197"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConjugate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT12getConjugateEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT16getImaginaryPartEv">
+<span id="_CPPv3NK7PxQuatT16getImaginaryPartEv"></span><span id="_CPPv2NK7PxQuatT16getImaginaryPartEv"></span><span id="PxQuatT::getImaginaryPartC"></span><span class="target" id="class_px_quat_t_1a4c702c5d95b3e55e4d7f9899bf6fd09a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getImaginaryPart</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT16getImaginaryPartEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT15getBasisVector0Ev">
+<span id="_CPPv3NK7PxQuatT15getBasisVector0Ev"></span><span id="_CPPv2NK7PxQuatT15getBasisVector0Ev"></span><span id="PxQuatT::getBasisVector0C"></span><span class="target" id="class_px_quat_t_1aebe7e100c0851ff28f053d3fe592ee12"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBasisVector0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT15getBasisVector0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>brief computes rotation of x-axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT15getBasisVector1Ev">
+<span id="_CPPv3NK7PxQuatT15getBasisVector1Ev"></span><span id="_CPPv2NK7PxQuatT15getBasisVector1Ev"></span><span id="PxQuatT::getBasisVector1C"></span><span class="target" id="class_px_quat_t_1a8044a7d096a37de6ad27c6e1caade63d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBasisVector1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT15getBasisVector1Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>brief computes rotation of y-axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT15getBasisVector2Ev">
+<span id="_CPPv3NK7PxQuatT15getBasisVector2Ev"></span><span id="_CPPv2NK7PxQuatT15getBasisVector2Ev"></span><span id="PxQuatT::getBasisVector2C"></span><span class="target" id="class_px_quat_t_1aea186295396be354d10bdd060f7f7596"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBasisVector2</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT15getBasisVector2Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>brief computes rotation of z-axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT6rotateERK7PxVec3TI4TypeE">
+<span id="_CPPv3NK7PxQuatT6rotateERK7PxVec3TI4TypeE"></span><span id="_CPPv2NK7PxQuatT6rotateERK7PxVec3TI4TypeE"></span><span id="PxQuatT::rotate__PxVec3T:Type:CRC"></span><span class="target" id="class_px_quat_t_1a328d2b73e89cdf614079f7bfbe1a0be5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT6rotateERK7PxVec3TI4TypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>rotates passed vec by this (assumed unitary) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatT9rotateInvERK7PxVec3TI4TypeE">
+<span id="_CPPv3NK7PxQuatT9rotateInvERK7PxVec3TI4TypeE"></span><span id="_CPPv2NK7PxQuatT9rotateInvERK7PxVec3TI4TypeE"></span><span id="PxQuatT::rotateInv__PxVec3T:Type:CRC"></span><span class="target" id="class_px_quat_t_1a2bba049bd97f5d8af29e46103766aeae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotateInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatT9rotateInvERK7PxVec3TI4TypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>inverse rotates passed vec by this (assumed unitary) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatTaSERK7PxQuatT">
+<span id="_CPPv3N7PxQuatTaSERK7PxQuatT"></span><span id="_CPPv2N7PxQuatTaSERK7PxQuatT"></span><span id="PxQuatT::assign-operator__PxQuatTCR"></span><span class="target" id="class_px_quat_t_1acf406b8b88f670982a65444080f3202c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatTaSERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatTmLERK7PxQuatT">
+<span id="_CPPv3N7PxQuatTmLERK7PxQuatT"></span><span id="_CPPv2N7PxQuatTmLERK7PxQuatT"></span><span id="PxQuatT::mul-assign-operator__PxQuatTCR"></span><span class="target" id="class_px_quat_t_1a49bb07dee1b95c1269cbee0e03b1eec8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatTmLERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatTpLERK7PxQuatT">
+<span id="_CPPv3N7PxQuatTpLERK7PxQuatT"></span><span id="_CPPv2N7PxQuatTpLERK7PxQuatT"></span><span id="PxQuatT::add-assign-operator__PxQuatTCR"></span><span class="target" id="class_px_quat_t_1ae65a961634c1030dd90ba4349e6ff5b9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatTpLERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatTmIERK7PxQuatT">
+<span id="_CPPv3N7PxQuatTmIERK7PxQuatT"></span><span id="_CPPv2N7PxQuatTmIERK7PxQuatT"></span><span id="PxQuatT::sub-assign-operator__PxQuatTCR"></span><span class="target" id="class_px_quat_t_1ae81df92410a4bce173a8afbbda0a4f37"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatTmIERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatTmLEK4Type">
+<span id="_CPPv3N7PxQuatTmLEK4Type"></span><span id="_CPPv2N7PxQuatTmLEK4Type"></span><span id="PxQuatT::mul-assign-operator__TypeC"></span><span class="target" id="class_px_quat_t_1a036bda6bc666528980fb2c4df46422bc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">s</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxQuatTmLEK4Type" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTmlERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatTmlERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatTmlERK7PxQuatT"></span><span id="PxQuatT::mul-operator__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1a6c98c70d6fa9d8adffb5917357424dce"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTmlERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>quaternion multiplication </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTplERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatTplERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatTplERK7PxQuatT"></span><span id="PxQuatT::add-operator__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1a3c16cc627d8977475358ad0a54ffbfed"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTplERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>quaternion addition </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTmiEv">
+<span id="_CPPv3NK7PxQuatTmiEv"></span><span id="_CPPv2NK7PxQuatTmiEv"></span><span id="PxQuatT::sub-operatorC"></span><span class="target" id="class_px_quat_t_1a6bb22e1cc462ec24a0e599b063609847"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTmiEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>quaternion subtraction </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTmiERK7PxQuatT">
+<span id="_CPPv3NK7PxQuatTmiERK7PxQuatT"></span><span id="_CPPv2NK7PxQuatTmiERK7PxQuatT"></span><span id="PxQuatT::sub-operator__PxQuatTCRC"></span><span class="target" id="class_px_quat_t_1afae70bdedb160dab878cd186d9174cf4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTmiERK7PxQuatT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxQuatTmlE4Type">
+<span id="_CPPv3NK7PxQuatTmlE4Type"></span><span id="_CPPv2NK7PxQuatTmlE4Type"></span><span id="PxQuatT::mul-operator__TypeC"></span><span class="target" id="class_px_quat_t_1afd690fa481d8f8ba30956a221da2fcaf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxQuatTmlE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT1xE">
+<span id="_CPPv3N7PxQuatT1xE"></span><span id="_CPPv2N7PxQuatT1xE"></span><span id="PxQuatT::x__Type"></span><span class="target" id="class_px_quat_t_1a6e29e4d3776997432d8fd33d2b168be1"></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x</span></span></span><a class="headerlink" href="#_CPPv4N7PxQuatT1xE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>the quaternion elements </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT1yE">
+<span id="_CPPv3N7PxQuatT1yE"></span><span id="_CPPv2N7PxQuatT1yE"></span><span id="PxQuatT::y__Type"></span><span class="target" id="class_px_quat_t_1ac40c64548f4e7226fdaf1c0f1ca4dce7"></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">y</span></span></span><a class="headerlink" href="#_CPPv4N7PxQuatT1yE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT1zE">
+<span id="_CPPv3N7PxQuatT1zE"></span><span id="_CPPv2N7PxQuatT1zE"></span><span id="PxQuatT::z__Type"></span><span class="target" id="class_px_quat_t_1a5fe364c42be3f87ed30fe7632106ecc0"></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">z</span></span></span><a class="headerlink" href="#_CPPv4N7PxQuatT1zE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxQuatT1wE">
+<span id="_CPPv3N7PxQuatT1wE"></span><span id="_CPPv2N7PxQuatT1wE"></span><span id="PxQuatT::w__Type"></span><span class="target" id="class_px_quat_t_1a07f68a81f8501bc3d9e6815fd0ed366b"></span><a class="reference internal" href="#_CPPv4I0E7PxQuatT" title="PxQuatT::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">w</span></span></span><a class="headerlink" href="#_CPPv4N7PxQuatT1wE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxConvexMeshGeometry &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxConvexMeshGeometry</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxconvexmeshgeometry">
+<span id="exhale-class-class-px-convex-mesh-geometry"></span><h1>PxConvexMeshGeometry<a class="headerlink" href="#pxconvexmeshgeometry" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxConvexMeshGeometry.h.html#file-include-geometry-pxconvexmeshgeometry-h"><span class="std std-ref">include/geometry/PxConvexMeshGeometry.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxGeometry</span></code> (<a class="reference internal" href="class_px_geometry.html#exhale-class-class-px-geometry"><span class="std std-ref">PxGeometry</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv420PxConvexMeshGeometry">
+<span id="_CPPv320PxConvexMeshGeometry"></span><span id="_CPPv220PxConvexMeshGeometry"></span><span id="PxConvexMeshGeometry"></span><span class="target" id="class_px_convex_mesh_geometry"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><a class="headerlink" href="#_CPPv420PxConvexMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convex mesh geometry class. </p>
+<p>This class unifies a convex mesh object with a scaling transform, and lets the combined object be used anywhere a <a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> is needed.</p>
+<p>The scaling is a transform along arbitrary axes contained in the scale object. The vertices of the mesh in geometry (or shape) space is the <a class="reference internal" href="class_px_mesh_scale.html#class_px_mesh_scale_1a5e400f0d1c372288d663668c55875e68"><span class="std std-ref">PxMeshScale::toMat33()</span></a> transform, multiplied by the vertex space vertices in the <a class="reference internal" href="class_px_convex_mesh.html#class_px_convex_mesh"><span class="std std-ref">PxConvexMesh</span></a> object. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry20PxConvexMeshGeometryEP12PxConvexMeshRK11PxMeshScale25PxConvexMeshGeometryFlags">
+<span id="_CPPv3N20PxConvexMeshGeometry20PxConvexMeshGeometryEP12PxConvexMeshRK11PxMeshScale25PxConvexMeshGeometryFlags"></span><span id="_CPPv2N20PxConvexMeshGeometry20PxConvexMeshGeometryEP12PxConvexMeshRK11PxMeshScale25PxConvexMeshGeometryFlags"></span><span id="PxConvexMeshGeometry::PxConvexMeshGeometry__PxConvexMeshP.PxMeshScaleCR.PxConvexMeshGeometryFlags"></span><span class="target" id="class_px_convex_mesh_geometry_1a9377fa517424d1cce2c0591e500a4dd5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mesh</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scaling</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__geomutils_1ga913cfc3a0f052fb2ea2818e1a31131c2.html#_CPPv425PxConvexMeshGeometryFlags" title="PxConvexMeshGeometryFlags"><span class="n"><span class="pre">PxConvexMeshGeometryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_convex_mesh_geometry_flag.html#_CPPv424PxConvexMeshGeometryFlag" title="PxConvexMeshGeometryFlag"><span class="n"><span class="pre">PxConvexMeshGeometryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_convex_mesh_geometry_flag.html#_CPPv4N24PxConvexMeshGeometryFlag4Enum13eTIGHT_BOUNDSE" title="PxConvexMeshGeometryFlag::eTIGHT_BOUNDS"><span class="n"><span class="pre">eTIGHT_BOUNDS</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry20PxConvexMeshGeometryEP12PxConvexMeshRK11PxMeshScale25PxConvexMeshGeometryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+<p>By default creates an empty object with a NULL mesh and identity scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – <strong>[in]</strong> Mesh pointer. May be NULL, though this will not make the object valid for shape construction. </p></li>
+<li><p><strong>scaling</strong> – <strong>[in]</strong> Scale factor. </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> Mesh flags. \ </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry20PxConvexMeshGeometryERK20PxConvexMeshGeometry">
+<span id="_CPPv3N20PxConvexMeshGeometry20PxConvexMeshGeometryERK20PxConvexMeshGeometry"></span><span id="_CPPv2N20PxConvexMeshGeometry20PxConvexMeshGeometryERK20PxConvexMeshGeometry"></span><span id="PxConvexMeshGeometry::PxConvexMeshGeometry__PxConvexMeshGeometryCR"></span><span class="target" id="class_px_convex_mesh_geometry_1a1a60536b05fd6ad23644b88293669451"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N20PxConvexMeshGeometry20PxConvexMeshGeometryERK20PxConvexMeshGeometry" title="PxConvexMeshGeometry::PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry20PxConvexMeshGeometryERK20PxConvexMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy constructor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>that</strong> – <strong>[in]</strong> Other object </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometryaSERK20PxConvexMeshGeometry">
+<span id="_CPPv3N20PxConvexMeshGeometryaSERK20PxConvexMeshGeometry"></span><span id="_CPPv2N20PxConvexMeshGeometryaSERK20PxConvexMeshGeometry"></span><span id="PxConvexMeshGeometry::assign-operator__PxConvexMeshGeometryCR"></span><span class="target" id="class_px_convex_mesh_geometry_1a0a0ab8706facd94b2acd0b713fd4c82b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometryaSERK20PxConvexMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxConvexMeshGeometry7isValidEv">
+<span id="_CPPv3NK20PxConvexMeshGeometry7isValidEv"></span><span id="_CPPv2NK20PxConvexMeshGeometry7isValidEv"></span><span id="PxConvexMeshGeometry::isValidC"></span><span class="target" id="group__geomutils_1ga16176eef17d017446d303f63163651e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK20PxConvexMeshGeometry7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the geometry is valid. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidActor::createShape, <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A valid convex mesh has a positive scale value in each direction (scale.x &gt; 0, scale.y &gt; 0, scale.z &gt; 0). It is illegal to call PxRigidActor::createShape and <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> with a convex that has zero extent in any direction.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the current settings are valid for shape creation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxConvexMeshGeometry7getTypeEv">
+<span id="_CPPv3NK20PxConvexMeshGeometry7getTypeEv"></span><span id="_CPPv2NK20PxConvexMeshGeometry7getTypeEv"></span><span id="PxConvexMeshGeometry::getTypeC"></span><span class="target" id="class_px_geometry_1ad2b00176e41b024361b83ff030639b60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK20PxConvexMeshGeometry7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the type of the geometry. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The type of the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry5scaleE">
+<span id="_CPPv3N20PxConvexMeshGeometry5scaleE"></span><span id="_CPPv2N20PxConvexMeshGeometry5scaleE"></span><span id="PxConvexMeshGeometry::scale__PxMeshScale"></span><span class="target" id="class_px_convex_mesh_geometry_1a777f625bb1fd49fabf03eb4be02ed581"></span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The scaling transformation (from vertex space to shape space). </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry10convexMeshE">
+<span id="_CPPv3N20PxConvexMeshGeometry10convexMeshE"></span><span id="_CPPv2N20PxConvexMeshGeometry10convexMeshE"></span><span id="PxConvexMeshGeometry::convexMesh__PxConvexMeshP"></span><span class="target" id="class_px_convex_mesh_geometry_1a2fdc589d347de81e55c8b45b7c133feb"></span><a class="reference internal" href="class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">convexMesh</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry10convexMeshE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A reference to the convex mesh object. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry9meshFlagsE">
+<span id="_CPPv3N20PxConvexMeshGeometry9meshFlagsE"></span><span id="_CPPv2N20PxConvexMeshGeometry9meshFlagsE"></span><span id="PxConvexMeshGeometry::meshFlags__PxConvexMeshGeometryFlags"></span><span class="target" id="class_px_convex_mesh_geometry_1a6b2561b421c602ca110e6870a3037d49"></span><a class="reference internal" href="typedef_group__geomutils_1ga913cfc3a0f052fb2ea2818e1a31131c2.html#_CPPv425PxConvexMeshGeometryFlags" title="PxConvexMeshGeometryFlags"><span class="n"><span class="pre">PxConvexMeshGeometryFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshFlags</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry9meshFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh flags. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry16paddingFromFlagsE">
+<span id="_CPPv3N20PxConvexMeshGeometry16paddingFromFlagsE"></span><span id="_CPPv2N20PxConvexMeshGeometry16paddingFromFlagsE"></span><span id="PxConvexMeshGeometry::paddingFromFlags__PxPadding:3:"></span><span class="target" id="class_px_convex_mesh_geometry_1ad2bed15287e31918b5ca0051f0604eeb"></span><a class="reference internal" href="struct_px_padding.html#_CPPv4I_4PxU8E9PxPadding" title="PxPadding"><span class="n"><span class="pre">PxPadding</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">paddingFromFlags</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry16paddingFromFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>padding for mesh flags </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry12mTypePaddingE">
+<span id="_CPPv3N20PxConvexMeshGeometry12mTypePaddingE"></span><span id="_CPPv2N20PxConvexMeshGeometry12mTypePaddingE"></span><span id="PxConvexMeshGeometry::mTypePadding__float"></span><span class="target" id="class_px_geometry_1a5284d479017acbf4c06147715f42a47c"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mTypePadding</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry12mTypePaddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxConvexMeshGeometry5mTypeE">
+<span id="_CPPv3N20PxConvexMeshGeometry5mTypeE"></span><span id="_CPPv2N20PxConvexMeshGeometry5mTypeE"></span><span id="PxConvexMeshGeometry::mType__PxGeometryType::Enum"></span><span class="target" id="class_px_geometry_1af24eeb8078fbd12e17206029b52a45b6"></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mType</span></span></span><a class="headerlink" href="#_CPPv4N20PxConvexMeshGeometry5mTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

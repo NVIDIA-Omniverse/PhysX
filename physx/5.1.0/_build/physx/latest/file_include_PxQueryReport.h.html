@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/PxQueryReport.h &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/PxQueryReport.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-pxqueryreport-h">
+<span id="file-include-pxqueryreport-h"></span><h1>include/PxQueryReport.h<a class="headerlink" href="#include-pxqueryreport-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include.html#dir-include"><span class="std std-ref">include/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_PxQueryReport.h.html#program-listing-file-include-pxqueryreport-h"><span class="std std-ref">include/PxQueryReport.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_extensions_PxRigidBodyExt.h.html#file-include-extensions-pxrigidbodyext-h"><span class="std std-ref">include/extensions/PxRigidBodyExt.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxShapeExt.h.html#file-include-extensions-pxshapeext-h"><span class="std std-ref">include/extensions/PxShapeExt.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxQueryFiltering.h.html#file-include-pxqueryfiltering-h"><span class="std std-ref">include/PxQueryFiltering.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html#file-include-pxscenequerysystem-h"><span class="std std-ref">include/PxSceneQuerySystem.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_actor_shape.html#exhale-struct-struct-px-actor-shape"><span class="std std-ref">PxActorShape</span></a>: Combines a shape pointer and the actor the shape belongs to into one memory location.</p></li>
+<li><p><a class="reference internal" href="struct_px_hit_buffer.html#exhale-struct-struct-px-hit-buffer"><span class="std std-ref">PxHitBuffer</span></a>: Returns scene query hits (intersections) to the user in a preallocated buffer.</p></li>
+<li><p><a class="reference internal" href="struct_px_hit_callback.html#exhale-struct-struct-px-hit-callback"><span class="std std-ref">PxHitCallback</span></a>: This callback class facilitates reporting scene query hits (intersections) to the user.</p></li>
+<li><p><a class="reference internal" href="struct_px_overlap_buffer_n.html#exhale-struct-struct-px-overlap-buffer-n"><span class="std std-ref">PxOverlapBufferN</span></a>: Returns touching overlap hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_overlap_hit.html#exhale-struct-struct-px-overlap-hit"><span class="std std-ref">PxOverlapHit</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_query_cache.html#exhale-struct-struct-px-query-cache"><span class="std std-ref">PxQueryCache</span></a>: single hit cache for scene queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_raycast_buffer_n.html#exhale-struct-struct-px-raycast-buffer-n"><span class="std std-ref">PxRaycastBufferN</span></a>: Returns touching raycast hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_raycast_hit.html#exhale-struct-struct-px-raycast-hit"><span class="std std-ref">PxRaycastHit</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_sweep_buffer_n.html#exhale-struct-struct-px-sweep-buffer-n"><span class="std std-ref">PxSweepBufferN</span></a>: Returns touching sweep hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_sweep_hit.html#exhale-struct-struct-px-sweep-hit"><span class="std std-ref">PxSweepHit</span></a></p></li>
+</ul>
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef_group__scenequery_1ga4d0184965c0a910f5c96cb69c0690f5c.html#exhale-typedef-group-scenequery-1ga4d0184965c0a910f5c96cb69c0690f5c"><span class="std std-ref">PxAgain</span></a>: Describes query behavior after returning a partial query result via a callback.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1ga54a708942a891f3321c2427d5c160750.html#exhale-typedef-group-scenequery-1ga54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a>: Overlap query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7.html#exhale-typedef-group-scenequery-1ga9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a>: Overlap query callback.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c.html#exhale-typedef-group-scenequery-1gab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a>: Raycast query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41.html#exhale-typedef-group-scenequery-1ga4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a>: Raycast query callback.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665.html#exhale-typedef-group-scenequery-1gaecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a>: Sweep query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef_group__scenequery_1ga6f93f556cef747d50f643499928dd865.html#exhale-typedef-group-scenequery-1ga6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a>: Sweep query callback.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

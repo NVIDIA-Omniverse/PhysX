@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxErrorCode &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxErrorCode</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxerrorcode">
+<span id="exhale-struct-struct-px-error-code"></span><h1>PxErrorCode<a class="headerlink" href="#pxerrorcode" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxErrors.h.html#file-include-foundation-pxerrors-h"><span class="std std-ref">include/foundation/PxErrors.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv411PxErrorCode">
+<span id="_CPPv311PxErrorCode"></span><span id="_CPPv211PxErrorCode"></span><span id="PxErrorCode"></span><span class="target" id="struct_px_error_code"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxErrorCode</span></span></span><a class="headerlink" href="#_CPPv411PxErrorCode" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Error codes. </p>
+<p>These error codes are passed to <a class="reference internal" href="class_px_error_callback.html#class_px_error_callback"><span class="std std-ref">PxErrorCallback</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_error_callback.html#class_px_error_callback"><span class="std std-ref">PxErrorCallback</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4EnumE">
+<span id="_CPPv3N11PxErrorCode4EnumE"></span><span id="_CPPv2N11PxErrorCode4EnumE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum9eNO_ERRORE">
+<span id="_CPPv3N11PxErrorCode4Enum9eNO_ERRORE"></span><span id="_CPPv2N11PxErrorCode4Enum9eNO_ERRORE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a3f3e15f9946df5f301d1fe4b656df267"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNO_ERROR</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum9eNO_ERRORE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum11eDEBUG_INFOE">
+<span id="_CPPv3N11PxErrorCode4Enum11eDEBUG_INFOE"></span><span id="_CPPv2N11PxErrorCode4Enum11eDEBUG_INFOE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3ab822d9fb3b06cb1032cc65da86bef532"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDEBUG_INFO</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum11eDEBUG_INFOE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>An informational message. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum14eDEBUG_WARNINGE">
+<span id="_CPPv3N11PxErrorCode4Enum14eDEBUG_WARNINGE"></span><span id="_CPPv2N11PxErrorCode4Enum14eDEBUG_WARNINGE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a68043fa573b543adcd03a33f6bb862b8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDEBUG_WARNING</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum14eDEBUG_WARNINGE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a warning message for the user to help with debugging </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum18eINVALID_PARAMETERE">
+<span id="_CPPv3N11PxErrorCode4Enum18eINVALID_PARAMETERE"></span><span id="_CPPv2N11PxErrorCode4Enum18eINVALID_PARAMETERE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3afb9c03ed85ad357e8b8933e93579839c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINVALID_PARAMETER</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum18eINVALID_PARAMETERE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>method called with invalid parameter(s) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum18eINVALID_OPERATIONE">
+<span id="_CPPv3N11PxErrorCode4Enum18eINVALID_OPERATIONE"></span><span id="_CPPv2N11PxErrorCode4Enum18eINVALID_OPERATIONE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3ab8e095f9a3b6a730cfbda02bde82cd97"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINVALID_OPERATION</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum18eINVALID_OPERATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>method was called at a time when an operation is not possible </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum14eOUT_OF_MEMORYE">
+<span id="_CPPv3N11PxErrorCode4Enum14eOUT_OF_MEMORYE"></span><span id="_CPPv2N11PxErrorCode4Enum14eOUT_OF_MEMORYE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a507b5b07022c549c7edc581fb022c040"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eOUT_OF_MEMORY</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum14eOUT_OF_MEMORYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>method failed to allocate some memory </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum15eINTERNAL_ERRORE">
+<span id="_CPPv3N11PxErrorCode4Enum15eINTERNAL_ERRORE"></span><span id="_CPPv2N11PxErrorCode4Enum15eINTERNAL_ERRORE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a9053c116164e00f6d610e7781cd69cc2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINTERNAL_ERROR</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum15eINTERNAL_ERRORE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The library failed for some reason. </p>
+<p>Possibly you have passed invalid values like NaNs, which are not checked for. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum6eABORTE">
+<span id="_CPPv3N11PxErrorCode4Enum6eABORTE"></span><span id="_CPPv2N11PxErrorCode4Enum6eABORTE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a3882aa9c7973b904e82b686ec28bcb4b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eABORT</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum6eABORTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>An unrecoverable error, execution should be halted and log output flushed. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum13ePERF_WARNINGE">
+<span id="_CPPv3N11PxErrorCode4Enum13ePERF_WARNINGE"></span><span id="_CPPv2N11PxErrorCode4Enum13ePERF_WARNINGE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a51ce3303d03735d7996ebce26a7b6aa2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePERF_WARNING</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum13ePERF_WARNINGE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The SDK has determined that an operation may result in poor performance. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxErrorCode4Enum9eMASK_ALLE">
+<span id="_CPPv3N11PxErrorCode4Enum9eMASK_ALLE"></span><span id="_CPPv2N11PxErrorCode4Enum9eMASK_ALLE"></span><span class="target" id="struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3a89d326bbd9b7d716032e07925eaaad57"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMASK_ALL</span></span></span><a class="headerlink" href="#_CPPv4N11PxErrorCode4Enum9eMASK_ALLE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A bit mask for including all errors. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

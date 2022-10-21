@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/gpu/PxGpu.h &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/gpu/PxGpu.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-gpu-pxgpu-h">
+<span id="file-include-gpu-pxgpu-h"></span><h1>include/gpu/PxGpu.h<a class="headerlink" href="#include-gpu-pxgpu-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_gpu.html#dir-include-gpu"><span class="std std-ref">include/gpu/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_gpu_PxGpu.h.html#program-listing-file-include-gpu-pxgpu-h"><span class="std std-ref">include/gpu/PxGpu.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_gpu_load_hook.html#exhale-class-class-px-gpu-load-hook"><span class="std std-ref">PxGpuLoadHook</span></a>: <a class="reference internal" href="class_px_gpu_load_hook.html#exhale-class-class-px-gpu-load-hook"><span class="std std-ref">PxGpuLoadHook</span></a>.</p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a65a5fbd3f97569067823a68e873e2ccd.html#exhale-function-px-gpu-8h-1a65a5fbd3f97569067823a68e873e2ccd"><span class="std std-ref">PxCreateCudaContextManager</span></a>: Allocate a CUDA Context manager, complete with heaps.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a5a1ffb065124b0b38b643ecd8623a4ac.html#exhale-function-px-gpu-8h-1a5a1ffb065124b0b38b643ecd8623a4ac"><span class="std std-ref">PxCudaRegisterFatBinary</span></a>: Internally used callback to register cuda modules at load time.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a7d62bbc16a043ec8ef5f6353825078d4.html#exhale-function-px-gpu-8h-1a7d62bbc16a043ec8ef5f6353825078d4"><span class="std std-ref">PxCudaRegisterFunction</span></a>: Internally used callback to register function names of cuda kernels.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1ab9e1c1b5d22d272149e8579f62270eca.html#exhale-function-px-gpu-8h-1ab9e1c1b5d22d272149e8579f62270eca"><span class="std std-ref">PxGetCudaFunctionTable</span></a>: Access to the loaded cuda functions (kernels)</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1ab4682f6d0ca401d372482ca4254d2c53.html#exhale-function-px-gpu-8h-1ab4682f6d0ca401d372482ca4254d2c53"><span class="std std-ref">PxGetCudaFunctionTableSize</span></a>: Number of loaded cuda functions (kernels)</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a8ef252315227a5806f6e6dca4474c097.html#exhale-function-px-gpu-8h-1a8ef252315227a5806f6e6dca4474c097"><span class="std std-ref">PxGetCudaModuleTable</span></a>: Access to the registered cuda modules.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1ac129d7931847066137b820d5f9d3c275.html#exhale-function-px-gpu-8h-1ac129d7931847066137b820d5f9d3c275"><span class="std std-ref">PxGetCudaModuleTableSize</span></a>: Number of registered cuda modules.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a892dc6d1c907d378d55529a8fe17a4a2.html#exhale-function-px-gpu-8h-1a892dc6d1c907d378d55529a8fe17a4a2"><span class="std std-ref">PxGetSuggestedCudaDeviceOrdinal</span></a>: Ask the NVIDIA control panel which GPU has been selected for use by PhysX.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a751982d0473bc3394bc88aa0cd5d083b.html#exhale-function-px-gpu-8h-1a751982d0473bc3394bc88aa0cd5d083b"><span class="std std-ref">PxSetPhysXGpuLoadHook</span></a>: Sets GPU load hook instance for PhysX dll.</p></li>
+<li><p><a class="reference internal" href="function__px_gpu_8h_1a298292cdeea18f4815f59b32395fc523.html#exhale-function-px-gpu-8h-1a298292cdeea18f4815f59b32395fc523"><span class="std std-ref">PxSetPhysXGpuProfilerCallback</span></a>: Sets profiler callback to PhysX GPU.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

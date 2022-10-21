@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTriangleMeshInternalData &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTriangleMeshInternalData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtrianglemeshinternaldata">
+<span id="exhale-struct-struct-px-triangle-mesh-internal-data"></span><h1>PxTriangleMeshInternalData<a class="headerlink" href="#pxtrianglemeshinternaldata" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxGeometryInternal.h.html#file-include-geometry-pxgeometryinternal-h"><span class="std std-ref">include/geometry/PxGeometryInternal.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv426PxTriangleMeshInternalData">
+<span id="_CPPv326PxTriangleMeshInternalData"></span><span id="_CPPv226PxTriangleMeshInternalData"></span><span id="PxTriangleMeshInternalData"></span><span class="target" id="struct_px_triangle_mesh_internal_data"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshInternalData</span></span></span><a class="headerlink" href="#_CPPv426PxTriangleMeshInternalData" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxTriangleMeshInternalData24getSizeofVerticesInBytesEv">
+<span id="_CPPv3NK26PxTriangleMeshInternalData24getSizeofVerticesInBytesEv"></span><span id="_CPPv2NK26PxTriangleMeshInternalData24getSizeofVerticesInBytesEv"></span><span id="PxTriangleMeshInternalData::getSizeofVerticesInBytesC"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1aec3d086fa9a6ba6379f2d6bad3d6f7d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSizeofVerticesInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxTriangleMeshInternalData24getSizeofVerticesInBytesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxTriangleMeshInternalData25getSizeofTrianglesInBytesEv">
+<span id="_CPPv3NK26PxTriangleMeshInternalData25getSizeofTrianglesInBytesEv"></span><span id="_CPPv2NK26PxTriangleMeshInternalData25getSizeofTrianglesInBytesEv"></span><span id="PxTriangleMeshInternalData::getSizeofTrianglesInBytesC"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a7b731aa527b535675da49db28050061a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSizeofTrianglesInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxTriangleMeshInternalData25getSizeofTrianglesInBytesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxTriangleMeshInternalData25getSizeofFaceRemapInBytesEv">
+<span id="_CPPv3NK26PxTriangleMeshInternalData25getSizeofFaceRemapInBytesEv"></span><span id="_CPPv2NK26PxTriangleMeshInternalData25getSizeofFaceRemapInBytesEv"></span><span id="PxTriangleMeshInternalData::getSizeofFaceRemapInBytesC"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1abcb3b8cfda0c0b0f60f1cfc066253e5b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSizeofFaceRemapInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxTriangleMeshInternalData25getSizeofFaceRemapInBytesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxTriangleMeshInternalData21getSizeofNodesInBytesEv">
+<span id="_CPPv3NK26PxTriangleMeshInternalData21getSizeofNodesInBytesEv"></span><span id="_CPPv2NK26PxTriangleMeshInternalData21getSizeofNodesInBytesEv"></span><span id="PxTriangleMeshInternalData::getSizeofNodesInBytesC"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1ae95c51e8c97cd108d6c0ad4d38cb15d4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSizeofNodesInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxTriangleMeshInternalData21getSizeofNodesInBytesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData11mNbVerticesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData11mNbVerticesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData11mNbVerticesE"></span><span id="PxTriangleMeshInternalData::mNbVertices__PxU32"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a5a23d923de25a2cab4c3dfa23ef3426f"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbVertices</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData11mNbVerticesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData12mNbTrianglesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData12mNbTrianglesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData12mNbTrianglesE"></span><span id="PxTriangleMeshInternalData::mNbTriangles__PxU32"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a92aa44c1fb9be9feae554aaa02ed5ff1"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbTriangles</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData12mNbTrianglesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData9mVerticesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData9mVerticesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData9mVerticesE"></span><span id="PxTriangleMeshInternalData::mVertices__PxVec3P"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a464ec56e493a4cc236262de003e6819d"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mVertices</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData9mVerticesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData10mTrianglesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData10mTrianglesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData10mTrianglesE"></span><span id="PxTriangleMeshInternalData::mTriangles__voidP"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a49264430d23a0306b0527ae70905013d"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mTriangles</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData10mTrianglesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData10mFaceRemapE">
+<span id="_CPPv3N26PxTriangleMeshInternalData10mFaceRemapE"></span><span id="_CPPv2N26PxTriangleMeshInternalData10mFaceRemapE"></span><span id="PxTriangleMeshInternalData::mFaceRemap__PxU32P"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1ad8a8e3a718cf47c34475e2f2ebff57bc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mFaceRemap</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData10mFaceRemapE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData12mAABB_CenterE">
+<span id="_CPPv3N26PxTriangleMeshInternalData12mAABB_CenterE"></span><span id="_CPPv2N26PxTriangleMeshInternalData12mAABB_CenterE"></span><span id="PxTriangleMeshInternalData::mAABB_Center__PxVec3"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a5094dda71b44de6ec94963ef9f5a3be6"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mAABB_Center</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData12mAABB_CenterE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData13mAABB_ExtentsE">
+<span id="_CPPv3N26PxTriangleMeshInternalData13mAABB_ExtentsE"></span><span id="_CPPv2N26PxTriangleMeshInternalData13mAABB_ExtentsE"></span><span id="PxTriangleMeshInternalData::mAABB_Extents__PxVec3"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1afe0c7645f5b64c564146ddf126d9d222"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mAABB_Extents</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData13mAABB_ExtentsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData12mGeomEpsilonE">
+<span id="_CPPv3N26PxTriangleMeshInternalData12mGeomEpsilonE"></span><span id="_CPPv2N26PxTriangleMeshInternalData12mGeomEpsilonE"></span><span id="PxTriangleMeshInternalData::mGeomEpsilon__PxReal"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a60114b8cfd5ca180f8037cafac60e451"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mGeomEpsilon</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData12mGeomEpsilonE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData6mFlagsE">
+<span id="_CPPv3N26PxTriangleMeshInternalData6mFlagsE"></span><span id="_CPPv2N26PxTriangleMeshInternalData6mFlagsE"></span><span id="PxTriangleMeshInternalData::mFlags__PxU8"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a5fba875e417649f62f6f0d6e95b1e52b"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mFlags</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData6mFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData8mNbNodesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData8mNbNodesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData8mNbNodesE"></span><span id="PxTriangleMeshInternalData::mNbNodes__PxU32"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1aaaaa53bde44ccea4a49af9c31ee6fedc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNbNodes</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData8mNbNodesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData9mNodeSizeE">
+<span id="_CPPv3N26PxTriangleMeshInternalData9mNodeSizeE"></span><span id="_CPPv2N26PxTriangleMeshInternalData9mNodeSizeE"></span><span id="PxTriangleMeshInternalData::mNodeSize__PxU32"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a487b448336979438748b523f25a4cfb8"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNodeSize</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData9mNodeSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData6mNodesE">
+<span id="_CPPv3N26PxTriangleMeshInternalData6mNodesE"></span><span id="_CPPv2N26PxTriangleMeshInternalData6mNodesE"></span><span id="PxTriangleMeshInternalData::mNodes__voidP"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1aef942c4b6b662c85bdd0bb8610c50de5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mNodes</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData6mNodesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData9mInitDataE">
+<span id="_CPPv3N26PxTriangleMeshInternalData9mInitDataE"></span><span id="_CPPv2N26PxTriangleMeshInternalData9mInitDataE"></span><span id="PxTriangleMeshInternalData::mInitData__PxU32"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a542c7112caae700bc0553d7906c0f44f"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mInitData</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData9mInitDataE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData17mCenterOrMinCoeffE">
+<span id="_CPPv3N26PxTriangleMeshInternalData17mCenterOrMinCoeffE"></span><span id="_CPPv2N26PxTriangleMeshInternalData17mCenterOrMinCoeffE"></span><span id="PxTriangleMeshInternalData::mCenterOrMinCoeff__PxVec3"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a93ad5b22ede95a31bad2ab390a6b88c5"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCenterOrMinCoeff</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData17mCenterOrMinCoeffE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData18mExtentsOrMaxCoeffE">
+<span id="_CPPv3N26PxTriangleMeshInternalData18mExtentsOrMaxCoeffE"></span><span id="_CPPv2N26PxTriangleMeshInternalData18mExtentsOrMaxCoeffE"></span><span id="PxTriangleMeshInternalData::mExtentsOrMaxCoeff__PxVec3"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a32281a2a41a05b3cb66413e1ec771338"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mExtentsOrMaxCoeff</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData18mExtentsOrMaxCoeffE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxTriangleMeshInternalData10mQuantizedE">
+<span id="_CPPv3N26PxTriangleMeshInternalData10mQuantizedE"></span><span id="_CPPv2N26PxTriangleMeshInternalData10mQuantizedE"></span><span id="PxTriangleMeshInternalData::mQuantized__b"></span><span class="target" id="struct_px_triangle_mesh_internal_data_1a002990a724850f052e562c45d2cdefcf"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mQuantized</span></span></span><a class="headerlink" href="#_CPPv4N26PxTriangleMeshInternalData10mQuantizedE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

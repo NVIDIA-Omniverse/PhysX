@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxControllerBehaviorCallback &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxControllerBehaviorCallback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontrollerbehaviorcallback">
+<span id="exhale-class-class-px-controller-behavior-callback"></span><h1>PxControllerBehaviorCallback<a class="headerlink" href="#pxcontrollerbehaviorcallback" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxControllerBehavior.h.html#file-include-characterkinematic-pxcontrollerbehavior-h"><span class="std std-ref">include/characterkinematic/PxControllerBehavior.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv428PxControllerBehaviorCallback">
+<span id="_CPPv328PxControllerBehaviorCallback"></span><span id="_CPPv228PxControllerBehaviorCallback"></span><span id="PxControllerBehaviorCallback"></span><span class="target" id="class_px_controller_behavior_callback"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerBehaviorCallback</span></span></span><a class="headerlink" href="#_CPPv428PxControllerBehaviorCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>User behavior callback. </p>
+<p>This behavior callback is called to customize the controller’s behavior w.r.t. touched shapes. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK7PxShapeRK7PxActor">
+<span id="_CPPv3N28PxControllerBehaviorCallback16getBehaviorFlagsERK7PxShapeRK7PxActor"></span><span id="_CPPv2N28PxControllerBehaviorCallback16getBehaviorFlagsERK7PxShapeRK7PxActor"></span><span id="PxControllerBehaviorCallback::getBehaviorFlags__PxShapeCR.PxActorCR"></span><span class="target" id="class_px_controller_behavior_callback_1af1cac5db44edb432053ae94b141a4150"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gac727cde912827a0304f5ac182a0a0b1c.html#_CPPv425PxControllerBehaviorFlags" title="PxControllerBehaviorFlags"><span class="n"><span class="pre">PxControllerBehaviorFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBehaviorFlags</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK7PxShapeRK7PxActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve behavior flags for a shape. </p>
+<p>When the CCT touches a shape, the CCT’s behavior w.r.t. this shape can be customized by users. This function retrieves the desired <a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> flags capturing the desired behavior.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See comments about deprecated functions at the start of this class</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape the CCT is currently touching </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor owning the shape</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Desired behavior flags for the given shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK12PxController">
+<span id="_CPPv3N28PxControllerBehaviorCallback16getBehaviorFlagsERK12PxController"></span><span id="_CPPv2N28PxControllerBehaviorCallback16getBehaviorFlagsERK12PxController"></span><span id="PxControllerBehaviorCallback::getBehaviorFlags__PxControllerCR"></span><span class="target" id="class_px_controller_behavior_callback_1a79b661daa722e20eca9baa9a7b9745e9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gac727cde912827a0304f5ac182a0a0b1c.html#_CPPv425PxControllerBehaviorFlags" title="PxControllerBehaviorFlags"><span class="n"><span class="pre">PxControllerBehaviorFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBehaviorFlags</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">controller</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK12PxController" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve behavior flags for a controller. </p>
+<p>When the CCT touches a controller, the CCT’s behavior w.r.t. this controller can be customized by users. This function retrieves the desired <a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> flags capturing the desired behavior.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The flag <a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag_1aa8d6dfaac2847892e8c5b76eb4d1d55baff9a861db9c1c8457b1aa0ea220eafbc"><span class="std std-ref">PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT</span></a> is not supported. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See comments about deprecated functions at the start of this class</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>controller</strong> – <strong>[in]</strong> The controller the CCT is currently touching</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Desired behavior flags for the given controller</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK10PxObstacle">
+<span id="_CPPv3N28PxControllerBehaviorCallback16getBehaviorFlagsERK10PxObstacle"></span><span id="_CPPv2N28PxControllerBehaviorCallback16getBehaviorFlagsERK10PxObstacle"></span><span id="PxControllerBehaviorCallback::getBehaviorFlags__PxObstacleCR"></span><span class="target" id="class_px_controller_behavior_callback_1a21859ff2cacd3d1546e4d191493a6b39"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gac727cde912827a0304f5ac182a0a0b1c.html#_CPPv425PxControllerBehaviorFlags" title="PxControllerBehaviorFlags"><span class="n"><span class="pre">PxControllerBehaviorFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBehaviorFlags</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_obstacle.html#_CPPv410PxObstacle" title="PxObstacle"><span class="n"><span class="pre">PxObstacle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">obstacle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N28PxControllerBehaviorCallback16getBehaviorFlagsERK10PxObstacle" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve behavior flags for an obstacle. </p>
+<p>When the CCT touches an obstacle, the CCT’s behavior w.r.t. this obstacle can be customized by users. This function retrieves the desired <a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> flags capturing the desired behavior.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See comments about deprecated functions at the start of this class</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>obstacle</strong> – <strong>[in]</strong> The obstacle the CCT is currently touching</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Desired behavior flags for the given obstacle</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxControllerBehaviorCallbackD0Ev">
+<span id="_CPPv3N28PxControllerBehaviorCallbackD0Ev"></span><span id="_CPPv2N28PxControllerBehaviorCallbackD0Ev"></span><span id="PxControllerBehaviorCallback::~PxControllerBehaviorCallback"></span><span class="target" id="class_px_controller_behavior_callback_1a435c808998d0ddb0ee20988a6542d570"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxControllerBehaviorCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N28PxControllerBehaviorCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

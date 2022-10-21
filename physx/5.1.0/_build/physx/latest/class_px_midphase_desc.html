@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMidphaseDesc &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMidphaseDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmidphasedesc">
+<span id="exhale-class-class-px-midphase-desc"></span><h1>PxMidphaseDesc<a class="headerlink" href="#pxmidphasedesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxMidphaseDesc.h.html#file-include-cooking-pxmidphasedesc-h"><span class="std std-ref">include/cooking/PxMidphaseDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxMidphaseDesc">
+<span id="_CPPv314PxMidphaseDesc"></span><span id="_CPPv214PxMidphaseDesc"></span><span id="PxMidphaseDesc"></span><span class="target" id="class_px_midphase_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMidphaseDesc</span></span></span><a class="headerlink" href="#_CPPv414PxMidphaseDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure describing parameters affecting midphase mesh structure. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params"><span class="std std-ref">PxCookingParams</span></a>, <a class="reference internal" href="struct_px_b_v_h33_midphase_desc.html#struct_px_b_v_h33_midphase_desc"><span class="std std-ref">PxBVH33MidphaseDesc</span></a>, <a class="reference internal" href="struct_px_b_v_h34_midphase_desc.html#struct_px_b_v_h34_midphase_desc"><span class="std std-ref">PxBVH34MidphaseDesc</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDesc14PxMidphaseDescEv">
+<span id="_CPPv3N14PxMidphaseDesc14PxMidphaseDescEv"></span><span id="_CPPv2N14PxMidphaseDesc14PxMidphaseDescEv"></span><span id="PxMidphaseDesc::PxMidphaseDesc"></span><span class="target" id="class_px_midphase_desc_1afc58c2b92161e8b346be6fed6eb23dfc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMidphaseDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxMidphaseDesc14PxMidphaseDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxMidphaseDesc7getTypeEv">
+<span id="_CPPv3NK14PxMidphaseDesc7getTypeEv"></span><span id="_CPPv2NK14PxMidphaseDesc7getTypeEv"></span><span id="PxMidphaseDesc::getTypeC"></span><span class="target" id="class_px_midphase_desc_1a31b9c93f62337b02f903c1e89ffa5d38"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv414PxMeshMidPhase" title="PxMeshMidPhase"><span class="n"><span class="pre">PxMeshMidPhase</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4EnumE" title="PxMeshMidPhase::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxMidphaseDesc7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns type of midphase mesh structure. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_mesh_mid_phase.html#struct_px_mesh_mid_phase_1a49f740883fbfb1a49631c28818c219f4"><span class="std std-ref">PxMeshMidPhase::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><a class="reference internal" href="struct_px_mesh_mid_phase.html#struct_px_mesh_mid_phase_1a49f740883fbfb1a49631c28818c219f4"><span class="std std-ref">PxMeshMidPhase::Enum</span></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDesc12setToDefaultEN14PxMeshMidPhase4EnumE">
+<span id="_CPPv3N14PxMidphaseDesc12setToDefaultEN14PxMeshMidPhase4EnumE"></span><span id="_CPPv2N14PxMidphaseDesc12setToDefaultEN14PxMeshMidPhase4EnumE"></span><span id="PxMidphaseDesc::setToDefault__PxMeshMidPhase::Enum"></span><span class="target" id="class_px_midphase_desc_1ac941c94835e494ae0dcc3f774ac16240"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv414PxMeshMidPhase" title="PxMeshMidPhase"><span class="n"><span class="pre">PxMeshMidPhase</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4EnumE" title="PxMeshMidPhase::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxMidphaseDesc12setToDefaultEN14PxMeshMidPhase4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Initialize the midphase mesh structure descriptor. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBV33MidphaseDesc, PxBV34MidphaseDesc </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>type</strong> – <strong>[in]</strong> Midphase mesh structure descriptor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxMidphaseDesc7isValidEv">
+<span id="_CPPv3NK14PxMidphaseDesc7isValidEv"></span><span id="_CPPv2NK14PxMidphaseDesc7isValidEv"></span><span id="PxMidphaseDesc::isValidC"></span><span class="target" id="class_px_midphase_desc_1a212f11fba05535d204d52a75ad19b64a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxMidphaseDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDescaSEN14PxMeshMidPhase4EnumE">
+<span id="_CPPv3N14PxMidphaseDescaSEN14PxMeshMidPhase4EnumE"></span><span id="_CPPv2N14PxMidphaseDescaSEN14PxMeshMidPhase4EnumE"></span><span id="PxMidphaseDesc::assign-operator__PxMeshMidPhase::Enum"></span><span class="target" id="class_px_midphase_desc_1a06288900e99f9c4d6270acc3c62d2725"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxMidphaseDesc" title="PxMidphaseDesc"><span class="n"><span class="pre">PxMidphaseDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv414PxMeshMidPhase" title="PxMeshMidPhase"><span class="n"><span class="pre">PxMeshMidPhase</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4EnumE" title="PxMeshMidPhase::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">descType</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxMidphaseDescaSEN14PxMeshMidPhase4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>this </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDesc10mBVH33DescE">
+<span id="_CPPv3N14PxMidphaseDesc10mBVH33DescE"></span><span id="_CPPv2N14PxMidphaseDesc10mBVH33DescE"></span><span id="PxMidphaseDesc::mBVH33Desc__PxBVH33MidphaseDesc"></span><span class="target" id="class_px_midphase_desc_1aed287e641cd5f9c1c30659666534123e"></span><a class="reference internal" href="struct_px_b_v_h33_midphase_desc.html#_CPPv419PxBVH33MidphaseDesc" title="PxBVH33MidphaseDesc"><span class="n"><span class="pre">PxBVH33MidphaseDesc</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBVH33Desc</span></span></span><a class="headerlink" href="#_CPPv4N14PxMidphaseDesc10mBVH33DescE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDesc10mBVH34DescE">
+<span id="_CPPv3N14PxMidphaseDesc10mBVH34DescE"></span><span id="_CPPv2N14PxMidphaseDesc10mBVH34DescE"></span><span id="PxMidphaseDesc::mBVH34Desc__PxBVH34MidphaseDesc"></span><span class="target" id="class_px_midphase_desc_1ae369084445c520f5de14039bb91fefb5"></span><a class="reference internal" href="struct_px_b_v_h34_midphase_desc.html#_CPPv419PxBVH34MidphaseDesc" title="PxBVH34MidphaseDesc"><span class="n"><span class="pre">PxBVH34MidphaseDesc</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBVH34Desc</span></span></span><a class="headerlink" href="#_CPPv4N14PxMidphaseDesc10mBVH34DescE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDescUt2_38E">
+<span id="_CPPv3N14PxMidphaseDescUt2_38E"></span><span class="target" id="class_px_midphase_desc_1abadd4248dd385e3740aab808e2d5c2cc"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxMidphaseDesc" title="PxMidphaseDesc"><span class="n"><span class="pre">PxMidphaseDesc</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">[anonymous]</span></span></span><a class="headerlink" href="#_CPPv4N14PxMidphaseDescUt2_38E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Midphase descriptors union. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBV33MidphaseDesc, PxBV34MidphaseDesc </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMidphaseDesc5mTypeE">
+<span id="_CPPv3N14PxMidphaseDesc5mTypeE"></span><span id="_CPPv2N14PxMidphaseDesc5mTypeE"></span><span id="PxMidphaseDesc::mType__PxMeshMidPhase::Enum"></span><span class="target" id="class_px_midphase_desc_1accf127a843dae110fc24fe458f7924e6"></span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv414PxMeshMidPhase" title="PxMeshMidPhase"><span class="n"><span class="pre">PxMeshMidPhase</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4EnumE" title="PxMeshMidPhase::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mType</span></span></span><a class="headerlink" href="#_CPPv4N14PxMidphaseDesc5mTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

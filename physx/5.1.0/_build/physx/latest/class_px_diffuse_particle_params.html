@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxDiffuseParticleParams &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxDiffuseParticleParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxdiffuseparticleparams">
+<span id="exhale-class-class-px-diffuse-particle-params"></span><h1>PxDiffuseParticleParams<a class="headerlink" href="#pxdiffuseparticleparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticleBuffer.h.html#file-include-pxparticlebuffer-h"><span class="std std-ref">include/PxParticleBuffer.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv423PxDiffuseParticleParams">
+<span id="_CPPv323PxDiffuseParticleParams"></span><span id="_CPPv223PxDiffuseParticleParams"></span><span id="PxDiffuseParticleParams"></span><span class="target" id="class_px_diffuse_particle_params"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDiffuseParticleParams</span></span></span><a class="headerlink" href="#_CPPv423PxDiffuseParticleParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Parameters to configure the behavior of diffuse particles. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams23PxDiffuseParticleParamsEv">
+<span id="_CPPv3N23PxDiffuseParticleParams23PxDiffuseParticleParamsEv"></span><span id="_CPPv2N23PxDiffuseParticleParams23PxDiffuseParticleParamsEv"></span><span id="PxDiffuseParticleParams::PxDiffuseParticleParams"></span><span class="target" id="class_px_diffuse_particle_params_1ad1274f0caf5d23fefd267451066e780d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDiffuseParticleParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams23PxDiffuseParticleParamsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct parameters with default values. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams12setToDefaultEv">
+<span id="_CPPv3N23PxDiffuseParticleParams12setToDefaultEv"></span><span id="_CPPv2N23PxDiffuseParticleParams12setToDefaultEv"></span><span id="PxDiffuseParticleParams::setToDefault"></span><span class="target" id="class_px_diffuse_particle_params_1af2ec0b59169aad09bdd92bc511cb4ffd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams9thresholdE">
+<span id="_CPPv3N23PxDiffuseParticleParams9thresholdE"></span><span id="_CPPv2N23PxDiffuseParticleParams9thresholdE"></span><span id="PxDiffuseParticleParams::threshold__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a8ba526ef8415efd663aec0ca5676cbda"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">threshold</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams9thresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Particles with potential value greater than the threshold will spawn diffuse particles. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams8lifetimeE">
+<span id="_CPPv3N23PxDiffuseParticleParams8lifetimeE"></span><span id="_CPPv2N23PxDiffuseParticleParams8lifetimeE"></span><span id="PxDiffuseParticleParams::lifetime__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1aa847bcc039f6cfb8826f0e23138df5eb"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lifetime</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams8lifetimeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Diffuse particle will be removed after the specified lifetime. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams7airDragE">
+<span id="_CPPv3N23PxDiffuseParticleParams7airDragE"></span><span id="_CPPv2N23PxDiffuseParticleParams7airDragE"></span><span id="PxDiffuseParticleParams::airDrag__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a6debdcbdce5adf5a8f5f4d99873aeb03"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">airDrag</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams7airDragE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Air drag force factor for spray particles. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams10bubbleDragE">
+<span id="_CPPv3N23PxDiffuseParticleParams10bubbleDragE"></span><span id="_CPPv2N23PxDiffuseParticleParams10bubbleDragE"></span><span id="PxDiffuseParticleParams::bubbleDrag__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a029ffe1901d9da939cf9b63b4f37fdff"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bubbleDrag</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams10bubbleDragE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fluid drag force factor for bubble particles. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams8buoyancyE">
+<span id="_CPPv3N23PxDiffuseParticleParams8buoyancyE"></span><span id="_CPPv2N23PxDiffuseParticleParams8buoyancyE"></span><span id="PxDiffuseParticleParams::buoyancy__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a3fd33692e71ac32d0ed7fc006f8a567d"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buoyancy</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams8buoyancyE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Buoyancy force factor for bubble particles. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams19kineticEnergyWeightE">
+<span id="_CPPv3N23PxDiffuseParticleParams19kineticEnergyWeightE"></span><span id="_CPPv2N23PxDiffuseParticleParams19kineticEnergyWeightE"></span><span id="PxDiffuseParticleParams::kineticEnergyWeight__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1ab5c47fcab12d52cf09f52359eb5e4143"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">kineticEnergyWeight</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams19kineticEnergyWeightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Contribution from kinetic energy when deciding diffuse particle creation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams14pressureWeightE">
+<span id="_CPPv3N23PxDiffuseParticleParams14pressureWeightE"></span><span id="_CPPv2N23PxDiffuseParticleParams14pressureWeightE"></span><span id="PxDiffuseParticleParams::pressureWeight__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a8484e10b5e9a36c26ec636be81031832"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pressureWeight</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams14pressureWeightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Contribution from pressure when deciding diffuse particle creation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams16divergenceWeightE">
+<span id="_CPPv3N23PxDiffuseParticleParams16divergenceWeightE"></span><span id="_CPPv2N23PxDiffuseParticleParams16divergenceWeightE"></span><span id="PxDiffuseParticleParams::divergenceWeight__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a2bef3cd3378eb27d3d5f40205d1ef3e5"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">divergenceWeight</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams16divergenceWeightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Contribution from divergence when deciding diffuse particle creation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams14collisionDecayE">
+<span id="_CPPv3N23PxDiffuseParticleParams14collisionDecayE"></span><span id="_CPPv2N23PxDiffuseParticleParams14collisionDecayE"></span><span id="PxDiffuseParticleParams::collisionDecay__PxReal"></span><span class="target" id="class_px_diffuse_particle_params_1a10697c7784710fa2d34665180765a9d8"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">collisionDecay</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams14collisionDecayE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decay factor of diffuse particles’ lifetime after they collide with shapes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxDiffuseParticleParams19useAccurateVelocityE">
+<span id="_CPPv3N23PxDiffuseParticleParams19useAccurateVelocityE"></span><span id="_CPPv2N23PxDiffuseParticleParams19useAccurateVelocityE"></span><span id="PxDiffuseParticleParams::useAccurateVelocity__b"></span><span class="target" id="class_px_diffuse_particle_params_1ad4d23e09d52d4e9496c3b6df1fe9384e"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">useAccurateVelocity</span></span></span><a class="headerlink" href="#_CPPv4N23PxDiffuseParticleParams19useAccurateVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>If true, enables accurate velocity estimation when using PBD solver. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

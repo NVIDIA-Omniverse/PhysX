@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/foundation/PxFoundation.h &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/foundation/PxFoundation.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-foundation-pxfoundation-h">
+<span id="file-include-foundation-pxfoundation-h"></span><h1>include/foundation/PxFoundation.h<a class="headerlink" href="#include-foundation-pxfoundation-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_foundation.html#dir-include-foundation"><span class="std std-ref">include/foundation/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_foundation_PxFoundation.h.html#program-listing-file-include-foundation-pxfoundation-h"><span class="std std-ref">include/foundation/PxFoundation.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_common_PxProfileZone.h.html#file-include-common-pxprofilezone-h"><span class="std std-ref">include/common/PxProfileZone.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_common_PxSerializer.h.html#file-include-common-pxserializer-h"><span class="std std-ref">include/common/PxSerializer.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxDefaultStreams.h.html#file-include-extensions-pxdefaultstreams-h"><span class="std std-ref">include/extensions/PxDefaultStreams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxAllocator.h.html#file-include-foundation-pxallocator-h"><span class="std std-ref">include/foundation/PxAllocator.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_gpu_PxGpu.h.html#file-include-gpu-pxgpu-h"><span class="std std-ref">include/gpu/PxGpu.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_braking_PxVehicleBrakingParams.h.html#file-include-vehicle2-braking-pxvehiclebrakingparams-h"><span class="std std-ref">include/vehicle2/braking/PxVehicleBrakingParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_commands_PxVehicleCommandParams.h.html#file-include-vehicle2-commands-pxvehiclecommandparams-h"><span class="std std-ref">include/vehicle2/commands/PxVehicleCommandParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainParams.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainparams-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxConstraints_PxVehiclePhysXConstraintParams.h.html#file-include-vehicle2-physxconstraints-pxvehiclephysxconstraintparams-h"><span class="std std-ref">include/vehicle2/physxConstraints/PxVehiclePhysXConstraintParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxRoadGeometry_PxVehiclePhysXRoadGeometryParams.h.html#file-include-vehicle2-physxroadgeometry-pxvehiclephysxroadgeometryparams-h"><span class="std std-ref">include/vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleComponentSequence.h.html#file-include-vehicle2-pxvehiclecomponentsequence-h"><span class="std std-ref">include/vehicle2/PxVehicleComponentSequence.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleParams.h.html#file-include-vehicle2-pxvehicleparams-h"><span class="std std-ref">include/vehicle2/PxVehicleParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_rigidBody_PxVehicleRigidBodyParams.h.html#file-include-vehicle2-rigidbody-pxvehiclerigidbodyparams-h"><span class="std std-ref">include/vehicle2/rigidBody/PxVehicleRigidBodyParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_steering_PxVehicleSteeringParams.h.html#file-include-vehicle2-steering-pxvehiclesteeringparams-h"><span class="std std-ref">include/vehicle2/steering/PxVehicleSteeringParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_suspension_PxVehicleSuspensionParams.h.html#file-include-vehicle2-suspension-pxvehiclesuspensionparams-h"><span class="std std-ref">include/vehicle2/suspension/PxVehicleSuspensionParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_tire_PxVehicleTireParams.h.html#file-include-vehicle2-tire-pxvehicletireparams-h"><span class="std std-ref">include/vehicle2/tire/PxVehicleTireParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_wheel_PxVehicleWheelParams.h.html#file-include-vehicle2-wheel-pxvehiclewheelparams-h"><span class="std std-ref">include/vehicle2/wheel/PxVehicleWheelParams.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_foundation.html#exhale-class-class-px-foundation"><span class="std std-ref">PxFoundation</span></a>: Foundation SDK singleton class.</p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__foundation_1gaecb6919737d04907d4347219c2949eea.html#exhale-function-group-foundation-1gaecb6919737d04907d4347219c2949eea"><span class="std std-ref">PxCreateFoundation</span></a>: Creates an instance of the foundation class.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1gaac17ee99818e65c2fb8c8729e9695857.html#exhale-function-group-foundation-1gaac17ee99818e65c2fb8c8729e9695857"><span class="std std-ref">PxDecFoundationRefCount</span></a>: Decrement the ref count of <a class="reference internal" href="class_px_foundation.html#exhale-class-class-px-foundation"><span class="std std-ref">PxFoundation</span></a>.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga882383e8c4e38e4ac8f783c338475075.html#exhale-function-group-foundation-1ga882383e8c4e38e4ac8f783c338475075"><span class="std std-ref">PxGetAllocatorCallback</span></a>: Get the allocator callback.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1gad99aba9b4d0571026f56d1a43dc9ffef.html#exhale-function-group-foundation-1gad99aba9b4d0571026f56d1a43dc9ffef"><span class="std std-ref">PxGetBroadcastAllocator</span></a>: Get the broadcasting allocator callback.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga4e0037921e2b43cd7b01b63d13c964e3.html#exhale-function-group-foundation-1ga4e0037921e2b43cd7b01b63d13c964e3"><span class="std std-ref">PxGetBroadcastError</span></a>: Get the broadcasting error callback.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga36ad12bb5727bcd09b54a87a9d993d07.html#exhale-function-group-foundation-1ga36ad12bb5727bcd09b54a87a9d993d07"><span class="std std-ref">PxGetErrorCallback</span></a>: Get the error callback.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga4cc7755976a58cbe38f48b73271fbce8.html#exhale-function-group-foundation-1ga4cc7755976a58cbe38f48b73271fbce8"><span class="std std-ref">PxGetFoundation</span></a>: Retrieves the Foundation SDK after it has been created.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga4a38e0a77d678c786241c92dfa4b55d6.html#exhale-function-group-foundation-1ga4a38e0a77d678c786241c92dfa4b55d6"><span class="std std-ref">PxGetProfilerCallback</span></a>: Get the callback that will be used for all profiling.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga7f6c95789fd8859a04ecd4a2dba3eaa6.html#exhale-function-group-foundation-1ga7f6c95789fd8859a04ecd4a2dba3eaa6"><span class="std std-ref">PxGetWarnOnceTimeStamp</span></a>: Get the warn once timestamp.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1gace67b419bfefeabc6f10cedc2506576a.html#exhale-function-group-foundation-1gace67b419bfefeabc6f10cedc2506576a"><span class="std std-ref">PxIncFoundationRefCount</span></a>: Increment the ref count of <a class="reference internal" href="class_px_foundation.html#exhale-class-class-px-foundation"><span class="std std-ref">PxFoundation</span></a>.</p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga548490f3a331689dbecf6b7817e3f766.html#exhale-function-group-foundation-1ga548490f3a331689dbecf6b7817e3f766"><span class="std std-ref">PxSetFoundationInstance</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1ga68f2d044b94b01e58ce85c48c4e3a48b.html#exhale-function-group-foundation-1ga68f2d044b94b01e58ce85c48c4e3a48b"><span class="std std-ref">PxSetProfilerCallback</span></a>: Set the callback that will be used for all profiling.</p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__foundation_1ga89beab11abe1ea8c4f4d30b5a38edb01.html#exhale-define-group-foundation-1ga89beab11abe1ea8c4f4d30b5a38edb01"><span class="std std-ref">PX_IMPLEMENT_OUTPUT_ERROR</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

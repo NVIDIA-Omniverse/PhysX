@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehiclePhysXConstraintState &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehiclePhysXConstraintState</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclephysxconstraintstate">
+<span id="exhale-struct-struct-px-vehicle-phys-x-constraint-state"></span><h1>PxVehiclePhysXConstraintState<a class="headerlink" href="#pxvehiclephysxconstraintstate" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_physxConstraints_PxVehiclePhysXConstraintStates.h.html#file-include-vehicle2-physxconstraints-pxvehiclephysxconstraintstates-h"><span class="std std-ref">include/vehicle2/physxConstraints/PxVehiclePhysXConstraintStates.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv429PxVehiclePhysXConstraintState">
+<span id="_CPPv329PxVehiclePhysXConstraintState"></span><span id="_CPPv229PxVehiclePhysXConstraintState"></span><span id="PxVehiclePhysXConstraintState"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePhysXConstraintState</span></span></span><a class="headerlink" href="#_CPPv429PxVehiclePhysXConstraintState" title="Permalink to this definition"></a><br /></dt>
+<dd><p><a class="reference internal" href="#struct_px_vehicle_phys_x_constraint_state"><span class="std std-ref">PxVehiclePhysXConstraintState</span></a> is a data structure used to write constraint data to the internal state of the associated <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Px1dConstraint </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState12setToDefaultEv">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState12setToDefaultEv"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState12setToDefaultEv"></span><span id="PxVehiclePhysXConstraintState::setToDefault"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a9f32837734f90c0804ecf49dbd8b0bd7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState16tireActiveStatusE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState16tireActiveStatusE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState16tireActiveStatusE"></span><span id="PxVehiclePhysXConstraintState::tireActiveStatus__bA"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a91e4960ffcd938c55807696017deeee4"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireActiveStatus</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv427PxVehicleTireDirectionModes" title="PxVehicleTireDirectionModes"><span class="n"><span class="pre">PxVehicleTireDirectionModes</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv4N27PxVehicleTireDirectionModes4Enum25eMAX_NB_PLANAR_DIRECTIONSE" title="PxVehicleTireDirectionModes::eMAX_NB_PLANAR_DIRECTIONS"><span class="n"><span class="pre">eMAX_NB_PLANAR_DIRECTIONS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState16tireActiveStatusE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a boolean describing whether to trigger a low speed constraint along the tire longitudinal and lateral directions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState11tireLinearsE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState11tireLinearsE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState11tireLinearsE"></span><span id="PxVehiclePhysXConstraintState::tireLinears__PxVec3A"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1af42690199c6a570cec125148b276925e"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireLinears</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv427PxVehicleTireDirectionModes" title="PxVehicleTireDirectionModes"><span class="n"><span class="pre">PxVehicleTireDirectionModes</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv4N27PxVehicleTireDirectionModes4Enum25eMAX_NB_PLANAR_DIRECTIONSE" title="PxVehicleTireDirectionModes::eMAX_NB_PLANAR_DIRECTIONS"><span class="n"><span class="pre">eMAX_NB_PLANAR_DIRECTIONS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState11tireLinearsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>linear component of velocity jacobian in world space for the tire’s longitudinal and lateral directions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState12tireAngularsE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState12tireAngularsE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState12tireAngularsE"></span><span id="PxVehiclePhysXConstraintState::tireAngulars__PxVec3A"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a9d1687b775fdc668260da40e1fa6656b"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireAngulars</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv427PxVehicleTireDirectionModes" title="PxVehicleTireDirectionModes"><span class="n"><span class="pre">PxVehicleTireDirectionModes</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv4N27PxVehicleTireDirectionModes4Enum25eMAX_NB_PLANAR_DIRECTIONSE" title="PxVehicleTireDirectionModes::eMAX_NB_PLANAR_DIRECTIONS"><span class="n"><span class="pre">eMAX_NB_PLANAR_DIRECTIONS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState12tireAngularsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>angular component of velocity jacobian in world space for the tire’s longitudinal and lateral directions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState11tireDampingE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState11tireDampingE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState11tireDampingE"></span><span id="PxVehiclePhysXConstraintState::tireDamping__PxRealA"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a83c4b7d5c926bfbd6beb324ab5e477ce"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireDamping</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv427PxVehicleTireDirectionModes" title="PxVehicleTireDirectionModes"><span class="n"><span class="pre">PxVehicleTireDirectionModes</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html#_CPPv4N27PxVehicleTireDirectionModes4Enum25eMAX_NB_PLANAR_DIRECTIONSE" title="PxVehicleTireDirectionModes::eMAX_NB_PLANAR_DIRECTIONS"><span class="n"><span class="pre">eMAX_NB_PLANAR_DIRECTIONS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState11tireDampingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>damping coefficient applied to the tire’s longitudinal and lateral velocities. </p>
+<p>The constraint sets a target velocity of 0 and the damping coefficient will impact the size of the impulse applied to reach the target. Since damping acts as a stiffness with respect to the velocity, too large a value can cause instabilities. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState16suspActiveStatusE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState16suspActiveStatusE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState16suspActiveStatusE"></span><span id="PxVehiclePhysXConstraintState::suspActiveStatus__b"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1aa2b918a3df4c18c60f42bc56d6d458cf"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suspActiveStatus</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState16suspActiveStatusE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a boolean describing whether to trigger a suspension limit constraint. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState10suspLinearE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState10suspLinearE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState10suspLinearE"></span><span id="PxVehiclePhysXConstraintState::suspLinear__PxVec3"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a2f3c07d60b702e9b22674622fead4360"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suspLinear</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState10suspLinearE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>linear component of velocity jacobian in the world frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState11suspAngularE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState11suspAngularE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState11suspAngularE"></span><span id="PxVehiclePhysXConstraintState::suspAngular__PxVec3"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a32287ba9c78173441419e1be528ac3cf"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suspAngular</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState11suspAngularE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>angular component of velocity jacobian in the world frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState18suspGeometricErrorE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState18suspGeometricErrorE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState18suspGeometricErrorE"></span><span id="PxVehiclePhysXConstraintState::suspGeometricError__PxReal"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1ae4006da0786a4c7534dd4574cccb8e91"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suspGeometricError</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState18suspGeometricErrorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>the excess suspension compression to be resolved by the constraint that cannot be resolved due to the travel limit of the suspension spring. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The expected error value is the excess suspension compression projected onto the ground plane normal and should have a negative sign. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehiclePhysXConstraintState11restitutionE">
+<span id="_CPPv3N29PxVehiclePhysXConstraintState11restitutionE"></span><span id="_CPPv2N29PxVehiclePhysXConstraintState11restitutionE"></span><span id="PxVehiclePhysXConstraintState::restitution__PxReal"></span><span class="target" id="struct_px_vehicle_phys_x_constraint_state_1a6b3022677360ee28af2b3c25dcf0173a"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehiclePhysXConstraintState11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>restitution value of the restitution model used to generate a target velocity that will resolve the geometric error. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px1_d_constraint_flag.html#struct_px1_d_constraint_flag_1a0d9f59379f0d8eba3bace01f8bb88b76a4584044b6824a4cb54860d7b0f2b52ad"><span class="std std-ref">Px1DConstraintFlag::eRESTITUTION</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Px1DConstraint::RestitutionModifiers::restitution </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of 0.0 means that the restitution model is not employed. </p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

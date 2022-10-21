@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneLimits &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSceneLimits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenelimits">
+<span id="exhale-class-class-px-scene-limits"></span><h1>PxSceneLimits<a class="headerlink" href="#pxscenelimits" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneDesc.h.html#file-include-pxscenedesc-h"><span class="std std-ref">include/PxSceneDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxSceneLimits">
+<span id="_CPPv313PxSceneLimits"></span><span id="_CPPv213PxSceneLimits"></span><span id="PxSceneLimits"></span><span class="target" id="class_px_scene_limits"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneLimits</span></span></span><a class="headerlink" href="#_CPPv413PxSceneLimits" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Class used to retrieve limits(e.g. </p>
+<p>maximum number of bodies) for a scene. The limits are used as a hint to the size of the scene, not as a hard limit (i.e. it will be possible to create more objects than specified in the scene limits).</p>
+<p>0 indicates no limit. Using limits allows the SDK to preallocate various arrays, leading to less re-allocations and faster code at runtime. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits13PxSceneLimitsEv">
+<span id="_CPPv3N13PxSceneLimits13PxSceneLimitsEv"></span><span id="_CPPv2N13PxSceneLimits13PxSceneLimitsEv"></span><span id="PxSceneLimits::PxSceneLimits"></span><span class="target" id="group__physics_1gaa75a5a61bc24a016c4a3a290306f6f33"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneLimits</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSceneLimits13PxSceneLimitsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constructor sets to default </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits12setToDefaultEv">
+<span id="_CPPv3N13PxSceneLimits12setToDefaultEv"></span><span id="_CPPv2N13PxSceneLimits12setToDefaultEv"></span><span id="PxSceneLimits::setToDefault"></span><span class="target" id="group__physics_1ga762d3d9068df87e1c3e9537e3de47c4f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSceneLimits12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxSceneLimits7isValidEv">
+<span id="_CPPv3NK13PxSceneLimits7isValidEv"></span><span id="_CPPv2NK13PxSceneLimits7isValidEv"></span><span id="PxSceneLimits::isValidC"></span><span class="target" id="group__physics_1ga0fbe2213b5695cfac8579a16f947b8bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxSceneLimits7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits11maxNbActorsE">
+<span id="_CPPv3N13PxSceneLimits11maxNbActorsE"></span><span id="_CPPv2N13PxSceneLimits11maxNbActorsE"></span><span id="PxSceneLimits::maxNbActors__PxU32"></span><span class="target" id="class_px_scene_limits_1af0a6bbbff2a3c1ce5cf80d2ef3666cf5"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbActors</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits11maxNbActorsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of actors. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits11maxNbBodiesE">
+<span id="_CPPv3N13PxSceneLimits11maxNbBodiesE"></span><span id="_CPPv2N13PxSceneLimits11maxNbBodiesE"></span><span id="PxSceneLimits::maxNbBodies__PxU32"></span><span class="target" id="class_px_scene_limits_1ad0eaee83c330232159c791093abc0f4c"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbBodies</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits11maxNbBodiesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of dynamic rigid bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits17maxNbStaticShapesE">
+<span id="_CPPv3N13PxSceneLimits17maxNbStaticShapesE"></span><span id="_CPPv2N13PxSceneLimits17maxNbStaticShapesE"></span><span id="PxSceneLimits::maxNbStaticShapes__PxU32"></span><span class="target" id="class_px_scene_limits_1a5269e317c229389fc49ed658d60f1a7e"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbStaticShapes</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits17maxNbStaticShapesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of static shapes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits18maxNbDynamicShapesE">
+<span id="_CPPv3N13PxSceneLimits18maxNbDynamicShapesE"></span><span id="_CPPv2N13PxSceneLimits18maxNbDynamicShapesE"></span><span id="PxSceneLimits::maxNbDynamicShapes__PxU32"></span><span class="target" id="class_px_scene_limits_1a2657acecc1cc484fc48a1263f4fc0427"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbDynamicShapes</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits18maxNbDynamicShapesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of dynamic shapes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits15maxNbAggregatesE">
+<span id="_CPPv3N13PxSceneLimits15maxNbAggregatesE"></span><span id="_CPPv2N13PxSceneLimits15maxNbAggregatesE"></span><span id="PxSceneLimits::maxNbAggregates__PxU32"></span><span class="target" id="class_px_scene_limits_1ad44cb62b261514d8937077f75b40c5cc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbAggregates</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits15maxNbAggregatesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of aggregates. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits16maxNbConstraintsE">
+<span id="_CPPv3N13PxSceneLimits16maxNbConstraintsE"></span><span id="_CPPv2N13PxSceneLimits16maxNbConstraintsE"></span><span id="PxSceneLimits::maxNbConstraints__PxU32"></span><span class="target" id="class_px_scene_limits_1a4226fb580e6cf704af33208a931bfd0e"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbConstraints</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits16maxNbConstraintsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of constraint shaders. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits12maxNbRegionsE">
+<span id="_CPPv3N13PxSceneLimits12maxNbRegionsE"></span><span id="_CPPv2N13PxSceneLimits12maxNbRegionsE"></span><span id="PxSceneLimits::maxNbRegions__PxU32"></span><span class="target" id="class_px_scene_limits_1ac629764140a510c999a83e1b65e796af"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbRegions</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits12maxNbRegionsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of broad-phase regions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSceneLimits23maxNbBroadPhaseOverlapsE">
+<span id="_CPPv3N13PxSceneLimits23maxNbBroadPhaseOverlapsE"></span><span id="_CPPv2N13PxSceneLimits23maxNbBroadPhaseOverlapsE"></span><span id="PxSceneLimits::maxNbBroadPhaseOverlaps__PxU32"></span><span class="target" id="class_px_scene_limits_1a8f662dce363bf4b21782a0d33b309446"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbBroadPhaseOverlaps</span></span></span><a class="headerlink" href="#_CPPv4N13PxSceneLimits23maxNbBroadPhaseOverlapsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected maximum number of broad-phase overlaps. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleWheelConstraintGroupState &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleWheelConstraintGroupState</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclewheelconstraintgroupstate">
+<span id="exhale-struct-struct-px-vehicle-wheel-constraint-group-state"></span><h1>PxVehicleWheelConstraintGroupState<a class="headerlink" href="#pxvehiclewheelconstraintgroupstate" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainStates.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainstates-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainStates.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv434PxVehicleWheelConstraintGroupState">
+<span id="_CPPv334PxVehicleWheelConstraintGroupState"></span><span id="_CPPv234PxVehicleWheelConstraintGroupState"></span><span id="PxVehicleWheelConstraintGroupState"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleWheelConstraintGroupState</span></span></span><a class="headerlink" href="#_CPPv434PxVehicleWheelConstraintGroupState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specify groups of wheels that are to be constrained to have pre-determined angular velocity relationship. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState12setToDefaultEv">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState12setToDefaultEv"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState12setToDefaultEv"></span><span id="PxVehicleWheelConstraintGroupState::setToDefault"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1af6cd0f24393d97197d88bd0b851787af"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState18addConstraintGroupEK5PxU32PCK5PxU32PK5PxF32">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState18addConstraintGroupEK5PxU32PCK5PxU32PK5PxF32"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState18addConstraintGroupEK5PxU32PCK5PxU32PK5PxF32"></span><span id="PxVehicleWheelConstraintGroupState::addConstraintGroup__PxU32C.PxU32CPC.PxF32CP"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1abaf4a0c7f6095f5788a44c6312fc7543"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addConstraintGroup</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbWheelsInGroupToAdd</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wheelIdsInGroupToAdd</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraintMultipliers</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState18addConstraintGroupEK5PxU32PCK5PxU32PK5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add a wheel constraint group by specifying the number of wheels in the group, an array of wheel ids specifying each wheel in the group and a desired rotational speed relationship. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>constraintMultipliers[j] specifies the target rotational speed of the jth wheel in the constraint group as a multiplier of the rotational speed of the zeroth wheel in the group. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbWheelsInGroupToAdd</strong> – <strong>[in]</strong> is the number of wheels in the group to be added. </p></li>
+<li><p><strong>wheelIdsInGroupToAdd</strong> – <strong>[in]</strong> is an array of wheel ids specifying all the wheels in the group to be added. </p></li>
+<li><p><strong>constraintMultipliers</strong> – <strong>[in]</strong> is an array of constraint multipliers describing the desired relationship of the wheel rotational speeds. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK34PxVehicleWheelConstraintGroupState21getNbConstraintGroupsEv">
+<span id="_CPPv3NK34PxVehicleWheelConstraintGroupState21getNbConstraintGroupsEv"></span><span id="_CPPv2NK34PxVehicleWheelConstraintGroupState21getNbConstraintGroupsEv"></span><span id="PxVehicleWheelConstraintGroupState::getNbConstraintGroupsC"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a3d5279df412c82cca288cec5cfed60d6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbConstraintGroups</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK34PxVehicleWheelConstraintGroupState21getNbConstraintGroupsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of wheel constraint groups in the vehicle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_wheel_constraint_group_state_1adf38ced0aefc36a9b985be1905cff8bc"><span class="std std-ref">getNbWheelsInConstraintGroup()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of wheel constraint groups. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK34PxVehicleWheelConstraintGroupState28getNbWheelsInConstraintGroupEK5PxU32">
+<span id="_CPPv3NK34PxVehicleWheelConstraintGroupState28getNbWheelsInConstraintGroupEK5PxU32"></span><span id="_CPPv2NK34PxVehicleWheelConstraintGroupState28getNbWheelsInConstraintGroupEK5PxU32"></span><span id="PxVehicleWheelConstraintGroupState::getNbWheelsInConstraintGroup__PxU32CC"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1adf38ced0aefc36a9b985be1905cff8bc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbWheelsInConstraintGroup</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK34PxVehicleWheelConstraintGroupState28getNbWheelsInConstraintGroupEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of wheels in the ith constraint group. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_wheel_constraint_group_state_1a63f07ca66941cd6440cffc272cb7e922"><span class="std std-ref">getWheelInConstraintGroup()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> specifies the constraint group to be queried for its wheel count. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The number of wheels in the specified constraint group. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK34PxVehicleWheelConstraintGroupState25getWheelInConstraintGroupEK5PxU32K5PxU32">
+<span id="_CPPv3NK34PxVehicleWheelConstraintGroupState25getWheelInConstraintGroupEK5PxU32K5PxU32"></span><span id="_CPPv2NK34PxVehicleWheelConstraintGroupState25getWheelInConstraintGroupEK5PxU32K5PxU32"></span><span id="PxVehicleWheelConstraintGroupState::getWheelInConstraintGroup__PxU32C.PxU32CC"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a63f07ca66941cd6440cffc272cb7e922"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWheelInConstraintGroup</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">j</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK34PxVehicleWheelConstraintGroupState25getWheelInConstraintGroupEK5PxU32K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the wheel id of the jth wheel in the ith constraint group. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_wheel_constraint_group_state_1adf38ced0aefc36a9b985be1905cff8bc"><span class="std std-ref">getNbWheelsInConstraintGroup()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>j</strong> – <strong>[in]</strong> specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified constraint group. </p></li>
+<li><p><strong>i</strong> – <strong>[in]</strong> specifies the constraint group to be queried. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The wheel id of the jth wheel in the ith constraint group. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK34PxVehicleWheelConstraintGroupState30getMultiplierInConstraintGroupEK5PxU32K5PxU32">
+<span id="_CPPv3NK34PxVehicleWheelConstraintGroupState30getMultiplierInConstraintGroupEK5PxU32K5PxU32"></span><span id="_CPPv2NK34PxVehicleWheelConstraintGroupState30getMultiplierInConstraintGroupEK5PxU32K5PxU32"></span><span id="PxVehicleWheelConstraintGroupState::getMultiplierInConstraintGroup__PxU32C.PxU32CC"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1aeefc1368f0014339227e6c09ee664ef0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMultiplierInConstraintGroup</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">j</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK34PxVehicleWheelConstraintGroupState30getMultiplierInConstraintGroupEK5PxU32K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the constraint multiplier of the jth wheel in the ith constraint group. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>j</strong> – <strong>[in]</strong> specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified constraint group. </p></li>
+<li><p><strong>i</strong> – <strong>[in]</strong> specifies the constraint group to be queried. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The constraint multiplier of the jth wheel in the ith constraint group. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState8nbGroupsE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState8nbGroupsE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState8nbGroupsE"></span><span id="PxVehicleWheelConstraintGroupState::nbGroups__PxU32"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1ac9e02a0ae744006fd2bbbc2c756e700c"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbGroups</span></span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState8nbGroupsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of constraint groups in the vehicle. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState16nbWheelsPerGroupE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState16nbWheelsPerGroupE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState16nbWheelsPerGroupE"></span><span id="PxVehicleWheelConstraintGroupState::nbWheelsPerGroup__PxU32A"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a1cdf38a94573e0bdc1d3b09e518dba00"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheelsPerGroup</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum13eMAX_NB_AXLESE" title="PxVehicleLimits::eMAX_NB_AXLES"><span class="n"><span class="pre">eMAX_NB_AXLES</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState16nbWheelsPerGroupE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels in each group. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState15groupToWheelIdsE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState15groupToWheelIdsE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState15groupToWheelIdsE"></span><span id="PxVehicleWheelConstraintGroupState::groupToWheelIds__PxU32A"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1add4474c3b9a13843b798de278d409475"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">groupToWheelIds</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum13eMAX_NB_AXLESE" title="PxVehicleLimits::eMAX_NB_AXLES"><span class="n"><span class="pre">eMAX_NB_AXLES</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState15groupToWheelIdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of wheel ids for the ith group begins at wheelIdsInGroupOrder[groupToWheelIds[i]]. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState20wheelIdsInGroupOrderE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState20wheelIdsInGroupOrderE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState20wheelIdsInGroupOrderE"></span><span id="PxVehicleWheelConstraintGroupState::wheelIdsInGroupOrder__PxU32A"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a0032571d218b40cc24af98a4ba0fed22"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wheelIdsInGroupOrder</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState20wheelIdsInGroupOrderE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of all wheel ids in constraint groups. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState28wheelMultipliersInGroupOrderE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState28wheelMultipliersInGroupOrderE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState28wheelMultipliersInGroupOrderE"></span><span id="PxVehicleWheelConstraintGroupState::wheelMultipliersInGroupOrder__PxF32A"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a4bf8e3f72c5fc118e9b969486ca6ac7e"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wheelMultipliersInGroupOrder</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState28wheelMultipliersInGroupOrderE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The constraint multipliers for each constraint group. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N34PxVehicleWheelConstraintGroupState16nbWheelsInGroupsE">
+<span id="_CPPv3N34PxVehicleWheelConstraintGroupState16nbWheelsInGroupsE"></span><span id="_CPPv2N34PxVehicleWheelConstraintGroupState16nbWheelsInGroupsE"></span><span id="PxVehicleWheelConstraintGroupState::nbWheelsInGroups__PxU32"></span><span class="target" id="struct_px_vehicle_wheel_constraint_group_state_1a6cc14c599a2e60879529224875c3b068"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheelsInGroups</span></span></span><a class="headerlink" href="#_CPPv4N34PxVehicleWheelConstraintGroupState16nbWheelsInGroupsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels in a constraint group. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSimulationFilterShader &mdash; physx 5.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSimulationFilterShader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsimulationfiltershader">
+<span id="exhale-typedef-group-physics-1ga235380b2a5b3cc89a4cd89d089d72b33"></span><h1>PxSimulationFilterShader<a class="headerlink" href="#pxsimulationfiltershader" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxFiltering.h.html#file-include-pxfiltering-h"><span class="std std-ref">include/PxFiltering.h</span></a></p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv424PxSimulationFilterShader">
+<span id="_CPPv324PxSimulationFilterShader"></span><span id="_CPPv224PxSimulationFilterShader"></span><span id="PxSimulationFilterShader"></span><span class="target" id="group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationFilterShader</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n"><span class="pre">attributes0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n"><span class="pre">filterData0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n"><span class="pre">attributes1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n"><span class="pre">filterData1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">pairFlags</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">constantBlock</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n"><span class="pre">constantBlockSize</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv424PxSimulationFilterShader" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filter method to specify how a pair of potentially colliding objects should be processed. </p>
+<p>Collision filtering is a mechanism to specify how a pair of potentially colliding objects should be processed by the simulation. A pair of objects is potentially colliding if the bounding volumes of the two objects overlap. In short, a collision filter decides whether a collision pair should get processed, temporarily ignored or discarded. If a collision pair should get processed, the filter can additionally specify how it should get processed, for instance, whether contacts should get resolved, which callbacks should get invoked or which reports should be sent etc. The function returns the <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> flags and sets the <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> flags to define what the simulation should do with the given collision pair.</p>
+<p>
+This methods gets called when: <ul class="simple">
+<li><p>The bounding volumes of two objects start to overlap. </p></li>
+<li><p>The bounding volumes of two objects overlap and the filter data or filter attributes of one of the objects changed </p></li>
+<li><p>A re-filtering was forced through resetFiltering() (see <a class="reference internal" href="class_px_scene.html#class_px_scene_1a7c0cd2502c7918dd7d520178fa2a9e87"><span class="std std-ref">PxScene::resetFiltering()</span></a>) </p></li>
+<li><p>Filtering is requested in scene queries</p></li>
+</ul>
+<ul class="simple">
+<li><p>Pair of static rigid actors </p></li>
+<li><p>A static rigid actor and a kinematic actor (unless one is a trigger or if explicitly enabled through <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a15ecf48d452c22f6fb755df16919eca4"><span class="std std-ref">PxPairFilteringMode::eKEEP</span></a>) </p></li>
+<li><p>Two kinematic actors (unless one is a trigger or if explicitly enabled through <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a15ecf48d452c22f6fb755df16919eca4"><span class="std std-ref">PxPairFilteringMode::eKEEP</span></a>) </p></li>
+<li><p>Two jointed rigid bodies and the joint was defined to disable collision </p></li>
+<li><p>Two articulation links if connected through an articulation joint</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a> <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#group__physics_1ga675117fb97324a28d3b982b47430ea02"><span class="std std-ref">PxFilterFlags</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> <a class="reference internal" href="typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#group__physics_1gacacbeccf757e60dbf45089ef382681d9"><span class="std std-ref">PxPairFlags</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a9410287c6ea926dad9e2b2374541ad38"><span class="std std-ref">PxSceneDesc.filterShader</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A default implementation of a filter shader is provided in the PhysX extensions library, see <a class="reference internal" href="function_group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f.html#group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f"><span class="std std-ref">PxDefaultSimulationFilterShader</span></a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Certain pairs of objects are always ignored and this method does not get called. This is the case for the following pairs:</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a performance critical method and should be stateless. You should neither access external objects from within this method nor should you call external methods that are not inlined. If you need a more complex logic to filter a collision pair then use the filter callback mechanism for this pair (see <a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a>, <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083a62c42e8178d44dc0ead47699f9df87b8"><span class="std std-ref">PxFilterFlag::eCALLBACK</span></a>, <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a>).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Param attributes0</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The filter attribute of the first object </p>
+</dd>
+<dt class="field-even">Param filterData0</dt>
+<dd class="field-even"><p><strong>[in]</strong> The custom filter data of the first object </p>
+</dd>
+<dt class="field-odd">Param attributes1</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The filter attribute of the second object </p>
+</dd>
+<dt class="field-even">Param filterData1</dt>
+<dd class="field-even"><p><strong>[in]</strong> The custom filter data of the second object </p>
+</dd>
+<dt class="field-odd">Param pairFlags</dt>
+<dd class="field-odd"><p><strong>[out]</strong> Flags giving additional information on how an accepted pair should get processed </p>
+</dd>
+<dt class="field-even">Param constantBlock</dt>
+<dd class="field-even"><p><strong>[in]</strong> The constant global filter data (see <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1ad9ceb142127cc259aa2f5d322a1494e2"><span class="std std-ref">PxSceneDesc.filterShaderData</span></a>) </p>
+</dd>
+<dt class="field-odd">Param constantBlockSize</dt>
+<dd class="field-odd"><p><strong>[in]</strong> Size of the global filter data (see <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a710c03915bbaaa9bdf23925d535c3883"><span class="std std-ref">PxSceneDesc.filterShaderDataSize</span></a>) </p>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p>Filter flags defining whether the pair should be discarded, temporarily ignored, processed and whether the filter callback should get invoked for this pair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 08, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
