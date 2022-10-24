@@ -1,0 +1,34 @@
+<project toolsVersion="6.4">
+	<dependency name="CMakeModules">
+		<package name="CMakeModules" version="1.27.trunk.31953513" /> <!-- default -->
+		<package name="CMakeModules" version="1.27.trunk.30964292" platforms="linux linux-*"/>
+	</dependency>
+
+	<dependency name="clangMetadata" tags="requiredForDistro requiredForMetaGen">
+		<package name="clang-physxmetadata" version="4.0.0.31811673"/>
+	</dependency>
+
+	<dependency name="vswhere">
+		<package name="VsWhere" version="1.0.1.1"  platforms="vc12win32* vc12win64* vc14win32 vc14win64* vc15win32 vc15win64*  vc16win32 vc16win64 linux-crosscompile linux-aarch64-crosscompile "/>
+	</dependency>
+
+	<dependency name="PhysXDevice">
+		<package name="PhysXDevice" version="18.12.7.3"  platforms="vc12win32* vc12win64* vc14win32 vc14win64* vc15win32 vc15win64*  vc16win32 vc16win64"/>
+	</dependency>
+
+	<dependency name="glut32">
+		<package name="glut32-win" version="1.0.1.1"  platforms="vc12win32* vc12win64* vc14win32 vc14win64* vc15win32 vc15win64*  vc16win32 vc16win64"/>
+	</dependency>
+
+	<dependency name="PhysXGpu">
+		<package name="PhysXGpu" version="1.31958197"  platforms=" vc12win64*  vc14win64*  vc15win64*  vc16win64"/>
+	</dependency>
+
+	<dependency name="opengllinux" tags="requiredForDistro">
+		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux"/>
+	</dependency>
+
+    <dependency name="rapidjson">
+		<package name="rapidjson" version="1.1.0-67fac85-073453e1" />
+	</dependency>
+</project>
