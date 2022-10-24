@@ -1,7 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxSceneQuerySystemBase.html" title="Base class for the scene&#45;query system. " alt="" coords="5,31,191,57"/>
-<area shape="rect" id="node2" href="$classPxSceneQuerySystem.html" title="Scene&#45;queries external sub&#45;system for PxScene&#45;based objects. " alt="" coords="239,5,393,32"/>
-<area shape="rect" id="node4" href="$classPxSceneSQSystem.html" title="Traditional SQ system for PxScene. " alt="" coords="247,56,385,83"/>
-<area shape="rect" id="node3" href="$classPxCustomSceneQuerySystem.html" title="A custom scene query system. " alt="" coords="441,5,641,32"/>
-<area shape="rect" id="node5" href="$classPxScene.html" title="A scene is a collection of bodies and constraints which can interact. " alt="" coords="504,56,579,83"/>
-</map>

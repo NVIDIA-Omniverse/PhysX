@@ -1,8 +1,0 @@
-<map id="PxTriggerPair" name="PxTriggerPair">
-<area shape="rect" id="node2" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="11,236,81,263"/>
-<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="48,109,116,136"/>
-<area shape="rect" id="node7" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="92,185,197,212"/>
-<area shape="rect" id="node4" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,159,47"/>
-<area shape="rect" id="node5" href="$classPxFlags.html" title="PxFlags\&lt; PxTriggerPairFlag\l::Enum, PxU8 \&gt;" alt="" coords="219,287,404,328"/>
-<area shape="rect" id="node6" href="$classPxShape.html" title="Abstract class for collision shapes. " alt="" coords="119,294,194,321"/>
-</map>

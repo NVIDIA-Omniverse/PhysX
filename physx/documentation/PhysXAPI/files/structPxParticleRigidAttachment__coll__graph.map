@@ -1,5 +1,0 @@
-<map id="PxParticleRigidAttachment" name="PxParticleRigidAttachment">
-<area shape="rect" id="node2" href="$structPxParticleRigidFilterPair.html" title="Struct for storing a particle/vertex &#45; rigid filter pair with comparison operators. " alt="" coords="5,109,168,136"/>
-<area shape="rect" id="node3" href="$structPxConeLimitParams.html" title="Compressed form of cone limit parameters. " alt="" coords="324,109,465,136"/>
-<area shape="rect" id="node4" href="$classPxVec4T.html" title="PxVec4T\&lt; float \&gt;" alt="" coords="209,5,332,32"/>
-</map>

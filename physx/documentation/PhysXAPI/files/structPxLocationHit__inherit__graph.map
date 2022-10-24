@@ -1,7 +1,0 @@
-<map id="PxLocationHit" name="PxLocationHit">
-<area shape="rect" id="node3" href="$structPxGeomRaycastHit.html" title="Stores results of raycast queries. " alt="" coords="5,155,143,181"/>
-<area shape="rect" id="node5" href="$structPxGeomSweepHit.html" title="Stores results of sweep queries. " alt="" coords="167,155,295,181"/>
-<area shape="rect" id="node2" href="$structPxQueryHit.html" title="collection of set bits defined in PxHitFlag. " alt="" coords="108,5,197,32"/>
-<area shape="rect" id="node4" href="$structPxRaycastHit.html" title="PxRaycastHit" alt="" coords="23,229,125,256"/>
-<area shape="rect" id="node6" href="$structPxSweepHit.html" title="PxSweepHit" alt="" coords="185,229,278,256"/>
-</map>

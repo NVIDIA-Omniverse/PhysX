@@ -1,4 +1,0 @@
-<map id="PxVehiclePhysXWheelParams" name="PxVehiclePhysXWheelParams">
-<area shape="rect" id="node2" href="$structPxVehicleAxleDescription.html" title="PxVehicleAxleDescription" alt="" coords="5,5,177,32"/>
-<area shape="rect" id="node3" href="$structPxVehicleWheelParams.html" title="PxVehicleWheelParams" alt="" coords="202,5,365,32"/>
-</map>

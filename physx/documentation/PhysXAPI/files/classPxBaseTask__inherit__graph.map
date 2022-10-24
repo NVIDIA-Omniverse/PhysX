@@ -1,4 +1,0 @@
-<map id="PxBaseTask" name="PxBaseTask">
-<area shape="rect" id="node2" href="$classPxLightCpuTask.html" title="A PxBaseTask implementation with immediate execution and simple dependencies. " alt="" coords="5,80,123,107"/>
-<area shape="rect" id="node3" href="$classPxTask.html" title="A PxBaseTask implementation with deferred execution and full dependencies. " alt="" coords="147,80,213,107"/>
-</map>

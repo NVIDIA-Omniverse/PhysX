@@ -1,6 +1,0 @@
-<map id="PxVehiclePhysXRoadGeometryQueryParams" name="PxVehiclePhysXRoadGeometryQueryParams">
-<area shape="rect" id="node2" href="$structPxQueryFilterData.html" title="Scene query filtering data. " alt="" coords="95,109,224,136"/>
-<area shape="rect" id="node3" href="$classPxFlags.html" title="PxFlags\&lt; PxQueryFlag\l::Enum, PxU16 \&gt;" alt="" coords="5,5,164,47"/>
-<area shape="rect" id="node4" href="$structPxFilterData.html" title="PxFilterData is user&#45;definable data which gets passed into the collision filtering shader and/or call..." alt="" coords="188,13,283,39"/>
-<area shape="rect" id="node5" href="$classPxQueryFilterCallback.html" title="Scene query filtering callbacks. " alt="" coords="249,109,401,136"/>
-</map>

@@ -1,9 +1,0 @@
-<map id="PxVehiclePhysXConstraints" name="PxVehiclePhysXConstraints">
-<area shape="rect" id="node2" href="$structPxVehiclePhysXConstraintState.html" title="PxVehiclePhysXConstraintState is a data structure used to write constraint data to the internal state..." alt="" coords="197,153,375,195"/>
-<area shape="rect" id="node4" href="$classPxVehicleConstraintConnector.html" title="PxVehicleConstraintConnector" alt="" coords="28,257,227,284"/>
-<area shape="rect" id="node3" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="225,13,347,39"/>
-<area shape="rect" id="node5" href="$classPxConstraintConnector.html" title="This class connects a custom constraint to the SDK. " alt="" coords="5,161,161,187"/>
-<area shape="rect" id="node6" href="$classPxConstraint.html" title="A plugin class for implementing constraints. " alt="" coords="421,257,519,284"/>
-<area shape="rect" id="node7" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="436,161,504,187"/>
-<area shape="rect" id="node8" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="393,5,547,47"/>
-</map>

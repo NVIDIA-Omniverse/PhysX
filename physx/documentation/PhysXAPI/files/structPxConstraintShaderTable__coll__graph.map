@@ -1,6 +1,0 @@
-<map id="PxConstraintShaderTable" name="PxConstraintShaderTable">
-<area shape="rect" id="node2" href="$structPx1DConstraint.html" title="A one&#45;dimensional constraint. " alt="" coords="10,139,123,165"/>
-<area shape="rect" id="node3" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="5,5,128,32"/>
-<area shape="rect" id="node4" href="$classPxTransformT.html" title="class representing a rigid euclidean transform as a quaternion and a vector " alt="" coords="148,139,303,165"/>
-<area shape="rect" id="node5" href="$classPxConstraintVisualizer.html" title="API used to visualize details about a constraint. " alt="" coords="327,139,481,165"/>
-</map>

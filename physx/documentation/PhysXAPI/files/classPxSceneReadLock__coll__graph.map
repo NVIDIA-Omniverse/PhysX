@@ -1,5 +1,0 @@
-<map id="PxSceneReadLock" name="PxSceneReadLock">
-<area shape="rect" id="node2" href="$classPxScene.html" title="A scene is a collection of bodies and constraints which can interact. " alt="" coords="61,157,135,184"/>
-<area shape="rect" id="node3" href="$classPxSceneSQSystem.html" title="Traditional SQ system for PxScene. " alt="" coords="29,81,167,108"/>
-<area shape="rect" id="node4" href="$classPxSceneQuerySystemBase.html" title="Base class for the scene&#45;query system. " alt="" coords="5,5,191,32"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$classPxCoalescedHashMap.html" title="PxCoalescedHashMap\l\&lt; Key, Value, HashFn,\l Allocator \&gt;" alt="" coords="189,5,344,61"/>
-<area shape="rect" id="node3" href="$classPxHashMap.html" title="PxHashMap\&lt; Key, Value,\l HashFn, Allocator \&gt;" alt="" coords="180,86,353,127"/>
-<area shape="rect" id="node4" href="$classPxHashMap.html" title="PxHashMap\&lt; PxRigidActor\l *, PxU32 \&gt;" alt="" coords="176,151,357,193"/>
-</map>

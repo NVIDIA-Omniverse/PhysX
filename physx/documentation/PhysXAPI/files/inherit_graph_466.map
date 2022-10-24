@@ -1,4 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="5,5,128,32"/>
-<area shape="rect" id="node2" href="$classPxVec3Padded.html" title="A padded version of PxVec3, to safely load its data using SIMD. " alt="" coords="176,5,288,32"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="PxRenderOutput" name="PxRenderOutput">
-<area shape="rect" id="node2" href="$classPxRenderBuffer.html" title="Interface for points, lines, triangles, and text buffer. " alt="" coords="5,139,117,165"/>
-<area shape="rect" id="node3" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="141,139,264,165"/>
-<area shape="rect" id="node4" href="$classPxMat44T.html" title="PxMat44T\&lt; float \&gt;" alt="" coords="289,139,418,165"/>
-<area shape="rect" id="node5" href="$classPxVec4T.html" title="PxVec4T\&lt; float \&gt;" alt="" coords="292,5,415,32"/>
-</map>

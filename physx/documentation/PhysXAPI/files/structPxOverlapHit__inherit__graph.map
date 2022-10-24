@@ -1,5 +1,0 @@
-<map id="PxOverlapHit" name="PxOverlapHit">
-<area shape="rect" id="node2" href="$structPxGeomOverlapHit.html" title="Stores results of overlap queries. " alt="" coords="5,80,137,107"/>
-<area shape="rect" id="node3" href="$structPxQueryHit.html" title="collection of set bits defined in PxHitFlag. " alt="" coords="27,5,116,32"/>
-<area shape="rect" id="node4" href="$structPxActorShape.html" title="Combines a shape pointer and the actor the shape belongs to into one memory location. " alt="" coords="162,80,269,107"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="PxTriangleMesh" name="PxTriangleMesh">
-<area shape="rect" id="node4" href="$classPxBVH33TriangleMesh.html" title="A triangle mesh containing the PxMeshMidPhase::eBVH33 structure. " alt="" coords="5,229,161,256"/>
-<area shape="rect" id="node5" href="$classPxBVH34TriangleMesh.html" title="A triangle mesh containing the PxMeshMidPhase::eBVH34 structure. " alt="" coords="185,229,341,256"/>
-<area shape="rect" id="node2" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="120,80,225,107"/>
-<area shape="rect" id="node3" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="139,5,207,32"/>
-</map>

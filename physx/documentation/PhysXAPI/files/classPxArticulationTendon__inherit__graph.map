@@ -1,5 +1,0 @@
-<map id="PxArticulationTendon" name="PxArticulationTendon">
-<area shape="rect" id="node3" href="$classPxArticulationFixedTendon.html" title="A fixed tendon that can be used to link multiple degrees of freedom of multiple articulation joints v..." alt="" coords="5,155,183,181"/>
-<area shape="rect" id="node4" href="$classPxArticulationSpatialTendon.html" title="A spatial tendon that attaches to an articulation. " alt="" coords="207,155,392,181"/>
-<area shape="rect" id="node2" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="163,5,231,32"/>
-</map>

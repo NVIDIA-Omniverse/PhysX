@@ -1,6 +1,0 @@
-<map id="PxContactSet" name="PxContactSet">
-<area shape="rect" id="node2" href="$structPxModifiableContact.html" title="A modifiable contact point. This has additional fields per&#45;contact to permit modification by user..." alt="" coords="5,260,147,287"/>
-<area shape="rect" id="node3" href="$structPxExtendedContact.html" title="Contact point data with additional target and max impulse values. " alt="" coords="79,184,217,211"/>
-<area shape="rect" id="node4" href="$structPxContact.html" title="Contact point data. " alt="" coords="215,95,297,121"/>
-<area shape="rect" id="node5" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="44,5,167,32"/>
-</map>

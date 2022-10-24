@@ -1,8 +1,0 @@
-<map id="PxActorShape" name="PxActorShape">
-<area shape="rect" id="node2" href="$classPxRigidActor.html" title="PxRigidActor represents a base class shared between dynamic and static rigid bodies in the physics SD..." alt="" coords="5,261,104,288"/>
-<area shape="rect" id="node3" href="$classPxActor.html" title="PxActor is the base class for the main simulation objects in the physics SDK. " alt="" coords="20,185,89,212"/>
-<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="57,109,125,136"/>
-<area shape="rect" id="node7" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="114,185,219,212"/>
-<area shape="rect" id="node5" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="14,5,167,47"/>
-<area shape="rect" id="node6" href="$classPxShape.html" title="Abstract class for collision shapes. " alt="" coords="128,261,203,288"/>
-</map>

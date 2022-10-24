@@ -1,5 +1,0 @@
-<map id="PxGeomRaycastHit" name="PxGeomRaycastHit">
-<area shape="rect" id="node4" href="$structPxRaycastHit.html" title="PxRaycastHit" alt="" coords="23,229,125,256"/>
-<area shape="rect" id="node2" href="$structPxLocationHit.html" title="Scene query hit information for raycasts and sweeps returning hit position and normal information..." alt="" coords="23,80,125,107"/>
-<area shape="rect" id="node3" href="$structPxQueryHit.html" title="collection of set bits defined in PxHitFlag. " alt="" coords="29,5,119,32"/>
-</map>

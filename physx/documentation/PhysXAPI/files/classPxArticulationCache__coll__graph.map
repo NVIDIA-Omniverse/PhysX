@@ -1,8 +1,0 @@
-<map id="PxArticulationCache" name="PxArticulationCache">
-<area shape="rect" id="node2" href="$structPxSpatialVelocity.html" title="Data structure to represent spatial velocities. " alt="" coords="371,192,497,219"/>
-<area shape="rect" id="node3" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="218,5,341,32"/>
-<area shape="rect" id="node4" href="$structPxArticulationRootLinkData.html" title="Data structure used to access the root link state and acceleration. " alt="" coords="74,244,255,271"/>
-<area shape="rect" id="node5" href="$classPxTransformT.html" title="PxTransformT\&lt; float \&gt;" alt="" coords="5,125,156,152"/>
-<area shape="rect" id="node7" href="$structPxSpatialForce.html" title="Data structure to represent spatial forces. " alt="" coords="251,192,361,219"/>
-<area shape="rect" id="node6" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="20,5,141,32"/>
-</map>

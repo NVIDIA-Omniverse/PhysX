@@ -1,4 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxMat34T.html" title="PxMat34T\&lt; Type \&gt;" alt="" coords="5,5,139,32"/>
-<area shape="rect" id="node2" href="$classPxMat34Padded.html" title="A padded version of PxMat34, to safely load its data using SIMD. " alt="" coords="187,5,305,32"/>
-</map>

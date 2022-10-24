@@ -1,4 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPxCpuDispatcher.html" title="A CpuDispatcher is responsible for scheduling the execution of tasks passed to it by the SDK..." alt="" coords="5,5,128,32"/>
-<area shape="rect" id="node2" href="$classPxDefaultCpuDispatcher.html" title="A default implementation for a CPU task dispatcher. " alt="" coords="176,5,339,32"/>
-</map>

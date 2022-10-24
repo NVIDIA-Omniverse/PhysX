@@ -1,6 +1,0 @@
-<map id="PxBVH33TriangleMesh" name="PxBVH33TriangleMesh">
-<area shape="rect" id="node2" href="$classPxTriangleMesh.html" title="A triangle mesh, also called a &#39;polygon soup&#39;. " alt="" coords="26,261,141,288"/>
-<area shape="rect" id="node3" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="31,185,136,212"/>
-<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="49,109,117,136"/>
-<area shape="rect" id="node5" href="$classPxFlags.html" title="PxFlags\&lt; PxBaseFlag\l::Enum, PxU16 \&gt;" alt="" coords="7,5,160,47"/>
-</map>

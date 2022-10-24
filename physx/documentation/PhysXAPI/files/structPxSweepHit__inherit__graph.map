@@ -1,6 +1,0 @@
-<map id="PxSweepHit" name="PxSweepHit">
-<area shape="rect" id="node2" href="$structPxGeomSweepHit.html" title="Stores results of sweep queries. " alt="" coords="5,155,133,181"/>
-<area shape="rect" id="node3" href="$structPxLocationHit.html" title="Scene query hit information for raycasts and sweeps returning hit position and normal information..." alt="" coords="18,80,121,107"/>
-<area shape="rect" id="node4" href="$structPxQueryHit.html" title="collection of set bits defined in PxHitFlag. " alt="" coords="25,5,114,32"/>
-<area shape="rect" id="node5" href="$structPxActorShape.html" title="Combines a shape pointer and the actor the shape belongs to into one memory location. " alt="" coords="157,155,264,181"/>
-</map>

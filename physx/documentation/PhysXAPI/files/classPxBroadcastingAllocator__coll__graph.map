@@ -1,5 +1,0 @@
-<map id="PxBroadcastingAllocator" name="PxBroadcastingAllocator">
-<area shape="rect" id="node2" href="$classPxBroadcast.html" title="PxBroadcast\&lt; PxAllocation\lListener, PxAllocatorCallback \&gt;" alt="" coords="193,42,399,83"/>
-<area shape="rect" id="node3" href="$classPxAllocatorCallback.html" title="Abstract base class for an application defined memory allocator that can be used by the Nv library..." alt="" coords="5,5,144,32"/>
-<area shape="rect" id="node4" href="$classPxErrorCallback.html" title="User defined interface class. Used by the library to emit debug information. " alt="" coords="238,108,354,135"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="ExtGpu::PxSparseGridBuilder" name="ExtGpu::PxSparseGridBuilder">
-<area shape="rect" id="node2" href="$structPxSparseGridParams.html" title="Parameters to define the sparse grid settings like grid spacing, maximal number of subgrids etc..." alt="" coords="5,13,153,39"/>
-<area shape="rect" id="node3" href="$classExtGpu_1_1PxGpuRadixSort.html" title="ExtGpu::PxGpuRadixSort\l\&lt; PxU32 \&gt;" alt="" coords="178,5,349,47"/>
-<area shape="rect" id="node4" href="$classExtGpu_1_1PxGpuScan.html" title="Performs a scan operation (exclusive or inclusive cumulative sum) on the GPU. " alt="" coords="373,13,517,39"/>
-</map>

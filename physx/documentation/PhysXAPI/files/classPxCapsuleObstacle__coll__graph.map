@@ -1,5 +1,0 @@
-<map id="PxCapsuleObstacle" name="PxCapsuleObstacle">
-<area shape="rect" id="node2" href="$classPxObstacle.html" title="Base class for obstacles. " alt="" coords="95,95,185,121"/>
-<area shape="rect" id="node3" href="$structPxExtendedVec3.html" title="PxExtendedVec3" alt="" coords="5,5,128,32"/>
-<area shape="rect" id="node4" href="$classPxQuatT.html" title="PxQuatT\&lt; float \&gt;" alt="" coords="153,5,274,32"/>
-</map>

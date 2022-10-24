@@ -1,6 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structPxVehicleCommandResponseParams.html" title="A description of the per wheel response to an input command. " alt="" coords="5,71,204,112"/>
-<area shape="rect" id="node2" href="$structPxVehicleBrakeCommandResponseParams.html" title="Distribute a brake response to the wheels of a vehicle. " alt="" coords="252,5,484,47"/>
-<area shape="rect" id="node3" href="$structPxVehicleDirectDriveThrottleCommandResponseParams.html" title="Distribute a throttle response to the wheels of a direct drive vehicle. " alt="" coords="275,71,461,112"/>
-<area shape="rect" id="node4" href="$structPxVehicleSteerCommandResponseParams.html" title="Distribute a steer response to the wheels of a vehicle. " alt="" coords="253,136,483,177"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="ExtGpu::PxParticleBufferDesc" name="ExtGpu::PxParticleBufferDesc">
-<area shape="rect" id="node2" href="$structPxParticleVolume.html" title="Particle volume structure. Used to track the bounding volume of a user&#45;specified set of particles..." alt="" coords="5,243,132,269"/>
-<area shape="rect" id="node3" href="$classPxBounds3.html" title="Class representing 3D range or axis aligned bounding box. " alt="" coords="24,109,113,136"/>
-<area shape="rect" id="node4" href="$classPxVec3T.html" title="PxVec3T\&lt; float \&gt;" alt="" coords="7,5,130,32"/>
-<area shape="rect" id="node5" href="$classPxVec4T.html" title="4 Element vector class. " alt="" coords="156,243,283,269"/>
-</map>

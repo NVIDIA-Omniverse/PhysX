@@ -1,7 +1,0 @@
-<map id="PxFEMMaterial" name="PxFEMMaterial">
-<area shape="rect" id="node5" href="$classPxFEMClothMaterial.html" title="Material class to represent a set of FEM material properties. " alt="" coords="5,304,148,331"/>
-<area shape="rect" id="node6" href="$classPxFEMSoftBodyMaterial.html" title="Material class to represent a set of softbody FEM material properties. " alt="" coords="173,304,338,331"/>
-<area shape="rect" id="node2" href="$classPxBaseMaterial.html" title="Base material class. " alt="" coords="109,155,223,181"/>
-<area shape="rect" id="node3" href="$classPxRefCounted.html" title="Base class for ref&#45;counted objects. " alt="" coords="113,80,219,107"/>
-<area shape="rect" id="node4" href="$classPxBase.html" title="Base class for objects that can be members of a PxCollection. " alt="" coords="132,5,200,32"/>
-</map>
