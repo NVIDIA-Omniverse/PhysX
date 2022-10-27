@@ -1,0 +1,33 @@
+<project toolsVersion="6.4">
+	<dependency name="CMakeModules">
+		<package name="CMakeModules" version="1.28.trunk.31965103" /> <!-- default -->
+	</dependency>
+
+	<dependency name="clangMetadata" tags="requiredForDistro requiredForMetaGen">
+		<package name="clang-physxmetadata" version="4.0.0.31968624_1.1"/>
+	</dependency>
+
+	<dependency name="vswhere">
+		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64  vc16win64 linux-crosscompile linux-aarch64-crosscompile "/>
+	</dependency>
+
+	<dependency name="PhysXDevice">
+		<package name="PhysXDevice" version="18.12.7.3"  platforms="vc15win64  vc16win64"/>
+	</dependency>
+
+	<dependency name="freeglut">
+		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64  vc16win64"/>
+	</dependency>
+
+	<dependency name="PhysXGpu">
+		<package name="PhysXGpu" version="104.0-5.1.118.32022295-public"  platforms="vc15win64  vc16win64 linux linux-aarch64"/>
+	</dependency>
+
+	<dependency name="opengllinux" tags="requiredForDistro">
+		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux"/>
+	</dependency>
+
+    <dependency name="rapidjson">
+		<package name="rapidjson" version="1.1.0-67fac85-073453e1" />
+	</dependency>
+</project>

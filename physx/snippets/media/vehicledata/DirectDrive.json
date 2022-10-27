@@ -1,0 +1,14 @@
+{
+    "ThrottleCommandResponseParams": 
+	{
+        "MaxResponse": 750.0,
+        "WheelResponseMultipliers": [1.0, 1.0, 1.0, 1.0],
+		"NonLinearResponse": [
+			{"Throttle": 0.00, "ResponseCurve": [[0.0,0.00], [20.0, 0.00], [60.0, 0.0]]},
+			{"Throttle": 0.25, "ResponseCurve": [[0.0,0.25], [20.0, 0.25], [60.0, 0.0]]},
+			{"Throttle": 0.50, "ResponseCurve": [[0.0,0.50], [20.0, 0.50], [60.0, 0.0]]},
+			{"Throttle": 0.75, "ResponseCurve": [[0.0,0.75], [20.0, 0.75], [60.0, 0.0]]},
+			{"Throttle": 1.00, "ResponseCurve": [[1.0,1.00], [20.0, 1.00], [60.0, 0.0]]}			
+		]
+    }
+}
