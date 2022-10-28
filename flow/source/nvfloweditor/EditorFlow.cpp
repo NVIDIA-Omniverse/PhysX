@@ -15,6 +15,7 @@ struct NvFlowDatabasePrim
     NvFlowDatabasePrim* parent;
     const char* path;
     const char* name;
+    NvFlowStringHashTable<NvFlowDatabaseAttr*> attrMap;
 };
 
 NV_FLOW_INLINE NvFlowDatabasePrim* createPrim(
@@ -31,7 +32,17 @@ NV_FLOW_INLINE NvFlowDatabasePrim* createPrim(
     prim->path = path;
     prim->name = name;
 
-    printf("Create prim: displayTypename(%s), path(%s) name(%s)\n", displayTypename, path, name);
+    //printf("Create prim: displayTypename(%s), path(%s) name(%s)\n", displayTypename, path, name);
+
+    // register prim
+    EditorFlow* ptr = (EditorFlow*)context;
+    NvFlowBool32 success = NV_FLOW_FALSE;
+    ptr->primMap.insert(path, NvFlowStringHashFNV(path), prim, &success);
+
+    if (!success)
+    {
+        editorCompute_logPrint(eNvFlowLogLevel_warning, "Prim register failed, existing prim at path %s", path);
+    }
 
     return prim;
 }
@@ -47,12 +58,19 @@ NV_FLOW_INLINE void updatePrim(
 
 NV_FLOW_INLINE void markDestroyedPrim(NvFlowDatabaseContext* context, NvFlowDatabasePrim* prim)
 {
-    printf("MarkDestroyed prim: path(%s) name(%s)\n", prim->path, prim->name);
+    // unregister prim
+    EditorFlow* ptr = (EditorFlow*)context;
+    if (!ptr->primMap.erase(prim->path, NvFlowStringHashFNV(prim->path)))
+    {
+        editorCompute_logPrint(eNvFlowLogLevel_warning, "Prim unregister failed, prim not registered %s", prim->path);
+    }
+
+    //printf("MarkDestroyed prim: path(%s) name(%s)\n", prim->path, prim->name);
 }
 
 NV_FLOW_INLINE void destroyPrim(NvFlowDatabaseContext* context, NvFlowDatabasePrim* prim)
 {
-    printf("Destroy prim: path(%s) name(%s)\n", prim->path, prim->name);
+    //printf("Destroy prim: path(%s) name(%s)\n", prim->path, prim->name);
 
     delete prim;
 }
@@ -66,8 +84,10 @@ struct NvFlowDatabaseValue
 
 struct NvFlowDatabaseAttr
 {
-    NvFlowDatabasePrim* prim;
+    NvFlowDatabasePrim* prim = nullptr;
     NvFlowRingBufferPointer<NvFlowDatabaseValue*> values;
+    const char* name = nullptr;
+    NvFlowUint64 commandIdx = ~0llu;
 };
 
 NV_FLOW_INLINE NvFlowDatabaseValue* copyArray(
@@ -124,6 +144,7 @@ NV_FLOW_INLINE NvFlowDatabaseAttr* createAttr(
     auto attr = new NvFlowDatabaseAttr();
 
     attr->prim = prim;
+    attr->name = reflectData->name;
 
     // make copy of any read only arrays to allow in place edit
     if (reflectData->reflectMode == eNvFlowReflectMode_array ||
@@ -135,6 +156,16 @@ NV_FLOW_INLINE NvFlowDatabaseAttr* createAttr(
         NvFlowUint64 arraySizeInBytes = (*pArraySize) * reflectData->dataType->elementSize;
         copyArray(version, version, attr, reflectData, mappedData, data, arraySizeInBytes);
     }
+
+    // register attribute
+    EditorFlow* ptr = (EditorFlow*)context;
+    NvFlowBool32 success = NV_FLOW_FALSE;
+    prim->attrMap.insert(attr->name, NvFlowStringHashFNV(attr->name), attr, &success);
+    if (!success)
+    {
+        editorCompute_logPrint(eNvFlowLogLevel_warning, "Attribute register failed, existing attribute with name %s", reflectData->name);
+    }
+
     return attr;
 }
 
@@ -160,31 +191,24 @@ NV_FLOW_INLINE void updateAttr(
         }
     }
 
-    for (NvFlowUint64 idx = 0u; idx < ptr->commands.size; idx++)
+    if (attr->commandIdx < ptr->commands.size)
     {
-        EditorFlowCommand* cmd = &ptr->commands[idx];
-        NvFlowUint* cmdState = &ptr->commandStates[idx];
-        if ((*cmdState) == 0u &&
-            strcmp(cmd->cmd, "setAttribute") == 0 &&
-            strcmp(cmd->name, reflectData->name) == 0 &&
-            strcmp(cmd->path, attr->prim->path) == 0)
+        EditorFlowCommand* cmd = &ptr->commands[attr->commandIdx];
+        if (reflectData->reflectMode == eNvFlowReflectMode_value ||
+            reflectData->reflectMode == eNvFlowReflectMode_valueVersioned)
         {
-            if (reflectData->reflectMode == eNvFlowReflectMode_value ||
-                reflectData->reflectMode == eNvFlowReflectMode_valueVersioned)
+            if (reflectData->dataType->elementSize == cmd->dataSize)
             {
-                if (reflectData->dataType->elementSize == cmd->dataSize)
-                {
-                    memcpy(mappedData + reflectData->dataOffset, cmd->data, cmd->dataSize);
-                    (*cmdState) = 1u; // mark completed
-                }
-            }
-            else if (reflectData->reflectMode == eNvFlowReflectMode_array ||
-                     reflectData->reflectMode == eNvFlowReflectMode_arrayVersioned)
-            {
-                copyArray(version, minActiveVersion, attr, reflectData, mappedData, cmd->data, cmd->dataSize);
-                (*cmdState) = 1u; // mark completed
+                memcpy(mappedData + reflectData->dataOffset, cmd->data, cmd->dataSize);
             }
         }
+        else if (reflectData->reflectMode == eNvFlowReflectMode_array ||
+            reflectData->reflectMode == eNvFlowReflectMode_arrayVersioned)
+        {
+            copyArray(version, minActiveVersion, attr, reflectData, mappedData, cmd->data, cmd->dataSize);
+        }
+        // invalidate command
+        attr->commandIdx = ~0llu;
     }
 
     // free at end, in case new array allows old to free
@@ -207,7 +231,12 @@ NV_FLOW_INLINE void updateAttr(
 
 NV_FLOW_INLINE void markDestroyedAttr(NvFlowDatabaseContext* context, NvFlowDatabaseAttr* attr)
 {
-
+    // unregister attribute
+    EditorFlow* ptr = (EditorFlow*)context;
+    if (!attr->prim->attrMap.erase(attr->name, NvFlowStringHashFNV(attr->name)))
+    {
+        editorCompute_logPrint(eNvFlowLogLevel_warning, "Attribute unregister failed, attribute not registered %s", attr->name);
+    }
 }
 
 NV_FLOW_INLINE void destroyAttr(NvFlowDatabaseContext* context, NvFlowDatabaseAttr* attr)
@@ -338,31 +367,15 @@ void editorFlow_presimulate(EditorCompute* ctx, EditorFlow* ptr, float deltaTime
     NvFlowUint64 minActiveVersion = 0llu;
     ctx->loader.gridParamsInterface.getVersion(ptr->gridParams, &stagingVersion, &minActiveVersion);
 
-    // match command state to commands size and clear
-    ptr->commandStates.reserve(ptr->commands.size);
-    ptr->commandStates.size = ptr->commands.size;
-    for (NvFlowUint64 idx = 0u; idx < ptr->commandStates.size; idx++)
-    {
-        ptr->commandStates[idx] = 0u;
-    }
-
-    // process commands that work outside database update
+    // process commands
     for (NvFlowUint64 idx = 0u; idx < ptr->commands.size; idx++)
     {
         EditorFlowCommand* cmd = &ptr->commands[idx];
-        NvFlowUint* cmdState = &ptr->commandStates[idx];
         if (strcmp(cmd->cmd, "clearStage") == 0)
         {
             ptr->gridParamsSet.markAllInstancesForDestroy<&iface>((NvFlowDatabaseContext*)ptr);
-            // mark this command and all previous commands complete
-            // previous setAttribute() commands should no-op
-            for (NvFlowUint64 idxLocal = 0u; idxLocal < idx; idxLocal++)
-            {
-                ptr->commandStates[idxLocal] = 1u;
-            }
-            (*cmdState) = 1u; // mark completed
         }
-        if (strcmp(cmd->cmd, "definePrim") == 0)
+        else if (strcmp(cmd->cmd, "definePrim") == 0)
         {
             NvFlowUint64 typenameIdx = 0u;
             for (; typenameIdx < ptr->typenames.size; typenameIdx++)
@@ -375,27 +388,39 @@ void editorFlow_presimulate(EditorCompute* ctx, EditorFlow* ptr, float deltaTime
             }
             if (typenameIdx < ptr->typenames.size)
             {
-                ptr->gridParamsSet.createInstance<&iface>(nullptr, stagingVersion, ptr->types[typenameIdx], cmd->path, cmd->name);
-                (*cmdState) = 1u; // mark completed
+                ptr->gridParamsSet.createInstance<&iface>((NvFlowDatabaseContext*)ptr, stagingVersion, ptr->types[typenameIdx], cmd->path, cmd->name);
             }
             else
             {
                 editorCompute_logPrint(eNvFlowLogLevel_warning, "definePrim(%s, %s) failed, type not recognized", cmd->type, cmd->path);
             }
         }
+        else if (strcmp(cmd->cmd, "setAttribute") == 0)
+        {
+            NvFlowBool32 success = NV_FLOW_FALSE;
+            NvFlowUint64 primFindIdx = ptr->primMap.find(cmd->path, NvFlowStringHashFNV(cmd->path));
+            if (primFindIdx != ~0llu)
+            {
+                NvFlowDatabasePrim* prim = ptr->primMap.values[primFindIdx];
+                NvFlowUint64 attrFindIdx = prim->attrMap.find(cmd->name, NvFlowStringHashFNV(cmd->name));
+                if (attrFindIdx != ~0llu)
+                {
+                    NvFlowDatabaseAttr* attr = prim->attrMap.values[attrFindIdx];
+                    attr->commandIdx = idx;
+                    success = NV_FLOW_TRUE;
+                }
+            }
+            if (!success)
+            {
+                editorCompute_logPrint(eNvFlowLogLevel_warning,
+                    "setAttribute(%s, %s) failed, attribute does not exist.",
+                    cmd->path, cmd->name
+                );
+            }
+        }
     }
 
     ptr->gridParamsSet.update<&iface>((NvFlowDatabaseContext*)ptr, stagingVersion, minActiveVersion);
-
-    for (NvFlowUint64 idx = 0u; idx < ptr->commands.size; idx++)
-    {
-        EditorFlowCommand* cmd = &ptr->commands[idx];
-        NvFlowUint state = ptr->commandStates[idx];
-        if (state == 0u)
-        {
-            editorCompute_logPrint(eNvFlowLogLevel_warning, "cmd %s path(%s) name(%s) type(%s) failed", cmd->cmd, cmd->path, cmd->name, cmd->type);
-        }
-    }
 
     // reset command queue
     ptr->commands.size = 0u;
@@ -590,8 +615,13 @@ void editorFlow_destroy(EditorCompute* ctx, EditorFlow* ptr)
     ctx->loader.gridParamsInterface.destroyGridParamsNamed(ptr->gridParamsServer);
     ctx->loader.gridParamsInterface.destroyGridParamsNamed(ptr->gridParamsClient);
 
-    ptr->gridParamsSet.destroy<&iface>(nullptr);
+    ptr->gridParamsSet.markAllInstancesForDestroy<&iface>((NvFlowDatabaseContext*)ptr);
+    ptr->gridParamsSet.destroy<&iface>((NvFlowDatabaseContext*)ptr);
 
+    if (ptr->primMap.keyCount > 0u)
+    {
+        editorCompute_logPrint(eNvFlowLogLevel_warning, "Warning primMap not fully unregistered");
+    }
     NvFlowStringPoolDestroy(ptr->commandStringPool);
 
     editorCompute_logPrint(eNvFlowLogLevel_info, "Destroyed Grid");

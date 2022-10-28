@@ -33,6 +33,8 @@
 
 #include "NvFlowDatabase.h"
 
+#include "NvFlowStringHash.h"
+
 // Editor stage API
 
 struct EditorFlow;
@@ -168,8 +170,8 @@ struct EditorFlow
     NvFlowGridParamsSnapshot* paramsSnapshot = nullptr;
 
     NvFlowArray<EditorFlowCommand> commands;
-    NvFlowArray<NvFlowUint> commandStates;
     NvFlowStringPool* commandStringPool = nullptr;
+    NvFlowStringHashTable<NvFlowDatabasePrim*> primMap;
 };
 
 void editorFlow_init(EditorCompute* ctx, EditorFlow* ptr);
