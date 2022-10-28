@@ -34,7 +34,7 @@ This repository contains source releases of the PhysX and Flow SDKs used in NVID
 
 ## Documentation
 
-TODO
+*Temporary for preview release:* See the respective folders in the [GitHub pages branch (`gh-pages`)](../../../tree/gh-pages) branch.
 
 ## Instructions
 
