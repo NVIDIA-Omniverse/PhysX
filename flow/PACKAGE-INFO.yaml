@@ -1,0 +1,5 @@
+Package : nvflow
+Maintainers : areidmeyer@nvidia.com
+Description : Flow SDK
+SWIPAT NvBug : 
+Repository : P4://sw/devrel/libdev/turbulence2/NvFlow2/dev/main/

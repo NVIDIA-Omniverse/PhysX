@@ -1,0 +1,7 @@
+includeDir("../../../include/nvflow");
+computeShader("shaders/ImguiCS.hlsl");
+computeShader("shaders/ImguiBuildCS.hlsl");
+computeShader("shaders/ImguiTileCS.hlsl");
+computeShader("shaders/ImguiTileCountCS.hlsl");
+computeShader("shaders/ImguiTileScanCS.hlsl");
+computeShader("shaders/ShapeCS.hlsl");
