@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxContactPatch &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxContactPatch</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontactpatch">
+<span id="exhale-struct-struct-px-contact-patch"></span><h1>PxContactPatch<a class="headerlink" href="#pxcontactpatch" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxContact.h.html#file-include-pxcontact-h"><span class="std std-ref">include/PxContact.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxContactPatch">
+<span id="_CPPv314PxContactPatch"></span><span id="_CPPv214PxContactPatch"></span><span id="PxContactPatch"></span><span class="target" id="struct_px_contact_patch"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPatch</span></span></span><a class="headerlink" href="#_CPPv414PxContactPatch" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Header for a contact patch where all points share same material and normal. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlagsE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlagsE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlagsE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPatchFlags</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags17eHAS_FACE_INDICESE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags17eHAS_FACE_INDICESE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags17eHAS_FACE_INDICESE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9af45f36084b23d060d8d68255a5493da5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAS_FACE_INDICES</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags17eHAS_FACE_INDICESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream has face indices. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags11eMODIFIABLEE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags11eMODIFIABLEE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags11eMODIFIABLEE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9ac9c1a5e826b50a161bc6d0656bc2c1ca"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMODIFIABLE</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags11eMODIFIABLEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream is modifiable. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags18eFORCE_NO_RESPONSEE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags18eFORCE_NO_RESPONSEE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags18eFORCE_NO_RESPONSEE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9a5d458af3c038a84b13c5f44508f00f31"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_NO_RESPONSE</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags18eFORCE_NO_RESPONSEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream is notify-only (no contact response). </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags25eHAS_MODIFIED_MASS_RATIOSE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags25eHAS_MODIFIED_MASS_RATIOSE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags25eHAS_MODIFIED_MASS_RATIOSE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9a0b3667ec3f96024527acc84fc850cbb1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAS_MODIFIED_MASS_RATIOS</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags25eHAS_MODIFIED_MASS_RATIOSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream has modified mass ratios. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags20eHAS_TARGET_VELOCITYE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags20eHAS_TARGET_VELOCITYE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags20eHAS_TARGET_VELOCITYE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9acaf67d93398b35860d340dd017b13d43"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAS_TARGET_VELOCITY</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags20eHAS_TARGET_VELOCITYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream has target velocities set. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags16eHAS_MAX_IMPULSEE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags16eHAS_MAX_IMPULSEE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags16eHAS_MAX_IMPULSEE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9a9e30c7fa533ce8776828ca9908126991"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAS_MAX_IMPULSE</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags16eHAS_MAX_IMPULSEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream has max impulses set. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags19eREGENERATE_PATCHESE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags19eREGENERATE_PATCHESE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags19eREGENERATE_PATCHESE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9ae58c6eb59a2e441c78dbbdc831d375f4"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGENERATE_PATCHES</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags19eREGENERATE_PATCHESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates this contact stream needs patches re-generated. This is required if the application modified either the contact normal or the material properties. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch19PxContactPatchFlags28eCOMPRESSED_MODIFIED_CONTACTE">
+<span id="_CPPv3N14PxContactPatch19PxContactPatchFlags28eCOMPRESSED_MODIFIED_CONTACTE"></span><span id="_CPPv2N14PxContactPatch19PxContactPatchFlags28eCOMPRESSED_MODIFIED_CONTACTE"></span><span class="target" id="struct_px_contact_patch_1a704320591170cbad6698b74b5d1d9eb9a2907c86838f9d60fe66944c198ca3e48"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOMPRESSED_MODIFIED_CONTACT</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch19PxContactPatchFlags28eCOMPRESSED_MODIFIED_CONTACTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch17mMassModificationE">
+<span id="_CPPv3N14PxContactPatch17mMassModificationE"></span><span id="_CPPv2N14PxContactPatch17mMassModificationE"></span><span id="PxContactPatch::mMassModification__PxMassModificationProps"></span><span class="target" id="struct_px_contact_patch_1af9d61775e197a57872542e83fc94086b"></span><a class="reference internal" href="struct_px_mass_modification_props.html#_CPPv423PxMassModificationProps" title="PxMassModificationProps"><span class="n"><span class="pre">PxMassModificationProps</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mMassModification</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch17mMassModificationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Modifiers for scaling the inertia of the involved bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch6normalE">
+<span id="_CPPv3N14PxContactPatch6normalE"></span><span id="_CPPv2N14PxContactPatch6normalE"></span><span id="PxContactPatch::normal__PxVec3"></span><span class="target" id="struct_px_contact_patch_1a3a2a8dfc2ccb1ed2ea3f6306663c5751"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normal</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch6normalE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Contact normal. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch11restitutionE">
+<span id="_CPPv3N14PxContactPatch11restitutionE"></span><span id="_CPPv2N14PxContactPatch11restitutionE"></span><span id="PxContactPatch::restitution__PxReal"></span><span class="target" id="struct_px_contact_patch_1a699efaf2e4f28fd4661c46a5248d70d1"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Restitution coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch15dynamicFrictionE">
+<span id="_CPPv3N14PxContactPatch15dynamicFrictionE"></span><span id="_CPPv2N14PxContactPatch15dynamicFrictionE"></span><span id="PxContactPatch::dynamicFriction__PxReal"></span><span class="target" id="struct_px_contact_patch_1a02ea0a2efb0fed52c4cb9a8219c5d275"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicFriction</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch15dynamicFrictionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Dynamic friction coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch14staticFrictionE">
+<span id="_CPPv3N14PxContactPatch14staticFrictionE"></span><span id="_CPPv2N14PxContactPatch14staticFrictionE"></span><span id="PxContactPatch::staticFriction__PxReal"></span><span class="target" id="struct_px_contact_patch_1acf94a4b4a3610acae52002510d117458"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticFriction</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch14staticFrictionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Static friction coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch7dampingE">
+<span id="_CPPv3N14PxContactPatch7dampingE"></span><span id="_CPPv2N14PxContactPatch7dampingE"></span><span id="PxContactPatch::damping__PxReal"></span><span class="target" id="struct_px_contact_patch_1a128d38f022c63a85dff30f0f1c7ccf3b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damping</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch7dampingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Damping coefficient (for compliant contacts) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch17startContactIndexE">
+<span id="_CPPv3N14PxContactPatch17startContactIndexE"></span><span id="_CPPv2N14PxContactPatch17startContactIndexE"></span><span id="PxContactPatch::startContactIndex__PxU16"></span><span class="target" id="struct_px_contact_patch_1a04ec3f6909c1d9e168c072729e62dec1"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startContactIndex</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch17startContactIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Index of the first contact in the patch. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch10nbContactsE">
+<span id="_CPPv3N14PxContactPatch10nbContactsE"></span><span id="_CPPv2N14PxContactPatch10nbContactsE"></span><span id="PxContactPatch::nbContacts__PxU8"></span><span class="target" id="struct_px_contact_patch_1a7b3b618ffe8837691cb56543a7462e66"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbContacts</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch10nbContactsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of contacts in this patch. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch13materialFlagsE">
+<span id="_CPPv3N14PxContactPatch13materialFlagsE"></span><span id="_CPPv2N14PxContactPatch13materialFlagsE"></span><span id="PxContactPatch::materialFlags__PxU8"></span><span class="target" id="struct_px_contact_patch_1a8e5278067def84d90e068a8d3cf6fc01"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialFlags</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch13materialFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The combined material flag of two actors that come in contact. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a>, <a class="reference internal" href="struct_px_combine_mode.html#struct_px_combine_mode"><span class="std std-ref">PxCombineMode</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch13internalFlagsE">
+<span id="_CPPv3N14PxContactPatch13internalFlagsE"></span><span id="_CPPv2N14PxContactPatch13internalFlagsE"></span><span id="PxContactPatch::internalFlags__PxU16"></span><span class="target" id="struct_px_contact_patch_1ad2cf4e546e99f13095e3ea3c9783675a"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">internalFlags</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch13internalFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The PxContactPatchFlags for this patch. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch14materialIndex0E">
+<span id="_CPPv3N14PxContactPatch14materialIndex0E"></span><span id="_CPPv2N14PxContactPatch14materialIndex0E"></span><span id="PxContactPatch::materialIndex0__PxU16"></span><span class="target" id="struct_px_contact_patch_1a271d410b04d40c20bbd1fcf981a221e1"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndex0</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch14materialIndex0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Material index of first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch14materialIndex1E">
+<span id="_CPPv3N14PxContactPatch14materialIndex1E"></span><span id="_CPPv2N14PxContactPatch14materialIndex1E"></span><span id="PxContactPatch::materialIndex1__PxU16"></span><span class="target" id="struct_px_contact_patch_1a150b3ca1257f0f5cf6b5e23ac1546bbc"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndex1</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch14materialIndex1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Material index of second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPatch3padE">
+<span id="_CPPv3N14PxContactPatch3padE"></span><span id="_CPPv2N14PxContactPatch3padE"></span><span id="PxContactPatch::pad__PxU16A"></span><span class="target" id="struct_px_contact_patch_1ab91658015a326cf8aac3f943c04ebe71"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pad</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">5</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N14PxContactPatch3padE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

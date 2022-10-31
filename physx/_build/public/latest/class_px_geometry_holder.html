@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxGeometryHolder &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxGeometryHolder</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxgeometryholder">
+<span id="exhale-class-class-px-geometry-holder"></span><h1>PxGeometryHolder<a class="headerlink" href="#pxgeometryholder" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxGeometryHelpers.h.html#file-include-geometry-pxgeometryhelpers-h"><span class="std std-ref">include/geometry/PxGeometryHelpers.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxGeometryHolder">
+<span id="_CPPv316PxGeometryHolder"></span><span id="_CPPv216PxGeometryHolder"></span><span id="PxGeometryHolder"></span><span class="target" id="class_px_geometry_holder"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGeometryHolder</span></span></span><a class="headerlink" href="#_CPPv416PxGeometryHolder" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Geometry holder class. </p>
+<p>This class contains enough space to hold a value of any <a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> subtype.</p>
+<p>Its principal use is as a convenience class to allow geometries to be returned polymorphically from functions. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxGeometryHolder7getTypeEv">
+<span id="_CPPv3NK16PxGeometryHolder7getTypeEv"></span><span id="_CPPv2NK16PxGeometryHolder7getTypeEv"></span><span id="PxGeometryHolder::getTypeC"></span><span class="target" id="class_px_geometry_holder_1afb6cc5c15fff9c8166458559c0257892"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxGeometryHolder7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder3anyEv">
+<span id="_CPPv3N16PxGeometryHolder3anyEv"></span><span id="_CPPv2N16PxGeometryHolder3anyEv"></span><span id="PxGeometryHolder::any"></span><span class="target" id="class_px_geometry_holder_1a1f0fbf16f543ba2c9280229c63edbb01"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">any</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder3anyEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxGeometryHolder3anyEv">
+<span id="_CPPv3NK16PxGeometryHolder3anyEv"></span><span id="_CPPv2NK16PxGeometryHolder3anyEv"></span><span id="PxGeometryHolder::anyC"></span><span class="target" id="class_px_geometry_holder_1a3a300470d539b582ddffbbdd33b8a74b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">any</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxGeometryHolder3anyEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder8storeAnyERK10PxGeometry">
+<span id="_CPPv3N16PxGeometryHolder8storeAnyERK10PxGeometry"></span><span id="_CPPv2N16PxGeometryHolder8storeAnyERK10PxGeometry"></span><span id="PxGeometryHolder::storeAny__PxGeometryCR"></span><span class="target" id="class_px_geometry_holder_1a26819a9ae268f33567489609c0c2b9d0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">storeAny</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder8storeAnyERK10PxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder16PxGeometryHolderEv">
+<span id="_CPPv3N16PxGeometryHolder16PxGeometryHolderEv"></span><span id="_CPPv2N16PxGeometryHolder16PxGeometryHolderEv"></span><span id="PxGeometryHolder::PxGeometryHolder"></span><span class="target" id="class_px_geometry_holder_1a8747f2baec13a1cf9aadcd032d7b88c9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGeometryHolder</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder16PxGeometryHolderEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder16PxGeometryHolderERK10PxGeometry">
+<span id="_CPPv3N16PxGeometryHolder16PxGeometryHolderERK10PxGeometry"></span><span id="_CPPv2N16PxGeometryHolder16PxGeometryHolderERK10PxGeometry"></span><span id="PxGeometryHolder::PxGeometryHolder__PxGeometryCR"></span><span class="target" id="class_px_geometry_holder_1a9481f1c9cb0b98ed0244536642f47f72"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGeometryHolder</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder16PxGeometryHolderERK10PxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder8geometryE">
+<span id="_CPPv3N16PxGeometryHolder8geometryE"></span><span id="_CPPv2N16PxGeometryHolder8geometryE"></span><span id="PxGeometryHolder::geometry__PxU8A"></span><span class="target" id="class_px_geometry_holder_1afcb5030748d06e0f7602bb88ee3e32d5"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">geometry</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder8geometryE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder3boxE">
+<span id="_CPPv3N16PxGeometryHolder3boxE"></span><span id="_CPPv2N16PxGeometryHolder3boxE"></span><span id="PxGeometryHolder::box__PxU8A"></span><span class="target" id="class_px_geometry_holder_1a6fab820a0dc0a5bc48869009d47c34f3"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">box</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_box_geometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder3boxE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder6sphereE">
+<span id="_CPPv3N16PxGeometryHolder6sphereE"></span><span id="_CPPv2N16PxGeometryHolder6sphereE"></span><span id="PxGeometryHolder::sphere__PxU8A"></span><span class="target" id="class_px_geometry_holder_1abff8115d43e86a7d3c7ecdc5aeef1d1a"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sphere</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_sphere_geometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><span class="n"><span class="pre">PxSphereGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder6sphereE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder7capsuleE">
+<span id="_CPPv3N16PxGeometryHolder7capsuleE"></span><span id="_CPPv2N16PxGeometryHolder7capsuleE"></span><span id="PxGeometryHolder::capsule__PxU8A"></span><span class="target" id="class_px_geometry_holder_1a257945977ceabbc34e4ddd5a90580002"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capsule</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_capsule_geometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><span class="n"><span class="pre">PxCapsuleGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder7capsuleE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder5planeE">
+<span id="_CPPv3N16PxGeometryHolder5planeE"></span><span id="_CPPv2N16PxGeometryHolder5planeE"></span><span id="PxGeometryHolder::plane__PxU8A"></span><span class="target" id="class_px_geometry_holder_1ad67cf9387e22e8f90140f782e27591ac"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">plane</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><span class="n"><span class="pre">PxPlaneGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder5planeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder6convexE">
+<span id="_CPPv3N16PxGeometryHolder6convexE"></span><span id="_CPPv2N16PxGeometryHolder6convexE"></span><span id="PxGeometryHolder::convex__PxU8A"></span><span class="target" id="class_px_geometry_holder_1ac33b37ad65b0faa230784e6be0e49ad6"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convex</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder6convexE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder7tetMeshE">
+<span id="_CPPv3N16PxGeometryHolder7tetMeshE"></span><span id="_CPPv2N16PxGeometryHolder7tetMeshE"></span><span id="PxGeometryHolder::tetMesh__PxU8A"></span><span class="target" id="class_px_geometry_holder_1ae96154aa656f4c8b164681a1b5867b71"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tetMesh</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><span class="n"><span class="pre">PxTetrahedronMeshGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder7tetMeshE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder4meshE">
+<span id="_CPPv3N16PxGeometryHolder4meshE"></span><span id="_CPPv2N16PxGeometryHolder4meshE"></span><span id="PxGeometryHolder::mesh__PxU8A"></span><span class="target" id="class_px_geometry_holder_1ac8a0e2e83c34c91eb1facd01deb3f484"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mesh</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder4meshE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder11heightfieldE">
+<span id="_CPPv3N16PxGeometryHolder11heightfieldE"></span><span id="_CPPv2N16PxGeometryHolder11heightfieldE"></span><span id="PxGeometryHolder::heightfield__PxU8A"></span><span class="target" id="class_px_geometry_holder_1a13086e315b9865701c5d4c03031723ca"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">heightfield</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><span class="n"><span class="pre">PxHeightFieldGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder11heightfieldE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder14particleSystemE">
+<span id="_CPPv3N16PxGeometryHolder14particleSystemE"></span><span id="_CPPv2N16PxGeometryHolder14particleSystemE"></span><span id="PxGeometryHolder::particleSystem__PxU8A"></span><span class="target" id="class_px_geometry_holder_1ac847320c6d3f5aaa3c41216b55b731ab"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">particleSystem</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><span class="n"><span class="pre">PxParticleSystemGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder14particleSystemE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder10hairSystemE">
+<span id="_CPPv3N16PxGeometryHolder10hairSystemE"></span><span id="_CPPv2N16PxGeometryHolder10hairSystemE"></span><span id="PxGeometryHolder::hairSystem__PxU8A"></span><span class="target" id="class_px_geometry_holder_1a04b8df8c8531e82d426258cfb7439e6f"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hairSystem</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><span class="n"><span class="pre">PxHairSystemGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder10hairSystemE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxGeometryHolder6customE">
+<span id="_CPPv3N16PxGeometryHolder6customE"></span><span id="_CPPv2N16PxGeometryHolder6customE"></span><span id="PxGeometryHolder::custom__PxU8A"></span><span class="target" id="class_px_geometry_holder_1a80906eb5bd8bf72880cc635468e370d8"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">custom</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><span class="n"><span class="pre">PxCustomGeometry</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N16PxGeometryHolder6customE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

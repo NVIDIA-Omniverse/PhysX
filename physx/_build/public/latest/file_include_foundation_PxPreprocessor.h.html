@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/foundation/PxPreprocessor.h &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/foundation/PxPreprocessor.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-foundation-pxpreprocessor-h">
+<span id="file-include-foundation-pxpreprocessor-h"></span><h1>include/foundation/PxPreprocessor.h<a class="headerlink" href="#include-foundation-pxpreprocessor-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_foundation.html#dir-include-foundation"><span class="std std-ref">include/foundation/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_foundation_PxPreprocessor.h.html#program-listing-file-include-foundation-pxpreprocessor-h"><span class="std std-ref">include/foundation/PxPreprocessor.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_common_PxStringTable.h.html#file-include-common-pxstringtable-h"><span class="std std-ref">include/common/PxStringTable.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_common_windows_PxWindowsDelayLoadHook.h.html#file-include-common-windows-pxwindowsdelayloadhook-h"><span class="std std-ref">include/common/windows/PxWindowsDelayLoadHook.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cooking_PxBVH33MidphaseDesc.h.html#file-include-cooking-pxbvh33midphasedesc-h"><span class="std std-ref">include/cooking/PxBVH33MidphaseDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cooking_PxBVH34MidphaseDesc.h.html#file-include-cooking-pxbvh34midphasedesc-h"><span class="std std-ref">include/cooking/PxBVH34MidphaseDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cudamanager_PxCudaContext.h.html#file-include-cudamanager-pxcudacontext-h"><span class="std std-ref">include/cudamanager/PxCudaContext.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cudamanager_PxCudaTypes.h.html#file-include-cudamanager-pxcudatypes-h"><span class="std std-ref">include/cudamanager/PxCudaTypes.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cudamanager_PxCudaContextManager.h.html#file-include-cudamanager-pxcudacontextmanager-h"><span class="std std-ref">include/cudamanager/PxCudaContextManager.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxConstraintExt.h.html#file-include-extensions-pxconstraintext-h"><span class="std std-ref">include/extensions/PxConstraintExt.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxBasicTemplates.h.html#file-include-foundation-pxbasictemplates-h"><span class="std std-ref">include/foundation/PxBasicTemplates.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxFoundationConfig.h.html#file-include-foundation-pxfoundationconfig-h"><span class="std std-ref">include/foundation/PxFoundationConfig.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxInlineAoS.h.html#file-include-foundation-pxinlineaos-h"><span class="std std-ref">include/foundation/PxInlineAoS.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxIntrinsics.h.html#file-include-foundation-pxintrinsics-h"><span class="std std-ref">include/foundation/PxIntrinsics.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxMath.h.html#file-include-foundation-pxmath-h"><span class="std std-ref">include/foundation/PxMath.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxMathIntrinsics.h.html#file-include-foundation-pxmathintrinsics-h"><span class="std std-ref">include/foundation/PxMathIntrinsics.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxSimpleTypes.h.html#file-include-foundation-pxsimpletypes-h"><span class="std std-ref">include/foundation/PxSimpleTypes.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxString.h.html#file-include-foundation-pxstring-h"><span class="std std-ref">include/foundation/PxString.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_gpu_PxGpu.h.html#file-include-gpu-pxgpu-h"><span class="std std-ref">include/gpu/PxGpu.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxForceMode.h.html#file-include-pxforcemode-h"><span class="std std-ref">include/PxForceMode.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleSolverType.h.html#file-include-pxparticlesolvertype-h"><span class="std std-ref">include/PxParticleSolverType.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysics.h.html#file-include-pxphysics-h"><span class="std std-ref">include/PxPhysics.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxVisualizationParameter.h.html#file-include-pxvisualizationparameter-h"><span class="std std-ref">include/PxVisualizationParameter.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_braking_PxVehicleBrakingFunctions.h.html#file-include-vehicle2-braking-pxvehiclebrakingfunctions-h"><span class="std std-ref">include/vehicle2/braking/PxVehicleBrakingFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_commands_PxVehicleCommandStates.h.html#file-include-vehicle2-commands-pxvehiclecommandstates-h"><span class="std std-ref">include/vehicle2/commands/PxVehicleCommandStates.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxActor_PxVehiclePhysXActorStates.h.html#file-include-vehicle2-physxactor-pxvehiclephysxactorstates-h"><span class="std std-ref">include/vehicle2/physxActor/PxVehiclePhysXActorStates.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxConstraints_PxVehiclePhysXConstraintHelpers.h.html#file-include-vehicle2-physxconstraints-pxvehiclephysxconstrainthelpers-h"><span class="std std-ref">include/vehicle2/physxConstraints/PxVehiclePhysXConstraintHelpers.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxRoadGeometry_PxVehiclePhysXRoadGeometryHelpers.h.html#file-include-vehicle2-physxroadgeometry-pxvehiclephysxroadgeometryhelpers-h"><span class="std std-ref">include/vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryHelpers.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleLimits.h.html#file-include-vehicle2-pxvehiclelimits-h"><span class="std std-ref">include/vehicle2/PxVehicleLimits.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_steering_PxVehicleSteeringFunctions.h.html#file-include-vehicle2-steering-pxvehiclesteeringfunctions-h"><span class="std std-ref">include/vehicle2/steering/PxVehicleSteeringFunctions.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_pack_validation.html#exhale-struct-struct-px-pack-validation"><span class="std std-ref">PxPackValidation</span></a></p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__foundation_1gaf7c213579c67c0c25ad5b2346a94d8a3.html#exhale-function-group-foundation-1gaf7c213579c67c0c25ad5b2346a94d8a3"><span class="std std-ref">PX_UNUSED</span></a></p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__foundation_1ga8853e1b0f46c6dd7043b948747a19a19.html#exhale-define-group-foundation-1ga8853e1b0f46c6dd7043b948747a19a19"><span class="std std-ref">PX_A64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4330ceada999f3f6d10f7bd4b3dd3c2f.html#exhale-define-group-foundation-1ga4330ceada999f3f6d10f7bd4b3dd3c2f"><span class="std std-ref">PX_APPLE_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad566a9166622790d99924279df71eaf4.html#exhale-define-group-foundation-1gad566a9166622790d99924279df71eaf4"><span class="std std-ref">PX_ARM</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga99db209a98702e2d6673d967bac37d07.html#exhale-define-group-foundation-1ga99db209a98702e2d6673d967bac37d07"><span class="std std-ref">PX_ARM_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadff4cde4e8b8443cfbe024b9fb52a891.html#exhale-define-group-foundation-1gadff4cde4e8b8443cfbe024b9fb52a891"><span class="std std-ref">PX_CHECKED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga382d2b60e6161c1dcb3801bbf8e1b4a3.html#exhale-define-group-foundation-1ga382d2b60e6161c1dcb3801bbf8e1b4a3"><span class="std std-ref">PX_CLANG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gab12cc8cbd08c9c19ab0d40b7f789012e.html#exhale-define-group-foundation-1gab12cc8cbd08c9c19ab0d40b7f789012e"><span class="std std-ref">PX_COMPILE_TIME_ASSERT</span></a>: General defines.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5f35262177498e8a11a4f3e5ba83e5e8.html#exhale-define-group-foundation-1ga5f35262177498e8a11a4f3e5ba83e5e8"><span class="std std-ref">PX_CONCAT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga571ac4b7ead96ee2a8ad83d1ebe1aec9.html#exhale-define-group-foundation-1ga571ac4b7ead96ee2a8ad83d1ebe1aec9"><span class="std std-ref">PX_CONCAT_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6e444d58dbf1459261fadc9b79594f63.html#exhale-define-group-foundation-1ga6e444d58dbf1459261fadc9b79594f63"><span class="std std-ref">PX_CUDA_CALLABLE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7b6fbb539e9185279ced84864179180b.html#exhale-define-group-foundation-1ga7b6fbb539e9185279ced84864179180b"><span class="std std-ref">PX_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6952091abd80c0c93a99d331b6c97482.html#exhale-define-group-foundation-1ga6952091abd80c0c93a99d331b6c97482"><span class="std std-ref">PX_DEBUG_CRT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafd8f8779793627061774cfcfa1b9fbd7.html#exhale-define-group-foundation-1gafd8f8779793627061774cfcfa1b9fbd7"><span class="std std-ref">PX_DEPRECATED</span></a>: Alignment macros.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5be743320fae5abf91e51efebced816e.html#exhale-define-group-foundation-1ga5be743320fae5abf91e51efebced816e"><span class="std std-ref">PX_DLL_EXPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadfbe26e2b38cec0e72ed7d70872d234f.html#exhale-define-group-foundation-1gadfbe26e2b38cec0e72ed7d70872d234f"><span class="std std-ref">PX_DLL_IMPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae83a283ec08df8515d40c81810628e87.html#exhale-define-group-foundation-1gae83a283ec08df8515d40c81810628e87"><span class="std std-ref">PX_DUMMY_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gab14d7af80f3dc4ff432087381fcefdb9.html#exhale-define-group-foundation-1gab14d7af80f3dc4ff432087381fcefdb9"><span class="std std-ref">PX_EMSCRIPTEN</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga43c56deefc64fae5fe077a232a10056c.html#exhale-define-group-foundation-1ga43c56deefc64fae5fe077a232a10056c"><span class="std std-ref">PX_ENABLE_ASSERTS</span></a>: Assert macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga069272504fcb1a82c2feb09830eda88c.html#exhale-define-group-foundation-1ga069272504fcb1a82c2feb09830eda88c"><span class="std std-ref">PX_FL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6a774eed3cad34b0f636332a3d28c6bb.html#exhale-define-group-foundation-1ga6a774eed3cad34b0f636332a3d28c6bb"><span class="std std-ref">PX_FORCE_INLINE</span></a>: Force inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga732674527c19934c396385ac405993b6.html#exhale-define-group-foundation-1ga732674527c19934c396385ac405993b6"><span class="std std-ref">PX_GCC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae6e47183b054e4c5d6a478a00fe91e27.html#exhale-define-group-foundation-1gae6e47183b054e4c5d6a478a00fe91e27"><span class="std std-ref">PX_GCC_FAMILY</span></a>: family shortcuts</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gacb03347b642a2a5bdea1f9b305a6fbec.html#exhale-define-group-foundation-1gacb03347b642a2a5bdea1f9b305a6fbec"><span class="std std-ref">PX_INLINE</span></a>: Inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga481340bf67229603a2c5b9257874934a.html#exhale-define-group-foundation-1ga481340bf67229603a2c5b9257874934a"><span class="std std-ref">PX_INTEL_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad76274b09d89544fc4133c8d915293ed.html#exhale-define-group-foundation-1gad76274b09d89544fc4133c8d915293ed"><span class="std std-ref">PX_LIBCPP</span></a>: C++ standard library defines.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga73b08402e151455258acc7ec628a277b.html#exhale-define-group-foundation-1ga73b08402e151455258acc7ec628a277b"><span class="std std-ref">PX_LINUX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaa6237ff50213fc9872d4569a649dcd53.html#exhale-define-group-foundation-1gaa6237ff50213fc9872d4569a649dcd53"><span class="std std-ref">PX_LINUX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga41ea3463989964c5a4e21d68a9d3884a.html#exhale-define-group-foundation-1ga41ea3463989964c5a4e21d68a9d3884a"><span class="std std-ref">PX_NEON</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga838010cc1baa6df8d6ff0fc5655274dd.html#exhale-define-group-foundation-1ga838010cc1baa6df8d6ff0fc5655274dd"><span class="std std-ref">PX_NOALIAS</span></a>: Noalias macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2af6846d9d49e433af97059f0291eef1.html#exhale-define-group-foundation-1ga2af6846d9d49e433af97059f0291eef1"><span class="std std-ref">PX_NOCOPY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga56b7f4f37ac451a47f3d7d661069aa49.html#exhale-define-group-foundation-1ga56b7f4f37ac451a47f3d7d661069aa49"><span class="std std-ref">PX_NOINLINE</span></a>: Noinline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga65237bda8f886bb466e89d01a1ba0a77.html#exhale-define-group-foundation-1ga65237bda8f886bb466e89d01a1ba0a77"><span class="std std-ref">PX_NVTX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaace09d9150d8d87671f893afe548ebac.html#exhale-define-group-foundation-1gaace09d9150d8d87671f893afe548ebac"><span class="std std-ref">PX_OFFSET_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2ac82f7e080e1411a86f98758a0f3875.html#exhale-define-group-foundation-1ga2ac82f7e080e1411a86f98758a0f3875"><span class="std std-ref">PX_OFFSET_OF_RT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga305a9ab26a10d521e58782103206edf5.html#exhale-define-group-foundation-1ga305a9ab26a10d521e58782103206edf5"><span class="std std-ref">PX_OFFSETOF_BASE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2b3efd786b831b6cfd30e51dcd3c5ca2.html#exhale-define-group-foundation-1ga2b3efd786b831b6cfd30e51dcd3c5ca2"><span class="std std-ref">PX_OSX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7f84f0458b75adc8c2f2a164fdb6fb0d.html#exhale-define-group-foundation-1ga7f84f0458b75adc8c2f2a164fdb6fb0d"><span class="std std-ref">PX_OVERRIDE</span></a>: Override macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac9e21d1f7a04c78926a89d936c97546f.html#exhale-define-group-foundation-1gac9e21d1f7a04c78926a89d936c97546f"><span class="std std-ref">PX_P64_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9aad3b08e5e15565ff39638b753f4a92.html#exhale-define-group-foundation-1ga9aad3b08e5e15565ff39638b753f4a92"><span class="std std-ref">PX_POP_PACK</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5bd657340cb0dc207107cb1742d1135b.html#exhale-define-group-foundation-1ga5bd657340cb0dc207107cb1742d1135b"><span class="std std-ref">PX_PPC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gabefdbdd6927f15e90168c46824f7bd38.html#exhale-define-group-foundation-1gabefdbdd6927f15e90168c46824f7bd38"><span class="std std-ref">PX_PROFILE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga1145ffab2cc9a77ca65b59ba4126342f.html#exhale-define-group-foundation-1ga1145ffab2cc9a77ca65b59ba4126342f"><span class="std std-ref">PX_PUSH_PACK_DEFAULT</span></a>: Calling convention.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3b15bb2f7697b2bed10eb5477909fbe4.html#exhale-define-group-foundation-1ga3b15bb2f7697b2bed10eb5477909fbe4"><span class="std std-ref">PX_RESTRICT</span></a>: Restrict macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2dd18616fa4eec4df42b5f3505dd2a64.html#exhale-define-group-foundation-1ga2dd18616fa4eec4df42b5f3505dd2a64"><span class="std std-ref">PX_SSE2</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga40e7fc272047a5ab6870668b81aca1a3.html#exhale-define-group-foundation-1ga40e7fc272047a5ab6870668b81aca1a3"><span class="std std-ref">PX_STRINGIZE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaaa541ee81b5c7958c1367b710cfa99ed.html#exhale-define-group-foundation-1gaaa541ee81b5c7958c1367b710cfa99ed"><span class="std std-ref">PX_STRINGIZE_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga58dd174408338f37c62dfe6ac1baec60.html#exhale-define-group-foundation-1ga58dd174408338f37c62dfe6ac1baec60"><span class="std std-ref">PX_SUPPORT_EXTERN_TEMPLATE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0a511de410e7de7a8625fb572f88bd89.html#exhale-define-group-foundation-1ga0a511de410e7de7a8625fb572f88bd89"><span class="std std-ref">PX_SUPPORT_GPU_PHYSX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga69c3fa9b2882d545ebdb965086853c62.html#exhale-define-group-foundation-1ga69c3fa9b2882d545ebdb965086853c62"><span class="std std-ref">PX_SWITCH</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac40d28c5e85426df7a98ff9bd597810c.html#exhale-define-group-foundation-1gac40d28c5e85426df7a98ff9bd597810c"><span class="std std-ref">PX_UNIX_EXPORT</span></a>: DLL export macros.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad7d515be586be72c5c485c5624783a97.html#exhale-define-group-foundation-1gad7d515be586be72c5c485c5624783a97"><span class="std std-ref">PX_UNIX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaec15ff1639b763560ddaffc82936ff03.html#exhale-define-group-foundation-1gaec15ff1639b763560ddaffc82936ff03"><span class="std std-ref">PX_VC</span></a>: Compiler defines, see <a class="reference external" href="http://sourceforge.net/p/predef/wiki/Compilers/">http://sourceforge.net/p/predef/wiki/Compilers/</a>.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga43eec71a9b57bd336f2208cb33dba42e.html#exhale-define-group-foundation-1ga43eec71a9b57bd336f2208cb33dba42e"><span class="std std-ref">PX_VMX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga41f92d88ba8f7b8ef321aa090b0e270d.html#exhale-define-group-foundation-1ga41f92d88ba8f7b8ef321aa090b0e270d"><span class="std std-ref">PX_WEAK_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac4b372e9d2d91a0a86d40f7486936993.html#exhale-define-group-foundation-1gac4b372e9d2d91a0a86d40f7486936993"><span class="std std-ref">PX_WIN32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafb26faf6ab4449f92b90eaedb74d6f3b.html#exhale-define-group-foundation-1gafb26faf6ab4449f92b90eaedb74d6f3b"><span class="std std-ref">PX_WIN64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8d26d765b23de0bca18dd327cde2d8f8.html#exhale-define-group-foundation-1ga8d26d765b23de0bca18dd327cde2d8f8"><span class="std std-ref">PX_WINDOWS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5121e2d88c11a94738ee44b0b6b339a2.html#exhale-define-group-foundation-1ga5121e2d88c11a94738ee44b0b6b339a2"><span class="std std-ref">PX_WINDOWS_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga559a6fbf1f502edf3e25e3b90647f111.html#exhale-define-group-foundation-1ga559a6fbf1f502edf3e25e3b90647f111"><span class="std std-ref">PX_X64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4f7abce9f24240386fb46d29e4332d3d.html#exhale-define-group-foundation-1ga4f7abce9f24240386fb46d29e4332d3d"><span class="std std-ref">PX_X86</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

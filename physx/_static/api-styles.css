@@ -1,0 +1,84 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+
+/**
+ * CSS variables for API signature styling.
+ *
+ * These define styles in a way that function signatures produced by Sphinx will apply similar results for Python, C++,
+ * or any other language supported by Sphinx.
+ */
+:root {
+    --api-signature-font-style-light: 300;
+    --api-signature-parameter-name-color: var(--sd-color-secondary);
+    --api-signature-parameter-name-font-style: normal;
+    --api-signature-parameter-symbol-color: var(--sd-color-tabs-label-inactive);
+    --api-signature-parameter-default-value-color: var(--sd-color-tabs-label-inactive);
+}
+
+
+/**
+ * Python module name.
+ */
+dl.py code.sig-prename.descclassname > span.pre {
+    font-weight: var(--api-signature-font-style-light);
+}
+
+/**
+ * Python function parenthesis.
+ */
+dl.py span.sig-paren {
+    font-weight: var(--api-signature-font-style-light);
+}
+
+/**
+ * Python function parameter name.
+ */
+/*dl.py em.sig-param > span.n > span.pre*/
+div > dl.py > dt > em.sig-param > span.n > span.pre,
+div > dl.py > dt > span.pre
+{
+    color: var(--api-signature-parameter-name-color);
+    font-style: var(--api-signature-parameter-name-font-style);
+}
+
+/**
+ * Python function parameter typehint reference.
+ */
+dl.py em.sig-param > span.n > a
+{
+    font-style: normal;
+}
+
+/**
+ * Python function parameter operator (i.e. `=`).
+ */
+dl.py em.sig-param > span.o > span.pre {
+    color: var(--api-signature-parameter-symbol-color);
+    font-weight: var(--api-signature-font-style-light);
+}
+
+/**
+ * Python function parameter default value.
+ */
+dl.py em.sig-param > span.default_value > span.pre {
+    color: var(--api-signature-parameter-default-value-color);
+    font-weight: var(--api-signature-font-style-light);
+}
+
+/**
+ * Python return typehint
+ */
+dl.py span.sig-return-typehint > span.pre {
+    color: var(--api-signature-parameter-name-color);
+    font-weight: var(--api-signature-font-style-light);
+}

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxConcreteType &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxConcreteType</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxconcretetype">
+<span id="exhale-struct-struct-px-concrete-type"></span><h1>PxConcreteType<a class="headerlink" href="#pxconcretetype" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxTypeInfo.h.html#file-include-common-pxtypeinfo-h"><span class="std std-ref">include/common/PxTypeInfo.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxConcreteType">
+<span id="_CPPv314PxConcreteType"></span><span id="_CPPv214PxConcreteType"></span><span id="PxConcreteType"></span><span class="target" id="struct_px_concrete_type"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConcreteType</span></span></span><a class="headerlink" href="#_CPPv414PxConcreteType" title="Permalink to this definition"></a><br /></dt>
+<dd><p>an enumeration of concrete classes inheriting from <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> </p>
+<p>Enumeration space is reserved for future PhysX core types, PhysXExtensions, PhysXVehicle and Custom application types.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a>, <a class="reference internal" href="struct_px_type_info.html#struct_px_type_info"><span class="std std-ref">PxTypeInfo</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4EnumE">
+<span id="_CPPv3N14PxConcreteType4EnumE"></span><span id="_CPPv2N14PxConcreteType4EnumE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum10eUNDEFINEDE">
+<span id="_CPPv3N14PxConcreteType4Enum10eUNDEFINEDE"></span><span id="_CPPv2N14PxConcreteType4Enum10eUNDEFINEDE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ae532e94bf1c5c2deac15d6ecc9e96ac6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUNDEFINED</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum10eUNDEFINEDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum12eHEIGHTFIELDE">
+<span id="_CPPv3N14PxConcreteType4Enum12eHEIGHTFIELDE"></span><span id="_CPPv2N14PxConcreteType4Enum12eHEIGHTFIELDE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a0b7794c6d7c176b457e45ce84f9efb4a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHEIGHTFIELD</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum12eHEIGHTFIELDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum12eCONVEX_MESHE">
+<span id="_CPPv3N14PxConcreteType4Enum12eCONVEX_MESHE"></span><span id="_CPPv2N14PxConcreteType4Enum12eCONVEX_MESHE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a82eb74ec3cb3500943f14c6b587ec606"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONVEX_MESH</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum12eCONVEX_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH33E">
+<span id="_CPPv3N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH33E"></span><span id="_CPPv2N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH33E"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ab6ae11318fb26a00eff8864beaa1290d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTRIANGLE_MESH_BVH33</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH33E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH34E">
+<span id="_CPPv3N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH34E"></span><span id="_CPPv2N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH34E"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a59470211a58ba63a20540005c76fd767"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTRIANGLE_MESH_BVH34</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum20eTRIANGLE_MESH_BVH34E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum17eTETRAHEDRON_MESHE">
+<span id="_CPPv3N14PxConcreteType4Enum17eTETRAHEDRON_MESHE"></span><span id="_CPPv2N14PxConcreteType4Enum17eTETRAHEDRON_MESHE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a7787e836b44f71fdfccfad266c0d8754"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTETRAHEDRON_MESH</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum17eTETRAHEDRON_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum14eSOFTBODY_MESHE">
+<span id="_CPPv3N14PxConcreteType4Enum14eSOFTBODY_MESHE"></span><span id="_CPPv2N14PxConcreteType4Enum14eSOFTBODY_MESHE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ae391bbfadb8eeb717623823e502ca211"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSOFTBODY_MESH</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum14eSOFTBODY_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum14eRIGID_DYNAMICE">
+<span id="_CPPv3N14PxConcreteType4Enum14eRIGID_DYNAMICE"></span><span id="_CPPv2N14PxConcreteType4Enum14eRIGID_DYNAMICE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aa7f7c318076dc92e78f9b23c75cf591d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRIGID_DYNAMIC</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum14eRIGID_DYNAMICE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum13eRIGID_STATICE">
+<span id="_CPPv3N14PxConcreteType4Enum13eRIGID_STATICE"></span><span id="_CPPv2N14PxConcreteType4Enum13eRIGID_STATICE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a927c0cfacf7985ca89a0084e2d2b552a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRIGID_STATIC</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum13eRIGID_STATICE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum6eSHAPEE">
+<span id="_CPPv3N14PxConcreteType4Enum6eSHAPEE"></span><span id="_CPPv2N14PxConcreteType4Enum6eSHAPEE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ab6585d569ee421acfeadc5d89adf3bc3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSHAPE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum6eSHAPEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum9eMATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum9eMATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum9eMATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aba56f4ba8a534856e101ffb7d6fef757"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum9eMATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum18eSOFTBODY_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum18eSOFTBODY_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum18eSOFTBODY_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a3da3c32678c7d3510794b696df57ccf0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSOFTBODY_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum18eSOFTBODY_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum15eCLOTH_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum15eCLOTH_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum15eCLOTH_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aff143630b56f1824c865111a6b5c685f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCLOTH_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum15eCLOTH_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum13ePBD_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum13ePBD_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum13ePBD_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a7c3530131803399d92eb362b9d038575"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePBD_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum13ePBD_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum14eFLIP_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum14eFLIP_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum14eFLIP_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ac6286e2523d337734e32bb402b9ad00a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFLIP_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum14eFLIP_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum13eMPM_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum13eMPM_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum13eMPM_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8acfae230528ed966bc514ec4339c81d2b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMPM_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum13eMPM_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum16eCUSTOM_MATERIALE">
+<span id="_CPPv3N14PxConcreteType4Enum16eCUSTOM_MATERIALE"></span><span id="_CPPv2N14PxConcreteType4Enum16eCUSTOM_MATERIALE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a822464eb0666d338b55fabf1429e0ced"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCUSTOM_MATERIAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum16eCUSTOM_MATERIALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum11eCONSTRAINTE">
+<span id="_CPPv3N14PxConcreteType4Enum11eCONSTRAINTE"></span><span id="_CPPv2N14PxConcreteType4Enum11eCONSTRAINTE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a16cd44fb372accd877e9ceef294f424f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONSTRAINT</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum11eCONSTRAINTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum10eAGGREGATEE">
+<span id="_CPPv3N14PxConcreteType4Enum10eAGGREGATEE"></span><span id="_CPPv2N14PxConcreteType4Enum10eAGGREGATEE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a3edb3b8e6daab37cfeb242b840dc5731"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eAGGREGATE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum10eAGGREGATEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum32eARTICULATION_REDUCED_COORDINATEE">
+<span id="_CPPv3N14PxConcreteType4Enum32eARTICULATION_REDUCED_COORDINATEE"></span><span id="_CPPv2N14PxConcreteType4Enum32eARTICULATION_REDUCED_COORDINATEE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a993fe98b452ae2bf67f63fdd38d6895c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_REDUCED_COORDINATE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum32eARTICULATION_REDUCED_COORDINATEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum18eARTICULATION_LINKE">
+<span id="_CPPv3N14PxConcreteType4Enum18eARTICULATION_LINKE"></span><span id="_CPPv2N14PxConcreteType4Enum18eARTICULATION_LINKE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a94841b56bdad372addb96f488a9b9f3b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_LINK</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum18eARTICULATION_LINKE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum38eARTICULATION_JOINT_REDUCED_COORDINATEE">
+<span id="_CPPv3N14PxConcreteType4Enum38eARTICULATION_JOINT_REDUCED_COORDINATEE"></span><span id="_CPPv2N14PxConcreteType4Enum38eARTICULATION_JOINT_REDUCED_COORDINATEE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ad0b03d874bccbc262188e9c7663ec21c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_JOINT_REDUCED_COORDINATE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum38eARTICULATION_JOINT_REDUCED_COORDINATEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum20eARTICULATION_SENSORE">
+<span id="_CPPv3N14PxConcreteType4Enum20eARTICULATION_SENSORE"></span><span id="_CPPv2N14PxConcreteType4Enum20eARTICULATION_SENSORE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aa8c78a6191c44a6401017d935fe8b84d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_SENSOR</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum20eARTICULATION_SENSORE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum28eARTICULATION_SPATIAL_TENDONE">
+<span id="_CPPv3N14PxConcreteType4Enum28eARTICULATION_SPATIAL_TENDONE"></span><span id="_CPPv2N14PxConcreteType4Enum28eARTICULATION_SPATIAL_TENDONE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a6023161b90054f15543b2914c528c0a4"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_SPATIAL_TENDON</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum28eARTICULATION_SPATIAL_TENDONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum26eARTICULATION_FIXED_TENDONE">
+<span id="_CPPv3N14PxConcreteType4Enum26eARTICULATION_FIXED_TENDONE"></span><span id="_CPPv2N14PxConcreteType4Enum26eARTICULATION_FIXED_TENDONE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aa5ca366a19ece2e507002ccaa38c7287"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION_FIXED_TENDON</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum26eARTICULATION_FIXED_TENDONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum18ePRUNING_STRUCTUREE">
+<span id="_CPPv3N14PxConcreteType4Enum18ePRUNING_STRUCTUREE"></span><span id="_CPPv2N14PxConcreteType4Enum18ePRUNING_STRUCTUREE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a9cfa4bbab08af1a894d4d3cf196ade84"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePRUNING_STRUCTURE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum18ePRUNING_STRUCTUREE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum4eBVHE">
+<span id="_CPPv3N14PxConcreteType4Enum4eBVHE"></span><span id="_CPPv2N14PxConcreteType4Enum4eBVHE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a4f69a341c8784e61a27771796cf7dd21"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBVH</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum4eBVHE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum10eSOFT_BODYE">
+<span id="_CPPv3N14PxConcreteType4Enum10eSOFT_BODYE"></span><span id="_CPPv2N14PxConcreteType4Enum10eSOFT_BODYE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a1e82400ef7c1baf3c75f850648519faf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSOFT_BODY</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum10eSOFT_BODYE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum16eSOFT_BODY_STATEE">
+<span id="_CPPv3N14PxConcreteType4Enum16eSOFT_BODY_STATEE"></span><span id="_CPPv2N14PxConcreteType4Enum16eSOFT_BODY_STATEE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a486b9554105468f2eba5f06cdd64bc31"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSOFT_BODY_STATE</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum16eSOFT_BODY_STATEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum19ePBD_PARTICLESYSTEME">
+<span id="_CPPv3N14PxConcreteType4Enum19ePBD_PARTICLESYSTEME"></span><span id="_CPPv2N14PxConcreteType4Enum19ePBD_PARTICLESYSTEME"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a66dbba9ee75a2a3380b1029a715eb365"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePBD_PARTICLESYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum19ePBD_PARTICLESYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum20eFLIP_PARTICLESYSTEME">
+<span id="_CPPv3N14PxConcreteType4Enum20eFLIP_PARTICLESYSTEME"></span><span id="_CPPv2N14PxConcreteType4Enum20eFLIP_PARTICLESYSTEME"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aae23d3043ebb651e55ee97d2cd8124f3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFLIP_PARTICLESYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum20eFLIP_PARTICLESYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum19eMPM_PARTICLESYSTEME">
+<span id="_CPPv3N14PxConcreteType4Enum19eMPM_PARTICLESYSTEME"></span><span id="_CPPv2N14PxConcreteType4Enum19eMPM_PARTICLESYSTEME"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a0a5a11e543fd549d9dda48e7cb0896eb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMPM_PARTICLESYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum19eMPM_PARTICLESYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum22eCUSTOM_PARTICLESYSTEME">
+<span id="_CPPv3N14PxConcreteType4Enum22eCUSTOM_PARTICLESYSTEME"></span><span id="_CPPv2N14PxConcreteType4Enum22eCUSTOM_PARTICLESYSTEME"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aa6be86e6a3ad662a0ef3c1b4696e812d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCUSTOM_PARTICLESYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum22eCUSTOM_PARTICLESYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum10eFEM_CLOTHE">
+<span id="_CPPv3N14PxConcreteType4Enum10eFEM_CLOTHE"></span><span id="_CPPv2N14PxConcreteType4Enum10eFEM_CLOTHE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a41eaba6a58440ef38f0911ab05399d23"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFEM_CLOTH</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum10eFEM_CLOTHE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum12eHAIR_SYSTEME">
+<span id="_CPPv3N14PxConcreteType4Enum12eHAIR_SYSTEME"></span><span id="_CPPv2N14PxConcreteType4Enum12eHAIR_SYSTEME"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ae0f32dfae52ff4e6e090f85802b1b95a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAIR_SYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum12eHAIR_SYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum16ePARTICLE_BUFFERE">
+<span id="_CPPv3N14PxConcreteType4Enum16ePARTICLE_BUFFERE"></span><span id="_CPPv2N14PxConcreteType4Enum16ePARTICLE_BUFFERE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a9a731200fd3afe71a51fd5db9cfcbd56"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePARTICLE_BUFFER</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum16ePARTICLE_BUFFERE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum24ePARTICLE_DIFFUSE_BUFFERE">
+<span id="_CPPv3N14PxConcreteType4Enum24ePARTICLE_DIFFUSE_BUFFERE"></span><span id="_CPPv2N14PxConcreteType4Enum24ePARTICLE_DIFFUSE_BUFFERE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8acc90199986199d2fc0a5d19021689d9f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePARTICLE_DIFFUSE_BUFFER</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum24ePARTICLE_DIFFUSE_BUFFERE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum22ePARTICLE_CLOTH_BUFFERE">
+<span id="_CPPv3N14PxConcreteType4Enum22ePARTICLE_CLOTH_BUFFERE"></span><span id="_CPPv2N14PxConcreteType4Enum22ePARTICLE_CLOTH_BUFFERE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8aa9c0c27a8b6d19bd4e291c8cdebe7a0a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePARTICLE_CLOTH_BUFFER</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum22ePARTICLE_CLOTH_BUFFERE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum22ePARTICLE_RIGID_BUFFERE">
+<span id="_CPPv3N14PxConcreteType4Enum22ePARTICLE_RIGID_BUFFERE"></span><span id="_CPPv2N14PxConcreteType4Enum22ePARTICLE_RIGID_BUFFERE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a2a6c5a07ab68a1b03a6a79f76297bacf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePARTICLE_RIGID_BUFFER</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum22ePARTICLE_RIGID_BUFFERE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum17ePHYSX_CORE_COUNTE">
+<span id="_CPPv3N14PxConcreteType4Enum17ePHYSX_CORE_COUNTE"></span><span id="_CPPv2N14PxConcreteType4Enum17ePHYSX_CORE_COUNTE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a0ff66b28d98136906e07b15b396d7a1f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePHYSX_CORE_COUNT</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum17ePHYSX_CORE_COUNTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum22eFIRST_PHYSX_EXTENSIONE">
+<span id="_CPPv3N14PxConcreteType4Enum22eFIRST_PHYSX_EXTENSIONE"></span><span id="_CPPv2N14PxConcreteType4Enum22eFIRST_PHYSX_EXTENSIONE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ac2bbf4877545a3ced65d6057f643fd54"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFIRST_PHYSX_EXTENSION</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum22eFIRST_PHYSX_EXTENSIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum24eFIRST_VEHICLE_EXTENSIONE">
+<span id="_CPPv3N14PxConcreteType4Enum24eFIRST_VEHICLE_EXTENSIONE"></span><span id="_CPPv2N14PxConcreteType4Enum24eFIRST_VEHICLE_EXTENSIONE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8a0156649a63242d4a34c1c69af29eb92a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFIRST_VEHICLE_EXTENSION</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum24eFIRST_VEHICLE_EXTENSIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxConcreteType4Enum21eFIRST_USER_EXTENSIONE">
+<span id="_CPPv3N14PxConcreteType4Enum21eFIRST_USER_EXTENSIONE"></span><span id="_CPPv2N14PxConcreteType4Enum21eFIRST_USER_EXTENSIONE"></span><span class="target" id="struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8ad6da0b02403dd6002e67bbbb489b221e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFIRST_USER_EXTENSION</span></span></span><a class="headerlink" href="#_CPPv4N14PxConcreteType4Enum21eFIRST_USER_EXTENSIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

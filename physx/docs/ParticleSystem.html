@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Particle System &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Geometry Queries" href="GeometryQueries.html" />
+    <link rel="prev" title="Soft Bodies" href="SoftBodies.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Particle System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#position-based-dynamics-pbd">Position-based Dynamics (PBD)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cloth">Cloth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inflatables">Inflatables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volumes">Volumes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/public/latest/public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Particle System</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="particle-system">
+<span id="particlesystem"></span><h1>Particle System<a class="headerlink" href="#particle-system" title="Permalink to this headline"></a></h1>
+<p>In this chapter we cover a number of topics that are essential for creating particle-based simulations.</p>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>A particle system, defined as an instance of PxParticleSystem class, is capable of simulating different types of dynamics that are represented with a set of particles. While a particle system itself is a generic concept, the underlying solver can be specified to handle different needs. For instance, PxPBDParticleSystem, which inherits from PxParticleSystem, will use Position-based Dynamics (PBD) for solving particle-to-particle dynamics. The PBD method is an algorithm to compute dynamics of a material using stable, purely particle-based method.</p>
+</section>
+<section id="position-based-dynamics-pbd">
+<h2>Position-based Dynamics (PBD)<a class="headerlink" href="#position-based-dynamics-pbd" title="Permalink to this headline"></a></h2>
+<p>The PBD method is a particle-based method which can handle wide range of dynamics including fluid and deformable objects. Unlike other particle solvers which mostly compute velocity first, PBD finds positions of particles that meet given constraints (such as volume preservation) and then calculates velocities from the optimized positions. This approach makes PBD stable and more robust to larger simulation time-steps.</p>
+<p>As a first step to make a PBD simulation in PhysX, an instance of PxPBDParticleSystem can be created as shown below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particleSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createPBDParticleSystem</span><span class="p">(</span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="mi">96</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that we are providing a cudaContextManager. Particle system requires a CUDA capable GPU and a CUDA context manager must be provided to create it. It also specifies maximum neighbors to 96. Here’s an example code to create cudaContextManager:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxCudaContextManagerDesc</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateCudaContextManager</span><span class="p">(</span><span class="o">*</span><span class="n">gFoundation</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">,</span><span class="w"> </span><span class="n">PxGetProfilerCallback</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Next, we need to specify particle properties such as particle radius and mass. Here’s an example code to set up fluid particles:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">particleSpacing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.2f</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">fluidDensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1000.f</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">particleSpacing</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">solidRestOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">restOffset</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">restOffset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">particleMass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fluidDensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1.333f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">3.14159f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">renderRadius</span><span class="p">;</span><span class="w"></span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setRestOffset</span><span class="p">(</span><span class="n">restOffset</span><span class="p">);</span><span class="w"></span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setContactOffset</span><span class="p">(</span><span class="n">restOffset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">);</span><span class="w"></span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setParticleContactOffset</span><span class="p">(</span><span class="n">PxMax</span><span class="p">(</span><span class="n">solidRestOffset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">,</span><span class="w"> </span><span class="n">fluidRestOffset</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">0.6f</span><span class="p">));</span><span class="w"></span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setSolidRestOffset</span><span class="p">(</span><span class="n">solidRestOffset</span><span class="p">);</span><span class="w"></span>
+<span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">setFluidRestOffset</span><span class="p">(</span><span class="n">fluidRestOffset</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here’s the definition of each setter function used above:</p>
+<ul class="simple">
+<li><p>particleSystem-&gt;setRestOffset(…): set rest the offset between particles and rigids or soft bodies</p></li>
+<li><p>particleSystem-&gt;setContactOffset(…): set the contact offset for the collision between particles and rigids or soft bodies</p></li>
+<li><p>particleSystem-&gt;setParticleContactOffset(…): set the contact offset for the interactions between particles</p></li>
+<li><p>particleSystem-&gt;setSolidRestOffset(…): set the solid rest offset</p></li>
+<li><p>particleSystem-&gt;setFluidRestOffset(…): set the fluid rest offset</p></li>
+</ul>
+<p>Once configured, the new particle system can be added to the scene:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addParticleSystem</span><span class="p">(</span><span class="o">*</span><span class="n">particleSystem</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>So far we haven’t initialized the particle set itself. The new particles need to be positioned with initial velocities with phase flags that defines particles’ behavior. Finally, we need to specify which particles are participating in the simulation with an active particles indices array. This can be achieved by creating host-side buffers, filling those buffers with particle values, and then writing them to the particle system. Here’s a sample code for initializing fluid particles:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create particles and add them to the particle system</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particlePhase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">particleSystem</span><span class="o">-&gt;</span><span class="n">createPhase</span><span class="p">(</span><span class="n">defaultMat</span><span class="p">,</span><span class="w"> </span><span class="n">PxParticlePhaseFlags</span><span class="p">(</span><span class="n">PxParticlePhaseFlag</span><span class="o">::</span><span class="n">eParticlePhaseFluid</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticlePhaseFlag</span><span class="o">::</span><span class="n">eParticlePhaseSelfCollide</span><span class="p">));</span><span class="w"></span>
+
+<span class="n">PxPinnedHostMemoryPointer</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">phaseBuf</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxPinnedHostMemoryPointer</span><span class="o">&lt;</span><span class="n">PxVec4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">positionInvMassBuf</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxPinnedHostMemoryPointer</span><span class="o">&lt;</span><span class="n">PxVec4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">velocityBuf</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phaseBuf</span><span class="p">.</span><span class="n">getHostPointer</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">positionInvMass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMassBuf</span><span class="p">.</span><span class="n">getHostPointer</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">velocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">velocityBuf</span><span class="p">.</span><span class="n">getHostPointer</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">PxReal</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">x</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">z</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxZ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">z</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">numX</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">numY</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">numZ</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">k</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">numY</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">numZ</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">numZ</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">PxVec4</span><span class="w"> </span><span class="nf">pos</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">particleMass</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">phase</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">particlePhase</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">positionInvMass</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pos</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">velocity</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec4</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">z</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">maxZ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">z</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">y</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">maxY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+<span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleAndDiffuseBufferDesc</span><span class="w"> </span><span class="n">bufferDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">numActiveParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxDiffuseParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxDiffuseParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxActiveDiffuseParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxDiffuseParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">diffuseParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpParams</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">positions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">velocities</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">velocity</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">phases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phase</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">gParticleBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxCreateAndPopulateParticleAndDiffuseBuffer</span><span class="p">(</span><span class="n">bufferDesc</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+<span class="n">gParticleSystem</span><span class="o">-&gt;</span><span class="n">addParticleAndDiffuseBuffer</span><span class="p">(</span><span class="n">gParticleBuffer</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This code above will create a cubic-shaped particle set.</p>
+<section id="cloth">
+<h3>Cloth<a class="headerlink" href="#cloth" title="Permalink to this headline"></a></h3>
+<p>Particles in a particle system can not only behave like fluid or granular material. It is possible to insert additional constraints into the particle systems to connect a group of particles to act like a piece of cloth. To set up a cloth, a couple of additional buffers are required to define the connections between the particles. The following code can be added to the normal particle setup to create a piece of cloth:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Define springs and triangles</span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxParticleSpring</span><span class="o">&gt;</span><span class="w"> </span><span class="n">springs</span><span class="p">;</span><span class="w"></span>
+<span class="n">springs</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">numSprings</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">triangles</span><span class="p">;</span><span class="w"></span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">numTriangles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="c1">//Places a spring between particles at location i and j in the vertex buffer</span>
+<span class="n">PxParticleSpring</span><span class="w"> </span><span class="n">spring</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">particleSpacing</span><span class="p">,</span><span class="w"> </span><span class="n">stretchStiffness</span><span class="p">,</span><span class="w"> </span><span class="n">springDamping</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="n">springs</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">spring</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//Adds a triangle between vertices at locations a, b and c in the vertex buffer. Triangles are used to compute approximated aerodynamic forces for cloth</span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">a</span><span class="p">);</span><span class="w"></span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">b</span><span class="p">);</span><span class="w"></span>
+<span class="n">triangles</span><span class="p">.</span><span class="n">pushBack</span><span class="p">(</span><span class="n">c</span><span class="p">);</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">addCloth</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">springs</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">numSprings</span><span class="p">,</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">,</span><span class="w"> </span><span class="n">numParticles</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="w"> </span><span class="n">bufferDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">numActiveParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">positions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">velocities</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">velocity</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">phases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phase</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">const</span><span class="w"> </span><span class="n">PxParticleClothDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">clothDesc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">getParticleClothDesc</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxParticleClothPreProcessor</span><span class="o">*</span><span class="w"> </span><span class="n">clothPreProcessor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothPreProcessor</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxPartitionedParticleCloth</span><span class="w"> </span><span class="n">output</span><span class="p">;</span><span class="w"></span>
+<span class="n">clothPreProcessor</span><span class="o">-&gt;</span><span class="n">partitionSprings</span><span class="p">(</span><span class="n">clothDesc</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">);</span><span class="w"></span>
+<span class="n">clothPreProcessor</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">gUserClothBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxCreateAndPopulateParticleClothBuffer</span><span class="p">(</span><span class="n">bufferDesc</span><span class="p">,</span><span class="w"> </span><span class="n">clothDesc</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+<span class="n">gParticleSystem</span><span class="o">-&gt;</span><span class="n">addParticleClothBuffer</span><span class="p">(</span><span class="n">gUserClothBuffer</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="inflatables">
+<h3>Inflatables<a class="headerlink" href="#inflatables" title="Permalink to this headline"></a></h3>
+<p>A group of particles that is configured as cloth can be converted to an inflatable body if the triangle mesh used to create the inflatable is a non-overlapping, watertight mesh with a well defined volume. In contrast to a simple cloth, an inflatable body will simulate pressure inside the object. The pressure factor to control the behavior defines the volume the inflatable body tries to maintain during simulation. If the pressure is set to a value larger than one, the inflatable will show a behavior like a balloon. The setup is similar to cloth with some extensions:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//The cooker helps to generate spring and triangle constraints. The constraints from the cooker need to be written into the corresponding buffers.</span>
+<span class="n">PxParticleClothCooker</span><span class="o">*</span><span class="w"> </span><span class="n">cooker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothCooker</span><span class="p">(</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">vertices</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">indices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">indices</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_HORIZONTAL_CONSTRAINT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_VERTICAL_CONSTRAINT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxParticleClothConstraint</span><span class="o">::</span><span class="n">eTYPE_DIAGONAL_CONSTRAINT</span><span class="p">);</span><span class="w"></span>
+<span class="n">cooker</span><span class="o">-&gt;</span><span class="n">cookConstraints</span><span class="p">();</span><span class="w"></span>
+<span class="n">cooker</span><span class="o">-&gt;</span><span class="n">calculateMeshVolume</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">cookedTriangleIndicesCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getTriangleIndicesCount</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">cookedTriangleIndices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getTriangleIndices</span><span class="p">();</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cookedTriangleIndicesCount</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">particleTriangles</span><span class="o">-&gt;</span><span class="n">addTriangle</span><span class="p">(</span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">cookedTriangleIndices</span><span class="p">[</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">vertexCount</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">constraintCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getConstraintCount</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxClothConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraintBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getConstraints</span><span class="p">();</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">constraintCount</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxClothConstraint</span><span class="o">&amp;</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">constraintBuffer</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="n">particleSprings</span><span class="o">-&gt;</span><span class="n">addSpring</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="n">mParticleIndexA</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">mParticleIndexB</span><span class="p">,</span><span class="w"> </span><span class="n">stiffness</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">mLength</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">PxParticleClothBufferHelper</span><span class="o">*</span><span class="w"> </span><span class="n">clothBuffers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothBufferHelper</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">numSprings</span><span class="p">,</span><span class="w"> </span><span class="n">numParticles</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">addCloth</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">cooker</span><span class="o">-&gt;</span><span class="n">getMeshVolume</span><span class="p">(),</span><span class="w"> </span><span class="n">pressure</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">springs</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">numSprings</span><span class="p">,</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">,</span><span class="w"> </span><span class="n">numParticles</span><span class="p">);</span><span class="w"></span>
+<span class="n">cooker</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="w"> </span><span class="n">bufferDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxParticles</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">numParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">numActiveParticles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numParticles</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">positions</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">velocities</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">velocity</span><span class="p">;</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">phases</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">phases</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxParticleClothPreProcessor</span><span class="o">*</span><span class="w"> </span><span class="n">clothPreProcessor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleClothPreProcessor</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxPartitionedParticleCloth</span><span class="w"> </span><span class="n">output</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxParticleClothDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">clothDesc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">getParticleClothDesc</span><span class="p">();</span><span class="w"></span>
+<span class="n">clothPreProcessor</span><span class="o">-&gt;</span><span class="n">partitionSprings</span><span class="p">(</span><span class="n">clothDesc</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">);</span><span class="w"></span>
+<span class="n">clothPreProcessor</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">gUserClothBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxCreateAndPopulateParticleClothBuffer</span><span class="p">(</span><span class="n">bufferDesc</span><span class="p">,</span><span class="w"> </span><span class="n">clothDesc</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+<span class="n">gParticleSystem</span><span class="o">-&gt;</span><span class="n">addParticleClothBuffer</span><span class="p">(</span><span class="n">gUserClothBuffer</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">clothBuffers</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It is required to specify the maximal number of inflatables a particle system can contain when creating it.</p>
+</section>
+<section id="volumes">
+<h3>Volumes<a class="headerlink" href="#volumes" title="Permalink to this headline"></a></h3>
+<p>Volumes are used to accelerate scene queries, e.g. to support picking. Similar to inflatables, it is required to specify the maximal number of volumes a particle system can contain when creating it:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxParticleVolumeBufferHelper</span><span class="o">*</span><span class="w"> </span><span class="n">volumeBuffers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateParticleVolumeBufferHelper</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"> </span><span class="c1">//Volumes are optional. They are used to accelerate scene queries, e. g. to support picking.</span>
+
+<span class="n">volumeBuffers</span><span class="o">-&gt;</span><span class="n">addVolume</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">numParticles</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="w"> </span><span class="n">bufferDesc</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">maxVolumes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volumeBuffers</span><span class="o">-&gt;</span><span class="n">getMaxVolumes</span><span class="p">();</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">numVolumes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volumeBuffers</span><span class="o">-&gt;</span><span class="n">getNumVolumes</span><span class="p">();</span><span class="w"></span>
+<span class="n">bufferDesc</span><span class="p">.</span><span class="n">volumes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volumeBuffers</span><span class="o">-&gt;</span><span class="n">getParticleVolumes</span><span class="p">();</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">volumeBuffers</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

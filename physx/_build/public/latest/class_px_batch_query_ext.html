@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBatchQueryExt &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBatchQueryExt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbatchqueryext">
+<span id="exhale-class-class-px-batch-query-ext"></span><h1>PxBatchQueryExt<a class="headerlink" href="#pxbatchqueryext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSceneQueryExt.h.html#file-include-extensions-pxscenequeryext-h"><span class="std std-ref">include/extensions/PxSceneQueryExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxBatchQueryExt">
+<span id="_CPPv315PxBatchQueryExt"></span><span id="_CPPv215PxBatchQueryExt"></span><span id="PxBatchQueryExt"></span><span class="target" id="class_px_batch_query_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBatchQueryExt</span></span></span><a class="headerlink" href="#_CPPv415PxBatchQueryExt" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExt7releaseEv">
+<span id="_CPPv3N15PxBatchQueryExt7releaseEv"></span><span id="_CPPv2N15PxBatchQueryExt7releaseEv"></span><span id="PxBatchQueryExt::release"></span><span class="target" id="class_px_batch_query_ext_1a2d65e3c527e2e590cb688450e961f61a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExt7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExt7raycastERK6PxVec3RK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCache">
+<span id="_CPPv3N15PxBatchQueryExt7raycastERK6PxVec3RK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCache"></span><span id="_CPPv2N15PxBatchQueryExt7raycastERK6PxVec3RK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCache"></span><span id="PxBatchQueryExt::raycast__PxVec3CR.PxVec3CR.PxRealC.PxU16C.PxHitFlags.PxQueryFilterDataCR.PxQueryCacheCP"></span><span class="target" id="class_px_batch_query_ext_1aaa6ab59e05cb0f6778b0cabeb856f4f6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c.html#_CPPv415PxRaycastBuffer" title="PxRaycastBuffer"><span class="n"><span class="pre">PxRaycastBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNbTouches</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">PxHitFlags</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExt7raycastERK6PxVec3RK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a raycast against objects in the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512.html#group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512"><span class="std std-ref">PxCreateBatchQueryExt</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"><span class="std std-ref">PxScene::raycast</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in article SceneQuery. User can ignore such objects by using one of the provided filter mechanisms.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This query call writes to a list associated with the query object and is NOT thread safe (for performance reasons there is no lock and overlapping writes from different threads may result in undefined behavior).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Needs to be larger than 0. </p></li>
+<li><p><strong>maxNbTouches</strong> – <strong>[in]</strong> Maximum number of hits to record in the touch buffer for this query. Default=0 reports a single blocking hit. If maxTouchHits is set to 0 all hits are treated as blocking by default. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned in hit array and blocking hit. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data passed to the filter shader. See <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Query is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns a PxRaycastBuffer pointer that will store the result of the query after execute() is completed. This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExt5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCacheK6PxReal">
+<span id="_CPPv3N15PxBatchQueryExt5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCacheK6PxReal"></span><span id="_CPPv2N15PxBatchQueryExt5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCacheK6PxReal"></span><span id="PxBatchQueryExt::sweep__PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxU16C.PxHitFlags.PxQueryFilterDataCR.PxQueryCacheCP.PxRealC"></span><span class="target" id="class_px_batch_query_ext_1a73e6c1b8e39b5e6d8d1936790b94ab4d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665.html#_CPPv413PxSweepBuffer" title="PxSweepBuffer"><span class="n"><span class="pre">PxSweepBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNbTouches</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">PxHitFlags</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExt5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealK5PxU1610PxHitFlagsRK17PxQueryFilterDataPK12PxQueryCacheK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a sweep test against objects in the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512.html#group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512"><span class="std std-ref">PxCreateBatchQueryExt</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxHitFlags <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> PxBatchQueryPreFilterShader PxBatchQueryPostFilterShader <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, the hit is returned unless eASSUME_NO_INITIAL_OVERLAP was specified.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This query call writes to a list associated with the query object and is NOT thread safe (for performance reasons there is no lock and overlapping writes from different threads may result in undefined behavior).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>maxNbTouches</strong> – <strong>[in]</strong> Maximum number of hits to record in the touch buffer for this query. Default=0 reports a single blocking hit. If maxTouchHits is set to 0 all hits are treated as blocking by default. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned in hit array and blocking hit. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. See <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Query is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. Note: ePRECISE_SWEEP doesn’t support inflation. Therefore the sweep will be performed with zero inflation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns a PxSweepBuffer pointer that will store the result of the query after execute() is completed. This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExt7overlapERK10PxGeometryRK11PxTransform5PxU16RK17PxQueryFilterDataPK12PxQueryCache">
+<span id="_CPPv3N15PxBatchQueryExt7overlapERK10PxGeometryRK11PxTransform5PxU16RK17PxQueryFilterDataPK12PxQueryCache"></span><span id="_CPPv2N15PxBatchQueryExt7overlapERK10PxGeometryRK11PxTransform5PxU16RK17PxQueryFilterDataPK12PxQueryCache"></span><span id="PxBatchQueryExt::overlap__PxGeometryCR.PxTransformCR.PxU16.PxQueryFilterDataCR.PxQueryCacheCP"></span><span class="target" id="class_px_batch_query_ext_1afe2287b7fc706315adef1a2de4107507"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__scenequery_1ga54a708942a891f3321c2427d5c160750.html#_CPPv415PxOverlapBuffer" title="PxOverlapBuffer"><span class="n"><span class="pre">PxOverlapBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNbTouches</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExt7overlapERK10PxGeometryRK11PxTransform5PxU16RK17PxQueryFilterDataPK12PxQueryCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs an overlap test of a given geometry against objects in the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512.html#group__extensions_1ga7e7565f01fb6d14cbb0f686afbf5b512"><span class="std std-ref">PxCreateBatchQueryExt</span></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Filtering: returning eBLOCK from user filter for overlap queries will cause a warning (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eBLOCK should not be returned from user filters for <a class="reference internal" href="#class_px_batch_query_ext_1afe2287b7fc706315adef1a2de4107507"><span class="std std-ref">overlap()</span></a>. Doing so will result in undefined behavior, and a warning will be issued. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98467f45e717fa0f52652f52b0ff9798"><span class="std std-ref">PxQueryFlag::eNO_BLOCK</span></a> flag is set, the eBLOCK will instead be automatically converted to an eTOUCH and the warning suppressed. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This query call writes to a list associated with the query object and is NOT thread safe (for performance reasons there is no lock and overlapping writes from different threads may result in undefined behavior).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the object. </p></li>
+<li><p><strong>maxNbTouches</strong> – <strong>[in]</strong> Maximum number of hits to record in the touch buffer for this query. Default=0 reports a single blocking hit. If maxTouchHits is set to 0 all hits are treated as blocking by default. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. See <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Query is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns a PxOverlapBuffer pointer that will store the result of the query after execute() is completed. This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExt7executeEv">
+<span id="_CPPv3N15PxBatchQueryExt7executeEv"></span><span id="_CPPv2N15PxBatchQueryExt7executeEv"></span><span id="PxBatchQueryExt::execute"></span><span class="target" id="class_px_batch_query_ext_1aabcefc2df981dd11497b934f09e90173"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">execute</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExt7executeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBatchQueryExtD0Ev">
+<span id="_CPPv3N15PxBatchQueryExtD0Ev"></span><span id="_CPPv2N15PxBatchQueryExtD0Ev"></span><span id="PxBatchQueryExt::~PxBatchQueryExt"></span><span class="target" id="class_px_batch_query_ext_1a4ad99e56979c2cf5c2841ead3e31097e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBatchQueryExt</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxBatchQueryExtD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

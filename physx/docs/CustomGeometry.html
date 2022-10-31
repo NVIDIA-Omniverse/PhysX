@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Geometry &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Body Overview" href="RigidBodyOverview.html" />
+    <link rel="prev" title="Geometry" href="Geometry.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Custom Geometry</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-geometry-callbacks">Custom Geometry Callbacks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#custom-type">Custom Type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#local-bounds">Local Bounds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#contacts-generation">Contacts Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#queries">Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-geometry-extensions">Custom Geometry Extensions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#cylinder">Cylinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cone">Cone</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/public/latest/public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Custom Geometry</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="custom-geometry">
+<span id="customgeometry"></span><h1>Custom Geometry<a class="headerlink" href="#custom-geometry" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This section discusses the PhysX custom geometry class - PxCustomGeometry. Custom geometry is used to implement non-standard collision shapes.</p>
+</section>
+<section id="id1">
+<h2>Custom Geometry<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h2>
+<p>PxCustomGeometry constructor takes a reference to PxCustomGeometry::Callbacks virtual interface. User should inherit this interface and implement all its virtual functions. Custom geometry stores the reference to the callback object. User is responsible for allocating/deallocating the callback object memory.</p>
+<section id="custom-geometry-callbacks">
+<h3>Custom Geometry Callbacks<a class="headerlink" href="#custom-geometry-callbacks" title="Permalink to this headline"></a></h3>
+<p>PxCustomGeometry::Callbacks virtual interface has six virtual functions: getCustomType, getLocalBounds, generateContacts, raycast, overlap, sweep.</p>
+<section id="custom-type">
+<h4>Custom Type<a class="headerlink" href="#custom-type" title="Permalink to this headline"></a></h4>
+<p>Function getCustomType is expected to return a unique ID for every custom geometry type. It’s purpose is for the user to differentiate custom geometries. Not used by PhysX.</p>
+</section>
+<section id="local-bounds">
+<h4>Local Bounds<a class="headerlink" href="#local-bounds" title="Permalink to this headline"></a></h4>
+<p>Function getLocalBounds is expected to return the custom geometry’s local bounding box - the farthest extents along six directions: -X, -Y, -Z, +X, +Y, +Z, in the geometry’s local space. Used by PhysX Broadphase.</p>
+</section>
+<section id="contacts-generation">
+<h4>Contacts Generation<a class="headerlink" href="#contacts-generation" title="Permalink to this headline"></a></h4>
+<p>Function generateContacts is expected to do the collision detection between this and the other given geometry. It’s the user responsibility to implement collision detection for all necessary geometry types pairs. User can use auxiliary API functions provided by PhysX, like Immediate Mode Contact Generation or Geometry Queries.</p>
+</section>
+<section id="queries">
+<h4>Queries<a class="headerlink" href="#queries" title="Permalink to this headline"></a></h4>
+<p>Function raycast, overlap and sweep should implement the specified queries. User can use Geometry Queries API functions here.</p>
+</section>
+</section>
+<section id="custom-geometry-extensions">
+<h3>Custom Geometry Extensions<a class="headerlink" href="#custom-geometry-extensions" title="Permalink to this headline"></a></h3>
+<p>There are two pre-made custom geometry callbacks objects in PxCustomGeometryExt to create Cylinder and Cone custom geometries.</p>
+<section id="cylinder">
+<h4>Cylinder<a class="headerlink" href="#cylinder" title="Permalink to this headline"></a></h4>
+<p>Allocate CylinderCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cylinder geometry. Note that PxCustomGeometry won’t deallocate the callback object when destroyed. It’s the user’s responsibility.</p>
+</section>
+<section id="cone">
+<h4>Cone<a class="headerlink" href="#cone" title="Permalink to this headline"></a></h4>
+<p>Allocate ConeCallbacks object, and pass its pointer to PxCustomGeometry constructor to create cone geometry. Note that PxCustomGeometry won’t deallocate the callback object when destroyed. It’s the user’s responsibility.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSparseGridParams &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSparseGridParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsparsegridparams">
+<span id="exhale-struct-struct-px-sparse-grid-params"></span><h1>PxSparseGridParams<a class="headerlink" href="#pxsparsegridparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSparseGridParams.h.html#file-include-pxsparsegridparams-h"><span class="std std-ref">include/PxSparseGridParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv418PxSparseGridParams">
+<span id="_CPPv318PxSparseGridParams"></span><span id="_CPPv218PxSparseGridParams"></span><span id="PxSparseGridParams"></span><span class="target" id="struct_px_sparse_grid_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSparseGridParams</span></span></span><a class="headerlink" href="#_CPPv418PxSparseGridParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Parameters to define the sparse grid settings like grid spacing, maximal number of subgrids etc. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams18PxSparseGridParamsEv">
+<span id="_CPPv3N18PxSparseGridParams18PxSparseGridParamsEv"></span><span id="_CPPv2N18PxSparseGridParams18PxSparseGridParamsEv"></span><span id="PxSparseGridParams::PxSparseGridParams"></span><span class="target" id="struct_px_sparse_grid_params_1a35a06a3528ef72a00282a0c7cb0ef451"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSparseGridParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams18PxSparseGridParamsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams18PxSparseGridParamsERK18PxSparseGridParams">
+<span id="_CPPv3N18PxSparseGridParams18PxSparseGridParamsERK18PxSparseGridParams"></span><span id="_CPPv2N18PxSparseGridParams18PxSparseGridParamsERK18PxSparseGridParams"></span><span id="PxSparseGridParams::PxSparseGridParams__PxSparseGridParamsCR"></span><span class="target" id="struct_px_sparse_grid_params_1ab5c13e677827814a2cac9894465ed2e5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSparseGridParams</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N18PxSparseGridParams18PxSparseGridParamsERK18PxSparseGridParams" title="PxSparseGridParams::PxSparseGridParams"><span class="n"><span class="pre">PxSparseGridParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams18PxSparseGridParamsERK18PxSparseGridParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSparseGridParams21getNumCellsPerSubgridEv">
+<span id="_CPPv3NK18PxSparseGridParams21getNumCellsPerSubgridEv"></span><span id="_CPPv2NK18PxSparseGridParams21getNumCellsPerSubgridEv"></span><span id="PxSparseGridParams::getNumCellsPerSubgridC"></span><span class="target" id="struct_px_sparse_grid_params_1a6bb4ce2cf8c3250f02110a22a5bba4ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumCellsPerSubgrid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxSparseGridParams21getNumCellsPerSubgridEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSparseGridParams10getSqrt3dxEv">
+<span id="_CPPv3NK18PxSparseGridParams10getSqrt3dxEv"></span><span id="_CPPv2NK18PxSparseGridParams10getSqrt3dxEv"></span><span id="PxSparseGridParams::getSqrt3dxC"></span><span class="target" id="struct_px_sparse_grid_params_1ac69f7dc3d13402e03ad9d1ce0a9979c5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSqrt3dx</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxSparseGridParams10getSqrt3dxEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams12setToDefaultEv">
+<span id="_CPPv3N18PxSparseGridParams12setToDefaultEv"></span><span id="_CPPv2N18PxSparseGridParams12setToDefaultEv"></span><span id="PxSparseGridParams::setToDefault"></span><span class="target" id="struct_px_sparse_grid_params_1a97b8edbc3e4a5dfdec1d8e9a5b394812"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParamsaSERK18PxSparseGridParams">
+<span id="_CPPv3N18PxSparseGridParamsaSERK18PxSparseGridParams"></span><span id="_CPPv2N18PxSparseGridParamsaSERK18PxSparseGridParams"></span><span id="PxSparseGridParams::assign-operator__PxSparseGridParamsCR"></span><span class="target" id="struct_px_sparse_grid_params_1a46f44ebe5be7836ab91669e5b79b9245"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv418PxSparseGridParams" title="PxSparseGridParams"><span class="n"><span class="pre">PxSparseGridParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSparseGridParamsaSERK18PxSparseGridParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams14maxNumSubgridsE">
+<span id="_CPPv3N18PxSparseGridParams14maxNumSubgridsE"></span><span id="_CPPv2N18PxSparseGridParams14maxNumSubgridsE"></span><span id="PxSparseGridParams::maxNumSubgrids__PxU32"></span><span class="target" id="struct_px_sparse_grid_params_1a714e96668fdf8a2f73ab6931834422be"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNumSubgrids</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams14maxNumSubgridsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Maximum number of subgrids. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams11gridSpacingE">
+<span id="_CPPv3N18PxSparseGridParams11gridSpacingE"></span><span id="_CPPv2N18PxSparseGridParams11gridSpacingE"></span><span id="PxSparseGridParams::gridSpacing__PxReal"></span><span class="target" id="struct_px_sparse_grid_params_1a84a3803fd410c04c9f54afd0f7db61c8"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gridSpacing</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams11gridSpacingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Grid spacing for the grid. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams12subgridSizeXE">
+<span id="_CPPv3N18PxSparseGridParams12subgridSizeXE"></span><span id="_CPPv2N18PxSparseGridParams12subgridSizeXE"></span><span id="PxSparseGridParams::subgridSizeX__PxU16"></span><span class="target" id="struct_px_sparse_grid_params_1ac1ef6c7baa0cf14a4503db45e9fa1066"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridSizeX</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams12subgridSizeXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Subgrid resolution in x dimension (must be an even number) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams12subgridSizeYE">
+<span id="_CPPv3N18PxSparseGridParams12subgridSizeYE"></span><span id="_CPPv2N18PxSparseGridParams12subgridSizeYE"></span><span id="PxSparseGridParams::subgridSizeY__PxU16"></span><span class="target" id="struct_px_sparse_grid_params_1a1f8aa8dfafc404ff8e019e2a214cf461"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridSizeY</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams12subgridSizeYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Subgrid resolution in y dimension (must be an even number) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams12subgridSizeZE">
+<span id="_CPPv3N18PxSparseGridParams12subgridSizeZE"></span><span id="_CPPv2N18PxSparseGridParams12subgridSizeZE"></span><span id="PxSparseGridParams::subgridSizeZ__PxU16"></span><span class="target" id="struct_px_sparse_grid_params_1a26d46e178f60be4ea5ccc2d7ad4228dc"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridSizeZ</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams12subgridSizeZE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Subgrid resolution in z dimension (must be an even number) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSparseGridParams8haloSizeE">
+<span id="_CPPv3N18PxSparseGridParams8haloSizeE"></span><span id="_CPPv2N18PxSparseGridParams8haloSizeE"></span><span id="PxSparseGridParams::haloSize__PxU16"></span><span class="target" id="struct_px_sparse_grid_params_1aa1e264b46afa2adbd0b60b9a90a3af14"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">haloSize</span></span></span><a class="headerlink" href="#_CPPv4N18PxSparseGridParams8haloSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of halo cell layers around every subgrid cell. Only 0 and 1 are valid values. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleTireForceParams &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleTireForceParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicletireforceparams">
+<span id="exhale-struct-struct-px-vehicle-tire-force-params"></span><h1>PxVehicleTireForceParams<a class="headerlink" href="#pxvehicletireforceparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_tire_PxVehicleTireParams.h.html#file-include-vehicle2-tire-pxvehicletireparams-h"><span class="std std-ref">include/vehicle2/tire/PxVehicleTireParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv424PxVehicleTireForceParams">
+<span id="_CPPv324PxVehicleTireForceParams"></span><span id="_CPPv224PxVehicleTireForceParams"></span><span id="PxVehicleTireForceParams"></span><span class="target" id="struct_px_vehicle_tire_force_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleTireForceParams</span></span></span><a class="headerlink" href="#_CPPv424PxVehicleTireForceParams" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleTireForceParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK24PxVehicleTireForceParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK24PxVehicleTireForceParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleTireForceParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_tire_force_params_1a3f18c1e1380d6be6cd7c2b19ee5b7f24"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv424PxVehicleTireForceParams" title="PxVehicleTireForceParams"><span class="n"><span class="pre">PxVehicleTireForceParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleTireForceParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK24PxVehicleTireForceParams7isValidEv">
+<span id="_CPPv3NK24PxVehicleTireForceParams7isValidEv"></span><span id="_CPPv2NK24PxVehicleTireForceParams7isValidEv"></span><span id="PxVehicleTireForceParams::isValidC"></span><span class="target" id="struct_px_vehicle_tire_force_params_1a403b398280e818e475d17516de75169b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK24PxVehicleTireForceParams7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams9latStiffXE">
+<span id="_CPPv3N24PxVehicleTireForceParams9latStiffXE"></span><span id="_CPPv2N24PxVehicleTireForceParams9latStiffXE"></span><span id="PxVehicleTireForceParams::latStiffX__PxReal"></span><span class="target" id="struct_px_vehicle_tire_force_params_1ae3f4a19582e3b08b0e5a47241a69f35b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">latStiffX</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams9latStiffXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tire lateral stiffness is a graph of tire load that has linear behavior near zero load and flattens at large loads. </p>
+<p>latStiffX describes the minimum normalized load (load/restLoad) that gives a flat lateral stiffness response to load. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of 0.0 indicates that the tire lateral stiffness is independent of load and will adopt the value <a class="reference internal" href="#struct_px_vehicle_tire_force_params_1ad3c1647f41840eac5382be457add0e07"><span class="std std-ref">latStiffY</span></a> for all values of tire load. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams9latStiffYE">
+<span id="_CPPv3N24PxVehicleTireForceParams9latStiffYE"></span><span id="_CPPv2N24PxVehicleTireForceParams9latStiffYE"></span><span id="PxVehicleTireForceParams::latStiffY__PxReal"></span><span class="target" id="struct_px_vehicle_tire_force_params_1ad3c1647f41840eac5382be457add0e07"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">latStiffY</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams9latStiffYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tire lateral stiffness is a graph of tire load that has linear behavior near zero load and flattens at large loads. </p>
+<p>latStiffY describes the maximum possible value of lateral stiffness that occurs when (load/restLoad) &gt;= <a class="reference internal" href="#struct_px_vehicle_tire_force_params_1ae3f4a19582e3b08b0e5a47241a69f35b"><span class="std std-ref">latStiffX</span></a>.</p>
+<p><strong>Unit:</strong> force per lateral slip = mass * length / (time^2) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams9longStiffE">
+<span id="_CPPv3N24PxVehicleTireForceParams9longStiffE"></span><span id="_CPPv2N24PxVehicleTireForceParams9longStiffE"></span><span id="PxVehicleTireForceParams::longStiff__PxReal"></span><span class="target" id="struct_px_vehicle_tire_force_params_1ae8bd11ef3b8a64a6f16c3942eaf58ca4"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">longStiff</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams9longStiffE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tire Longitudinal stiffness. </p>
+<p><strong>Unit:</strong> force per longitudinal slip = mass * length / (time^2) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Longitudinal force can be approximated as longStiff*longitudinalSlip.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams11camberStiffE">
+<span id="_CPPv3N24PxVehicleTireForceParams11camberStiffE"></span><span id="_CPPv2N24PxVehicleTireForceParams11camberStiffE"></span><span id="PxVehicleTireForceParams::camberStiff__PxReal"></span><span class="target" id="struct_px_vehicle_tire_force_params_1ac39bb67e1f8405351e5c4157293d3ff9"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">camberStiff</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams11camberStiffE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tire camber stiffness. </p>
+<p><strong>Unit:</strong> force per radian = mass * length / (time^2) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Camber force can be approximated as camberStiff*camberAngle.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams14frictionVsSlipE">
+<span id="_CPPv3N24PxVehicleTireForceParams14frictionVsSlipE"></span><span id="_CPPv2N24PxVehicleTireForceParams14frictionVsSlipE"></span><span id="PxVehicleTireForceParams::frictionVsSlip__PxRealAA"></span><span class="target" id="struct_px_vehicle_tire_force_params_1a975db3c393b75fb500f3d12309e3b132"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionVsSlip</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams14frictionVsSlipE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Graph of friction vs longitudinal slip with 3 points. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[0][0] is always zero. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[0][1] is the friction available at zero longitudinal slip. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[1][0] is the value of longitudinal slip with maximum friction. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[1][1] is the maximum friction. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[2][0] is the end point of the graph. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[2][1] is the value of friction for slips greater than frictionVsSlip[2][0]. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The friction value is computed from the friction vs longitudinal slip graph using linear interpolation. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The friction value computed from the friction vs longitudinal slip graph is used to scale the friction value of the road geometry. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[2][0] &gt; frictionVsSlip[1][0] &gt; frictionVsSlip[0][0] </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[1][1] is typically greater than frictionVsSlip[0][1] </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionVsSlip[2][1] is typically smaller than frictionVsSlip[1][1] </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>longitudinal slips &gt; frictionVsSlip[2][0] use friction multiplier frictionVsSlip[2][1] </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams8restLoadE">
+<span id="_CPPv3N24PxVehicleTireForceParams8restLoadE"></span><span id="_CPPv2N24PxVehicleTireForceParams8restLoadE"></span><span id="PxVehicleTireForceParams::restLoad__PxReal"></span><span class="target" id="struct_px_vehicle_tire_force_params_1a0ed686439ef580cf2174860706f2b9b0"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restLoad</span></span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams8restLoadE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The rest load is the load that develops on the tire when the vehicle is at rest on a flat plane. </p>
+<p><strong>Unit:</strong> force = mass * length / (time^2) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The rest load is approximately the product of gravitational acceleration and (sprungMass + wheelMass).</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVehicleTireForceParams10loadFilterE">
+<span id="_CPPv3N24PxVehicleTireForceParams10loadFilterE"></span><span id="_CPPv2N24PxVehicleTireForceParams10loadFilterE"></span><span id="PxVehicleTireForceParams::loadFilter__PxRealAA"></span><span class="target" id="struct_px_vehicle_tire_force_params_1a2bfaddb3bbcffd5e8142c93c46c467da"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">loadFilter</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N24PxVehicleTireForceParams10loadFilterE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tire load variation can be strongly dependent on the time-step so it is a good idea to filter it to give less jerky handling behavior. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tire load filtering is implemented by linear interpolating a graph containing just two points. The x-axis of the graph is normalized tire load, while the y-axis is the filtered normalized tire load that is to be applied during the tire force calculation. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The normalized load is the force acting downwards on the tire divided by restLoad. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The minimum possible normalized load is zero. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are two points on the graph: (minNormalisedLoad, minNormalisedFilteredLoad) and (maxNormalisedLoad, maxFilteredNormalisedLoad). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Normalized loads less than minNormalisedLoad have filtered normalized load = minNormalisedFilteredLoad. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Normalized loads greater than maxNormalisedLoad have filtered normalized load = maxFilteredNormalisedLoad. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Normalized loads in-between are linearly interpolated between minNormalisedFilteredLoad and maxFilteredNormalisedLoad. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The tire load applied as input to the tire force computation is the filtered normalized load multiplied by the rest load. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>loadFilter[0][0] is minNormalisedLoad </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>loadFilter[0][1] is minFilteredNormalisedLoad </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>loadFilter[1][0] is maxNormalisedLoad </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>loadFilter[1][1] is maxFilteredNormalisedLoad </p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSphericalJoint &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSphericalJoint</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsphericaljoint">
+<span id="exhale-class-class-px-spherical-joint"></span><h1>PxSphericalJoint<a class="headerlink" href="#pxsphericaljoint" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSphericalJoint.h.html#file-include-extensions-pxsphericaljoint-h"><span class="std std-ref">include/extensions/PxSphericalJoint.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxJoint</span></code> (<a class="reference internal" href="class_px_joint.html#exhale-class-class-px-joint"><span class="std std-ref">PxJoint</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxSphericalJoint">
+<span id="_CPPv316PxSphericalJoint"></span><span id="_CPPv216PxSphericalJoint"></span><span id="PxSphericalJoint"></span><span class="target" id="class_px_spherical_joint"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSphericalJoint</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_joint.html#_CPPv47PxJoint" title="PxJoint"><span class="n"><span class="pre">PxJoint</span></span></a><a class="headerlink" href="#_CPPv416PxSphericalJoint" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A joint which behaves in a similar way to a ball and socket. </p>
+<p>A spherical joint removes all linear degrees of freedom from two objects.</p>
+<p>The position of the joint on each actor is specified by the origin of the body’s joint frame.</p>
+<p>A spherical joint may have a cone limit, to restrict the motion to within a certain range. In addition, the bodies may be projected together if the distance between them exceeds a given threshold.</p>
+<p>Projection, drive and limits are activated by setting the appropriate flags on the joint.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__extensions_1ga4aa56f32cb1cb2245d1c0cde99d0af17.html#group__extensions_1ga4aa56f32cb1cb2245d1c0cde99d0af17"><span class="std std-ref">PxRevoluteJointCreate()</span></a> <a class="reference internal" href="class_px_joint.html#class_px_joint"><span class="std std-ref">PxJoint</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint12getLimitConeEv">
+<span id="_CPPv3NK16PxSphericalJoint12getLimitConeEv"></span><span id="_CPPv2NK16PxSphericalJoint12getLimitConeEv"></span><span id="PxSphericalJoint::getLimitConeC"></span><span class="target" id="class_px_spherical_joint_1a5c48934f9981180ef691c7914efa9c05"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_joint_limit_cone.html#_CPPv416PxJointLimitCone" title="PxJointLimitCone"><span class="n"><span class="pre">PxJointLimitCone</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLimitCone</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint12getLimitConeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the limit cone. </p>
+<p>If enabled, the limit cone will constrain the angular movement of the joint to lie within an elliptical cone.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_joint_limit_cone.html#class_px_joint_limit_cone"><span class="std std-ref">PxJointLimitCone</span></a> setLimit() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the limit cone</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint12setLimitConeERK16PxJointLimitCone">
+<span id="_CPPv3N16PxSphericalJoint12setLimitConeERK16PxJointLimitCone"></span><span id="_CPPv2N16PxSphericalJoint12setLimitConeERK16PxJointLimitCone"></span><span id="PxSphericalJoint::setLimitCone__PxJointLimitConeCR"></span><span class="target" id="class_px_spherical_joint_1a7ca415d2d986e63c5d5fa86dde583e6c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLimitCone</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_joint_limit_cone.html#_CPPv416PxJointLimitCone" title="PxJointLimitCone"><span class="n"><span class="pre">PxJointLimitCone</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint12setLimitConeERK16PxJointLimitCone" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the limit cone. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_joint_limit_cone.html#class_px_joint_limit_cone"><span class="std std-ref">PxJointLimitCone</span></a> getLimit() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> the limit cone</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint14getSwingYAngleEv">
+<span id="_CPPv3NK16PxSphericalJoint14getSwingYAngleEv"></span><span id="_CPPv2NK16PxSphericalJoint14getSwingYAngleEv"></span><span id="PxSphericalJoint::getSwingYAngleC"></span><span class="target" id="class_px_spherical_joint_1aa47bad77fc2a697a495a0bad9b23aedc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSwingYAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint14getSwingYAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the swing angle of the joint from the Y axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint14getSwingZAngleEv">
+<span id="_CPPv3NK16PxSphericalJoint14getSwingZAngleEv"></span><span id="_CPPv2NK16PxSphericalJoint14getSwingZAngleEv"></span><span id="PxSphericalJoint::getSwingZAngleC"></span><span class="target" id="class_px_spherical_joint_1a049d33a64738222c3386c4e7d4dd9690"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSwingZAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint14getSwingZAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the swing angle of the joint from the Z axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint22setSphericalJointFlagsE21PxSphericalJointFlags">
+<span id="_CPPv3N16PxSphericalJoint22setSphericalJointFlagsE21PxSphericalJointFlags"></span><span id="_CPPv2N16PxSphericalJoint22setSphericalJointFlagsE21PxSphericalJointFlags"></span><span id="PxSphericalJoint::setSphericalJointFlags__PxSphericalJointFlags"></span><span class="target" id="class_px_spherical_joint_1a3f3dd6934d09d6bc1605e53c15e45ab7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSphericalJointFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__extensions_1ga4e2440ba605d9e05614c938fcb2e6fcb.html#_CPPv421PxSphericalJointFlags" title="PxSphericalJointFlags"><span class="n"><span class="pre">PxSphericalJointFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint22setSphericalJointFlagsE21PxSphericalJointFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the flags specific to the Spherical Joint. </p>
+<p><strong>Default</strong> PxSphericalJointFlags(0)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_spherical_joint_flag.html#struct_px_spherical_joint_flag"><span class="std std-ref">PxSphericalJointFlag</span></a> setFlag() getFlags() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> The joint flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint21setSphericalJointFlagEN20PxSphericalJointFlag4EnumEb">
+<span id="_CPPv3N16PxSphericalJoint21setSphericalJointFlagEN20PxSphericalJointFlag4EnumEb"></span><span id="_CPPv2N16PxSphericalJoint21setSphericalJointFlagEN20PxSphericalJointFlag4EnumEb"></span><span id="PxSphericalJoint::setSphericalJointFlag__PxSphericalJointFlag::Enum.b"></span><span class="target" id="class_px_spherical_joint_1a0cff21b619ff48b2ca974df7f0e38ebb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSphericalJointFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_spherical_joint_flag.html#_CPPv420PxSphericalJointFlag" title="PxSphericalJointFlag"><span class="n"><span class="pre">PxSphericalJointFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_spherical_joint_flag.html#_CPPv4N20PxSphericalJointFlag4EnumE" title="PxSphericalJointFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint21setSphericalJointFlagEN20PxSphericalJointFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a single flag specific to a Spherical Joint to true or false. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_spherical_joint_flag.html#struct_px_spherical_joint_flag"><span class="std std-ref">PxSphericalJointFlag</span></a>, getFlags() setFlags() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to set or clear. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> the value to which to set the flag</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint22getSphericalJointFlagsEv">
+<span id="_CPPv3NK16PxSphericalJoint22getSphericalJointFlagsEv"></span><span id="_CPPv2NK16PxSphericalJoint22getSphericalJointFlagsEv"></span><span id="PxSphericalJoint::getSphericalJointFlagsC"></span><span class="target" id="class_px_spherical_joint_1a77dc19089037fdd586ab0174bbce3926"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4e2440ba605d9e05614c938fcb2e6fcb.html#_CPPv421PxSphericalJointFlags" title="PxSphericalJointFlags"><span class="n"><span class="pre">PxSphericalJointFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSphericalJointFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint22getSphericalJointFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the flags specific to the Spherical Joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSphericalJoint::flags, <a class="reference internal" href="struct_px_spherical_joint_flag.html#struct_px_spherical_joint_flag"><span class="std std-ref">PxSphericalJointFlag</span></a> setFlag() setFlags() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the joint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint28setProjectionLinearToleranceE6PxReal">
+<span id="_CPPv3N16PxSphericalJoint28setProjectionLinearToleranceE6PxReal"></span><span id="_CPPv2N16PxSphericalJoint28setProjectionLinearToleranceE6PxReal"></span><span id="PxSphericalJoint::setProjectionLinearTolerance__PxReal"></span><span class="target" id="class_px_spherical_joint_1a73173f0db2281377b91fe3b58b22001d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setProjectionLinearTolerance</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">tolerance</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint28setProjectionLinearToleranceE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the linear tolerance threshold for projection. </p>
+<p>Projection is enabled if <a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a2d3f8e02cd1fa3a41256d186a0a38ebf"><span class="std std-ref">PxConstraintFlag::ePROJECTION</span></a> is set for the joint.</p>
+<p>If the joint separates by more than this distance along its locked degrees of freedom, the solver will move the bodies to close the distance.</p>
+<p>Setting a very small tolerance may result in simulation jitter or other artifacts.</p>
+<p>Sometimes it is not possible to project (for example when the joints form a cycle).</p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 1e10f</p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_spherical_joint_1a4cfc3fbb4621799cbf5449270c120d1e"><span class="std std-ref">getProjectionLinearTolerance()</span></a> <a class="reference internal" href="#class_px_joint_1a857ea5abc40d94b0e1537b566a9d45bf"><span class="std std-ref">PxJoint::setConstraintFlags()</span></a> <a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a2d3f8e02cd1fa3a41256d186a0a38ebf"><span class="std std-ref">PxConstraintFlag::ePROJECTION</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tolerance</strong> – <strong>[in]</strong> the linear tolerance threshold</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint28getProjectionLinearToleranceEv">
+<span id="_CPPv3NK16PxSphericalJoint28getProjectionLinearToleranceEv"></span><span id="_CPPv2NK16PxSphericalJoint28getProjectionLinearToleranceEv"></span><span id="PxSphericalJoint::getProjectionLinearToleranceC"></span><span class="target" id="class_px_spherical_joint_1a4cfc3fbb4621799cbf5449270c120d1e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getProjectionLinearTolerance</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint28getProjectionLinearToleranceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the linear tolerance threshold for projection. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_spherical_joint_1a73173f0db2281377b91fe3b58b22001d"><span class="std std-ref">setProjectionLinearTolerance()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the linear tolerance threshold</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint19getConcreteTypeNameEv">
+<span id="_CPPv3NK16PxSphericalJoint19getConcreteTypeNameEv"></span><span id="_CPPv2NK16PxSphericalJoint19getConcreteTypeNameEv"></span><span id="PxSphericalJoint::getConcreteTypeNameC"></span><span class="target" id="class_px_spherical_joint_1ad2788b82dc6ebf4596222c8c112655c3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of <a class="reference internal" href="#class_px_spherical_joint"><span class="std std-ref">PxSphericalJoint</span></a>, used for serialization. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint9setActorsEP12PxRigidActorP12PxRigidActor">
+<span id="_CPPv3N16PxSphericalJoint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="_CPPv2N16PxSphericalJoint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="PxSphericalJoint::setActors__PxRigidActorP.PxRigidActorP"></span><span class="target" id="class_px_joint_1ae3f3bbd628f77104c438a16a1e9bff2f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setActors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor0</span></span>, <a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint9setActorsEP12PxRigidActorP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the actors for this joint. </p>
+<p>An actor may be NULL to indicate the world frame. At most one of the actors may be NULL.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a744ebe07ff38e08fa0497155b891cfb3"><span class="std std-ref">getActors()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[in]</strong> the first actor. </p></li>
+<li><p><strong>actor1</strong> – <strong>[in]</strong> the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint9getActorsERP12PxRigidActorRP12PxRigidActor">
+<span id="_CPPv3NK16PxSphericalJoint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="_CPPv2NK16PxSphericalJoint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="PxSphericalJoint::getActors__PxRigidActorPR.PxRigidActorPRC"></span><span class="target" id="class_px_joint_1a744ebe07ff38e08fa0497155b891cfb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getActors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor0</span></span>, <a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint9getActorsERP12PxRigidActorRP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the actors for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1ae3f3bbd628f77104c438a16a1e9bff2f"><span class="std std-ref">setActors()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[out]</strong> the first actor. </p></li>
+<li><p><strong>actor1</strong> – <strong>[out]</strong> the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform">
+<span id="_CPPv3N16PxSphericalJoint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform"></span><span id="_CPPv2N16PxSphericalJoint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform"></span><span id="PxSphericalJoint::setLocalPose__PxJointActorIndex::Enum.PxTransformCR"></span><span class="target" id="class_px_joint_1a7bb7f7676c3660945356ef6e726c48b3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLocalPose</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_joint_actor_index.html#_CPPv417PxJointActorIndex" title="PxJointActorIndex"><span class="n"><span class="pre">PxJointActorIndex</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_joint_actor_index.html#_CPPv4N17PxJointActorIndex4EnumE" title="PxJointActorIndex::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPose</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the joint local pose for an actor. </p>
+<p>This is the relative pose which locates the joint frame relative to the actor.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1ad13a76df450cf57cfbed486a5359c895"><span class="std std-ref">getLocalPose()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> 0 for the first actor, 1 for the second actor. </p></li>
+<li><p><strong>localPose</strong> – <strong>[in]</strong> the local pose for the actor this joint</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint12getLocalPoseEN17PxJointActorIndex4EnumE">
+<span id="_CPPv3NK16PxSphericalJoint12getLocalPoseEN17PxJointActorIndex4EnumE"></span><span id="_CPPv2NK16PxSphericalJoint12getLocalPoseEN17PxJointActorIndex4EnumE"></span><span id="PxSphericalJoint::getLocalPose__PxJointActorIndex::EnumC"></span><span class="target" id="class_px_joint_1ad13a76df450cf57cfbed486a5359c895"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalPose</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_joint_actor_index.html#_CPPv417PxJointActorIndex" title="PxJointActorIndex"><span class="n"><span class="pre">PxJointActorIndex</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_joint_actor_index.html#_CPPv4N17PxJointActorIndex4EnumE" title="PxJointActorIndex::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint12getLocalPoseEN17PxJointActorIndex4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the joint local pose for an actor. </p>
+<p>
+return the local pose for this joint</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a7bb7f7676c3660945356ef6e726c48b3"><span class="std std-ref">setLocalPose()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> 0 for the first actor, 1 for the second actor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint20getRelativeTransformEv">
+<span id="_CPPv3NK16PxSphericalJoint20getRelativeTransformEv"></span><span id="_CPPv2NK16PxSphericalJoint20getRelativeTransformEv"></span><span id="PxSphericalJoint::getRelativeTransformC"></span><span class="target" id="class_px_joint_1a116450043c073548c1c55d032014f7e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeTransform</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint20getRelativeTransformEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative pose for this joint </p>
+<p>This function returns the pose of the joint frame of actor1 relative to actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint25getRelativeLinearVelocityEv">
+<span id="_CPPv3NK16PxSphericalJoint25getRelativeLinearVelocityEv"></span><span id="_CPPv2NK16PxSphericalJoint25getRelativeLinearVelocityEv"></span><span id="PxSphericalJoint::getRelativeLinearVelocityC"></span><span class="target" id="class_px_joint_1aba1e47a8ff180a564a2ef44a016372bf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeLinearVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint25getRelativeLinearVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative linear velocity of the joint </p>
+<p>This function returns the linear velocity of the origin of the constraint frame of actor1, relative to the origin of the constraint frame of actor0. The value is returned in the constraint frame of actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint26getRelativeAngularVelocityEv">
+<span id="_CPPv3NK16PxSphericalJoint26getRelativeAngularVelocityEv"></span><span id="_CPPv2NK16PxSphericalJoint26getRelativeAngularVelocityEv"></span><span id="PxSphericalJoint::getRelativeAngularVelocityC"></span><span class="target" id="class_px_joint_1ae1d90c4cb53d5807584474ae130048df"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeAngularVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint26getRelativeAngularVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative angular velocity of the joint </p>
+<p>This function returns the angular velocity of actor1 relative to actor0. The value is returned in the constraint frame of actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint13setBreakForceE6PxReal6PxReal">
+<span id="_CPPv3N16PxSphericalJoint13setBreakForceE6PxReal6PxReal"></span><span id="_CPPv2N16PxSphericalJoint13setBreakForceE6PxReal6PxReal"></span><span id="PxSphericalJoint::setBreakForce__PxReal.PxReal"></span><span class="target" id="class_px_joint_1a1cfe86fe5c8131cea1b9b5ff9df7a014"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBreakForce</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">force</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">torque</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint13setBreakForceE6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the break force for this joint. </p>
+<p>if the constraint force or torque on the joint exceeds the specified values, the joint will break, at which point it will not constrain the two actors and the flag <a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a91151f48e43ade5a5d7153f1b3160696"><span class="std std-ref">PxConstraintFlag::eBROKEN</span></a> will be set. The force and torque are measured in the joint frame of the first actor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>force</strong> – <strong>[in]</strong> the maximum force the joint can apply before breaking </p></li>
+<li><p><strong>torque</strong> – <strong>[in]</strong> the maximum torque the joint can apply before breaking </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint13getBreakForceER6PxRealR6PxReal">
+<span id="_CPPv3NK16PxSphericalJoint13getBreakForceER6PxRealR6PxReal"></span><span id="_CPPv2NK16PxSphericalJoint13getBreakForceER6PxRealR6PxReal"></span><span id="PxSphericalJoint::getBreakForce__PxRealR.PxRealRC"></span><span class="target" id="class_px_joint_1a900aa5084125aa37f8d12bb9f37eab93"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBreakForce</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">torque</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint13getBreakForceER6PxRealR6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the break force for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a1cfe86fe5c8131cea1b9b5ff9df7a014"><span class="std std-ref">setBreakForce()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>force</strong> – <strong>[out]</strong> the maximum force the joint can apply before breaking </p></li>
+<li><p><strong>torque</strong> – <strong>[out]</strong> the maximum torque the joint can apply before breaking</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint18setConstraintFlagsE17PxConstraintFlags">
+<span id="_CPPv3N16PxSphericalJoint18setConstraintFlagsE17PxConstraintFlags"></span><span id="_CPPv2N16PxSphericalJoint18setConstraintFlagsE17PxConstraintFlags"></span><span id="PxSphericalJoint::setConstraintFlags__PxConstraintFlags"></span><span class="target" id="class_px_joint_1a857ea5abc40d94b0e1537b566a9d45bf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setConstraintFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__physics_1gaf2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint18setConstraintFlagsE17PxConstraintFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the constraint flags for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag"><span class="std std-ref">PxConstraintFlag</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> the constraint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint17setConstraintFlagEN16PxConstraintFlag4EnumEb">
+<span id="_CPPv3N16PxSphericalJoint17setConstraintFlagEN16PxConstraintFlag4EnumEb"></span><span id="_CPPv2N16PxSphericalJoint17setConstraintFlagEN16PxConstraintFlag4EnumEb"></span><span id="PxSphericalJoint::setConstraintFlag__PxConstraintFlag::Enum.b"></span><span class="target" id="class_px_joint_1a5bbf2a4196e036d711eea9bd5e542ce9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setConstraintFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_flag.html#_CPPv416PxConstraintFlag" title="PxConstraintFlag"><span class="n"><span class="pre">PxConstraintFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_constraint_flag.html#_CPPv4N16PxConstraintFlag4EnumE" title="PxConstraintFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint17setConstraintFlagEN16PxConstraintFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set a constraint flags for this joint to a specified value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag"><span class="std std-ref">PxConstraintFlag</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> the constraint flag </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> the value to which to set the flag</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint18getConstraintFlagsEv">
+<span id="_CPPv3NK16PxSphericalJoint18getConstraintFlagsEv"></span><span id="_CPPv2NK16PxSphericalJoint18getConstraintFlagsEv"></span><span id="PxSphericalJoint::getConstraintFlagsC"></span><span class="target" id="class_px_joint_1a1da1a62c8aa565a92ff25c83825d1657"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1gaf2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConstraintFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint18getConstraintFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the constraint flags for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag"><span class="std std-ref">PxConstraintFlag</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the constraint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint16setInvMassScale0E6PxReal">
+<span id="_CPPv3N16PxSphericalJoint16setInvMassScale0E6PxReal"></span><span id="_CPPv2N16PxSphericalJoint16setInvMassScale0E6PxReal"></span><span id="PxSphericalJoint::setInvMassScale0__PxReal"></span><span class="target" id="class_px_joint_1adf8d09205b60811980a2202f1265562b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale0</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint16setInvMassScale0E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse mass scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1af3bcb7920b533cd5911906744ab2f98c"><span class="std std-ref">getInvMassScale0</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invMassScale</strong> – <strong>[in]</strong> the scale to apply to the inverse mass of actor 0 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint16getInvMassScale0Ev">
+<span id="_CPPv3NK16PxSphericalJoint16getInvMassScale0Ev"></span><span id="_CPPv2NK16PxSphericalJoint16getInvMassScale0Ev"></span><span id="PxSphericalJoint::getInvMassScale0C"></span><span class="target" id="class_px_joint_1af3bcb7920b533cd5911906744ab2f98c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint16getInvMassScale0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse mass scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1adf8d09205b60811980a2202f1265562b"><span class="std std-ref">setInvMassScale0</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse mass scale for actor0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint19setInvInertiaScale0E6PxReal">
+<span id="_CPPv3N16PxSphericalJoint19setInvInertiaScale0E6PxReal"></span><span id="_CPPv2N16PxSphericalJoint19setInvInertiaScale0E6PxReal"></span><span id="PxSphericalJoint::setInvInertiaScale0__PxReal"></span><span class="target" id="class_px_joint_1a97cc4d817e404177af4c2a598bb944c3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale0</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint19setInvInertiaScale0E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse inertia scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1af3bcb7920b533cd5911906744ab2f98c"><span class="std std-ref">getInvMassScale0</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invInertiaScale</strong> – <strong>[in]</strong> the scale to apply to the inverse inertia of actor0 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint19getInvInertiaScale0Ev">
+<span id="_CPPv3NK16PxSphericalJoint19getInvInertiaScale0Ev"></span><span id="_CPPv2NK16PxSphericalJoint19getInvInertiaScale0Ev"></span><span id="PxSphericalJoint::getInvInertiaScale0C"></span><span class="target" id="class_px_joint_1a84e7520dfde380005d1c09a258602d33"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint19getInvInertiaScale0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse inertia scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a97cc4d817e404177af4c2a598bb944c3"><span class="std std-ref">setInvInertiaScale0</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse inertia scale for actor0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint16setInvMassScale1E6PxReal">
+<span id="_CPPv3N16PxSphericalJoint16setInvMassScale1E6PxReal"></span><span id="_CPPv2N16PxSphericalJoint16setInvMassScale1E6PxReal"></span><span id="PxSphericalJoint::setInvMassScale1__PxReal"></span><span class="target" id="class_px_joint_1a2f5f6c66b5e6933f8578a880a4a957ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale1</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint16setInvMassScale1E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse mass scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a36e5f97539fc423389536bbe20d59785"><span class="std std-ref">getInvMassScale1</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invMassScale</strong> – <strong>[in]</strong> the scale to apply to the inverse mass of actor 1 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint16getInvMassScale1Ev">
+<span id="_CPPv3NK16PxSphericalJoint16getInvMassScale1Ev"></span><span id="_CPPv2NK16PxSphericalJoint16getInvMassScale1Ev"></span><span id="PxSphericalJoint::getInvMassScale1C"></span><span class="target" id="class_px_joint_1a36e5f97539fc423389536bbe20d59785"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint16getInvMassScale1Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse mass scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a2f5f6c66b5e6933f8578a880a4a957ad"><span class="std std-ref">setInvMassScale1</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse mass scale for actor1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint19setInvInertiaScale1E6PxReal">
+<span id="_CPPv3N16PxSphericalJoint19setInvInertiaScale1E6PxReal"></span><span id="_CPPv2N16PxSphericalJoint19setInvInertiaScale1E6PxReal"></span><span id="PxSphericalJoint::setInvInertiaScale1__PxReal"></span><span class="target" id="class_px_joint_1ad733659ee380ebf04a5d1d50fcf46222"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale1</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint19setInvInertiaScale1E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse inertia scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a4d2fb184640f84666e2f6198dc6b7e0d"><span class="std std-ref">getInvInertiaScale1</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invInertiaScale</strong> – <strong>[in]</strong> the scale to apply to the inverse inertia of actor1 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint19getInvInertiaScale1Ev">
+<span id="_CPPv3NK16PxSphericalJoint19getInvInertiaScale1Ev"></span><span id="_CPPv2NK16PxSphericalJoint19getInvInertiaScale1Ev"></span><span id="PxSphericalJoint::getInvInertiaScale1C"></span><span class="target" id="class_px_joint_1a4d2fb184640f84666e2f6198dc6b7e0d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint19getInvInertiaScale1Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse inertia scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1ad733659ee380ebf04a5d1d50fcf46222"><span class="std std-ref">setInvInertiaScale1</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse inertia scale for actor1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint13getConstraintEv">
+<span id="_CPPv3NK16PxSphericalJoint13getConstraintEv"></span><span id="_CPPv2NK16PxSphericalJoint13getConstraintEv"></span><span id="PxSphericalJoint::getConstraintC"></span><span class="target" id="class_px_joint_1aeedb92e5f7954e07a9fc5c454b1a67e8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_constraint.html#_CPPv412PxConstraint" title="PxConstraint"><span class="n"><span class="pre">PxConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConstraint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint13getConstraintEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the <a class="reference internal" href="class_px_constraint.html#class_px_constraint"><span class="std std-ref">PxConstraint</span></a> corresponding to this joint. </p>
+<p>This can be used to determine, among other things, the force applied at the joint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the constraint </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint7setNameEPKc">
+<span id="_CPPv3N16PxSphericalJoint7setNameEPKc"></span><span id="_CPPv2N16PxSphericalJoint7setNameEPKc"></span><span id="PxSphericalJoint::setName__cCP"></span><span class="target" id="class_px_joint_1a79fbf86820e6ac2b1e5aedf13478e3c4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint7setNameEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a name string for the object that can be retrieved with <a class="reference internal" href="#class_px_joint_1ac8228ca5462b161b36ca22b9cd99f929"><span class="std std-ref">getName()</span></a>. </p>
+<p>This is for debugging and is not used by the SDK. The string is not copied by the SDK, only the pointer is stored.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1ac8228ca5462b161b36ca22b9cd99f929"><span class="std std-ref">getName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – <strong>[in]</strong> String to set the objects name to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint7getNameEv">
+<span id="_CPPv3NK16PxSphericalJoint7getNameEv"></span><span id="_CPPv2NK16PxSphericalJoint7getNameEv"></span><span id="PxSphericalJoint::getNameC"></span><span class="target" id="class_px_joint_1ac8228ca5462b161b36ca22b9cd99f929"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint7getNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the name string set with <a class="reference internal" href="#class_px_joint_1a79fbf86820e6ac2b1e5aedf13478e3c4"><span class="std std-ref">setName()</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_joint_1a79fbf86820e6ac2b1e5aedf13478e3c4"><span class="std std-ref">setName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Name string associated with object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint7releaseEv">
+<span id="_CPPv3N16PxSphericalJoint7releaseEv"></span><span id="_CPPv2N16PxSphericalJoint7releaseEv"></span><span id="PxSphericalJoint::release"></span><span class="target" id="class_px_joint_1ae0e293532bc9faecd381a2a84b1c866f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deletes the joint. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This call does not wake up the connected rigid bodies. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint8getSceneEv">
+<span id="_CPPv3NK16PxSphericalJoint8getSceneEv"></span><span id="_CPPv2NK16PxSphericalJoint8getSceneEv"></span><span id="PxSphericalJoint::getSceneC"></span><span class="target" id="class_px_joint_1a94b6afda907ba342af710f67aae09e6c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the scene which this joint belongs to. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Owner Scene. NULL if not part of a scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxSphericalJoint2isEP1Tv">
+<span id="_CPPv3I0EN16PxSphericalJoint2isEv"></span><span id="_CPPv2I0EN16PxSphericalJoint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN16PxSphericalJoint2isEP1Tv" title="PxSphericalJoint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxSphericalJoint2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK16PxSphericalJoint2isEPK1Tv">
+<span id="_CPPv3I0ENK16PxSphericalJoint2isEv"></span><span id="_CPPv2I0ENK16PxSphericalJoint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK16PxSphericalJoint2isEPK1Tv" title="PxSphericalJoint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK16PxSphericalJoint2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint15getConcreteTypeEv">
+<span id="_CPPv3NK16PxSphericalJoint15getConcreteTypeEv"></span><span id="_CPPv2NK16PxSphericalJoint15getConcreteTypeEv"></span><span id="PxSphericalJoint::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N16PxSphericalJoint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N16PxSphericalJoint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxSphericalJoint::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N16PxSphericalJoint12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N16PxSphericalJoint12setBaseFlagsE11PxBaseFlags"></span><span id="PxSphericalJoint::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint12getBaseFlagsEv">
+<span id="_CPPv3NK16PxSphericalJoint12getBaseFlagsEv"></span><span id="_CPPv2NK16PxSphericalJoint12getBaseFlagsEv"></span><span id="PxSphericalJoint::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint12isReleasableEv">
+<span id="_CPPv3NK16PxSphericalJoint12isReleasableEv"></span><span id="_CPPv2NK16PxSphericalJoint12isReleasableEv"></span><span id="PxSphericalJoint::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint8userDataE">
+<span id="_CPPv3N16PxSphericalJoint8userDataE"></span><span id="_CPPv2N16PxSphericalJoint8userDataE"></span><span id="PxSphericalJoint::userData__voidP"></span><span class="target" id="class_px_joint_1a8ce68f3ee0d88b6475e6cafbf1fc73ea"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint17getBinaryMetaDataER14PxOutputStream">
+<span id="_CPPv3N16PxSphericalJoint17getBinaryMetaDataER14PxOutputStream"></span><span id="_CPPv2N16PxSphericalJoint17getBinaryMetaDataER14PxOutputStream"></span><span id="PxSphericalJoint::getBinaryMetaData__PxOutputStreamR"></span><span class="target" id="class_px_joint_1a373b38ccd4aff8671b5b17761b73af1b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBinaryMetaData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint17getBinaryMetaDataER14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Put class meta data in stream, used for serialization. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint16PxSphericalJointE6PxType11PxBaseFlags">
+<span id="_CPPv3N16PxSphericalJoint16PxSphericalJointE6PxType11PxBaseFlags"></span><span id="_CPPv2N16PxSphericalJoint16PxSphericalJointE6PxType11PxBaseFlags"></span><span id="PxSphericalJoint::PxSphericalJoint__PxType.PxBaseFlags"></span><span class="target" id="class_px_spherical_joint_1a4fd1cbc2236c3a4e31f712dd23c27fcf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSphericalJoint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint16PxSphericalJointE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint16PxSphericalJointE11PxBaseFlags">
+<span id="_CPPv3N16PxSphericalJoint16PxSphericalJointE11PxBaseFlags"></span><span id="_CPPv2N16PxSphericalJoint16PxSphericalJointE11PxBaseFlags"></span><span id="PxSphericalJoint::PxSphericalJoint__PxBaseFlags"></span><span class="target" id="class_px_spherical_joint_1a35545d873c4e7fc1d5ad5bc42050b5f9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSphericalJoint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint16PxSphericalJointE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deserialization constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSphericalJoint8isKindOfEPKc">
+<span id="_CPPv3NK16PxSphericalJoint8isKindOfEPKc"></span><span id="_CPPv2NK16PxSphericalJoint8isKindOfEPKc"></span><span id="PxSphericalJoint::isKindOf__cCPC"></span><span class="target" id="class_px_spherical_joint_1a245cc4b07d4684a1d08be3ad9e1ea566"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSphericalJoint8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK16PxSphericalJoint9typeMatchEbv">
+<span id="_CPPv3I0ENK16PxSphericalJoint9typeMatchEv"></span><span id="_CPPv2I0ENK16PxSphericalJoint9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK16PxSphericalJoint9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint13mConcreteTypeE">
+<span id="_CPPv3N16PxSphericalJoint13mConcreteTypeE"></span><span id="_CPPv2N16PxSphericalJoint13mConcreteTypeE"></span><span id="PxSphericalJoint::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint10mBaseFlagsE">
+<span id="_CPPv3N16PxSphericalJoint10mBaseFlagsE"></span><span id="_CPPv2N16PxSphericalJoint10mBaseFlagsE"></span><span id="PxSphericalJoint::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSphericalJoint16mBuiltInRefCountE">
+<span id="_CPPv3N16PxSphericalJoint16mBuiltInRefCountE"></span><span id="_CPPv2N16PxSphericalJoint16mBuiltInRefCountE"></span><span id="PxSphericalJoint::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N16PxSphericalJoint16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

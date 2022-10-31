@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneQuerySystemBase &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSceneQuerySystemBase</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenequerysystembase">
+<span id="exhale-class-class-px-scene-query-system-base"></span><h1>PxSceneQuerySystemBase<a class="headerlink" href="#pxscenequerysystembase" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneQuerySystem.h.html#file-include-pxscenequerysystem-h"><span class="std std-ref">include/PxSceneQuerySystem.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="derived-types">
+<h3>Derived Types<a class="headerlink" href="#derived-types" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSceneQuerySystem</span></code> (<a class="reference internal" href="class_px_scene_query_system.html#exhale-class-class-px-scene-query-system"><span class="std std-ref">PxSceneQuerySystem</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSceneSQSystem</span></code> (<a class="reference internal" href="class_px_scene_s_q_system.html#exhale-class-class-px-scene-s-q-system"><span class="std std-ref">PxSceneSQSystem</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv422PxSceneQuerySystemBase">
+<span id="_CPPv322PxSceneQuerySystemBase"></span><span id="_CPPv222PxSceneQuerySystemBase"></span><span id="PxSceneQuerySystemBase"></span><span class="target" id="class_px_scene_query_system_base"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQuerySystemBase</span></span></span><a class="headerlink" href="#_CPPv422PxSceneQuerySystemBase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Base class for the scene-query system. </p>
+<p>Methods defined here are common to both the traditional <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> API and the <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a> API.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a> </p>
+</div>
+</p>
+<p>Subclassed by <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a>, <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system"><span class="std std-ref">PxSceneSQSystem</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-scene-query">Scene Query</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBase29setDynamicTreeRebuildRateHintE5PxU32">
+<span id="_CPPv3N22PxSceneQuerySystemBase29setDynamicTreeRebuildRateHintE5PxU32"></span><span id="_CPPv2N22PxSceneQuerySystemBase29setDynamicTreeRebuildRateHintE5PxU32"></span><span id="PxSceneQuerySystemBase::setDynamicTreeRebuildRateHint__PxU32"></span><span class="target" id="class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDynamicTreeRebuildRateHint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dynamicTreeRebuildRateHint</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBase29setDynamicTreeRebuildRateHintE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the rebuild rate of the dynamic tree pruning structures. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">getDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"><span class="std std-ref">forceRebuildDynamicTree()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dynamicTreeRebuildRateHint</strong> – <strong>[in]</strong> Rebuild rate of the dynamic tree pruning structures.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase29getDynamicTreeRebuildRateHintEv">
+<span id="_CPPv3NK22PxSceneQuerySystemBase29getDynamicTreeRebuildRateHintEv"></span><span id="_CPPv2NK22PxSceneQuerySystemBase29getDynamicTreeRebuildRateHintEv"></span><span id="PxSceneQuerySystemBase::getDynamicTreeRebuildRateHintC"></span><span class="target" id="class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDynamicTreeRebuildRateHint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase29getDynamicTreeRebuildRateHintEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the rebuild rate of the dynamic tree pruning structures. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"><span class="std std-ref">forceRebuildDynamicTree()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The rebuild rate of the dynamic tree pruning structures.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBase23forceRebuildDynamicTreeE5PxU32">
+<span id="_CPPv3N22PxSceneQuerySystemBase23forceRebuildDynamicTreeE5PxU32"></span><span id="_CPPv2N22PxSceneQuerySystemBase23forceRebuildDynamicTreeE5PxU32"></span><span id="PxSceneQuerySystemBase::forceRebuildDynamicTree__PxU32"></span><span class="target" id="class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">forceRebuildDynamicTree</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBase23forceRebuildDynamicTreeE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Forces dynamic trees to be immediately rebuilt. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">getDynamicTreeRebuildRateHint()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> will call this function with the PX_SCENE_PRUNER_STATIC or PX_SCENE_PRUNER_DYNAMIC value.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner containing the dynamic tree to rebuild</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBase13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE">
+<span id="_CPPv3N22PxSceneQuerySystemBase13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE"></span><span id="_CPPv2N22PxSceneQuerySystemBase13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE"></span><span id="PxSceneQuerySystemBase::setUpdateMode__PxSceneQueryUpdateMode::Enum"></span><span class="target" id="class_px_scene_query_system_base_1af0c895a275b63c869e019adb1d898757"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUpdateMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">updateMode</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBase13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets scene query update mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4"><span class="std std-ref">PxSceneQueryUpdateMode::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>updateMode</strong> – <strong>[in]</strong> Scene query update mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase13getUpdateModeEv">
+<span id="_CPPv3NK22PxSceneQuerySystemBase13getUpdateModeEv"></span><span id="_CPPv2NK22PxSceneQuerySystemBase13getUpdateModeEv"></span><span id="PxSceneQuerySystemBase::getUpdateModeC"></span><span class="target" id="class_px_scene_query_system_base_1ae385445780b7feb60422b7beddd13750"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUpdateMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase13getUpdateModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets scene query update mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4"><span class="std std-ref">PxSceneQueryUpdateMode::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Current scene query update mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase18getStaticTimestampEv">
+<span id="_CPPv3NK22PxSceneQuerySystemBase18getStaticTimestampEv"></span><span id="_CPPv2NK22PxSceneQuerySystemBase18getStaticTimestampEv"></span><span id="PxSceneQuerySystemBase::getStaticTimestampC"></span><span class="target" id="class_px_scene_query_system_base_1ac506bc892654f3c4442506379bb3422c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStaticTimestamp</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase18getStaticTimestampEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the system’s internal scene query timestamp, increased each time a change to the static scene query structure is performed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>scene query static timestamp </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBase12flushUpdatesEv">
+<span id="_CPPv3N22PxSceneQuerySystemBase12flushUpdatesEv"></span><span id="_CPPv2N22PxSceneQuerySystemBase12flushUpdatesEv"></span><span id="PxSceneQuerySystemBase::flushUpdates"></span><span class="target" id="class_px_scene_query_system_base_1afcfa182edf689c970b805876aa0b0358"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flushUpdates</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBase12flushUpdatesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes any changes to the scene query representation. </p>
+<p>This method updates the state of the scene query representation to match changes in the scene state.</p>
+<p>By default, these changes are buffered until the next query is submitted. Calling this function will not change the results from scene queries, but can be used to ensure that a query will not perform update work in the course of its execution.</p>
+<p>A thread performing updates will hold a write lock on the query structure, and thus stall other querying threads. In multithread scenarios it can be useful to explicitly schedule the period where this lock may be held for a significant period, so that subsequent queries issued from multiple threads will not block. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags">
+<span id="_CPPv3NK22PxSceneQuerySystemBase7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="_CPPv2NK22PxSceneQuerySystemBase7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystemBase::raycast__PxVec3CR.PxVec3CR.PxRealC.PxRaycastCallbackR.PxHitFlags.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41.html#_CPPv417PxRaycastCallback" title="PxRaycastCallback"><span class="n"><span class="pre">PxRaycastCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a raycast against objects in the scene, returns results in a PxRaycastBuffer object or via a custom user callback implementation inheriting from PxRaycastCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41.html#group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a> <a class="reference internal" href="typedef_group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c.html#group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a> <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_query_cache.html#struct_px_query_cache"><span class="std std-ref">PxQueryCache</span></a> <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in user guide article SceneQuery. User can ignore such objects by employing one of the provided filter mechanisms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Has to be in the [0, inf) range. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Raycast hit buffer or callback object used to report raycast hits. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned via the hit callback. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data passed to the filter shader. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags">
+<span id="_CPPv3NK22PxSceneQuerySystemBase5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags"></span><span id="_CPPv2NK22PxSceneQuerySystemBase5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystemBase::sweep__PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxSweepCallbackR.PxHitFlags.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxRealC.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a9384aae12d3ef33f4db300cfe0c91c6a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__scenequery_1ga6f93f556cef747d50f643499928dd865.html#_CPPv415PxSweepCallback" title="PxSweepCallback"><span class="n"><span class="pre">PxSweepCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a sweep test against objects in the scene, returns results in a PxSweepBuffer object or via a custom user callback implementation inheriting from PxSweepCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__scenequery_1ga6f93f556cef747d50f643499928dd865.html#group__scenequery_1ga6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a> <a class="reference internal" href="typedef_group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665.html#group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a> <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> <a class="reference internal" href="struct_px_query_cache.html#struct_px_query_cache"><span class="std std-ref">PxQueryCache</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, the hit is returned unless eASSUME_NO_INITIAL_OVERLAP was specified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be in [0, inf) range and &gt;0 if eASSUME_NO_INITIAL_OVERLAP was specified. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Sweep hit buffer or callback object used to report sweep hits. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned via the hit callback. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Sweep is performed against cached shape first. If no hit is found the sweep gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. Note: ePRECISE_SWEEP doesn’t support inflation. Therefore the sweep will be performed with zero inflation. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxSceneQuerySystemBase7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags">
+<span id="_CPPv3NK22PxSceneQuerySystemBase7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="_CPPv2NK22PxSceneQuerySystemBase7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystemBase::overlap__PxGeometryCR.PxTransformCR.PxOverlapCallbackR.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="typedef_group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7.html#_CPPv417PxOverlapCallback" title="PxOverlapCallback"><span class="n"><span class="pre">PxOverlapCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK22PxSceneQuerySystemBase7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs an overlap test of a given geometry against objects in the scene, returns results in a PxOverlapBuffer object or via a custom user callback implementation inheriting from PxOverlapCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7.html#group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a> <a class="reference internal" href="typedef_group__scenequery_1ga54a708942a891f3321c2427d5c160750.html#group__scenequery_1ga54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a> PxHitFlags <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Filtering: returning eBLOCK from user filter for overlap queries will cause a warning (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eBLOCK should not be returned from user filters for <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">overlap()</span></a>. Doing so will result in undefined behavior, and a warning will be issued. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98467f45e717fa0f52652f52b0ff9798"><span class="std std-ref">PxQueryFlag::eNO_BLOCK</span></a> flag is set, the eBLOCK will instead be automatically converted to an eTOUCH and the warning suppressed.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the object. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Overlap hit buffer or callback object used to report overlap hits. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. See <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to overlap. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Overlap is performed against cached shape first. If no hit is found the overlap gets queried against the scene. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBase22PxSceneQuerySystemBaseEv">
+<span id="_CPPv3N22PxSceneQuerySystemBase22PxSceneQuerySystemBaseEv"></span><span id="_CPPv2N22PxSceneQuerySystemBase22PxSceneQuerySystemBaseEv"></span><span id="PxSceneQuerySystemBase::PxSceneQuerySystemBase"></span><span class="target" id="class_px_scene_query_system_base_1a7e6ef3e90408d2973bbb218a6dc0db8f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQuerySystemBase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBase22PxSceneQuerySystemBaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxSceneQuerySystemBaseD0Ev">
+<span id="_CPPv3N22PxSceneQuerySystemBaseD0Ev"></span><span id="_CPPv2N22PxSceneQuerySystemBaseD0Ev"></span><span id="PxSceneQuerySystemBase::~PxSceneQuerySystemBase"></span><span class="target" id="class_px_scene_query_system_base_1a193bef6ca7eb021fb012d56570b598b8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSceneQuerySystemBase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxSceneQuerySystemBaseD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

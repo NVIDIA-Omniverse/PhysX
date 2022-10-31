@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxConstraintFlag &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxConstraintFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxconstraintflag">
+<span id="exhale-struct-struct-px-constraint-flag"></span><h1>PxConstraintFlag<a class="headerlink" href="#pxconstraintflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxConstraint.h.html#file-include-pxconstraint-h"><span class="std std-ref">include/PxConstraint.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv416PxConstraintFlag">
+<span id="_CPPv316PxConstraintFlag"></span><span id="_CPPv216PxConstraintFlag"></span><span id="PxConstraintFlag"></span><span class="target" id="struct_px_constraint_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraintFlag</span></span></span><a class="headerlink" href="#_CPPv416PxConstraintFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constraint flags </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eBROKEN is a read only flag </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4EnumE">
+<span id="_CPPv3N16PxConstraintFlag4EnumE"></span><span id="_CPPv2N16PxConstraintFlag4EnumE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum7eBROKENE">
+<span id="_CPPv3N16PxConstraintFlag4Enum7eBROKENE"></span><span id="_CPPv2N16PxConstraintFlag4Enum7eBROKENE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a91151f48e43ade5a5d7153f1b3160696"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBROKEN</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum7eBROKENE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>whether the constraint is broken </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR0E">
+<span id="_CPPv3N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR0E"></span><span id="_CPPv2N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR0E"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a33fd9097b65d3350f3165eacdc69abd0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePROJECT_TO_ACTOR0</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>whether actor1 should get projected to actor0 for this constraint (note: projection of a static/kinematic actor to a dynamic actor will be ignored) </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR1E">
+<span id="_CPPv3N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR1E"></span><span id="_CPPv2N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR1E"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a3636badf43fc1c44645e16c0c1004bb8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePROJECT_TO_ACTOR1</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum18ePROJECT_TO_ACTOR1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>whether actor0 should get projected to actor1 for this constraint (note: projection of a static/kinematic actor to a dynamic actor will be ignored) </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum11ePROJECTIONE">
+<span id="_CPPv3N16PxConstraintFlag4Enum11ePROJECTIONE"></span><span id="_CPPv2N16PxConstraintFlag4Enum11ePROJECTIONE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a2d3f8e02cd1fa3a41256d186a0a38ebf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePROJECTION</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum11ePROJECTIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>whether the actors should get projected for this constraint (the direction will be chosen by PhysX) </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum18eCOLLISION_ENABLEDE">
+<span id="_CPPv3N16PxConstraintFlag4Enum18eCOLLISION_ENABLEDE"></span><span id="_CPPv2N16PxConstraintFlag4Enum18eCOLLISION_ENABLEDE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a6ad8d7391857323f035ce2ebddee7595"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_ENABLED</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum18eCOLLISION_ENABLEDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>whether contacts should be generated between the objects this constraint constrains </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum14eVISUALIZATIONE">
+<span id="_CPPv3N16PxConstraintFlag4Enum14eVISUALIZATIONE"></span><span id="_CPPv2N16PxConstraintFlag4Enum14eVISUALIZATIONE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427aef261aa0d46aba737d058fb32bc87c02"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eVISUALIZATION</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum14eVISUALIZATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>whether this constraint should be visualized, if constraint visualization is turned on </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum24eDRIVE_LIMITS_ARE_FORCESE">
+<span id="_CPPv3N16PxConstraintFlag4Enum24eDRIVE_LIMITS_ARE_FORCESE"></span><span id="_CPPv2N16PxConstraintFlag4Enum24eDRIVE_LIMITS_ARE_FORCESE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a330ccf346c5056c0570dbc495007d1ce"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDRIVE_LIMITS_ARE_FORCES</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum24eDRIVE_LIMITS_ARE_FORCESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>limits for drive strength are forces rather than impulses </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum15eIMPROVED_SLERPE">
+<span id="_CPPv3N16PxConstraintFlag4Enum15eIMPROVED_SLERPE"></span><span id="_CPPv2N16PxConstraintFlag4Enum15eIMPROVED_SLERPE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a316da1cac10cf01bb0b55325ecc8e300"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eIMPROVED_SLERP</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum15eIMPROVED_SLERPE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>perform preprocessing for improved accuracy on D6 Slerp Drive (this flag will be removed in a future release when preprocessing is no longer required) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum22eDISABLE_PREPROCESSINGE">
+<span id="_CPPv3N16PxConstraintFlag4Enum22eDISABLE_PREPROCESSINGE"></span><span id="_CPPv2N16PxConstraintFlag4Enum22eDISABLE_PREPROCESSINGE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a519966ef860b18d3609d7c08f66389ef"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_PREPROCESSING</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum22eDISABLE_PREPROCESSINGE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>suppress constraint preprocessing, intended for use with rowResponseThreshold. May result in worse solver accuracy for ill-conditioned constraints. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum23eENABLE_EXTENDED_LIMITSE">
+<span id="_CPPv3N16PxConstraintFlag4Enum23eENABLE_EXTENDED_LIMITSE"></span><span id="_CPPv2N16PxConstraintFlag4Enum23eENABLE_EXTENDED_LIMITSE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a7b8997cb72e8bfe7189e62aaa861a820"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENABLE_EXTENDED_LIMITS</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum23eENABLE_EXTENDED_LIMITSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>enables extended limit ranges for angular limits (e.g., limit values &gt; PxPi or &lt; -PxPi) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum15eGPU_COMPATIBLEE">
+<span id="_CPPv3N16PxConstraintFlag4Enum15eGPU_COMPATIBLEE"></span><span id="_CPPv2N16PxConstraintFlag4Enum15eGPU_COMPATIBLEE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a8e00c572e54f3575284ff41432f1bec6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eGPU_COMPATIBLE</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum15eGPU_COMPATIBLEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>the constraint type is supported by gpu dynamics </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum14eALWAYS_UPDATEE">
+<span id="_CPPv3N16PxConstraintFlag4Enum14eALWAYS_UPDATEE"></span><span id="_CPPv2N16PxConstraintFlag4Enum14eALWAYS_UPDATEE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427a0da3b56d1bb7de30bb524b2aa0801952"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eALWAYS_UPDATE</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum14eALWAYS_UPDATEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>updates the constraint each frame </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxConstraintFlag4Enum19eDISABLE_CONSTRAINTE">
+<span id="_CPPv3N16PxConstraintFlag4Enum19eDISABLE_CONSTRAINTE"></span><span id="_CPPv2N16PxConstraintFlag4Enum19eDISABLE_CONSTRAINTE"></span><span class="target" id="struct_px_constraint_flag_1a86960e99b3e80ddb9e0ab51d7afc3427accfd4ca46b98827d80e3295921746307"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_CONSTRAINT</span></span></span><a class="headerlink" href="#_CPPv4N16PxConstraintFlag4Enum19eDISABLE_CONSTRAINTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>disables the constraint. SolverPrep functions won’t be called for this constraint. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

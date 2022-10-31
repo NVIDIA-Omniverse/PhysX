@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniPvdLoader &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>OmniPvdLoader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omnipvdloader">
+<span id="exhale-class-class-omni-pvd-loader"></span><h1>OmniPvdLoader<a class="headerlink" href="#omnipvdloader" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdLoader.h.html#file-pvdruntime-include-omnipvdloader-h"><span class="std std-ref">pvdruntime/include/OmniPvdLoader.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413OmniPvdLoader">
+<span id="_CPPv313OmniPvdLoader"></span><span id="_CPPv213OmniPvdLoader"></span><span id="OmniPvdLoader"></span><span class="target" id="class_omni_pvd_loader"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdLoader</span></span></span><a class="headerlink" href="#_CPPv413OmniPvdLoader" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader13OmniPvdLoaderEv">
+<span id="_CPPv3N13OmniPvdLoader13OmniPvdLoaderEv"></span><span id="_CPPv2N13OmniPvdLoader13OmniPvdLoaderEv"></span><span id="OmniPvdLoader::OmniPvdLoader"></span><span class="target" id="class_omni_pvd_loader_1a14492e6037672e1fc422a38e54d15128"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdLoader</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader13OmniPvdLoaderEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoaderD0Ev">
+<span id="_CPPv3N13OmniPvdLoaderD0Ev"></span><span id="_CPPv2N13OmniPvdLoaderD0Ev"></span><span id="OmniPvdLoader::~OmniPvdLoader"></span><span class="target" id="class_omni_pvd_loader_1a3f9f0072da530ba604184467ff252035"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OmniPvdLoader</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdLoaderD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader11loadOmniPvdEPKc">
+<span id="_CPPv3N13OmniPvdLoader11loadOmniPvdEPKc"></span><span id="_CPPv2N13OmniPvdLoader11loadOmniPvdEPKc"></span><span id="OmniPvdLoader::loadOmniPvd__cCP"></span><span class="target" id="class_omni_pvd_loader_1ae082d3215238cb5f61b8fc88200eddca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">loadOmniPvd</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">libFile</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader11loadOmniPvdEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader13unloadOmniPvdEv">
+<span id="_CPPv3N13OmniPvdLoader13unloadOmniPvdEv"></span><span id="_CPPv2N13OmniPvdLoader13unloadOmniPvdEv"></span><span id="OmniPvdLoader::unloadOmniPvd"></span><span class="target" id="class_omni_pvd_loader_1aa2d058bdac268e7b5cc8ad837d89be40"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unloadOmniPvd</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader13unloadOmniPvdEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader14mLibraryHandleE">
+<span id="_CPPv3N13OmniPvdLoader14mLibraryHandleE"></span><span id="_CPPv2N13OmniPvdLoader14mLibraryHandleE"></span><span id="OmniPvdLoader::mLibraryHandle__voidP"></span><span class="target" id="class_omni_pvd_loader_1abaa888ef22020dd93bca6060d363e994"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mLibraryHandle</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader14mLibraryHandleE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader20mCreateOmniPvdWriterE">
+<span id="_CPPv3N13OmniPvdLoader20mCreateOmniPvdWriterE"></span><span id="_CPPv2N13OmniPvdLoader20mCreateOmniPvdWriterE"></span><span id="OmniPvdLoader::mCreateOmniPvdWriter__createOmniPvdWriterFp"></span><span class="target" id="class_omni_pvd_loader_1ad86728817653549e21391d0ed01ae624"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a39fd547d1052b917cf67816792ca4779.html#_CPPv421createOmniPvdWriterFp" title="createOmniPvdWriterFp"><span class="n"><span class="pre">createOmniPvdWriterFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCreateOmniPvdWriter</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader20mCreateOmniPvdWriterE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader21mDestroyOmniPvdWriterE">
+<span id="_CPPv3N13OmniPvdLoader21mDestroyOmniPvdWriterE"></span><span id="_CPPv2N13OmniPvdLoader21mDestroyOmniPvdWriterE"></span><span id="OmniPvdLoader::mDestroyOmniPvdWriter__destroyOmniPvdWriterFp"></span><span class="target" id="class_omni_pvd_loader_1ad1450ee92a4e4e0b66190800ecc3d8a6"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1adbc517b1ee3c1ba97b12e24bc7a97da6.html#_CPPv422destroyOmniPvdWriterFp" title="destroyOmniPvdWriterFp"><span class="n"><span class="pre">destroyOmniPvdWriterFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mDestroyOmniPvdWriter</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader21mDestroyOmniPvdWriterE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader20mCreateOmniPvdReaderE">
+<span id="_CPPv3N13OmniPvdLoader20mCreateOmniPvdReaderE"></span><span id="_CPPv2N13OmniPvdLoader20mCreateOmniPvdReaderE"></span><span id="OmniPvdLoader::mCreateOmniPvdReader__createOmniPvdReaderFp"></span><span class="target" id="class_omni_pvd_loader_1a99459f2f519f004d84fe3232dd70dc39"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ad2cf434e084bc3e3f1980236afd9f2fa.html#_CPPv421createOmniPvdReaderFp" title="createOmniPvdReaderFp"><span class="n"><span class="pre">createOmniPvdReaderFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCreateOmniPvdReader</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader20mCreateOmniPvdReaderE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader21mDestroyOmniPvdReaderE">
+<span id="_CPPv3N13OmniPvdLoader21mDestroyOmniPvdReaderE"></span><span id="_CPPv2N13OmniPvdLoader21mDestroyOmniPvdReaderE"></span><span id="OmniPvdLoader::mDestroyOmniPvdReader__destroyOmniPvdReaderFp"></span><span class="target" id="class_omni_pvd_loader_1abdc4912456bc356bd7a1582b3c0d598a"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a9274245cbe09c88f8d675af872084d2c.html#_CPPv422destroyOmniPvdReaderFp" title="destroyOmniPvdReaderFp"><span class="n"><span class="pre">destroyOmniPvdReaderFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mDestroyOmniPvdReader</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader21mDestroyOmniPvdReaderE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader28mCreateOmniPvdFileReadStreamE">
+<span id="_CPPv3N13OmniPvdLoader28mCreateOmniPvdFileReadStreamE"></span><span id="_CPPv2N13OmniPvdLoader28mCreateOmniPvdFileReadStreamE"></span><span id="OmniPvdLoader::mCreateOmniPvdFileReadStream__createOmniPvdFileReadStreamFp"></span><span class="target" id="class_omni_pvd_loader_1a4755a57361b07846aa54ff7c0325de1f"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a839406f76b4dfc68e85da2cefb8bc772.html#_CPPv429createOmniPvdFileReadStreamFp" title="createOmniPvdFileReadStreamFp"><span class="n"><span class="pre">createOmniPvdFileReadStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCreateOmniPvdFileReadStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader28mCreateOmniPvdFileReadStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader29mDestroyOmniPvdFileReadStreamE">
+<span id="_CPPv3N13OmniPvdLoader29mDestroyOmniPvdFileReadStreamE"></span><span id="_CPPv2N13OmniPvdLoader29mDestroyOmniPvdFileReadStreamE"></span><span id="OmniPvdLoader::mDestroyOmniPvdFileReadStream__destroyOmniPvdFileReadStreamFp"></span><span class="target" id="class_omni_pvd_loader_1acfdb7bf9cd14e9b71e2fea6e3b22211c"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a9d5d1c49a4f357dd91e81e497e0a8286.html#_CPPv430destroyOmniPvdFileReadStreamFp" title="destroyOmniPvdFileReadStreamFp"><span class="n"><span class="pre">destroyOmniPvdFileReadStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mDestroyOmniPvdFileReadStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader29mDestroyOmniPvdFileReadStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader29mCreateOmniPvdFileWriteStreamE">
+<span id="_CPPv3N13OmniPvdLoader29mCreateOmniPvdFileWriteStreamE"></span><span id="_CPPv2N13OmniPvdLoader29mCreateOmniPvdFileWriteStreamE"></span><span id="OmniPvdLoader::mCreateOmniPvdFileWriteStream__createOmniPvdFileWriteStreamFp"></span><span class="target" id="class_omni_pvd_loader_1a5a2d2e05100e7c7c148a62df1ae09b7b"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1afe62c9142c679362016a2094da836872.html#_CPPv430createOmniPvdFileWriteStreamFp" title="createOmniPvdFileWriteStreamFp"><span class="n"><span class="pre">createOmniPvdFileWriteStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCreateOmniPvdFileWriteStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader29mCreateOmniPvdFileWriteStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader30mDestroyOmniPvdFileWriteStreamE">
+<span id="_CPPv3N13OmniPvdLoader30mDestroyOmniPvdFileWriteStreamE"></span><span id="_CPPv2N13OmniPvdLoader30mDestroyOmniPvdFileWriteStreamE"></span><span id="OmniPvdLoader::mDestroyOmniPvdFileWriteStream__destroyOmniPvdFileWriteStreamFp"></span><span class="target" id="class_omni_pvd_loader_1a22e738545eb685ad1cb5511c0c346f12"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1aacedf50717af3b1a8b37870ebfd151b2.html#_CPPv431destroyOmniPvdFileWriteStreamFp" title="destroyOmniPvdFileWriteStreamFp"><span class="n"><span class="pre">destroyOmniPvdFileWriteStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mDestroyOmniPvdFileWriteStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader30mDestroyOmniPvdFileWriteStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader26mCreateOmniPvdMemoryStreamE">
+<span id="_CPPv3N13OmniPvdLoader26mCreateOmniPvdMemoryStreamE"></span><span id="_CPPv2N13OmniPvdLoader26mCreateOmniPvdMemoryStreamE"></span><span id="OmniPvdLoader::mCreateOmniPvdMemoryStream__createOmniPvdMemoryStreamFp"></span><span class="target" id="class_omni_pvd_loader_1ada7382c433268f954fe4d6dbf3be41a2"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a8fb42546285c2e63638ab1a5138407cf.html#_CPPv427createOmniPvdMemoryStreamFp" title="createOmniPvdMemoryStreamFp"><span class="n"><span class="pre">createOmniPvdMemoryStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCreateOmniPvdMemoryStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader26mCreateOmniPvdMemoryStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdLoader27mDestroyOmniPvdMemoryStreamE">
+<span id="_CPPv3N13OmniPvdLoader27mDestroyOmniPvdMemoryStreamE"></span><span id="_CPPv2N13OmniPvdLoader27mDestroyOmniPvdMemoryStreamE"></span><span id="OmniPvdLoader::mDestroyOmniPvdMemoryStream__destroyOmniPvdMemoryStreamFp"></span><span class="target" id="class_omni_pvd_loader_1ae4e47b6a7311a9c2ec7d201c052532a5"></span><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ab8ea946797a84e6de91d4eb1d01ee22f.html#_CPPv428destroyOmniPvdMemoryStreamFp" title="destroyOmniPvdMemoryStreamFp"><span class="n"><span class="pre">destroyOmniPvdMemoryStreamFp</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mDestroyOmniPvdMemoryStream</span></span></span><a class="headerlink" href="#_CPPv4N13OmniPvdLoader27mDestroyOmniPvdMemoryStreamE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

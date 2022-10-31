@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxPoissonSampler &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxPoissonSampler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxpoissonsampler">
+<span id="exhale-class-class-px-poisson-sampler"></span><h1>PxPoissonSampler<a class="headerlink" href="#pxpoissonsampler" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSamplingExt.h.html#file-include-extensions-pxsamplingext-h"><span class="std std-ref">include/extensions/PxSamplingExt.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxUserAllocated</span></code> (<a class="reference internal" href="class_px_user_allocated.html#exhale-class-class-px-user-allocated"><span class="std std-ref">PxUserAllocated</span></a>)</p></li>
+</ul>
+</section>
+<section id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxTriangleMeshPoissonSampler</span></code> (<a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html#exhale-class-class-px-triangle-mesh-poisson-sampler"><span class="std std-ref">PxTriangleMeshPoissonSampler</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxPoissonSampler">
+<span id="_CPPv316PxPoissonSampler"></span><span id="_CPPv216PxPoissonSampler"></span><span id="PxPoissonSampler"></span><span class="target" id="class_px_poisson_sampler"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPoissonSampler</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_user_allocated.html#_CPPv415PxUserAllocated" title="PxUserAllocated"><span class="n"><span class="pre">PxUserAllocated</span></span></a><a class="headerlink" href="#_CPPv416PxPoissonSampler" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sampler to generate Poisson Samples locally on a triangle mesh or a shape. </p>
+<p>For every local addition of new samples, an individual sampling density can be used. </p>
+<p>Subclassed by <a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html#class_px_triangle_mesh_poisson_sampler"><span class="std std-ref">PxTriangleMeshPoissonSampler</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSampler17setSamplingRadiusE6PxReal">
+<span id="_CPPv3N16PxPoissonSampler17setSamplingRadiusE6PxReal"></span><span id="_CPPv2N16PxPoissonSampler17setSamplingRadiusE6PxReal"></span><span id="PxPoissonSampler::setSamplingRadius__PxReal"></span><span class="target" id="class_px_poisson_sampler_1abd7260e7d5b6147ce1f4bbf1a1a9ba5c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSamplingRadius</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">samplingRadius</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPoissonSampler17setSamplingRadiusE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the sampling radius. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>samplingRadius</strong> – <strong>[in]</strong> The closest distance two surface samples are allowed to have. Changing the sampling radius is a bit an expensive operation. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSampler10addSamplesERK7PxArrayI6PxVec3E">
+<span id="_CPPv3N16PxPoissonSampler10addSamplesERK7PxArrayI6PxVec3E"></span><span id="_CPPv2N16PxPoissonSampler10addSamplesERK7PxArrayI6PxVec3E"></span><span id="PxPoissonSampler::addSamples__PxArray:PxVec3:CR"></span><span class="target" id="class_px_poisson_sampler_1af23cfe49806f73dbf901b21fad8acb9e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addSamples</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxArray</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">samples</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPoissonSampler10addSamplesERK7PxArrayI6PxVec3E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds samples. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>samples</strong> – <strong>[in]</strong> The samples to add. Adding samples is a bit an expensive operation. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSampler13removeSamplesERK7PxArrayI6PxVec3E">
+<span id="_CPPv3N16PxPoissonSampler13removeSamplesERK7PxArrayI6PxVec3E"></span><span id="_CPPv2N16PxPoissonSampler13removeSamplesERK7PxArrayI6PxVec3E"></span><span id="PxPoissonSampler::removeSamples__PxArray:PxVec3:CR"></span><span class="target" id="class_px_poisson_sampler_1a7f41a3f42efc046b34aa041b3a4f770f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeSamples</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxArray</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">samples</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPoissonSampler13removeSamplesERK7PxArrayI6PxVec3E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds samples. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>samples</strong> – <strong>[in]</strong> The samples to remove. Removing samples is a bit an expensive operation. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the number of removed samples. If some samples were not found, then the number of actually removed samples will be smaller than the number of samples requested to remove </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSampler18addSamplesInSphereERK6PxVec36PxRealb">
+<span id="_CPPv3N16PxPoissonSampler18addSamplesInSphereERK6PxVec36PxRealb"></span><span id="_CPPv2N16PxPoissonSampler18addSamplesInSphereERK6PxVec36PxRealb"></span><span id="PxPoissonSampler::addSamplesInSphere__PxVec3CR.PxReal.b"></span><span class="target" id="class_px_poisson_sampler_1aa6cdcd2fb9037ede02b0049101850c4a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addSamplesInSphere</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sphereCenter</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">sphereRadius</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">createVolumeSamples</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPoissonSampler18addSamplesInSphereERK6PxVec36PxRealb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds new Poisson Samples inside the sphere specified. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sphereCenter</strong> – <strong>[in]</strong> The sphere’s center. Used to define the region where new samples get added. </p></li>
+<li><p><strong>sphereRadius</strong> – <strong>[in]</strong> The sphere’s radius. Used to define the region where new samples get added. </p></li>
+<li><p><strong>createVolumeSamples</strong> – <strong>[in]</strong> If set to true, samples will also get generated inside of the mesh, not just on its surface. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSampler15addSamplesInBoxERK9PxBounds3RK6PxQuatb">
+<span id="_CPPv3N16PxPoissonSampler15addSamplesInBoxERK9PxBounds3RK6PxQuatb"></span><span id="_CPPv2N16PxPoissonSampler15addSamplesInBoxERK9PxBounds3RK6PxQuatb"></span><span id="PxPoissonSampler::addSamplesInBox__PxBounds3CR.PxQuatCR.b"></span><span class="target" id="class_px_poisson_sampler_1a5581c4b5ce446001ba81cd8f5ea5d014"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addSamplesInBox</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axisAlignedBox</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">boxOrientation</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">createVolumeSamples</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPoissonSampler15addSamplesInBoxERK9PxBounds3RK6PxQuatb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds new Poisson Samples inside the box specified. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axisAlignedBox</strong> – <strong>[in]</strong> The axis aligned bounding box. Used to define the region where new samples get added. </p></li>
+<li><p><strong>boxOrientation</strong> – <strong>[in]</strong> The orientation making an oriented bounding box out of the axis aligned one. Used to define the region where new samples get added. </p></li>
+<li><p><strong>createVolumeSamples</strong> – <strong>[in]</strong> If set to true, samples will also get generated inside of the mesh, not just on its surface. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxPoissonSampler10getSamplesEv">
+<span id="_CPPv3NK16PxPoissonSampler10getSamplesEv"></span><span id="_CPPv2NK16PxPoissonSampler10getSamplesEv"></span><span id="PxPoissonSampler::getSamplesC"></span><span class="target" id="class_px_poisson_sampler_1ae5ded3388167e975affbbcf2448f6997"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxArray</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSamples</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxPoissonSampler10getSamplesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the Poisson Samples. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Returns the generated Poisson Samples </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSamplerD0Ev">
+<span id="_CPPv3N16PxPoissonSamplerD0Ev"></span><span id="_CPPv2N16PxPoissonSamplerD0Ev"></span><span id="PxPoissonSampler::~PxPoissonSampler"></span><span class="target" id="class_px_poisson_sampler_1ac8eb5f05754e871daa95e364795e90a7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxPoissonSampler</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPoissonSamplerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSamplernwE6size_tPv">
+<span id="_CPPv3N16PxPoissonSamplernwE6size_tPv"></span><span id="_CPPv2N16PxPoissonSamplernwE6size_tPv"></span><span id="PxPoissonSampler::new-operator__s.voidP"></span><span class="target" id="class_px_user_allocated_1a043559a17027a1d32204be66e9b1d3f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPoissonSamplernwE6size_tPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplernwEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplernwE6size_t5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplernwE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1af3309032413ea5ee85c18785a6ad56a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplernwEPv6size_t5AllocPKci" title="PxPoissonSampler::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplernwEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplernwEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplernwE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplernwE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1ade2b81f765dc68139ce8ae091b54796f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplernwEPv6size_t6size_t5AllocPKci" title="PxPoissonSampler::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplernwEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSamplerdlEPvPv">
+<span id="_CPPv3N16PxPoissonSamplerdlEPvPv"></span><span id="_CPPv2N16PxPoissonSamplerdlEPvPv"></span><span id="PxPoissonSampler::delete-operator__voidP.voidP"></span><span class="target" id="class_px_user_allocated_1a04c7cb45584c4f0ce7a8347ca740896b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span>, <span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPoissonSamplerdlEPvPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplerdlEvPv5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplerdlEPv5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplerdlEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a3cf613200747f3cefb86a365c74aa162"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplerdlEvPv5AllocPKci" title="PxPoissonSampler::operator delete::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplerdlEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSamplerdlEPv">
+<span id="_CPPv3N16PxPoissonSamplerdlEPv"></span><span id="_CPPv2N16PxPoissonSamplerdlEPv"></span><span id="PxPoissonSampler::delete-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2c4e502fe3d2248c358dd77dd3057238"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPoissonSamplerdlEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplernaEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplernaE6size_t5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplernaE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a20c94aa14dae1e05c23b2c9d2a6a0362"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplernaEPv6size_t5AllocPKci" title="PxPoissonSampler::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplernaEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplernaEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplernaE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplernaE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a71597b7a868015bda81c507955cc580d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplernaEPv6size_t6size_t5AllocPKci" title="PxPoissonSampler::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplernaEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN16PxPoissonSamplerdaEvPv5AllocPKci">
+<span id="_CPPv3I0EN16PxPoissonSamplerdaEPv5AllocPKci"></span><span id="_CPPv2I0EN16PxPoissonSamplerdaEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a27bba9023c672c7294bf98666139f482"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN16PxPoissonSamplerdaEvPv5AllocPKci" title="PxPoissonSampler::operator delete[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN16PxPoissonSamplerdaEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPoissonSamplerdaEPv">
+<span id="_CPPv3N16PxPoissonSamplerdaEPv"></span><span id="_CPPv2N16PxPoissonSamplerdaEPv"></span><span id="PxPoissonSampler::delete-array-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2b6969f7ac154e808f41a906a25a4a05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPoissonSamplerdaEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxPvdSceneClient &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxPvdSceneClient</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxpvdsceneclient">
+<span id="exhale-class-class-px-pvd-scene-client"></span><h1>PxPvdSceneClient<a class="headerlink" href="#pxpvdsceneclient" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_pvd_PxPvdSceneClient.h.html#file-include-pvd-pxpvdsceneclient-h"><span class="std std-ref">include/pvd/PxPvdSceneClient.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxPvdSceneClient">
+<span id="_CPPv316PxPvdSceneClient"></span><span id="_CPPv216PxPvdSceneClient"></span><span id="PxPvdSceneClient"></span><span class="target" id="class_px_pvd_scene_client"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPvdSceneClient</span></span></span><a class="headerlink" href="#_CPPv416PxPvdSceneClient" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Special client for <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>. </p>
+<p>It provides access to the <a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a>. It also provides simple user debug services that associated scene position such as immediate rendering and camera updates. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient15setScenePvdFlagEN14PxPvdSceneFlag4EnumEb">
+<span id="_CPPv3N16PxPvdSceneClient15setScenePvdFlagEN14PxPvdSceneFlag4EnumEb"></span><span id="_CPPv2N16PxPvdSceneClient15setScenePvdFlagEN14PxPvdSceneFlag4EnumEb"></span><span id="PxPvdSceneClient::setScenePvdFlag__PxPvdSceneFlag::Enum.b"></span><span class="target" id="class_px_pvd_scene_client_1a3b5e6327978fbe7a39fd53478da0c588"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setScenePvdFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_pvd_scene_flag.html#_CPPv414PxPvdSceneFlag" title="PxPvdSceneFlag"><span class="n"><span class="pre">PxPvdSceneFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pvd_scene_flag.html#_CPPv4N14PxPvdSceneFlag4EnumE" title="PxPvdSceneFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient15setScenePvdFlagEN14PxPvdSceneFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the PVD flag. </p>
+<p>See <a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – Flag to set. </p></li>
+<li><p><strong>value</strong> – value the flag gets set to. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient16setScenePvdFlagsE15PxPvdSceneFlags">
+<span id="_CPPv3N16PxPvdSceneClient16setScenePvdFlagsE15PxPvdSceneFlags"></span><span id="_CPPv2N16PxPvdSceneClient16setScenePvdFlagsE15PxPvdSceneFlags"></span><span id="PxPvdSceneClient::setScenePvdFlags__PxPvdSceneFlags"></span><span class="target" id="class_px_pvd_scene_client_1a74a77b0f48b6d0f9394ed7daa9c2c957"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setScenePvdFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__pvd_1ga23ddab69994886fb588a139635bff64b.html#_CPPv415PxPvdSceneFlags" title="PxPvdSceneFlags"><span class="n"><span class="pre">PxPvdSceneFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient16setScenePvdFlagsE15PxPvdSceneFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the PVD flags. </p>
+<p>See PxPvdSceneFlags. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – Flags to set. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxPvdSceneClient16getScenePvdFlagsEv">
+<span id="_CPPv3NK16PxPvdSceneClient16getScenePvdFlagsEv"></span><span id="_CPPv2NK16PxPvdSceneClient16getScenePvdFlagsEv"></span><span id="PxPvdSceneClient::getScenePvdFlagsC"></span><span class="target" id="class_px_pvd_scene_client_1aa001bda702ba5738c182358035f36cc3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__pvd_1ga23ddab69994886fb588a139635bff64b.html#_CPPv415PxPvdSceneFlags" title="PxPvdSceneFlags"><span class="n"><span class="pre">PxPvdSceneFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getScenePvdFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK16PxPvdSceneClient16getScenePvdFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the PVD flags. </p>
+<p>See PxPvdSceneFlags. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient12updateCameraEPKcRK6PxVec3RK6PxVec3RK6PxVec3">
+<span id="_CPPv3N16PxPvdSceneClient12updateCameraEPKcRK6PxVec3RK6PxVec3RK6PxVec3"></span><span id="_CPPv2N16PxPvdSceneClient12updateCameraEPKcRK6PxVec3RK6PxVec3RK6PxVec3"></span><span id="PxPvdSceneClient::updateCamera__cCP.PxVec3CR.PxVec3CR.PxVec3CR"></span><span class="target" id="class_px_pvd_scene_client_1a566584e2c33cba879612c468a6703ca4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateCamera</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient12updateCameraEPKcRK6PxVec3RK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>update camera on PVD application’s render window </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient10drawPointsEPKN5physx12PxDebugPointE5PxU32">
+<span id="_CPPv3N16PxPvdSceneClient10drawPointsEPKN5physx12PxDebugPointE5PxU32"></span><span id="_CPPv2N16PxPvdSceneClient10drawPointsEPKN5physx12PxDebugPointE5PxU32"></span><span id="PxPvdSceneClient::drawPoints__physx::PxDebugPointCP.PxU32"></span><span class="target" id="class_px_pvd_scene_client_1ad7d695b2a9515a302a89690d2c2c13c8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drawPoints</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxDebugPoint</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">points</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient10drawPointsEPKN5physx12PxDebugPointE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>draw points on PVD application’s render window </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient9drawLinesEPKN5physx11PxDebugLineE5PxU32">
+<span id="_CPPv3N16PxPvdSceneClient9drawLinesEPKN5physx11PxDebugLineE5PxU32"></span><span id="_CPPv2N16PxPvdSceneClient9drawLinesEPKN5physx11PxDebugLineE5PxU32"></span><span id="PxPvdSceneClient::drawLines__physx::PxDebugLineCP.PxU32"></span><span class="target" id="class_px_pvd_scene_client_1a071a3dd5d1d4f79c746c666771f7baea"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drawLines</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxDebugLine</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">lines</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient9drawLinesEPKN5physx11PxDebugLineE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>draw lines on PVD application’s render window </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient13drawTrianglesEPKN5physx15PxDebugTriangleE5PxU32">
+<span id="_CPPv3N16PxPvdSceneClient13drawTrianglesEPKN5physx15PxDebugTriangleE5PxU32"></span><span id="_CPPv2N16PxPvdSceneClient13drawTrianglesEPKN5physx15PxDebugTriangleE5PxU32"></span><span id="PxPvdSceneClient::drawTriangles__physx::PxDebugTriangleCP.PxU32"></span><span class="target" id="class_px_pvd_scene_client_1a4183ef02a45050455c80d376bd53b6ba"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drawTriangles</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxDebugTriangle</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triangles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient13drawTrianglesEPKN5physx15PxDebugTriangleE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>draw triangles on PVD application’s render window </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient8drawTextERKN5physx11PxDebugTextE">
+<span id="_CPPv3N16PxPvdSceneClient8drawTextERKN5physx11PxDebugTextE"></span><span id="_CPPv2N16PxPvdSceneClient8drawTextERKN5physx11PxDebugTextE"></span><span id="PxPvdSceneClient::drawText__physx::PxDebugTextCR"></span><span class="target" id="class_px_pvd_scene_client_1a93d6ef93acacfd2a7963c5099413fc9d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drawText</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxDebugText</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">text</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient8drawTextERKN5physx11PxDebugTextE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>draw text on PVD application’s render window </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClient17getClientInternalEv">
+<span id="_CPPv3N16PxPvdSceneClient17getClientInternalEv"></span><span id="_CPPv2N16PxPvdSceneClient17getClientInternalEv"></span><span id="PxPvdSceneClient::getClientInternal"></span><span class="target" id="class_px_pvd_scene_client_1ae1b5736b5b44f33705a406411e3926d2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pvdsdk</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PvdClient</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getClientInternal</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClient17getClientInternalEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the underlying client, for advanced users </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxPvdSceneClientD0Ev">
+<span id="_CPPv3N16PxPvdSceneClientD0Ev"></span><span id="_CPPv2N16PxPvdSceneClientD0Ev"></span><span id="PxPvdSceneClient::~PxPvdSceneClient"></span><span class="target" id="class_px_pvd_scene_client_1a0f9c59a8675b10a72f6a31f4ebb35897"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxPvdSceneClient</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxPvdSceneClientD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rigid Body Collision &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Body Dynamics" href="RigidBodyDynamics.html" />
+    <link rel="prev" title="Rigid Body Overview" href="RigidBodyOverview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Rigid Body Collision</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#shapes">Shapes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simulation-shapes-and-scene-query-shapes">Simulation Shapes and Scene Query Shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kinematic-triangle-meshes-planes-heightfields">Kinematic Triangle Meshes (Planes, Heightfields)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-triangle-meshes-with-sdfs">Dynamic Triangle Meshes with SDFs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trigger-shapes">Trigger Shapes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#broad-phase-collision-detection">Broad-phase Collision Detection</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#broad-phase-algorithms">Broad-phase Algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#regions-of-interest">Regions of Interest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#broad-phase-callback">Broad-phase Callback</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#interactions">Interactions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#collision-filtering">Collision Filtering</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pxpairfilteringmode">PxPairFilteringMode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxsimulationfiltershader">PxSimulationFilterShader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxsimulationfiltercallback">PxSimulationFilterCallback</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#aggregates">Aggregates</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-an-aggregate">Creating an Aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#populating-an-aggregate">Populating an Aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#releasing-an-aggregate">Releasing an Aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amortizing-insertion">Amortizing Insertion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#standalone-broad-phase">Standalone Broad-phase</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/public/latest/public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Rigid Body Collision</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rigid-body-collision">
+<span id="rigidbodycollision"></span><h1>Rigid Body Collision<a class="headerlink" href="#rigid-body-collision" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This section will introduce the fundamentals of rigid body collision. For more advanced topics also refer to the section <a class="reference internal" href="AdvancedCollisionDetection.html#advancedcollisiondetection"><span class="std std-ref">Advanced Collision Detection</span></a>.</p>
+</section>
+<section id="shapes">
+<span id="rigidbodycollisionshapes"></span><h2>Shapes<a class="headerlink" href="#shapes" title="Permalink to this headline"></a></h2>
+<p>Shapes describe the spatial extent and collision properties of actors. They are used for three purposes within PhysX:</p>
+<ul class="simple">
+<li><p>Intersection tests that determine the contacting features of rigid objects.</p></li>
+<li><p>Scene query tests such as raycasts, overlaps and sweeps.</p></li>
+<li><p>Defining trigger volumes that generate notifications when other shapes intersect with them.</p></li>
+</ul>
+<p>Shapes are reference counted, see <a class="reference internal" href="API.html#basicreferencecounting"><span class="std std-ref">Reference Counting</span></a>.</p>
+<p>Each shape contains a <a class="reference internal" href="../_build/public/latest/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> object and a reference to a <a class="reference internal" href="../_build/public/latest/class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMaterial</span></code></a>, which must both be specified upon creation.
+The following code creates a shape with a sphere geometry and a specific material:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physics</span><span class="p">.</span><span class="n">createShape</span><span class="p">(</span><span class="n">PxSphereGeometry</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">),</span><span class="w"> </span><span class="n">myMaterial</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+<span class="n">myActor</span><span class="p">.</span><span class="n">attachShape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">);</span><span class="w"></span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The method <a class="reference internal" href="../_build/public/latest/class_px_rigid_actor_ext.html#_CPPv4N15PxRigidActorExt20createExclusiveShapeER12PxRigidActorRK10PxGeometryPPC10PxMaterial5PxU1612PxShapeFlags" title="PxRigidActorExt::createExclusiveShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActorExt::createExclusiveShape()</span></code></a> is equivalent to the three lines above.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for reference counting behavior of deserialized shapes refer to <a class="reference internal" href="Serialization.html#deserializereferencecounting"><span class="std std-ref">Reference Counting of Deserialized Objects</span></a>.</p>
+</div>
+<p>The parameter ‘true’ to <a class="reference internal" href="../_build/public/latest/class_px_physics.html#_CPPv4N9PxPhysics11createShapeERK10PxGeometryRK10PxMaterialb12PxShapeFlags" title="PxPhysics::createShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::createShape()</span></code></a> informs the SDK that the shape will not be shared with other actors. You can use shape sharing to reduce the memory costs of your simulation when you have many actors with identical geometry, but shared shapes have a very strong restriction: you cannot update the attributes of a shared shape while it is attached to an actor.</p>
+<p>Optionally you may configure a shape by specifying shape flags of type <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d.html#_CPPv412PxShapeFlags" title="PxShapeFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxShapeFlags</span></code></a>. By default a shape is configured as:</p>
+<ul class="simple">
+<li><p>a simulation shape (enabled for contact generation during simulation)</p></li>
+<li><p>a scene query shape (enabled for scene queries)</p></li>
+<li><p>being visualized if debug rendering is enabled</p></li>
+</ul>
+<p>When a geometry object is specified for a shape, the geometry object is copied into the shape. There are some restrictions on which geometries may be specified for a shape, depending on the shape flags and the type of the parent actors.</p>
+<ul class="simple">
+<li><p>TriangleMesh, HeightField and Plane geometries are not supported for simulation shapes that are attached to dynamic actors, unless the dynamic actors are configured to be kinematic.</p></li>
+<li><p>TriangleMesh and HeightField geometries are not supported for trigger shapes.</p></li>
+</ul>
+<p>See the following sections for more details.</p>
+<p>Detach the shape from the actor as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">myActor</span><span class="p">.</span><span class="n">detachShape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<section id="simulation-shapes-and-scene-query-shapes">
+<h3>Simulation Shapes and Scene Query Shapes<a class="headerlink" href="#simulation-shapes-and-scene-query-shapes" title="Permalink to this headline"></a></h3>
+<p>Shapes may be independently configured to participate in either or both of scene queries and contact tests. This is controlled by <a class="reference internal" href="../_build/public/latest/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum17eSIMULATION_SHAPEE" title="PxShapeFlag::eSIMULATION_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eSIMULATION_SHAPE</span></code></a> and <a class="reference internal" href="../_build/public/latest/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE" title="PxShapeFlag::eSCENE_QUERY_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eSCENE_QUERY_SHAPE</span></code></a>. By default, a shape will participate in both.</p>
+<p>The following pseudo-code configures a <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> instance so that it no longer participates in shape pair intersection tests:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">disableShapeInContactTests</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> instance can be configured to participate in shape pair intersection tests as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">enableShapeInContactTests</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To disable a <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> instance from scene query tests:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">disableShapeInSceneQueryTests</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Finally, a <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> instance can be re-enabled in scene query tests:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">enableShapeInSceneQueryTests</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the movement of the shape’s <em>actor</em> does not need to be controlled by the simulation at all, i.e., the shape is used for scene queries only and gets moved manually if necessary, then memory can be saved by additionally disabling simulation on the actor itself (see <a class="reference internal" href="../_build/public/latest/struct_px_actor_flag.html#_CPPv4N11PxActorFlag4Enum19eDISABLE_SIMULATIONE" title="PxActorFlag::eDISABLE_SIMULATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxActorFlag::eDISABLE_SIMULATION</span></code></a>).</p>
+</div>
+</section>
+<section id="kinematic-triangle-meshes-planes-heightfields">
+<h3>Kinematic Triangle Meshes (Planes, Heightfields)<a class="headerlink" href="#kinematic-triangle-meshes-planes-heightfields" title="Permalink to this headline"></a></h3>
+<p>It is possible to create a kinematic <a class="reference internal" href="../_build/public/latest/class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code></a> which can have a triangle mesh (plane, heightfield) shape. If this shape has a simulation shape flag, this actor must stay kinematic. If you change the flag to not simulated, you can switch even the kinematic flag.</p>
+<p>To setup kinematic triangle mesh see following code:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">meshActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">));</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">meshShape</span><span class="p">;</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="n">meshActor</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">meshActor</span><span class="o">-&gt;</span><span class="n">setRigidDynamicFlag</span><span class="p">(</span><span class="n">PxRigidDynamicFlag</span><span class="o">::</span><span class="n">eKINEMATIC</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxTriangleMeshGeometry</span><span class="w"> </span><span class="n">triGeom</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">triGeom</span><span class="p">.</span><span class="n">triangleMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">triangleMesh</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">meshShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">meshActor</span><span class="p">,</span><span class="n">triGeom</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">defaultMaterial</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">getScene</span><span class="p">().</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">meshActor</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To switch a kinematic triangle mesh actor to a dynamic actor:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">meshActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">));</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">meshShape</span><span class="p">;</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="n">meshActor</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">meshActor</span><span class="o">-&gt;</span><span class="n">setRigidDynamicFlag</span><span class="p">(</span><span class="n">PxRigidDynamicFlag</span><span class="o">::</span><span class="n">eKINEMATIC</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxTriangleMeshGeometry</span><span class="w"> </span><span class="n">triGeom</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">triGeom</span><span class="p">.</span><span class="n">triangleMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">triangleMesh</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">meshShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">meshActor</span><span class="p">,</span><span class="w"> </span><span class="n">triGeom</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">defaultMaterial</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">getScene</span><span class="p">().</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">meshActor</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxConvexMeshGeometry</span><span class="w"> </span><span class="n">convexGeom</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxConvexMeshGeometry</span><span class="p">(</span><span class="n">convexBox</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">convexShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">meshActor</span><span class="p">,</span><span class="w"> </span><span class="n">convexGeom</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">defaultMaterial</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="dynamic-triangle-meshes-with-sdfs">
+<h3>Dynamic Triangle Meshes with SDFs<a class="headerlink" href="#dynamic-triangle-meshes-with-sdfs" title="Permalink to this headline"></a></h3>
+<p>Dynamic triangle meshes are only supported if they have a SDF (Signed Distance Field). The SDF can optionally be generated during the cooking process. It is recommended to use sparse SDFs because in their simplest form (dense SDF) they use a lot of memory. Collision detection performance of sparse and dense sdfs is almost identical. Please note that on static actors, SDFs are not supported while on kinematic and dynamic actors they work well in most cases.
+Adding a dynamic triangle mesh to a scene works basically identical to adding a kinematic mesh. The main difference is that the PxTriangleMesh must have been cooked with a SDF and that the mass and other dynamics related properties must be populated with valid values because they are important for the behavior of a dynamic object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">addDynamicTriangleMeshInstance</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">transform</span><span class="p">,</span><span class="w"> </span><span class="n">PxTriangleMesh</span><span class="o">*</span><span class="w"> </span><span class="n">mesh</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">dyn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">transform</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setLinearDamping</span><span class="p">(</span><span class="mf">0.2f</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setAngularDamping</span><span class="p">(</span><span class="mf">0.1f</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxTriangleMeshGeometry</span><span class="w"> </span><span class="n">geom</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">geom</span><span class="p">.</span><span class="n">triangleMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mesh</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">geom</span><span class="p">.</span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.1f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setRigidBodyFlag</span><span class="p">(</span><span class="n">PxRigidBodyFlag</span><span class="o">::</span><span class="n">eENABLE_GYROSCOPIC_FORCES</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setRigidBodyFlag</span><span class="p">(</span><span class="n">PxRigidBodyFlag</span><span class="o">::</span><span class="n">eENABLE_SPECULATIVE_CCD</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">,</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">gMaterial</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setContactOffset</span><span class="p">(</span><span class="mf">0.1f</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setRestOffset</span><span class="p">(</span><span class="mf">0.02f</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">density</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">100.f</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxRigidBodyExt</span><span class="o">::</span><span class="n">updateMassAndInertia</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">,</span><span class="w"> </span><span class="n">density</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setSolverIterationCounts</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setMaxDepenetrationVelocity</span><span class="p">(</span><span class="mf">5.f</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If SDF collisions don’t produce satisfactory results, it’s often possible to tweak some parameters to improve the situation.</p>
+<ul>
+<li><p>Increase the contact offset</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Larger contact offsets allow the solver to react a bit earlier to collisions potentially happening in subsequent timesteps. Too large contact offsets will slow down the collision detection performance, so it’s usually an iterative process of finding a good value</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Make objects heavier, within reasonable limits</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Objects that are extremely lightweight or if objects with very different mass come in contact, the collision response might not be perfect since those cases make convergence of the solver more difficult</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Adjust the SDF resolution</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A too low SDF resolution can lead to situations where very thin parts of the mesh don’t collide since the SDF cannot represent/capture them</p></li>
+<li><p>A too high SDF resolution might lead to increased memory consumption and a bit slower collision detection performance</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Reduce the maximal depenetration velocity</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Makes the collision response a bit slower and can help to avoid overshooting</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Increase the number of position iterations</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Gives the solver more iterations to improve convergence</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Increase friction</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Helps that objects in contact come to rest</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Use meshes with a good tessellation when generating the SDF</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Watertight triangle meshes without self intersections or other defects simplify the cooking process. In case the mesh has holes, the cooker closes them but the closing surface will be defined by the cooker</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Reduce the timestep of the physics simulation</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>This is only recommended if all other adjustments don’t lead to good results</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="trigger-shapes">
+<h3>Trigger Shapes<a class="headerlink" href="#trigger-shapes" title="Permalink to this headline"></a></h3>
+<p>Trigger shapes play no part in the simulation of the scene (though they can be configured to participate in scene queries). Instead, their role is to report that there has been an overlap with another shape. Contacts are not generated for the intersection, and as a result contact reports are not available for trigger shapes. Further, because triggers play no part in the simulation, the SDK will not allow the the <a class="reference internal" href="../_build/public/latest/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum17eSIMULATION_SHAPEE" title="PxShapeFlag::eSIMULATION_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eSIMULATION_SHAPE</span></code></a> and <a class="reference internal" href="../_build/public/latest/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum14eTRIGGER_SHAPEE" title="PxShapeFlag::eTRIGGER_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eTRIGGER_SHAPE</span></code></a> flags to be raised simultaneously; that is, if one flag is raised then attempts to raise the other will be rejected, and an error will be passed to the error stream.</p>
+<p>Trigger shapes can be used to implement <em>sensors</em>. They could be used for example to determine if a player has reached a checkpoint zone, or perhaps to automatically open a door when an object moves in front of it. In such examples the region of space around the checkpoint or the door would be represented as an actor with a unique shape (often a box or a sphere) configured as a trigger shape:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">sensorShape</span><span class="p">;</span><span class="w"></span>
+<span class="n">gSensorActor</span><span class="o">-&gt;</span><span class="n">getShapes</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sensorShape</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="n">sensorShape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+<span class="n">sensorShape</span><span class="o">-&gt;</span><span class="n">setFlag</span><span class="p">(</span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eTRIGGER_SHAPE</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The overlaps with trigger shapes are reported through the user-defined <a class="reference internal" href="../_build/public/latest/class_px_simulation_event_callback.html#_CPPv425PxSimulationEventCallback" title="PxSimulationEventCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationEventCallback</span></code></a> object, specifically through the implementation of <a class="reference internal" href="../_build/public/latest/class_px_simulation_event_callback.html#_CPPv4N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32" title="PxSimulationEventCallback::onTrigger"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onTrigger()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MySimulationEventCallback::onTrigger</span><span class="p">(</span><span class="n">PxTriggerPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">count</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// ignore pairs when shapes have been deleted</span>
+<span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">PxTriggerPairFlag</span><span class="o">::</span><span class="n">eREMOVED_SHAPE_TRIGGER</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxTriggerPairFlag</span><span class="o">::</span><span class="n">eREMOVED_SHAPE_OTHER</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Detect for example that a player entered a checkpoint zone</span>
+<span class="w">        </span><span class="k">if</span><span class="p">((</span><span class="o">&amp;</span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">otherShape</span><span class="o">-&gt;</span><span class="n">getActor</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">gPlayerActor</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="o">&amp;</span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">triggerShape</span><span class="o">-&gt;</span><span class="n">getActor</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">gSensorActor</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">gCheckpointReached</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The code above iterates through all pairs of overlapping shapes that involve a trigger shape. If it is found that the checkpoint sensor has been touched by the player then the flag gCheckpointReached is set to true.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="broad-phase-collision-detection">
+<h2>Broad-phase Collision Detection<a class="headerlink" href="#broad-phase-collision-detection" title="Permalink to this headline"></a></h2>
+<p>The <em>broad phase</em> is the first part of the collision pipeline. It is called <em>broad</em> phase because it detects overlaps between axis-aligned bounding boxes, i.e it only reports <em>potential</em> collisions rather than <em>actual</em> collisions. The actual collisions are detected by the next phase in the physics pipeline, named <em>narrow phase</em>.</p>
+<section id="broad-phase-algorithms">
+<h3>Broad-phase Algorithms<a class="headerlink" href="#broad-phase-algorithms" title="Permalink to this headline"></a></h3>
+<p>PhysX supports several broad-phase algorithms:</p>
+<ul class="simple">
+<li><p><em>sweep-and-prune (SAP)</em></p></li>
+<li><p><em>multi box pruning (MBP)</em></p></li>
+<li><p><em>automatic box pruning (ABP)</em></p></li>
+<li><p><em>parallel automatic box pruning (PABP)</em></p></li>
+<li><p><em>GPU broadphase (GPU)</em></p></li>
+</ul>
+<p><a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eSAPE" title="PxBroadPhaseType::eSAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eSAP</span></code></a> is a good generic choice with great performance when many objects are sleeping. Performance can degrade significantly though, when all objects are moving, or when large numbers of objects are added to or removed from the broad-phase. This algorithm does not need world bounds to be defined in order to work.</p>
+<p><a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eMBPE" title="PxBroadPhaseType::eMBP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eMBP</span></code></a> is an algorithm introduced in PhysX 3.3. It is an alternative broad-phase algorithm that does not suffer from the same performance issues as eSAP when all objects are moving or when inserting large numbers of objects. However its generic performance when many objects are sleeping might be inferior to eSAP, and it requires users to define world bounds (broadphase regions) in order to work.</p>
+<p><a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eABPE" title="PxBroadPhaseType::eABP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eABP</span></code></a> is a revisited implementation of <em>PxBroadPhaseType::eMBP</em> introduced in PhysX 4. It automatically manages world bounds and broad-phase regions, thus offering the convenience of <em>PxBroadPhaseType::eSAP</em> coupled to the performance of <em>PxBroadPhaseType::eMBP</em>. While <em>PxBroadPhaseType::eSAP</em> can remain faster when most objects are sleeping and <em>PxBroadPhaseType::eMBP</em> can remain faster when it uses a large number of properly-defined regions, <em>PxBroadPhaseType::eABP</em> often gives the best performance on average and the best memory usage. It is a good default choice for the broadphase.</p>
+<p><a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum5ePABPE" title="PxBroadPhaseType::ePABP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::ePABP</span></code></a> is a revisited implementation of <em>PxBroadPhaseType::eABP</em> introduced in PhysX 5. It is the same as <em>PxBroadPhaseType::eABP</em>, but taking advantage of multiple threads. Because the single-threaded ABP implementation is very fast on its own, its multithreaded version is only faster for large scenes, not necessarily for small ones. It also uses more memory.</p>
+<p><a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eGPUE" title="PxBroadPhaseType::eGPU"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eGPU</span></code></a> is a GPU implementation of the incremental sweep and prune approach. Additionally, it uses a ABP-style initial pair generation approach to avoid large spikes when inserting shapes. It not only has the advantage of traditional SAP approach which is good for when many objects are sleeping, but due to being fully parallel, it also is great when lots of shapes are moving or for runtime pair insertion and removal.</p>
+<p>The desired broad-phase algorithm is controlled by <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv4N11PxSceneDesc14broadPhaseTypeE" title="PxSceneDesc::broadPhaseType"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::broadPhaseType</span></code></a>.</p>
+</section>
+<section id="regions-of-interest">
+<h3>Regions of Interest<a class="headerlink" href="#regions-of-interest" title="Permalink to this headline"></a></h3>
+<p>A region of interest is a world-space AABB around a volume of space controlled by the broad-phase. Objects contained inside those regions are properly handled by the broad-phase. Objects falling outside of those regions lose all collision detection. Ideally those regions should cover the whole simulation space, while limiting the amount of covered empty space.</p>
+<p>Regions can overlap, although for maximum efficiency it is recommended to minimize the amount of overlap between regions as much as possible. Note that two regions whose AABBs just touch are not considered overlapping. For example the <a class="reference internal" href="../_build/public/latest/class_px_broad_phase_ext.html#_CPPv4N15PxBroadPhaseExt28createRegionsFromWorldBoundsEP9PxBounds3RK9PxBounds35PxU325PxU32" title="PxBroadPhaseExt::createRegionsFromWorldBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBroadPhaseExt::createRegionsFromWorldBounds()</span></code></a> helper function creates a number of non-overlapping region bounds by simply subdividing a given world AABB into a regular 2D grid.</p>
+<p>Regions can be defined by the <a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_region.html#_CPPv418PxBroadPhaseRegion" title="PxBroadPhaseRegion"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBroadPhaseRegion</span></code></a> structure, along with a user-data assigned to them. They can be defined at scene creation time or at runtime using <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene19addBroadPhaseRegionERK18PxBroadPhaseRegionb" title="PxScene::addBroadPhaseRegion"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::addBroadPhaseRegion()</span></code></a>. The SDK returns handles assigned to the newly created regions, that can be used later to remove regions using <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene22removeBroadPhaseRegionE5PxU32" title="PxScene::removeBroadPhaseRegion"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::removeBroadPhaseRegion()</span></code></a>.</p>
+<p>A newly added region may overlap already existing objects. The SDK can automatically add those objects to the new region, if the <em>populateRegion</em> parameter from the <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene19addBroadPhaseRegionERK18PxBroadPhaseRegionb" title="PxScene::addBroadPhaseRegion"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::addBroadPhaseRegion()</span></code></a> call is set. However this operation is not cheap and might have a high impact on performance, especially when several regions are added in the same frame. Thus, it is recommended to disable it whenever possible. The region would then be created empty, and it would only be populated either with objects added to the scene after the region has been created, or with previously existing objects when they are updated (i.e. when they move).</p>
+<p>Note that only <a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eMBPE" title="PxBroadPhaseType::eMBP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eMBP</span></code></a> requires regions to be defined. The other algorithms do not. This information is captured within the <a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_caps.html#_CPPv416PxBroadPhaseCaps" title="PxBroadPhaseCaps"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBroadPhaseCaps</span></code></a> structure, which lists information and capabilities of each broad-phase algorithm. This structure can be retrieved with a call to <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4NK7PxScene17getBroadPhaseCapsER16PxBroadPhaseCaps" title="PxScene::getBroadPhaseCaps"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getBroadPhaseCaps()</span></code></a>.</p>
+<p>Runtime information about current regions can be retrieved using the <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4NK7PxScene22getNbBroadPhaseRegionsEv" title="PxScene::getNbBroadPhaseRegions"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getNbBroadPhaseRegions()</span></code></a> and <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4NK7PxScene20getBroadPhaseRegionsEP22PxBroadPhaseRegionInfo5PxU325PxU32" title="PxScene::getBroadPhaseRegions"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getBroadPhaseRegions()</span></code></a> functions.</p>
+<p>The maximum number of regions is currently limited to 256.</p>
+</section>
+<section id="broad-phase-callback">
+<h3>Broad-phase Callback<a class="headerlink" href="#broad-phase-callback" title="Permalink to this headline"></a></h3>
+<p>A callback for broad-phase-related events can be defined within the <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv411PxSceneDesc" title="PxSceneDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneDesc</span></code></a> structure. This <a class="reference internal" href="../_build/public/latest/class_px_broad_phase_callback.html#_CPPv420PxBroadPhaseCallback" title="PxBroadPhaseCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBroadPhaseCallback</span></code></a> object will be called when objects are found out of the specified regions of interest, i.e. “out of bounds”. The SDK disables collision detection for those objects. It is re-enabled automatically as soon as the objects re-enter a valid region.</p>
+<p>It is up to users to decide what to do with out-of-bounds objects. Typical options are:</p>
+<ul class="simple">
+<li><p>delete the objects</p></li>
+<li><p>let them continue their motion without collisions until they re-enter a valid region</p></li>
+<li><p>artificially teleport them back to a valid place</p></li>
+</ul>
+<p>This callback is mainly used for <a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eMBPE" title="PxBroadPhaseType::eMBP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eMBP</span></code></a>.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="interactions">
+<h2>Interactions<a class="headerlink" href="#interactions" title="Permalink to this headline"></a></h2>
+<p>The SDK internally creates an interaction object for each overlapping pair reported by the broad-phase. These objects are not only created for pairs of colliding rigid bodies, but also for pairs of overlapping triggers. Generally speaking users should assume that such objects are created regardless of the involved objects’ types (rigid body, trigger, etc) and regardless of involved <em>PxFilterFlag</em> flags.</p>
+<p>The PhysX broadphase operates on <em>shapes</em>, not on <em>actors</em>. This means that an interaction is created for a pair of shapes, and two colliding compound actors could internally generate multiple interaction objects. Aggregates can be used to reduce the number of interactions in this case (see <a class="reference internal" href="#collisionaggregates"><span class="std std-ref">Aggregates</span></a>).</p>
+<hr class="docutils" />
+</section>
+<section id="collision-filtering">
+<span id="collisionfiltering"></span><h2>Collision Filtering<a class="headerlink" href="#collision-filtering" title="Permalink to this headline"></a></h2>
+<p>Collision filtering is the mechanism used to discard some overlapping pairs returned by the broadphase. Technically, filtering could be implemented with a single user callback - asking users whether or not a pair should be kept or dismissed. However going from the SDK to users’ code for each pair can quickly become expensive, and sometimes it is not even possible - for example when the broadphase runs on the GPU. Thus, PhysX implements collision filtering in several stages of the physics pipeline. From cheapest &amp; least flexible to most expensive &amp; most flexible, filtering happens:</p>
+<ul class="simple">
+<li><p>during the broadphase, using <a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv419PxPairFilteringMode" title="PxPairFilteringMode"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPairFilteringMode</span></code></a>.</p></li>
+<li><p>during or after the broadphase, using <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#_CPPv424PxSimulationFilterShader" title="PxSimulationFilterShader"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxSimulationFilterShader</span></code></a>.</p></li>
+<li><p>after the broadphase, using <a class="reference internal" href="../_build/public/latest/class_px_simulation_filter_callback.html#_CPPv426PxSimulationFilterCallback" title="PxSimulationFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationFilterCallback</span></code></a>.</p></li>
+</ul>
+<section id="pxpairfilteringmode">
+<h3>PxPairFilteringMode<a class="headerlink" href="#pxpairfilteringmode" title="Permalink to this headline"></a></h3>
+<p>This is the most efficient way to discard unwanted pairs (at the earliest point in the pipeline), but it is also the least flexible way: <a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv419PxPairFilteringMode" title="PxPairFilteringMode"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxPairFilteringMode</span></code></a> is mainly used to filter out <em>kinematic pairs</em> directly during the broadphase. A kinematic pair is a pair that contains one or more kinematic object. In the context of collision filtering we are mostly interested in:</p>
+<ul class="simple">
+<li><p>kinematic-vs-kinematic interactions, i.e. when two kinematic objects overlap. What happens for these pairs is controlled by <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv4N11PxSceneDesc21kineKineFilteringModeE" title="PxSceneDesc::kineKineFilteringMode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::kineKineFilteringMode</span></code></a>.</p></li>
+<li><p>kinematic-vs-static interactions, i.e. when a kinematic object overlaps a static object. What happens for these pairs is controlled by <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv4N11PxSceneDesc23staticKineFilteringModeE" title="PxSceneDesc::staticKineFilteringMode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticKineFilteringMode</span></code></a>.</p></li>
+</ul>
+<p>As previously mentioned, an <em>interaction object</em> is internally created for each pair reported by the broadphase. The available pair filtering modes control what happens here:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKEEPE" title="PxPairFilteringMode::eKEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKEEP</span></code></a> creates a regular interaction object for the pair. The pair will be kept, potentially sent to user callbacks, etc.</p></li>
+<li><p><a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum9eSUPPRESSE" title="PxPairFilteringMode::eSUPPRESS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eSUPPRESS</span></code></a> creates a placeholder interaction object for the pair. The pair will be ignored, but it can later be switched to a regular interaction.</p></li>
+<li><p><a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKILLE" title="PxPairFilteringMode::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKILL</span></code></a> ignores the pair and does not create an interaction. The pair can eventually be switched to a regular interaction later with a <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene14resetFilteringER7PxActor" title="PxScene::resetFiltering"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::resetFiltering()</span></code></a> call, but this is an expensive operation.</p></li>
+</ul>
+<p>These modes are not flexible: they are defined at scene creation time for all kinematic pairs and cannot be changed later. Thus it is mostly useful if you know you will never need kinematic pairs out of the broadphase, in which case using <a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKILLE" title="PxPairFilteringMode::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKILL</span></code></a> for both static-kinematic and kinematic-kinematic pairs is the most efficient thing to do. It is more efficient than the subsequent filter shader or filter callback because the filtering happens directly within the broadphase: discarded pairs are not returned by the broadphase, interaction objects are not created for them, etc. For comparison, the filter shader described in the next section could also potentially avoid creating these interaction objects, but the pairs would still have to be reported by the broadphase to the next stage of the pipeline.</p>
+</section>
+<section id="pxsimulationfiltershader">
+<h3>PxSimulationFilterShader<a class="headerlink" href="#pxsimulationfiltershader" title="Permalink to this headline"></a></h3>
+<p>The most common way to implement collision filtering is via a <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#_CPPv424PxSimulationFilterShader" title="PxSimulationFilterShader"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxSimulationFilterShader</span></code></a>, which is a reasonably fast and flexible mechanism. A <em>filter shader</em> is a standalone user-defined C function called for all pairs of shapes whose axis aligned bounding boxes in world space are found to intersect for the first time. All behavior beyond that is determined by what the shader returns.</p>
+<p>In theory such a shader can run on the GPU and thus it should not reference any memory other than arguments of the function and its own local stack variables. Such a function looks like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxFilterFlags</span><span class="w"> </span><span class="nf">FilterShaderExample</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterObjectAttributes</span><span class="w"> </span><span class="n">attributes0</span><span class="p">,</span><span class="w"> </span><span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData0</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterObjectAttributes</span><span class="w"> </span><span class="n">attributes1</span><span class="p">,</span><span class="w"> </span><span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData1</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxPairFlags</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairFlags</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">constantBlock</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">constantBlockSize</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// let triggers through</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes1</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eTRIGGER_DEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// generate contacts for all that were not filtered above</span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eCONTACT_DEFAULT</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// trigger the contact callback for pairs (A,B) where</span>
+<span class="w">    </span><span class="c1">// the filtermask of A contains the ID of B and vice versa.</span>
+<span class="w">    </span><span class="k">if</span><span class="p">((</span><span class="n">filterData0</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">filterData1</span><span class="p">.</span><span class="n">word1</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">filterData1</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">filterData0</span><span class="p">.</span><span class="n">word1</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eNOTIFY_TOUCH_FOUND</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And it would be passed to the scene at creation time via <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv4N11PxSceneDesc12filterShaderE" title="PxSceneDesc::filterShader"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::filterShader</span></code></a>, like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSceneDesc</span><span class="w"> </span><span class="n">sceneDesc</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">filterShader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sceneDesc</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>As previously mentioned, the shader filter function should only use the arguments passed to the function to operate. If you need access to shared/global data structures, consider using a <a class="reference internal" href="../_build/public/latest/class_px_simulation_filter_callback.html#_CPPv426PxSimulationFilterCallback" title="PxSimulationFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationFilterCallback</span></code></a> instead. These arguments include <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxFilterObjectAttributes</span></code></a> and <a class="reference internal" href="../_build/public/latest/struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a> for the two objects, and a constant block of memory. Note that the pointers to the two objects are NOT passed, because dereferencing them would mean accessing external memory to the shader, which could potentially crash if the shader code is uploaded to a remote processor.</p>
+<p><a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxFilterObjectAttributes</span></code></a> and <a class="reference internal" href="../_build/public/latest/struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a> are intended to contain all the useful information that one could quickly glean from the pointers. <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxFilterObjectAttributes</span></code></a> are 32 bits of data, that encode the type of object, for example <a class="reference internal" href="../_build/public/latest/struct_px_filter_object_type.html#_CPPv4N18PxFilterObjectType4Enum13eRIGID_STATICE" title="PxFilterObjectType::eRIGID_STATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterObjectType::eRIGID_STATIC</span></code></a> or <a class="reference internal" href="../_build/public/latest/struct_px_filter_object_type.html#_CPPv4N18PxFilterObjectType4Enum14eRIGID_DYNAMICE" title="PxFilterObjectType::eRIGID_DYNAMIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterObjectType::eRIGID_DYNAMIC</span></code></a>. Additionally, it lets you find out if the object is kinematic or a trigger without accessing the <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> flags (using the <a class="reference internal" href="../_build/public/latest/function_group__physics_1gab0b0f7fe4f001e8bc5aacd10103a87e4.html#_CPPv425PxFilterObjectIsKinematic24PxFilterObjectAttributes" title="PxFilterObjectIsKinematic"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFilterObjectIsKinematic()</span></code></a> and <a class="reference internal" href="../_build/public/latest/function_group__physics_1ga86216b0fb36be0fb1c670cba52bc8266.html#_CPPv423PxFilterObjectIsTrigger24PxFilterObjectAttributes" title="PxFilterObjectIsTrigger"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFilterObjectIsTrigger()</span></code></a> helper functions).</p>
+<p>Each <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> contains a <a class="reference internal" href="../_build/public/latest/struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a>. This is 128 bits of user defined data that can be used to store application specific information related to collision filtering. This is the other variable that is passed to the filter shader for each object, and again this is done so that the data is available to the shader without the need to call <a class="reference internal" href="../_build/public/latest/class_px_shape.html#_CPPv4NK7PxShape23getSimulationFilterDataEv" title="PxShape::getSimulationFilterData"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::getSimulationFilterData()</span></code></a>.</p>
+<p>The <em>constant block</em> is a chunk of per-scene global information that the application can give to the shader to operate on. You will want to use this to encode rules about what to filter and what not.</p>
+<p>Finally, <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxPairFlags</span></code></a> is an output parameter, like the return value <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxFilterFlags</span></code></a>, though used slightly differently. <a class="reference internal" href="../_build/public/latest/typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxFilterFlags</span></code></a> tells the SDK if it should:</p>
+<ul class="simple">
+<li><p>ignore the pair for good (<a class="reference internal" href="../_build/public/latest/struct_px_filter_flag.html#_CPPv4N12PxFilterFlag4Enum5eKILLE" title="PxFilterFlag::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterFlag::eKILL</span></code></a>)</p></li>
+<li><p>ignore the pair while it is overlapping but ask again when filtering related data changes for one of the objects (<a class="reference internal" href="../_build/public/latest/struct_px_filter_flag.html#_CPPv4N12PxFilterFlag4Enum9eSUPPRESSE" title="PxFilterFlag::eSUPPRESS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterFlag::eSUPPRESS</span></code></a>)</p></li>
+<li><p>or call the low performance but more flexible CPU callback if the shader cannot decide (<a class="reference internal" href="../_build/public/latest/struct_px_filter_flag.html#_CPPv4N12PxFilterFlag4Enum9eCALLBACKE" title="PxFilterFlag::eCALLBACK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterFlag::eCALLBACK</span></code></a>).</p></li>
+</ul>
+<p><a class="reference internal" href="../_build/public/latest/typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxPairFlags</span></code></a> specifies additional flags that stand for actions that the simulation should take in the future for this pair. For example, <a class="reference internal" href="../_build/public/latest/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eNOTIFY_TOUCH_FOUNDE" title="PxPairFlag::eNOTIFY_TOUCH_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></code></a> means notify the user when the pair really starts to touch, not just when the objects’ bounds overlap.</p>
+<p>Let us look at what the above shader does:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// let triggers through</span>
+<span class="k">if</span><span class="p">(</span><span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">PxFilterObjectIsTrigger</span><span class="p">(</span><span class="n">attributes1</span><span class="p">))</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eTRIGGER_DEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This means that if either object is a trigger, then perform default trigger behavior (notify the application about start and end of touch), and otherwise perform ‘default’ collision detection between them.:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// generate contacts for all that were not filtered above</span>
+<span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eCONTACT_DEFAULT</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// trigger the contact callback for pairs (A,B) where</span>
+<span class="c1">// the filtermask of A contains the ID of B and vice versa.</span>
+<span class="k">if</span><span class="p">((</span><span class="n">filterData0</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">filterData1</span><span class="p">.</span><span class="n">word1</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">filterData1</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">filterData0</span><span class="p">.</span><span class="n">word1</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eNOTIFY_TOUCH_FOUND</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This says that for all other objects, perform ‘default’ collision handling. In addition, there is a rule based on the filterDatas that asks for touch notifications for particular pairs. What the shader does with <em>filterData0</em> and <em>filterData1</em> is entirely user-defined, and the above is just an example of what it could look like. To understand the example, let us imagine an artificial scenario where we have different types of objects:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">FilterGroup</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ePLAYER</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eOBJECT1</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eOBJECT2</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eHEIGHTFIELD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>An app could identify each shape’s type using <a class="reference internal" href="../_build/public/latest/struct_px_filter_data.html#_CPPv4N12PxFilterData5word0E" title="PxFilterData::word0"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxFilterData::word0</span></code></a>. Then it could put a bit mask that specifies each type of object that should generate a report when touched by an object of type <em>word0</em> into <em>word1</em>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">setupFiltering</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">filterGroup</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">filterMask</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">filterData</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filterGroup</span><span class="p">;</span><span class="w"> </span><span class="c1">// word0 = own ID</span>
+<span class="w">    </span><span class="n">filterData</span><span class="p">.</span><span class="n">word1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filterMask</span><span class="p">;</span><span class="w">  </span><span class="c1">// word1 = ID mask to filter pairs that trigger a contact callback</span>
+<span class="w">    </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">setSimulationFilterData</span><span class="p">(</span><span class="n">filterData</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This sets up the <a class="reference internal" href="../_build/public/latest/struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a> for a shape, and it could be used like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">setupFiltering</span><span class="p">(</span><span class="n">playerShape</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">ePLAYER</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">eOBJECT1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">eOBJECT2</span><span class="p">);</span><span class="w"></span>
+<span class="n">setupFiltering</span><span class="p">(</span><span class="n">object1Shape</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">eOBJECT1</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">ePLAYER</span><span class="p">);</span><span class="w"></span>
+<span class="n">setupFiltering</span><span class="p">(</span><span class="n">object2Shape</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">eOBJECT2</span><span class="p">,</span><span class="w"> </span><span class="n">FilterGroup</span><span class="o">::</span><span class="n">ePLAYER</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This would enable contact notifications (<a class="reference internal" href="../_build/public/latest/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eNOTIFY_TOUCH_FOUNDE" title="PxPairFlag::eNOTIFY_TOUCH_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></code></a>) between the player and object1/object2, but not between the player and the heightfield. This is just an example.</p>
+<p>An alternative group-based filtering mechanism is provided with source in the extensions library’s <a class="reference internal" href="../_build/public/latest/function_group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f.html#_CPPv431PxDefaultSimulationFilterShader24PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDataR11PxPairFlagsPKv5PxU32" title="PxDefaultSimulationFilterShader"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxDefaultSimulationFilterShader</span></code></a>.</p>
+<p>Please refer to the snippets for additional examples. <em>SnippetTriggers</em> in particular shows how to use the filter shader to emulate triggers using regular non-trigger shapes, and also how to use the more flexible filter callback (described in the next section).</p>
+</section>
+<section id="pxsimulationfiltercallback">
+<h3>PxSimulationFilterCallback<a class="headerlink" href="#pxsimulationfiltercallback" title="Permalink to this headline"></a></h3>
+<p>The most flexible (but also the slowest) way to implement collision filtering is with the <a class="reference internal" href="../_build/public/latest/class_px_simulation_filter_callback.html#_CPPv426PxSimulationFilterCallback" title="PxSimulationFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationFilterCallback</span></code></a>. It is the most flexible because contrary to the filter shader, the callback can access any memory and do anything it needs to. It is the slowest because it happens after the broadphase, at the last stage of the filtering pipeline, and it is implemented with regular virtual calls.</p>
+<p>The user-defined callback must be passed to <a class="reference internal" href="../_build/public/latest/class_px_scene_desc.html#_CPPv4N11PxSceneDesc14filterCallbackE" title="PxSceneDesc::filterCallback"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::filterCallback</span></code></a> at scene creation time, or later with <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene26setSimulationEventCallbackEP25PxSimulationEventCallback" title="PxScene::setSimulationEventCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setSimulationEventCallback()</span></code></a>. For performance reasons the callback is not automatically called for each pair returned by the broadphase, the call must be requested inside the previously discussed filter shader using <a class="reference internal" href="../_build/public/latest/struct_px_filter_flag.html#_CPPv4N12PxFilterFlag4Enum9eCALLBACKE" title="PxFilterFlag::eCALLBACK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxFilterFlag::eCALLBACK</span></code></a>. This is also why the callback is the slowest filtering mechanism: by design it happens <em>after</em> the filter shader.</p>
+<p>The user-defined functions <a class="reference internal" href="../_build/public/latest/class_px_simulation_filter_callback.html#_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU3224PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags" title="PxSimulationFilterCallback::pairFound"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationFilterCallback::pairFound()</span></code></a> and <a class="reference internal" href="../_build/public/latest/class_px_simulation_filter_callback.html#_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU3224PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab" title="PxSimulationFilterCallback::pairLost"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationFilterCallback::pairLost()</span></code></a> are called appropriately. Please refer to the functions’ documentation for details. An example of using the filter callback is available in <em>SnippetTriggers</em>.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="aggregates">
+<span id="collisionaggregates"></span><h2>Aggregates<a class="headerlink" href="#aggregates" title="Permalink to this headline"></a></h2>
+<p>An aggregate (<a class="reference internal" href="../_build/public/latest/class_px_aggregate.html#_CPPv411PxAggregate" title="PxAggregate"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAggregate</span></code></a>) is a collection of actors represented as a single entry in the broadphase.</p>
+<p>Aggregates do not provide extra simulation or query features, but allow you to tell the SDK that a set of actors will be clustered together, which in turn allows the SDK to optimize its spatial data operations. A typical use case is a ragdoll, made of multiple actors connected by joints. Without aggregates, this gives rise to as many broad-phase entries as there are shapes in the ragdoll, and since by nature these shapes are always close to each other it gives birth to a lot of overlapping pairs, and a lot of internal interaction objects. It is typically more efficient to represent the ragdoll in the broad-phase as a single entity, and perform internal overlap tests in a second pass if necessary.</p>
+<p>Another potential use case is a single actor with a large number of attached shapes: using an aggregate for these large compound actors limits the number of internal interaction objects, which can give performance gains.</p>
+<section id="creating-an-aggregate">
+<h3>Creating an Aggregate<a class="headerlink" href="#creating-an-aggregate" title="Permalink to this headline"></a></h3>
+<p>Create an aggregate with <a class="reference internal" href="../_build/public/latest/class_px_physics.html#_CPPv4N9PxPhysics15createAggregateE5PxU325PxU3221PxAggregateFilterHint" title="PxPhysics::createAggregate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::createAggregate()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="p">;</span><span class="w"> </span><span class="c1">// The physics SDK object</span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">nbActors</span><span class="p">;</span><span class="w">     </span><span class="c1">// Max number of actors expected in the aggregate</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">selfCollisions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxAggregateFilterHint</span><span class="w"> </span><span class="n">hint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGetAggregateFilterHint</span><span class="p">(</span><span class="n">PxAggregateType</span><span class="o">::</span><span class="n">eGENERIC</span><span class="p">,</span><span class="w"> </span><span class="n">selfCollisions</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxAggregate</span><span class="o">*</span><span class="w"> </span><span class="n">aggregate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physics</span><span class="o">-&gt;</span><span class="n">createAggregate</span><span class="p">(</span><span class="n">nbActors</span><span class="p">,</span><span class="w"> </span><span class="n">hint</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If you will never need internal collisions between the actors of the aggregate, disable them at creation time with the selfCollision flag. This is much more efficient than using the scene filtering mechanism, as it bypasses all internal filtering logic.</p>
+<p>Aggregates containing only static or kinematic actors should ideally be created with <a class="reference internal" href="../_build/public/latest/struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4Enum7eSTATICE" title="PxAggregateType::eSTATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxAggregateType::eSTATIC</span></code></a> or <a class="reference internal" href="../_build/public/latest/struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4Enum10eKINEMATICE" title="PxAggregateType::eKINEMATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxAggregateType::eKINEMATIC</span></code></a>. This makes filtering faster, especially when combined with <a class="reference internal" href="../_build/public/latest/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKILLE" title="PxPairFilteringMode::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKILL</span></code></a> for static-vs-kinematic or kinematic-vs-kinematic pairs.</p>
+<p>It is not allowed to enable self collisions on <a class="reference internal" href="../_build/public/latest/struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4Enum7eSTATICE" title="PxAggregateType::eSTATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxAggregateType::eSTATIC</span></code></a> aggregates. Both the maximum number of actors and the filtering attributes are immutable.</p>
+</section>
+<section id="populating-an-aggregate">
+<h3>Populating an Aggregate<a class="headerlink" href="#populating-an-aggregate" title="Permalink to this headline"></a></h3>
+<p>Add an actor to an aggregate with <a class="reference internal" href="../_build/public/latest/class_px_aggregate.html#_CPPv4N11PxAggregate8addActorER7PxActorPK5PxBVH" title="PxAggregate::addActor"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxAggregate::addActor()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxActor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">actor</span><span class="p">;</span><span class="w">    </span><span class="c1">// Some actor, previously created</span>
+<span class="n">aggregate</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that if the actor already belongs to a scene, the call is ignored. Either add the actors to an aggregate and then add the aggregate to the scene, or add the aggregate to the scene and then the actors to the aggregate.</p>
+<p>To add the aggregate to a scene (before or after populating it), use <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene12addAggregateER11PxAggregate" title="PxScene::addAggregate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::addAggregate()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">addAggregate</span><span class="p">(</span><span class="o">*</span><span class="n">aggregate</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Similarly, to remove the aggregate from the scene, use <a class="reference internal" href="../_build/public/latest/class_px_scene.html#_CPPv4N7PxScene15removeAggregateER11PxAggregateb" title="PxScene::removeAggregate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::removeAggregate()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">removeAggregate</span><span class="p">(</span><span class="o">*</span><span class="n">aggregate</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="releasing-an-aggregate">
+<h3>Releasing an Aggregate<a class="headerlink" href="#releasing-an-aggregate" title="Permalink to this headline"></a></h3>
+<p>To release an aggregate, just call its release function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxAggregate</span><span class="o">*</span><span class="w"> </span><span class="n">aggregate</span><span class="p">;</span><span class="w">    </span><span class="c1">// The aggregate we previously created</span>
+<span class="n">aggregate</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Releasing an aggregate does not release the aggregated actors. If the aggregate belongs to a scene, the actors are automatically re-inserted in that scene. If you intend to delete both the aggregate and its actors, it is most efficient to release the actors first, then release the aggregate when it is empty.</p>
+</section>
+<section id="amortizing-insertion">
+<h3>Amortizing Insertion<a class="headerlink" href="#amortizing-insertion" title="Permalink to this headline"></a></h3>
+<p>Adding many objects to a scene in one frame can be a costly operation. This can be the case for a ragdoll, which as discussed is a good candidate for <a class="reference internal" href="../_build/public/latest/class_px_aggregate.html#_CPPv411PxAggregate" title="PxAggregate"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAggregate</span></code></a>. Another case is localized debris, for which self-collisions are often disabled. To amortize the cost of object insertion into the broad-phase structure over several, spawn the debris in an aggregate, then remove each actor from the aggregate and and re-insert it into the scene over those frames.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="standalone-broad-phase">
+<span id="broadphaseimmediatemode"></span><h2>Standalone Broad-phase<a class="headerlink" href="#standalone-broad-phase" title="Permalink to this headline"></a></h2>
+<p>Since PhysX 5 the broadphase is also exposed as an “immediate mode” standalone component.</p>
+<p>First, create a <a class="reference internal" href="../_build/public/latest/class_px_broad_phase_desc.html#_CPPv416PxBroadPhaseDesc" title="PxBroadPhaseDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBroadPhaseDesc</span></code></a> structure to describe the desired broadphase. It captures all the parameters needed to initialize a broadphase. For the GPU broadphase (<a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eGPUE" title="PxBroadPhaseType::eGPU"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eGPU</span></code></a>) it is necessary to provide a CUDA context manager, which can be created this way:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxFoundation</span><span class="o">*</span><span class="w"> </span><span class="n">foundation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+
+<span class="n">PxCudaContextManagerDesc</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateCudaContextManager</span><span class="p">(</span><span class="o">*</span><span class="n">foundation</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">,</span><span class="w"> </span><span class="n">PxGetProfilerCallback</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The kinematic filtering flags (<a class="reference internal" href="../_build/public/latest/class_px_broad_phase_desc.html#_CPPv4N16PxBroadPhaseDesc25mDiscardStaticVsKinematicE" title="PxBroadPhaseDesc::mDiscardStaticVsKinematic"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxBroadPhaseDesc::mDiscardStaticVsKinematic</span></code></a> and <a class="reference internal" href="../_build/public/latest/class_px_broad_phase_desc.html#_CPPv4N16PxBroadPhaseDesc28mDiscardKinematicVsKinematicE" title="PxBroadPhaseDesc::mDiscardKinematicVsKinematic"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxBroadPhaseDesc::mDiscardKinematicVsKinematic</span></code></a>) are currently not supported by the GPU broadphase. They are used to dismiss pairs that involve kinematic objects directly within the broadphase.</p>
+<p>To create the standalone broadphase, call <a class="reference internal" href="../_build/public/latest/function_group__physics_1ga83abea8c6c41790d092e9c58ef23640d.html#_CPPv418PxCreateBroadPhaseRK16PxBroadPhaseDesc" title="PxCreateBroadPhase"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreateBroadPhase()</span></code></a>. Creating a CPU broadphase can be as simple as:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBroadPhaseDesc</span><span class="w"> </span><span class="nf">bpDesc</span><span class="p">(</span><span class="n">PxBroadPhaseType</span><span class="o">::</span><span class="n">eABP</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxBroadPhase</span><span class="o">*</span><span class="w"> </span><span class="n">bp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateBroadPhase</span><span class="p">(</span><span class="n">bpDesc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The returned <a class="reference internal" href="../_build/public/latest/class_px_broad_phase.html#_CPPv412PxBroadPhase" title="PxBroadPhase"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBroadPhase</span></code></a> is a low-level broadphase API that only supports batched updates and leaves most of the data management to users. This is useful if you want to use the broadphase with your own memory buffers. Note however that the GPU broadphase works best with buffers allocated in CUDA memory. The <a class="reference internal" href="../_build/public/latest/class_px_broad_phase.html#_CPPv4N12PxBroadPhase12getAllocatorEv" title="PxBroadPhase::getAllocator"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBroadPhase::getAllocator()</span></code></a> function returns an allocator that is compatible with the selected broadphase. It is recommended to allocate and deallocate the broadphase data (bounds, groups, distances) using this allocator.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for CPU broadphases it must be safe to load 4 bytes past the end of the provided bounds array.</p>
+</div>
+<p><a class="reference internal" href="../_build/public/latest/class_px_a_a_b_b_manager.html#_CPPv413PxAABBManager" title="PxAABBManager"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxAABBManager</span></code></a> is an easier-to-use broadphase interface that automatically deals with these requirements. You can create an AABB manager after creating the broadphase object, with the <a class="reference internal" href="../_build/public/latest/function_group__physics_1ga31c52c7176f315ad16955e3f49bf53d0.html#_CPPv419PxCreateAABBManagerR12PxBroadPhase" title="PxCreateAABBManager"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreateAABBManager()</span></code></a> function. This high-level broadphase has a more traditional one-object-at-a-time API and does the proper data management automatically.</p>
+<p>Usage of the standalone broadphase is demonstrated in <em>SnippetStandaloneBroadphase</em>.</p>
+<img alt="../_images/SnippetStandaloneBroadphase.png" src="../_images/SnippetStandaloneBroadphase.png" />
+<p>Note that to take advantage of  multithreaded CPU implementations it is necessary to call <a class="reference internal" href="../_build/public/latest/class_px_broad_phase.html#_CPPv4N12PxBroadPhase6updateERK22PxBroadPhaseUpdateDataP10PxBaseTask" title="PxBroadPhase::update"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBroadPhase::update()</span></code></a> with a <a class="reference internal" href="../_build/public/latest/class_px_base_task.html#_CPPv410PxBaseTask" title="PxBaseTask"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBaseTask</span></code></a> continuation task. It is legal to pass NULL as a continuation task, but in this case the CPU broadphases will run single-threaded (even <a class="reference internal" href="../_build/public/latest/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum5ePABPE" title="PxBroadPhaseType::ePABP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::ePABP</span></code></a>). The GPU broadphase does not have this restriction.</p>
+<p>Here is an example of how to run a standalone multithreaded CPU broadphase:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Init time:</span>
+
+<span class="c1">// Create CPU dispatcher and task manager</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbThreads</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxDefaultCpuDispatcher</span><span class="o">*</span><span class="w"> </span><span class="n">dispatcher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultCpuDispatcherCreate</span><span class="p">(</span><span class="n">nbThreads</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxTaskManager</span><span class="o">*</span><span class="w"> </span><span class="n">taskManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxTaskManager</span><span class="o">::</span><span class="n">createTaskManager</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">dispatcher</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Create a standalone broadphase</span>
+<span class="n">PxBroadPhase</span><span class="o">*</span><span class="w"> </span><span class="n">bp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+
+<span class="c1">// Each frame:</span>
+
+<span class="w">    </span><span class="c1">// Start the task manager</span>
+<span class="w">    </span><span class="n">taskManager</span><span class="o">-&gt;</span><span class="n">resetDependencies</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">taskManager</span><span class="o">-&gt;</span><span class="n">startSimulation</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Gather update data for this frame</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxBroadPhaseUpdateData</span><span class="w"> </span><span class="n">bpData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Multithreaded broadphase update</span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxSync</span><span class="w"> </span><span class="n">sync</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">sync</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">TaskWait</span><span class="w"> </span><span class="nf">taskWait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sync</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">taskWait</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="o">*</span><span class="n">taskManager</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">bp</span><span class="o">-&gt;</span><span class="n">update</span><span class="p">(</span><span class="n">bpData</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">taskWait</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">taskWait</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">sync</span><span class="p">.</span><span class="n">wait</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Make sure you fetch the results after sync.wait() is done</span>
+<span class="w">        </span><span class="n">PxBroadPhaseResults</span><span class="w"> </span><span class="n">results</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">bp</span><span class="o">-&gt;</span><span class="n">fetchResults</span><span class="p">(</span><span class="n">results</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Stop the task manager</span>
+<span class="w">    </span><span class="n">taskManager</span><span class="o">-&gt;</span><span class="n">stopSimulation</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// Cleanup time:</span>
+<span class="n">PX_RELEASE</span><span class="p">(</span><span class="n">bp</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_RELEASE</span><span class="p">(</span><span class="n">taskManager</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_RELEASE</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And the waitTask object can be for example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">TaskWait</span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxLightCpuTask</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">TaskWait</span><span class="p">(</span><span class="n">PxSync</span><span class="o">*</span><span class="w"> </span><span class="n">sync</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxLightCpuTask</span><span class="p">(),</span><span class="w"> </span><span class="n">mSync</span><span class="p">(</span><span class="n">sync</span><span class="p">)</span><span class="w">  </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">run</span><span class="p">()</span><span class="w">  </span><span class="n">PX_OVERRIDE</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">release</span><span class="p">()</span><span class="w">    </span><span class="n">PX_OVERRIDE</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxLightCpuTask</span><span class="o">::</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">mSync</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">getName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PX_OVERRIDE</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;TaskWait&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxSync</span><span class="o">*</span><span class="w"> </span><span class="n">mSync</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The standalone broadphase does not necessarily operates on shapes or actors, it is up to users to define what the bounds represent. It also does not generate interaction objects for returned pairs, it is up to users to implement this if needed.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

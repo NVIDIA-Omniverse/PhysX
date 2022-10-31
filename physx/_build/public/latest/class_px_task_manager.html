@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTaskManager &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTaskManager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtaskmanager">
+<span id="exhale-class-class-px-task-manager"></span><h1>PxTaskManager<a class="headerlink" href="#pxtaskmanager" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_task_PxTaskManager.h.html#file-include-task-pxtaskmanager-h"><span class="std std-ref">include/task/PxTaskManager.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxTaskManager">
+<span id="_CPPv313PxTaskManager"></span><span id="_CPPv213PxTaskManager"></span><span id="PxTaskManager"></span><span class="target" id="class_px_task_manager"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTaskManager</span></span></span><a class="headerlink" href="#_CPPv413PxTaskManager" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> interface. </p>
+<p>A <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> instance holds references to user-provided dispatcher objects. When tasks are submitted the <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> routes them to the appropriate dispatcher and handles task profiling if enabled. Users should not implement the <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> interface, the SDK creates its own concrete <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> object per-scene which users can configure by passing dispatcher objects into the <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc"><span class="std std-ref">PxSceneDesc</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cpu_dispatcher.html#class_px_cpu_dispatcher"><span class="std std-ref">PxCpuDispatcher</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager16setCpuDispatcherER15PxCpuDispatcher">
+<span id="_CPPv3N13PxTaskManager16setCpuDispatcherER15PxCpuDispatcher"></span><span id="_CPPv2N13PxTaskManager16setCpuDispatcherER15PxCpuDispatcher"></span><span id="PxTaskManager::setCpuDispatcher__PxCpuDispatcherR"></span><span class="target" id="class_px_task_manager_1a13d99f628b2031f79875ccce57ab7342"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCpuDispatcher</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cpu_dispatcher.html#_CPPv415PxCpuDispatcher" title="PxCpuDispatcher"><span class="n"><span class="pre">PxCpuDispatcher</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager16setCpuDispatcherER15PxCpuDispatcher" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the user-provided dispatcher object for CPU tasks. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cpu_dispatcher.html#class_px_cpu_dispatcher"><span class="std std-ref">PxCpuDispatcher</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ref</strong> – <strong>[in]</strong> The dispatcher object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxTaskManager16getCpuDispatcherEv">
+<span id="_CPPv3NK13PxTaskManager16getCpuDispatcherEv"></span><span id="_CPPv2NK13PxTaskManager16getCpuDispatcherEv"></span><span id="PxTaskManager::getCpuDispatcherC"></span><span class="target" id="class_px_task_manager_1ab14160a600aca397ff93272ddd06fdfd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_cpu_dispatcher.html#_CPPv415PxCpuDispatcher" title="PxCpuDispatcher"><span class="n"><span class="pre">PxCpuDispatcher</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getCpuDispatcher</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxTaskManager16getCpuDispatcherEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the user-provided dispatcher object for CPU tasks. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cpu_dispatcher.html#class_px_cpu_dispatcher"><span class="std std-ref">PxCpuDispatcher</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The CPU dispatcher object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager17resetDependenciesEv">
+<span id="_CPPv3N13PxTaskManager17resetDependenciesEv"></span><span id="_CPPv2N13PxTaskManager17resetDependenciesEv"></span><span id="PxTaskManager::resetDependencies"></span><span class="target" id="class_px_task_manager_1a6de7da72e9ce000710a3b1154323df33"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resetDependencies</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager17resetDependenciesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reset any dependencies between Tasks. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_task.html#class_px_task"><span class="std std-ref">PxTask</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Will be called at the start of every frame before tasks are submitted.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager15startSimulationEv">
+<span id="_CPPv3N13PxTaskManager15startSimulationEv"></span><span id="_CPPv2N13PxTaskManager15startSimulationEv"></span><span id="PxTaskManager::startSimulation"></span><span class="target" id="class_px_task_manager_1a2653cdd8601dc2fefbbd3f5447a166b3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startSimulation</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager15startSimulationEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Called by the owning scene to start the task graph. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_task.html#class_px_task"><span class="std std-ref">PxTask</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All tasks with ref count of 1 will be dispatched.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager14stopSimulationEv">
+<span id="_CPPv3N13PxTaskManager14stopSimulationEv"></span><span id="_CPPv2N13PxTaskManager14stopSimulationEv"></span><span id="PxTaskManager::stopSimulation"></span><span class="target" id="class_px_task_manager_1a647e017b19c5daa86990beeb6351e541"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stopSimulation</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager14stopSimulationEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Called by the owning scene at the end of a simulation step. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager13taskCompletedER6PxTask">
+<span id="_CPPv3N13PxTaskManager13taskCompletedER6PxTask"></span><span id="_CPPv2N13PxTaskManager13taskCompletedER6PxTask"></span><span id="PxTaskManager::taskCompleted__PxTaskR"></span><span class="target" id="class_px_task_manager_1a55665c6afe1db5d3d65df97c80e5cc84"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">taskCompleted</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_task.html#_CPPv46PxTask" title="PxTask"><span class="n"><span class="pre">PxTask</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">task</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager13taskCompletedER6PxTask" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Called by the worker threads to inform the <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> that a task has completed processing. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>task</strong> – <strong>[in]</strong> The task which has been completed </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager12getNamedTaskEPKc">
+<span id="_CPPv3N13PxTaskManager12getNamedTaskEPKc"></span><span id="_CPPv2N13PxTaskManager12getNamedTaskEPKc"></span><span id="PxTaskManager::getNamedTask__cCP"></span><span class="target" id="class_px_task_manager_1aa11bf917674756d4374931c2c4581bcf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_CPPv48PxTaskID" title="PxTaskID"><span class="n"><span class="pre">PxTaskID</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNamedTask</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager12getNamedTaskEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve a task by name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – <strong>[in]</strong> The unique name of a task </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The ID of the task with that name, or eNOT_PRESENT if not found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager15submitNamedTaskEP6PxTaskPKcN10PxTaskType4EnumE">
+<span id="_CPPv3N13PxTaskManager15submitNamedTaskEP6PxTaskPKcN10PxTaskType4EnumE"></span><span id="_CPPv2N13PxTaskManager15submitNamedTaskEP6PxTaskPKcN10PxTaskType4EnumE"></span><span id="PxTaskManager::submitNamedTask__PxTaskP.cCP.PxTaskType::Enum"></span><span class="target" id="class_px_task_manager_1ac303df3aa4ae65e3d0debbc8c07021c8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_CPPv48PxTaskID" title="PxTaskID"><span class="n"><span class="pre">PxTaskID</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">submitNamedTask</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_task.html#_CPPv46PxTask" title="PxTask"><span class="n"><span class="pre">PxTask</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">task</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span>, <a class="reference internal" href="struct_px_task_type.html#_CPPv410PxTaskType" title="PxTaskType"><span class="n"><span class="pre">PxTaskType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_task_type.html#_CPPv4N10PxTaskType4EnumE" title="PxTaskType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_task_type.html#_CPPv410PxTaskType" title="PxTaskType"><span class="n"><span class="pre">PxTaskType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_task_type.html#_CPPv4N10PxTaskType4Enum4eCPUE" title="PxTaskType::eCPU"><span class="n"><span class="pre">eCPU</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager15submitNamedTaskEP6PxTaskPKcN10PxTaskType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Submit a task with a unique name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>task</strong> – <strong>[in]</strong> The task to be executed </p></li>
+<li><p><strong>name</strong> – <strong>[in]</strong> The unique name of a task </p></li>
+<li><p><strong>type</strong> – <strong>[in]</strong> The type of the task (default eCPU) </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The ID of the task with that name, or eNOT_PRESENT if not found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager17submitUnnamedTaskER6PxTaskN10PxTaskType4EnumE">
+<span id="_CPPv3N13PxTaskManager17submitUnnamedTaskER6PxTaskN10PxTaskType4EnumE"></span><span id="_CPPv2N13PxTaskManager17submitUnnamedTaskER6PxTaskN10PxTaskType4EnumE"></span><span id="PxTaskManager::submitUnnamedTask__PxTaskR.PxTaskType::Enum"></span><span class="target" id="class_px_task_manager_1a7cee8b2d1a09dfdb4934616957f950b8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_CPPv48PxTaskID" title="PxTaskID"><span class="n"><span class="pre">PxTaskID</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">submitUnnamedTask</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_task.html#_CPPv46PxTask" title="PxTask"><span class="n"><span class="pre">PxTask</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">task</span></span>, <a class="reference internal" href="struct_px_task_type.html#_CPPv410PxTaskType" title="PxTaskType"><span class="n"><span class="pre">PxTaskType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_task_type.html#_CPPv4N10PxTaskType4EnumE" title="PxTaskType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_task_type.html#_CPPv410PxTaskType" title="PxTaskType"><span class="n"><span class="pre">PxTaskType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_task_type.html#_CPPv4N10PxTaskType4Enum4eCPUE" title="PxTaskType::eCPU"><span class="n"><span class="pre">eCPU</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager17submitUnnamedTaskER6PxTaskN10PxTaskType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Submit an unnamed task. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>task</strong> – <strong>[in]</strong> The task to be executed </p></li>
+<li><p><strong>type</strong> – <strong>[in]</strong> The type of the task (default eCPU)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The ID of the task with that name, or eNOT_PRESENT if not found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager13getTaskFromIDE8PxTaskID">
+<span id="_CPPv3N13PxTaskManager13getTaskFromIDE8PxTaskID"></span><span id="_CPPv2N13PxTaskManager13getTaskFromIDE8PxTaskID"></span><span id="PxTaskManager::getTaskFromID__PxTaskID"></span><span class="target" id="class_px_task_manager_1a48b4aa01d2251b1fbbcfd63e56cfae67"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_task.html#_CPPv46PxTask" title="PxTask"><span class="n"><span class="pre">PxTask</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTaskFromID</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_CPPv48PxTaskID" title="PxTaskID"><span class="n"><span class="pre">PxTaskID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager13getTaskFromIDE8PxTaskID" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve a task given a task ID. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – <strong>[in]</strong> The ID of the task to return, a valid ID must be passed or results are undefined</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The task associated with the ID </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager7releaseEv">
+<span id="_CPPv3N13PxTaskManager7releaseEv"></span><span id="_CPPv2N13PxTaskManager7releaseEv"></span><span id="PxTaskManager::release"></span><span class="target" id="class_px_task_manager_1a27cbc0729fd7ba0c966a475fd22bdb25"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxTaskManager7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Release the <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> object, referenced dispatchers will not be released. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManager17createTaskManagerER15PxErrorCallbackP15PxCpuDispatcher">
+<span id="_CPPv3N13PxTaskManager17createTaskManagerER15PxErrorCallbackP15PxCpuDispatcher"></span><span id="_CPPv2N13PxTaskManager17createTaskManagerER15PxErrorCallbackP15PxCpuDispatcher"></span><span id="PxTaskManager::createTaskManager__PxErrorCallbackR.PxCpuDispatcherP"></span><span class="target" id="class_px_task_manager_1a3f0a80571df5128b588d24eb70f56f1d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv413PxTaskManager" title="PxTaskManager"><span class="n"><span class="pre">PxTaskManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createTaskManager</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_error_callback.html#_CPPv415PxErrorCallback" title="PxErrorCallback"><span class="n"><span class="pre">PxErrorCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">errorCallback</span></span>, <a class="reference internal" href="class_px_cpu_dispatcher.html#_CPPv415PxCpuDispatcher" title="PxCpuDispatcher"><span class="n"><span class="pre">PxCpuDispatcher</span></span></a><span class="p"><span class="pre">*</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxTaskManager17createTaskManagerER15PxErrorCallbackP15PxCpuDispatcher" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct a new <a class="reference internal" href="#class_px_task_manager"><span class="std std-ref">PxTaskManager</span></a> instance with the given [optional] dispatchers. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTaskManagerD0Ev">
+<span id="_CPPv3N13PxTaskManagerD0Ev"></span><span id="_CPPv2N13PxTaskManagerD0Ev"></span><span id="PxTaskManager::~PxTaskManager"></span><span class="target" id="class_px_task_manager_1ac86503910a8ac2ca471a76c392cdf469"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxTaskManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxTaskManagerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-friends">Friends</p>
+<dl>
+<dt class="sig sig-object cpp">
+<em class="property"><span class="pre">friend</span> <span class="pre">class</span></em> <span class="pre">PxBaseTask</span></dt>
+</dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<em class="property"><span class="pre">friend</span> <span class="pre">class</span></em> <span class="pre">PxTask</span></dt>
+</dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<em class="property"><span class="pre">friend</span> <span class="pre">class</span></em> <span class="pre">PxLightCpuTask</span></dt>
+</dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

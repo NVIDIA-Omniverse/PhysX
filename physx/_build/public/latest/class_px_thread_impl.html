@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxThreadImpl &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxThreadImpl</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxthreadimpl">
+<span id="exhale-class-class-px-thread-impl"></span><h1>PxThreadImpl<a class="headerlink" href="#pxthreadimpl" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxThread.h.html#file-include-foundation-pxthread-h"><span class="std std-ref">include/foundation/PxThread.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxThreadImpl">
+<span id="_CPPv312PxThreadImpl"></span><span id="_CPPv212PxThreadImpl"></span><span id="PxThreadImpl"></span><span class="target" id="class_px_thread_impl"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxThreadImpl</span></span></span><a class="headerlink" href="#_CPPv412PxThreadImpl" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl2IdE">
+<span id="_CPPv3N12PxThreadImpl2IdE"></span><span id="_CPPv2N12PxThreadImpl2IdE"></span><span id="PxThreadImpl::Id"></span><span class="target" id="class_px_thread_impl_1a5a4c7c197fc94d3697351dc0730eae75"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Id</span></span></span><a class="headerlink" href="#_CPPv4N12PxThreadImpl2IdE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl9ExecuteFnE">
+<span id="_CPPv3N12PxThreadImpl9ExecuteFnE"></span><span id="_CPPv2N12PxThreadImpl9ExecuteFnE"></span><span id="PxThreadImpl::ExecuteFn"></span><span class="target" id="class_px_thread_impl_1a981b01c09c9e38913bd420658863e122"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">ExecuteFn</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv4N12PxThreadImpl9ExecuteFnE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl12PxThreadImplEv">
+<span id="_CPPv3N12PxThreadImpl12PxThreadImplEv"></span><span id="_CPPv2N12PxThreadImpl12PxThreadImplEv"></span><span id="PxThreadImpl::PxThreadImpl"></span><span class="target" id="class_px_thread_impl_1a475b6c33e970953f891ad90755acd107"></span><span class="sig-name descname"><span class="n"><span class="pre">PxThreadImpl</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl12PxThreadImplEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct (but do not start) the thread object. </p>
+<p>The OS thread object will not be created until <a class="reference internal" href="#class_px_thread_impl_1a12f5fc5904c0d9ad8ccfd3ec7514184d"><span class="std std-ref">start()</span></a> is called. Executes in the context of the spawning thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl12PxThreadImplE9ExecuteFnPvPKc">
+<span id="_CPPv3N12PxThreadImpl12PxThreadImplE9ExecuteFnPvPKc"></span><span id="_CPPv2N12PxThreadImpl12PxThreadImplE9ExecuteFnPvPKc"></span><span id="PxThreadImpl::PxThreadImpl__ExecuteFn.voidP.cCP"></span><span class="target" id="class_px_thread_impl_1a8c9b9a3a41ebf4d4d885aec8870a271d"></span><span class="sig-name descname"><span class="n"><span class="pre">PxThreadImpl</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N12PxThreadImpl9ExecuteFnE" title="PxThreadImpl::ExecuteFn"><span class="n"><span class="pre">ExecuteFn</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fn</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">arg</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl12PxThreadImplE9ExecuteFnPvPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct and start the the thread, passing the given arg to the given fn. </p>
+<p>(pthread style) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImplD0Ev">
+<span id="_CPPv3N12PxThreadImplD0Ev"></span><span id="_CPPv2N12PxThreadImplD0Ev"></span><span id="PxThreadImpl::~PxThreadImpl"></span><span class="target" id="class_px_thread_impl_1a023ddf962fc62732764319d65cc3ca15"></span><span class="sig-name descname"><span class="n"><span class="pre">~PxThreadImpl</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImplD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deallocate all resources associated with the thread. </p>
+<p>Should be called in the context of the spawning thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl5startE5PxU32P10PxRunnable">
+<span id="_CPPv3N12PxThreadImpl5startE5PxU32P10PxRunnable"></span><span id="_CPPv2N12PxThreadImpl5startE5PxU32P10PxRunnable"></span><span id="PxThreadImpl::start__PxU32.PxRunnableP"></span><span class="target" id="class_px_thread_impl_1a12f5fc5904c0d9ad8ccfd3ec7514184d"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">start</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stackSize</span></span>, <a class="reference internal" href="class_px_runnable.html#_CPPv410PxRunnable" title="PxRunnable"><span class="n"><span class="pre">PxRunnable</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">r</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl5startE5PxU32P10PxRunnable" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create the OS thread and start it running. </p>
+<p>Called in the context of the spawning thread. If an affinity mask has previously been set then it will be applied after the thread has been created. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl4killEv">
+<span id="_CPPv3N12PxThreadImpl4killEv"></span><span id="_CPPv2N12PxThreadImpl4killEv"></span><span id="PxThreadImpl::kill"></span><span class="target" id="class_px_thread_impl_1a4a87f34f0f657cd85319d9d12d54415f"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">kill</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl4killEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Violently kill the current thread. </p>
+<p>Blunt instrument, not recommended since it can leave all kinds of things unreleased (stack, memory, mutexes…) Should be called in the context of the spawning thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl10signalQuitEv">
+<span id="_CPPv3N12PxThreadImpl10signalQuitEv"></span><span id="_CPPv2N12PxThreadImpl10signalQuitEv"></span><span id="PxThreadImpl::signalQuit"></span><span class="target" id="class_px_thread_impl_1aeaadaf188a769c1cf47008deff074b96"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">signalQuit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl10signalQuitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Stop the thread. </p>
+<p>Signals the spawned thread that it should stop, so the thread should check regularly </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl11waitForQuitEv">
+<span id="_CPPv3N12PxThreadImpl11waitForQuitEv"></span><span id="_CPPv2N12PxThreadImpl11waitForQuitEv"></span><span id="PxThreadImpl::waitForQuit"></span><span class="target" id="class_px_thread_impl_1a7ae2e6ad292b0d1e3764437efc464d5c"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">waitForQuit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl11waitForQuitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Wait for a thread to stop. </p>
+<p>Should be called in the context of the spawning thread. Returns false if the thread has not been started. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl15quitIsSignalledEv">
+<span id="_CPPv3N12PxThreadImpl15quitIsSignalledEv"></span><span id="_CPPv2N12PxThreadImpl15quitIsSignalledEv"></span><span id="PxThreadImpl::quitIsSignalled"></span><span class="target" id="class_px_thread_impl_1a7d146661b041772fa37251f3b633fc23"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">quitIsSignalled</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl15quitIsSignalledEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>check whether the thread is signalled to quit. </p>
+<p>Called in the context of the spawned thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl4quitEv">
+<span id="_CPPv3N12PxThreadImpl4quitEv"></span><span id="_CPPv2N12PxThreadImpl4quitEv"></span><span id="PxThreadImpl::quit"></span><span class="target" id="class_px_thread_impl_1aaf55d0ef21700917c98ffe913bcfc65e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">quit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl4quitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cleanly shut down this thread. </p>
+<p>Called in the context of the spawned thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl15setAffinityMaskE5PxU32">
+<span id="_CPPv3N12PxThreadImpl15setAffinityMaskE5PxU32"></span><span id="_CPPv2N12PxThreadImpl15setAffinityMaskE5PxU32"></span><span id="PxThreadImpl::setAffinityMask__PxU32"></span><span class="target" id="class_px_thread_impl_1afe2d4cda8a81f9f79093be818390297a"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAffinityMask</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl15setAffinityMaskE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Change the affinity mask for this thread. </p>
+<p>The mask is a platform specific value.</p>
+<p>On Windows, Linux, and Switch platforms, each set mask bit represents the index of a logical processor that the OS may schedule thread execution on. Bits outside the range of valid logical processors may be ignored or cause the function to return an error.</p>
+<p>On Apple platforms, this function has no effect.</p>
+<p>If the thread has not yet been started then the mask is stored and applied when the thread is started.</p>
+<p>If the thread has already been started then this method returns the previous affinity mask on success, otherwise it returns zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl11setPriorityEN16PxThreadPriority4EnumE">
+<span id="_CPPv3N12PxThreadImpl11setPriorityEN16PxThreadPriority4EnumE"></span><span id="_CPPv2N12PxThreadImpl11setPriorityEN16PxThreadPriority4EnumE"></span><span id="PxThreadImpl::setPriority__PxThreadPriority::Enum"></span><span class="target" id="class_px_thread_impl_1a3886abf16240ab9cfa966726b13c97b8"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPriority</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_thread_priority.html#_CPPv416PxThreadPriority" title="PxThreadPriority"><span class="n"><span class="pre">PxThreadPriority</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_thread_priority.html#_CPPv4N16PxThreadPriority4EnumE" title="PxThreadPriority::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prio</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl11setPriorityEN16PxThreadPriority4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set thread priority. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl7setNameEPKc">
+<span id="_CPPv3N12PxThreadImpl7setNameEPKc"></span><span id="_CPPv2N12PxThreadImpl7setNameEPKc"></span><span id="PxThreadImpl::setName__cCP"></span><span class="target" id="class_px_thread_impl_1a9d1469973815ea20dbdd8c008558a327"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl7setNameEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the thread’s name </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl19getDefaultStackSizeEv">
+<span id="_CPPv3N12PxThreadImpl19getDefaultStackSizeEv"></span><span id="_CPPv2N12PxThreadImpl19getDefaultStackSizeEv"></span><span id="PxThreadImpl::getDefaultStackSize"></span><span class="target" id="class_px_thread_impl_1af097f7945e6c4b29574e823f2b13eafb"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDefaultStackSize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl19getDefaultStackSizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl5getIdEv">
+<span id="_CPPv3N12PxThreadImpl5getIdEv"></span><span id="_CPPv2N12PxThreadImpl5getIdEv"></span><span id="PxThreadImpl::getId"></span><span class="target" id="class_px_thread_impl_1a2aa7b5464027f647e33a00a2b6b21853"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N12PxThreadImpl2IdE" title="PxThreadImpl::Id"><span class="n"><span class="pre">Id</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getId</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl5getIdEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl11getPriorityE2Id">
+<span id="_CPPv3N12PxThreadImpl11getPriorityE2Id"></span><span id="_CPPv2N12PxThreadImpl11getPriorityE2Id"></span><span id="PxThreadImpl::getPriority__Id"></span><span class="target" id="class_px_thread_impl_1a3b32e109e5f9238f0921e78a12934497"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="struct_px_thread_priority.html#_CPPv416PxThreadPriority" title="PxThreadPriority"><span class="n"><span class="pre">PxThreadPriority</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_thread_priority.html#_CPPv4N16PxThreadPriority4EnumE" title="PxThreadPriority::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPriority</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N12PxThreadImpl2IdE" title="PxThreadImpl::Id"><span class="n"><span class="pre">Id</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">threadId</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl11getPriorityE2Id" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl5sleepE5PxU32">
+<span id="_CPPv3N12PxThreadImpl5sleepE5PxU32"></span><span id="_CPPv2N12PxThreadImpl5sleepE5PxU32"></span><span id="PxThreadImpl::sleep__PxU32"></span><span class="target" id="class_px_thread_impl_1ab067580113bb938fa20cf68a10d410ff"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sleep</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">ms</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl5sleepE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Put the current thread to sleep for the given number of milliseconds. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl5yieldEv">
+<span id="_CPPv3N12PxThreadImpl5yieldEv"></span><span id="_CPPv2N12PxThreadImpl5yieldEv"></span><span id="PxThreadImpl::yield"></span><span class="target" id="class_px_thread_impl_1a12781c1fafc49ed235eacfca51422f27"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">yield</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl5yieldEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Yield the current thread’s slot on the CPU. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl14yieldProcessorEv">
+<span id="_CPPv3N12PxThreadImpl14yieldProcessorEv"></span><span id="_CPPv2N12PxThreadImpl14yieldProcessorEv"></span><span id="PxThreadImpl::yieldProcessor"></span><span class="target" id="class_px_thread_impl_1a0c7b55b48ed1bf95af46b8daa8ac4f82"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">yieldProcessor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl14yieldProcessorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Inform the processor that we’re in a busy wait to give it a chance to do something clever. </p>
+<p><a class="reference internal" href="#class_px_thread_impl_1a12781c1fafc49ed235eacfca51422f27"><span class="std std-ref">yield()</span></a> yields the thread, while <a class="reference internal" href="#class_px_thread_impl_1a0c7b55b48ed1bf95af46b8daa8ac4f82"><span class="std std-ref">yieldProcessor()</span></a> aims to yield the processor </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl18getNbPhysicalCoresEv">
+<span id="_CPPv3N12PxThreadImpl18getNbPhysicalCoresEv"></span><span id="_CPPv2N12PxThreadImpl18getNbPhysicalCoresEv"></span><span id="PxThreadImpl::getNbPhysicalCores"></span><span class="target" id="class_px_thread_impl_1a198e4d449ce252fddab9853f8d020baa"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbPhysicalCores</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl18getNbPhysicalCoresEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of physical cores (does not include hyper-threaded cores), returns 0 on failure. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxThreadImpl7getSizeEv">
+<span id="_CPPv3N12PxThreadImpl7getSizeEv"></span><span id="_CPPv2N12PxThreadImpl7getSizeEv"></span><span id="PxThreadImpl::getSize"></span><span class="target" id="class_px_thread_impl_1a8d66792e06ffa27ef18d9469d1f7fc78"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxThreadImpl7getSizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of this class. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

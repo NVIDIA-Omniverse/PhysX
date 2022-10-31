@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMassProperties &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMassProperties</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmassproperties">
+<span id="exhale-class-class-px-mass-properties"></span><h1>PxMassProperties<a class="headerlink" href="#pxmassproperties" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxMassProperties.h.html#file-include-extensions-pxmassproperties-h"><span class="std std-ref">include/extensions/PxMassProperties.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxMassProperties">
+<span id="_CPPv316PxMassProperties"></span><span id="_CPPv216PxMassProperties"></span><span id="PxMassProperties"></span><span class="target" id="class_px_mass_properties"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMassProperties</span></span></span><a class="headerlink" href="#_CPPv416PxMassProperties" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Utility class to compute and manipulate mass and inertia tensor properties. </p>
+<p>In most cases <a class="reference internal" href="class_px_rigid_body_ext.html#class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"><span class="std std-ref">PxRigidBodyExt::updateMassAndInertia()</span></a>, <a class="reference internal" href="class_px_rigid_body_ext.html#class_px_rigid_body_ext_1ab8f6af57a0fde875c41e5d747dec49fb"><span class="std std-ref">PxRigidBodyExt::setMassAndUpdateInertia()</span></a> should be enough to setup the mass properties of a rigid body. This utility class targets users that need to customize the mass properties computation. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties16PxMassPropertiesEv">
+<span id="_CPPv3N16PxMassProperties16PxMassPropertiesEv"></span><span id="_CPPv2N16PxMassProperties16PxMassPropertiesEv"></span><span id="PxMassProperties::PxMassProperties"></span><span class="target" id="class_px_mass_properties_1ad0bcafd2c2a7a224f84795fb60232ec7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMassProperties</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties16PxMassPropertiesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties16PxMassPropertiesEK6PxRealRK7PxMat33RK6PxVec3">
+<span id="_CPPv3N16PxMassProperties16PxMassPropertiesEK6PxRealRK7PxMat33RK6PxVec3"></span><span id="_CPPv2N16PxMassProperties16PxMassPropertiesEK6PxRealRK7PxMat33RK6PxVec3"></span><span id="PxMassProperties::PxMassProperties__PxRealC.PxMat33CR.PxVec3CR"></span><span class="target" id="class_px_mass_properties_1aec3bebe9ea0311fd0075bc48de028de6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMassProperties</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">m</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inertiaT</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">com</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties16PxMassPropertiesEK6PxRealRK7PxMat33RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct from individual elements. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties16PxMassPropertiesERK10PxGeometry">
+<span id="_CPPv3N16PxMassProperties16PxMassPropertiesERK10PxGeometry"></span><span id="_CPPv2N16PxMassProperties16PxMassPropertiesERK10PxGeometry"></span><span id="PxMassProperties::PxMassProperties__PxGeometryCR"></span><span class="target" id="class_px_mass_properties_1acc8eadc90e93df0e25d4dfb63988a596"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMassProperties</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties16PxMassPropertiesERK10PxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute mass properties based on a provided geometry structure. </p>
+<p>This constructor assumes the geometry has a density of 1. Mass and inertia tensor scale linearly with density.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The geometry to compute the mass properties for. Supported geometry types are: sphere, box, capsule and convex mesh. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxMassPropertiesmlEK6PxReal">
+<span id="_CPPv3NK16PxMassPropertiesmlEK6PxReal"></span><span id="_CPPv2NK16PxMassPropertiesmlEK6PxReal"></span><span id="PxMassProperties::mul-operator__PxRealCC"></span><span class="target" id="class_px_mass_properties_1a68e5314d5e54eb433504a2ef48e65d29"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxMassProperties" title="PxMassProperties"><span class="n"><span class="pre">PxMassProperties</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxMassPropertiesmlEK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scale mass properties. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> The linear scaling factor to apply to the mass properties. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The scaled mass properties. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties9translateERK6PxVec3">
+<span id="_CPPv3N16PxMassProperties9translateERK6PxVec3"></span><span id="_CPPv2N16PxMassProperties9translateERK6PxVec3"></span><span id="PxMassProperties::translate__PxVec3CR"></span><span class="target" id="class_px_mass_properties_1a015c55bfb9fdd6301db56bcc8fc07461"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties9translateERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Translate the center of mass by a given vector and adjust the inertia tensor accordingly. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> – <strong>[in]</strong> The translation vector for the center of mass. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties13inertiaTensorE">
+<span id="_CPPv3N16PxMassProperties13inertiaTensorE"></span><span id="_CPPv2N16PxMassProperties13inertiaTensorE"></span><span id="PxMassProperties::inertiaTensor__PxMat33"></span><span class="target" id="class_px_mass_properties_1aeefe4de17f788dacbf9c48fd5ec857ac"></span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inertiaTensor</span></span></span><a class="headerlink" href="#_CPPv4N16PxMassProperties13inertiaTensorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The inertia tensor of the object. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties12centerOfMassE">
+<span id="_CPPv3N16PxMassProperties12centerOfMassE"></span><span id="_CPPv2N16PxMassProperties12centerOfMassE"></span><span id="PxMassProperties::centerOfMass__PxVec3"></span><span class="target" id="class_px_mass_properties_1a8f4e5b19248941b3ee2369afadb20e96"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">centerOfMass</span></span></span><a class="headerlink" href="#_CPPv4N16PxMassProperties12centerOfMassE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The center of mass of the object. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties4massE">
+<span id="_CPPv3N16PxMassProperties4massE"></span><span id="_CPPv2N16PxMassProperties4massE"></span><span id="PxMassProperties::mass__PxReal"></span><span class="target" id="class_px_mass_properties_1a978392fb04bb472602f9fc1315d5f116"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mass</span></span></span><a class="headerlink" href="#_CPPv4N16PxMassProperties4massE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The mass of the object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties19getMassSpaceInertiaERK7PxMat33R6PxQuat">
+<span id="_CPPv3N16PxMassProperties19getMassSpaceInertiaERK7PxMat33R6PxQuat"></span><span id="_CPPv2N16PxMassProperties19getMassSpaceInertiaERK7PxMat33R6PxQuat"></span><span id="PxMassProperties::getMassSpaceInertia__PxMat33CR.PxQuatR"></span><span class="target" id="class_px_mass_properties_1af9e14e85c211cb1cf2ffb686eb351ae4"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMassSpaceInertia</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inertia</span></span>, <a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">massFrame</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties19getMassSpaceInertiaERK7PxMat33R6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the entries of the diagonalized inertia tensor and the corresponding reference rotation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inertia</strong> – <strong>[in]</strong> The inertia tensor to diagonalize. </p></li>
+<li><p><strong>massFrame</strong> – <strong>[out]</strong> The frame the diagonalized tensor refers to. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The entries of the diagonalized inertia tensor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties16translateInertiaERK7PxMat33K6PxRealRK6PxVec3">
+<span id="_CPPv3N16PxMassProperties16translateInertiaERK7PxMat33K6PxRealRK6PxVec3"></span><span id="_CPPv2N16PxMassProperties16translateInertiaERK7PxMat33K6PxRealRK6PxVec3"></span><span id="PxMassProperties::translateInertia__PxMat33CR.PxRealC.PxVec3CR"></span><span class="target" id="class_px_mass_properties_1a70cf97f0ad156d243b882cb62386dce9"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translateInertia</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inertia</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mass</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties16translateInertiaERK7PxMat33K6PxRealRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Translate an inertia tensor using the parallel axis theorem. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inertia</strong> – <strong>[in]</strong> The inertia tensor to translate. </p></li>
+<li><p><strong>mass</strong> – <strong>[in]</strong> The mass of the object. </p></li>
+<li><p><strong>t</strong> – <strong>[in]</strong> The relative frame to translate the inertia tensor to. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The translated inertia tensor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties13rotateInertiaERK7PxMat33RK6PxQuat">
+<span id="_CPPv3N16PxMassProperties13rotateInertiaERK7PxMat33RK6PxQuat"></span><span id="_CPPv2N16PxMassProperties13rotateInertiaERK7PxMat33RK6PxQuat"></span><span id="PxMassProperties::rotateInertia__PxMat33CR.PxQuatCR"></span><span class="target" id="class_px_mass_properties_1a31c57074f8353500f81a9c6de7f71c60"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotateInertia</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inertia</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties13rotateInertiaERK7PxMat33RK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Rotate an inertia tensor around the center of mass. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inertia</strong> – <strong>[in]</strong> The inertia tensor to rotate. </p></li>
+<li><p><strong>q</strong> – <strong>[in]</strong> The rotation from the new to the old coordinate frame, i.e. q.rotate(v) transforms the coordinates of vector v from the old to the new coordinate frame. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The rotated inertia tensor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties12scaleInertiaERK7PxMat33RK6PxQuatRK6PxVec3">
+<span id="_CPPv3N16PxMassProperties12scaleInertiaERK7PxMat33RK6PxQuatRK6PxVec3"></span><span id="_CPPv2N16PxMassProperties12scaleInertiaERK7PxMat33RK6PxQuatRK6PxVec3"></span><span id="PxMassProperties::scaleInertia__PxMat33CR.PxQuatCR.PxVec3CR"></span><span class="target" id="class_px_mass_properties_1a4ba3bf338320c9f0bf558b5d3a9046bd"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scaleInertia</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inertia</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scaleRotation</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties12scaleInertiaERK7PxMat33RK6PxQuatRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Non-uniform scaling of the inertia tensor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inertia</strong> – <strong>[in]</strong> The inertia tensor to scale. </p></li>
+<li><p><strong>scaleRotation</strong> – <strong>[in]</strong> The rotation from the scaling frame to the frame that inertia is expressed in. I.e. scaleRotation.rotate(v) transforms the coordinates of vertex v from inertia’s frame to the scaling-axes frame. </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> The scaling factor for each axis (relative to the frame specified with scaleRotation). </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The scaled inertia tensor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxMassProperties3sumEPK16PxMassPropertiesPK11PxTransformK5PxU32">
+<span id="_CPPv3N16PxMassProperties3sumEPK16PxMassPropertiesPK11PxTransformK5PxU32"></span><span id="_CPPv2N16PxMassProperties3sumEPK16PxMassPropertiesPK11PxTransformK5PxU32"></span><span id="PxMassProperties::sum__PxMassPropertiesCP.PxTransformCP.PxU32C"></span><span class="target" id="class_px_mass_properties_1a63e7875cb60efa35150002e56fcfa43f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxMassProperties" title="PxMassProperties"><span class="n"><span class="pre">PxMassProperties</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sum</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxMassProperties" title="PxMassProperties"><span class="n"><span class="pre">PxMassProperties</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">props</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">transforms</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxMassProperties3sumEPK16PxMassPropertiesPK11PxTransformK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sum up individual mass properties. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>props</strong> – <strong>[in]</strong> Array of mass properties to sum up. </p></li>
+<li><p><strong>transforms</strong> – <strong>[in]</strong> Reference transforms for each mass properties entry. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> The number of mass properties to sum up. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The summed up mass properties. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

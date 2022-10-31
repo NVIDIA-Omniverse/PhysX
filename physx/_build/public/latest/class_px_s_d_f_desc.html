@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSDFDesc &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSDFDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsdfdesc">
+<span id="exhale-class-class-px-s-d-f-desc"></span><h1>PxSDFDesc<a class="headerlink" href="#pxsdfdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxSDFDesc.h.html#file-include-cooking-pxsdfdesc-h"><span class="std std-ref">include/cooking/PxSDFDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv49PxSDFDesc">
+<span id="_CPPv39PxSDFDesc"></span><span id="_CPPv29PxSDFDesc"></span><span id="PxSDFDesc"></span><span class="target" id="class_px_s_d_f_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSDFDesc</span></span></span><a class="headerlink" href="#_CPPv49PxSDFDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A structure describing signed distance field for mesh. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9PxSDFDescEv">
+<span id="_CPPv3N9PxSDFDesc9PxSDFDescEv"></span><span id="_CPPv2N9PxSDFDesc9PxSDFDescEv"></span><span id="PxSDFDesc::PxSDFDesc"></span><span class="target" id="group__cooking_1ga7f9de098410071bc0468c81b2804ea77"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSDFDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9PxSDFDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxSDFDesc7isValidEv">
+<span id="_CPPv3NK9PxSDFDesc7isValidEv"></span><span id="_CPPv2NK9PxSDFDesc7isValidEv"></span><span id="PxSDFDesc::isValidC"></span><span class="target" id="group__cooking_1gac3af561a25afce6cc4ae8f64120ece60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxSDFDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc3sdfE">
+<span id="_CPPv3N9PxSDFDesc3sdfE"></span><span id="_CPPv2N9PxSDFDesc3sdfE"></span><span id="PxSDFDesc::sdf__PxBoundedData"></span><span class="target" id="class_px_s_d_f_desc_1a78b32e0ea3e088ebc0dc6bc03d127a49"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdf</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc3sdfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to first sdf array element. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc4dimsE">
+<span id="_CPPv3N9PxSDFDesc4dimsE"></span><span id="_CPPv2N9PxSDFDesc4dimsE"></span><span id="PxSDFDesc::dims__PxDim3"></span><span class="target" id="class_px_s_d_f_desc_1a9806a4f67c99c055243c86aee70a6128"></span><a class="reference internal" href="struct_px_dim3.html#_CPPv46PxDim3" title="PxDim3"><span class="n"><span class="pre">PxDim3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dims</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc4dimsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Dimensions of sdf. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9meshLowerE">
+<span id="_CPPv3N9PxSDFDesc9meshLowerE"></span><span id="_CPPv2N9PxSDFDesc9meshLowerE"></span><span id="PxSDFDesc::meshLower__PxVec3"></span><span class="target" id="class_px_s_d_f_desc_1a935686f68607bfbbec48546af9064858"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshLower</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9meshLowerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The Lower bound of the original mesh. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc7spacingE">
+<span id="_CPPv3N9PxSDFDesc7spacingE"></span><span id="_CPPv2N9PxSDFDesc7spacingE"></span><span id="PxSDFDesc::spacing__PxReal"></span><span class="target" id="class_px_s_d_f_desc_1a7ddab440215abc02092fd2402453015f"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">spacing</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc7spacingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The spacing of each sdf voxel. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc11subgridSizeE">
+<span id="_CPPv3N9PxSDFDesc11subgridSizeE"></span><span id="_CPPv2N9PxSDFDesc11subgridSizeE"></span><span id="PxSDFDesc::subgridSize__PxU32"></span><span class="target" id="class_px_s_d_f_desc_1a37096435c99a537e7a48f26941a05755"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridSize</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc11subgridSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of cells in a sparse subgrid block (full block has subgridSize^3 cells and (subgridSize+1)^3 samples). </p>
+<p>If set to zero, this indicates that only a dense background grid SDF is used without sparse blocks </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19bitsPerSubgridPixelE">
+<span id="_CPPv3N9PxSDFDesc19bitsPerSubgridPixelE"></span><span id="_CPPv2N9PxSDFDesc19bitsPerSubgridPixelE"></span><span id="PxSDFDesc::bitsPerSubgridPixel__PxSdfBitsPerSubgridPixel::Enum"></span><span class="target" id="class_px_s_d_f_desc_1a8f2ea4c137b8808ac0fe005ce325a0a9"></span><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html#_CPPv424PxSdfBitsPerSubgridPixel" title="PxSdfBitsPerSubgridPixel"><span class="n"><span class="pre">PxSdfBitsPerSubgridPixel</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html#_CPPv4N24PxSdfBitsPerSubgridPixel4EnumE" title="PxSdfBitsPerSubgridPixel::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bitsPerSubgridPixel</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19bitsPerSubgridPixelE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enumeration that defines the number of bits per subgrid pixel (either 32, 16 or 8bits) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc24sdfSubgrids3DTexBlockDimE">
+<span id="_CPPv3N9PxSDFDesc24sdfSubgrids3DTexBlockDimE"></span><span id="_CPPv2N9PxSDFDesc24sdfSubgrids3DTexBlockDimE"></span><span id="PxSDFDesc::sdfSubgrids3DTexBlockDim__PxDim3"></span><span class="target" id="class_px_s_d_f_desc_1aa173262095941ad39dad815d07e6ed4d"></span><a class="reference internal" href="struct_px_dim3.html#_CPPv46PxDim3" title="PxDim3"><span class="n"><span class="pre">PxDim3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfSubgrids3DTexBlockDim</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc24sdfSubgrids3DTexBlockDimE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of subgrid blocks in the 3d texture. </p>
+<p>The full texture dimension will be sdfSubgrids3DTexBlockDim*(subgridSize+1). </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc11sdfSubgridsE">
+<span id="_CPPv3N9PxSDFDesc11sdfSubgridsE"></span><span id="_CPPv2N9PxSDFDesc11sdfSubgridsE"></span><span id="PxSDFDesc::sdfSubgrids__PxBoundedData"></span><span class="target" id="class_px_s_d_f_desc_1ae1b97005a1270bebbe91ba18eeb4663b"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfSubgrids</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc11sdfSubgridsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The data to create the 3d texture containg the packed subgrid blocks. </p>
+<p>Stored as PxU8 to support multiple formats (8, 16 and 32 bits per pixel) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc13sdfStartSlotsE">
+<span id="_CPPv3N9PxSDFDesc13sdfStartSlotsE"></span><span id="_CPPv2N9PxSDFDesc13sdfStartSlotsE"></span><span id="PxSDFDesc::sdfStartSlots__PxBoundedData"></span><span class="target" id="class_px_s_d_f_desc_1abbbf3af3e9655cb3137870c259ca12c2"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfStartSlots</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc13sdfStartSlotsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Array with start indices into the subgrid texture for every subgrid block. </p>
+<p>10bits for z coordinate, 10bits for y and 10bits for x. Encoding is as follows: slot = (z &lt;&lt; 20) | (y &lt;&lt; 10) | x </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19subgridsMinSdfValueE">
+<span id="_CPPv3N9PxSDFDesc19subgridsMinSdfValueE"></span><span id="_CPPv2N9PxSDFDesc19subgridsMinSdfValueE"></span><span id="PxSDFDesc::subgridsMinSdfValue__PxReal"></span><span class="target" id="class_px_s_d_f_desc_1a9f699674b05168ac89d384e9820aef5d"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridsMinSdfValue</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19subgridsMinSdfValueE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The minimum value over all subgrid blocks. </p>
+<p>Used if normalized textures are used which is the case for 8 and 16bit formats </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc19subgridsMaxSdfValueE">
+<span id="_CPPv3N9PxSDFDesc19subgridsMaxSdfValueE"></span><span id="_CPPv2N9PxSDFDesc19subgridsMaxSdfValueE"></span><span id="PxSDFDesc::subgridsMaxSdfValue__PxReal"></span><span class="target" id="class_px_s_d_f_desc_1aed02f5c12b414d008114938a134a2cc3"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subgridsMaxSdfValue</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc19subgridsMaxSdfValueE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum value over all subgrid blocks. </p>
+<p>Used if normalized textures are used which is the case for 8 and 16bit formats </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc9sdfBoundsE">
+<span id="_CPPv3N9PxSDFDesc9sdfBoundsE"></span><span id="_CPPv2N9PxSDFDesc9sdfBoundsE"></span><span id="PxSDFDesc::sdfBounds__PxBounds3"></span><span class="target" id="class_px_s_d_f_desc_1aeecd3538de3093bb66cfaf73bab8978b"></span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sdfBounds</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc9sdfBoundsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The bounds of the sdf. </p>
+<p>If left unassigned (empty), the bounds of the mesh will be used </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE">
+<span id="_CPPv3N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE"></span><span id="_CPPv2N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE"></span><span id="PxSDFDesc::narrowBandThicknessRelativeToSdfBoundsDiagonal__PxReal"></span><span class="target" id="class_px_s_d_f_desc_1abf8ea1429a01b2944775bfd467cac30e"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">narrowBandThicknessRelativeToSdfBoundsDiagonal</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc46narrowBandThicknessRelativeToSdfBoundsDiagonalE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Narrow band thickness as a fraction of the bounds diagonal length. </p>
+<p>Every subgrid block that overlaps with the narrow band around the mesh surface will be kept providing high resultion around the mesh surface. The valid range of this parameter is (0, 1). The higher the value, the more subgrids will get created, the more memory will be required. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxSDFDesc28numThreadsForSdfConstructionE">
+<span id="_CPPv3N9PxSDFDesc28numThreadsForSdfConstructionE"></span><span id="_CPPv2N9PxSDFDesc28numThreadsForSdfConstructionE"></span><span id="PxSDFDesc::numThreadsForSdfConstruction__PxU32"></span><span class="target" id="class_px_s_d_f_desc_1a63938107507f8db32fd9d4f0446105a6"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numThreadsForSdfConstruction</span></span></span><a class="headerlink" href="#_CPPv4N9PxSDFDesc28numThreadsForSdfConstructionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of threads that are launched to compute the signed distance field. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

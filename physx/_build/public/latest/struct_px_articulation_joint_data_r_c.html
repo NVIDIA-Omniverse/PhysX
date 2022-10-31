@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxArticulationJointDataRC &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxArticulationJointDataRC</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxarticulationjointdatarc">
+<span id="exhale-struct-struct-px-articulation-joint-data-r-c"></span><h1>PxArticulationJointDataRC<a class="headerlink" href="#pxarticulationjointdatarc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxImmediateMode.h.html#file-include-pximmediatemode-h"><span class="std std-ref">include/PxImmediateMode.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv425PxArticulationJointDataRC">
+<span id="_CPPv325PxArticulationJointDataRC"></span><span id="_CPPv225PxArticulationJointDataRC"></span><span id="PxArticulationJointDataRC"></span><span class="target" id="struct_px_articulation_joint_data_r_c"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationJointDataRC</span></span></span><a class="headerlink" href="#_CPPv425PxArticulationJointDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8initDataEv">
+<span id="_CPPv3N25PxArticulationJointDataRC8initDataEv"></span><span id="_CPPv2N25PxArticulationJointDataRC8initDataEv"></span><span id="PxArticulationJointDataRC::initData"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1ac3955b2118c5a5ee10ffadf4bacd3139"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">initData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8initDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC10parentPoseE">
+<span id="_CPPv3N25PxArticulationJointDataRC10parentPoseE"></span><span id="_CPPv2N25PxArticulationJointDataRC10parentPoseE"></span><span id="PxArticulationJointDataRC::parentPose__PxTransform"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a9dd437f5ea603a2cfcae94664b1c8ddc"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parentPose</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC10parentPoseE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9childPoseE">
+<span id="_CPPv3N25PxArticulationJointDataRC9childPoseE"></span><span id="_CPPv2N25PxArticulationJointDataRC9childPoseE"></span><span id="PxArticulationJointDataRC::childPose__PxTransform"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1abe849bca196fde056d809f586473e0b1"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">childPose</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9childPoseE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6motionE">
+<span id="_CPPv3N25PxArticulationJointDataRC6motionE"></span><span id="_CPPv2N25PxArticulationJointDataRC6motionE"></span><span id="PxArticulationJointDataRC::motion__PxArticulationMotion::EnumA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a96b02bf4c96dca988a60e93a9bfdb6b6"></span><a class="reference internal" href="struct_px_articulation_motion.html#_CPPv420PxArticulationMotion" title="PxArticulationMotion"><span class="n"><span class="pre">PxArticulationMotion</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_motion.html#_CPPv4N20PxArticulationMotion4EnumE" title="PxArticulationMotion::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">motion</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6motionE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6limitsE">
+<span id="_CPPv3N25PxArticulationJointDataRC6limitsE"></span><span id="_CPPv2N25PxArticulationJointDataRC6limitsE"></span><span id="PxArticulationJointDataRC::limits__PxArticulationLimitA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a4ccdfdf509d4ade6dd04b850ea4f2593"></span><a class="reference internal" href="struct_px_articulation_limit.html#_CPPv419PxArticulationLimit" title="PxArticulationLimit"><span class="n"><span class="pre">PxArticulationLimit</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">limits</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6limitsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC6drivesE">
+<span id="_CPPv3N25PxArticulationJointDataRC6drivesE"></span><span id="_CPPv2N25PxArticulationJointDataRC6drivesE"></span><span id="PxArticulationJointDataRC::drives__PxArticulationDriveA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a4558ef78f2b0b69e22afa7eff395c271"></span><a class="reference internal" href="struct_px_articulation_drive.html#_CPPv419PxArticulationDrive" title="PxArticulationDrive"><span class="n"><span class="pre">PxArticulationDrive</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">drives</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC6drivesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9targetPosE">
+<span id="_CPPv3N25PxArticulationJointDataRC9targetPosE"></span><span id="_CPPv2N25PxArticulationJointDataRC9targetPosE"></span><span id="PxArticulationJointDataRC::targetPos__PxRealA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a8fa7c1925d385bf21359af7a3de00fdf"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">targetPos</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9targetPosE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC9targetVelE">
+<span id="_CPPv3N25PxArticulationJointDataRC9targetVelE"></span><span id="_CPPv2N25PxArticulationJointDataRC9targetVelE"></span><span id="PxArticulationJointDataRC::targetVel__PxRealA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1ac0880f71176ff60b2e6aebf2bf216237"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">targetVel</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC9targetVelE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8armatureE">
+<span id="_CPPv3N25PxArticulationJointDataRC8armatureE"></span><span id="_CPPv2N25PxArticulationJointDataRC8armatureE"></span><span id="PxArticulationJointDataRC::armature__PxRealA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1acff7d90499025e04cc0c0fab399118b5"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">armature</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8armatureE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8jointPosE">
+<span id="_CPPv3N25PxArticulationJointDataRC8jointPosE"></span><span id="_CPPv2N25PxArticulationJointDataRC8jointPosE"></span><span id="PxArticulationJointDataRC::jointPos__PxRealA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a4291bc9a4181faea1277fe9246b86fec"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">jointPos</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8jointPosE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC8jointVelE">
+<span id="_CPPv3N25PxArticulationJointDataRC8jointVelE"></span><span id="_CPPv2N25PxArticulationJointDataRC8jointVelE"></span><span id="PxArticulationJointDataRC::jointVel__PxRealA"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1aeb2b246a656d0dd63b7e442084a77d99"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">jointVel</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv418PxArticulationAxis" title="PxArticulationAxis"><span class="n"><span class="pre">PxArticulationAxis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_axis.html#_CPPv4N18PxArticulationAxis4Enum6eCOUNTE" title="PxArticulationAxis::eCOUNT"><span class="n"><span class="pre">eCOUNT</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC8jointVelE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC19frictionCoefficientE">
+<span id="_CPPv3N25PxArticulationJointDataRC19frictionCoefficientE"></span><span id="_CPPv2N25PxArticulationJointDataRC19frictionCoefficientE"></span><span id="PxArticulationJointDataRC::frictionCoefficient__PxReal"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a7e5c8d8c1b678999327c06074bdb3319"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionCoefficient</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC19frictionCoefficientE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC16maxJointVelocityE">
+<span id="_CPPv3N25PxArticulationJointDataRC16maxJointVelocityE"></span><span id="_CPPv2N25PxArticulationJointDataRC16maxJointVelocityE"></span><span id="PxArticulationJointDataRC::maxJointVelocity__PxReal"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a306d91bcf6e917fe2c321aacbf640d7b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxJointVelocity</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC16maxJointVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxArticulationJointDataRC4typeE">
+<span id="_CPPv3N25PxArticulationJointDataRC4typeE"></span><span id="_CPPv2N25PxArticulationJointDataRC4typeE"></span><span id="PxArticulationJointDataRC::type__PxArticulationJointType::Enum"></span><span class="target" id="struct_px_articulation_joint_data_r_c_1a2c9e37d76f4d6742136e985902eb72fa"></span><a class="reference internal" href="struct_px_articulation_joint_type.html#_CPPv423PxArticulationJointType" title="PxArticulationJointType"><span class="n"><span class="pre">PxArticulationJointType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_joint_type.html#_CPPv4N23PxArticulationJointType4EnumE" title="PxArticulationJointType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N25PxArticulationJointDataRC4typeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

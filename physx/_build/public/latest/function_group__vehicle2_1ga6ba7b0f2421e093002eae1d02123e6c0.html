@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehiclePhysXRoadGeometryQueryUpdate &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehiclePhysXRoadGeometryQueryUpdate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclephysxroadgeometryqueryupdate">
+<span id="exhale-function-group-vehicle2-1ga6ba7b0f2421e093002eae1d02123e6c0"></span><h1>PxVehiclePhysXRoadGeometryQueryUpdate<a class="headerlink" href="#pxvehiclephysxroadgeometryqueryupdate" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_physxRoadGeometry_PxVehiclePhysXRoadGeometryFunctions.h.html#file-include-vehicle2-physxroadgeometry-pxvehiclephysxroadgeometryfunctions-h"><span class="std std-ref">include/vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryFunctions.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv437PxVehiclePhysXRoadGeometryQueryUpdateRK20PxVehicleWheelParamsRK25PxVehicleSuspensionParamsRK37PxVehiclePhysXRoadGeometryQueryParamsRK36PxVehiclePhysXMaterialFrictionParamsK6PxRealRK23PxVehicleRigidBodyStateRK7PxScenePK12PxConvexMeshRK14PxVehicleFrameR26PxVehicleRoadGeometryStateP36PxVehiclePhysXRoadGeometryQueryState">
+<span id="_CPPv337PxVehiclePhysXRoadGeometryQueryUpdateRK20PxVehicleWheelParamsRK25PxVehicleSuspensionParamsRK37PxVehiclePhysXRoadGeometryQueryParamsRK36PxVehiclePhysXMaterialFrictionParamsK6PxRealRK23PxVehicleRigidBodyStateRK7PxScenePK12PxConvexMeshRK14PxVehicleFrameR26PxVehicleRoadGeometryStateP36PxVehiclePhysXRoadGeometryQueryState"></span><span id="_CPPv237PxVehiclePhysXRoadGeometryQueryUpdateRK20PxVehicleWheelParamsRK25PxVehicleSuspensionParamsRK37PxVehiclePhysXRoadGeometryQueryParamsRK36PxVehiclePhysXMaterialFrictionParamsK6PxRealRK23PxVehicleRigidBodyStateRK7PxScenePK12PxConvexMeshRK14PxVehicleFrameR26PxVehicleRoadGeometryStateP36PxVehiclePhysXRoadGeometryQueryState"></span><span id="PxVehiclePhysXRoadGeometryQueryUpdate__PxVehicleWheelParamsCR.PxVehicleSuspensionParamsCR.PxVehiclePhysXRoadGeometryQueryParamsCR.PxVehiclePhysXMaterialFrictionParamsCR.PxRealC.PxVehicleRigidBodyStateCR.PxSceneCR.PxConvexMeshCP.PxVehicleFrameCR.PxVehicleRoadGeometryStateR.PxVehiclePhysXRoadGeometryQueryStateP"></span><span class="target" id="group__vehicle2_1ga6ba7b0f2421e093002eae1d02123e6c0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePhysXRoadGeometryQueryUpdate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_params.html#_CPPv420PxVehicleWheelParams" title="PxVehicleWheelParams"><span class="n"><span class="pre">PxVehicleWheelParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_suspension_params.html#_CPPv425PxVehicleSuspensionParams" title="PxVehicleSuspensionParams"><span class="n"><span class="pre">PxVehicleSuspensionParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_params.html#_CPPv437PxVehiclePhysXRoadGeometryQueryParams" title="PxVehiclePhysXRoadGeometryQueryParams"><span class="n"><span class="pre">PxVehiclePhysXRoadGeometryQueryParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">roadGeomParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_phys_x_material_friction_params.html#_CPPv436PxVehiclePhysXMaterialFrictionParams" title="PxVehiclePhysXMaterialFrictionParams"><span class="n"><span class="pre">PxVehiclePhysXMaterialFrictionParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">materialFrictionParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">wheelYawAngle</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#_CPPv423PxVehicleRigidBodyState" title="PxVehicleRigidBodyState"><span class="n"><span class="pre">PxVehicleRigidBodyState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rigidBodyState</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">unitCylinderSweepMesh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">frame</span></span>, <a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#_CPPv426PxVehicleRoadGeometryState" title="PxVehicleRoadGeometryState"><span class="n"><span class="pre">PxVehicleRoadGeometryState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">roadGeomState</span></span>, <a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_state.html#_CPPv436PxVehiclePhysXRoadGeometryQueryState" title="PxVehiclePhysXRoadGeometryQueryState"><span class="n"><span class="pre">PxVehiclePhysXRoadGeometryQueryState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">physxRoadGeometryState</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv437PxVehiclePhysXRoadGeometryQueryUpdateRK20PxVehicleWheelParamsRK25PxVehicleSuspensionParamsRK37PxVehiclePhysXRoadGeometryQueryParamsRK36PxVehiclePhysXMaterialFrictionParamsK6PxRealRK23PxVehicleRigidBodyStateRK7PxScenePK12PxConvexMeshRK14PxVehicleFrameR26PxVehicleRoadGeometryStateP36PxVehiclePhysXRoadGeometryQueryState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the plane of the road geometry under a wheel and the tire friction of the contact. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#struct_px_vehicle_road_geometry_state_1ae58414a7fb6cd9e0d3e7e17cc7f13edf"><span class="std std-ref">PxVehicleRoadGeometryState::hitState</span></a> will have value false in the event that the there is no reachable road geometry under the wheel and true if there is reachable road geometry under the wheel. Road geometry is considered reachable if the suspension can elongate from its reference pose far enough to place wheel on the ground. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wheelParams</strong> – <strong>[in]</strong> describes the radius and halfwidth of the wheel. </p></li>
+<li><p><strong>suspParams</strong> – <strong>[in]</strong> describes the frame of the suspension and wheel and the maximum suspension travel. </p></li>
+<li><p><strong>roadGeomParams</strong> – <strong>[in]</strong> describes the operation of the PhysX scene query. </p></li>
+<li><p><strong>materialFrictionParams</strong> – <strong>[in]</strong> describes a mapping between <a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> and friction in order to compute a tire friction value. </p></li>
+<li><p><strong>wheelYawAngle</strong> – <strong>[in]</strong> is the yaw angle (in radians) of the wheel. </p></li>
+<li><p><strong>rigidBodyState</strong> – <strong>[in]</strong> describes the pose of the rigid body. </p></li>
+<li><p><strong>scene</strong> – <strong>[in]</strong> is the PhysX scene that will be queried by the scene query. </p></li>
+<li><p><strong>unitCylinderSweepMesh</strong> – <strong>[in]</strong> is a convex cylindrical mesh of unit radius and half-width to be used in the event that a sweep query is to be used. </p></li>
+<li><p><strong>frame</strong> – <strong>[in]</strong> describes the lateral, longitudinal and vertical axes and is used to scale unitCylinderSweepMesh by the wheel’s radius and half-width. </p></li>
+<li><p><strong>roadGeomState</strong> – <strong>[out]</strong> contains the plane and friction of the road geometry under the wheel. </p></li>
+<li><p><strong>physxRoadGeometryState</strong> – <strong>[out]</strong> Optional buffer to store additional information about the query (like actor/shape that got hit etc.). Set to NULL if not needed. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

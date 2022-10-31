@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gjk Queries &mdash; public trunk documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Vehicles" href="Vehicles.html" />
+    <link rel="prev" title="Scene Queries" href="SceneQueries.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OriginShift.html">Scene Origin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Gjk Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#support-mapping">Support Mapping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#margin">Margin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-support">Local Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#contact-generation">Contact Generation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raycast">Raycast</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overlap">Overlap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sweep">Sweep</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pre-made-support-mappings">Pre-made Support Mappings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/public/latest/public_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">public</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Gjk Queries</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gjk-queries">
+<span id="gjkqueries"></span><h1>Gjk Queries<a class="headerlink" href="#gjk-queries" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>The collection of query functions using GJK Support Mappings.</p>
+</section>
+<section id="support-mapping">
+<h2>Support Mapping<a class="headerlink" href="#support-mapping" title="Permalink to this headline"></a></h2>
+<p>All functions in this API accept the references to PxGjkQuery::Support virtual interfaces. To implement a support mapping user should inherit this interface and implement its virtual functions. Every support mapping represents a custom convex shape, which consists of a core shape and a margin. For example, a sphere core shape will be represented by a single point - the sphere center, and a margin as the sphere radius; a capsule will have the core shape as a line segment - two points, and a margin - radius. The margin can be set to zero. For a box, the core shape will consist of eight points - the box corners, and a zero margin.
+PxGjkQuery::Support virtual interface has two virtual functions: getMargin, supportLocal.</p>
+<section id="margin">
+<h3>Margin<a class="headerlink" href="#margin" title="Permalink to this headline"></a></h3>
+<p>Function getMargin should return the margin of the shape. For a sphere or capsule it should always return radius. For a box it should always return zero.</p>
+</section>
+<section id="local-support">
+<h3>Local Support<a class="headerlink" href="#local-support" title="Permalink to this headline"></a></h3>
+<p>Function supportLocal should return the farthest point of the shapes’s core. For a sphere it should always return the sphere center.</p>
+</section>
+</section>
+<section id="queries">
+<h2>Queries<a class="headerlink" href="#queries" title="Permalink to this headline"></a></h2>
+<p>The API has four query functions: generateContacts, raycast, overlap, sweep.</p>
+<section id="contact-generation">
+<h3>Contact Generation<a class="headerlink" href="#contact-generation" title="Permalink to this headline"></a></h3>
+<p>Function generateContacts computes a collision contact between two custom convex shapes. Reports the collision point, normal and penetration depth.</p>
+</section>
+<section id="raycast">
+<h3>Raycast<a class="headerlink" href="#raycast" title="Permalink to this headline"></a></h3>
+<p>Function raycast traces a ray against the custom convex shape. Reports the point of impact, its distance and normal.</p>
+</section>
+<section id="overlap">
+<h3>Overlap<a class="headerlink" href="#overlap" title="Permalink to this headline"></a></h3>
+<p>Function overlap tests the intersection between two custom convex shapes.</p>
+</section>
+<section id="sweep">
+<h3>Sweep<a class="headerlink" href="#sweep" title="Permalink to this headline"></a></h3>
+<p>Function sweep sweeps one custom convex shape against the other. Reports the point of impact, its distance and normal.</p>
+</section>
+</section>
+<section id="pre-made-support-mappings">
+<h2>Pre-made Support Mappings<a class="headerlink" href="#pre-made-support-mappings" title="Permalink to this headline"></a></h2>
+<p>The API provides four pre-made support mappings: SphereSupport, CapsuleSupport, BoxSupport, ConvexMeshSupport; and one universal for all the previous types: ConvexGeomSupport.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Oct 31, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
