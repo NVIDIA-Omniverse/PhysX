@@ -147,6 +147,121 @@ NvFlowUint64 lastCompletedFrame = contextInterface.getLastFrameCompleted(context
 </pre></div>
 </div>
 </section>
+<section id="manual-parameter-snapshot">
+<h2>Manual Parameter Snapshot<a class="headerlink" href="#manual-parameter-snapshot" title="Permalink to this headline"></a></h2>
+<p>For testing, it is possible to describe a snapshot of simulation parameters explicitly.
+A database snapshot is composed of snaphots for each datatype.
+The datatype snaphots for each type are formed out of an array of pointers to the C structs containing the parameters.
+The database snapshot is then included in the grid params snapshot, which adding timing information, global reset, and a user defined payload.
+The grid params snapshot can then be committed to grid params, for later access by simulate.</p>
+<p>Note, by design commitParams does not perform a deep copy of the data.
+Parameter values and memory should not change until minActiveVersion from gridParams getVersion() indicates they are no longer needed.
+In the below example static is used to meet this requirement.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>static NvFlowGridSimulateLayerParams testSimulate = NvFlowGridSimulateLayerParams_default;
+static NvFlowGridEmitterSphereParams testSpheres = NvFlowEmitterSphereParams_default;
+static NvFlowGridOffscreenLayerParams testOffscreen = NvFlowGridOffscreenLayerParams_default;
+static NvFlowGridRenderLayerParams testRender = NvFlowGridRenderLayerParams_default;
+
+testSimulate.nanoVdbExport.enabled = NV_FLOW_TRUE;
+testSimulate.nanoVdbExport.readbackEnabled = NV_FLOW_TRUE;
+
+static NvFlowGridSimulateLayerParams* pTestSimulate = &amp;testSimulate;
+static NvFlowGridEmitterSphereParams* pTestSpheres = &amp;testSpheres;
+static NvFlowGridOffscreenLayerParams* pTestOffscreen = &amp;testOffscreen;
+static NvFlowGridRenderLayerParams* pTestRender = &amp;testRender;
+
+static NvFlowUint64 version = 1u;
+
+static NvFlowDatabaseTypeSnapshot typeSnapshots[4u] = {
+	{version, &amp;NvFlowGridSimulateLayerParams_NvFlowReflectDataType,  (NvFlowUint8**)&amp;pTestSimulate,  1u},
+	{version, &amp;NvFlowGridEmitterSphereParams_NvFlowReflectDataType,  (NvFlowUint8**)&amp;pTestSpheres,   1u},
+	{version, &amp;NvFlowGridOffscreenLayerParams_NvFlowReflectDataType, (NvFlowUint8**)&amp;pTestOffscreen, 1u},
+	{version, &amp;NvFlowGridRenderLayerParams_NvFlowReflectDataType,    (NvFlowUint8**)&amp;pTestRender,    1u}
+};
+static NvFlowDatabaseSnapshot snapshot = {
+	version,
+	typeSnapshots,
+	4u
+};
+
+static NvFlowGridParamsDescSnapshot gridParamsDescSnapshot = { snapshot, 0.0, 1.f / 60.f, NV_FLOW_FALSE, nullptr, 0u };
+
+loader.gridParamsInterface.commitParams(paramSrc, &amp;gridParamsDescSnapshot);
+</pre></div>
+</div>
+</section>
+<section id="flow-database">
+<h2>Flow Database<a class="headerlink" href="#flow-database" title="Permalink to this headline"></a></h2>
+<p>NvFlowDatabase helps version parameters and automate the creation of snapshots.
+NvFlowDatabaseInterface allows for callbacks during traversal of Flow parameters.
+This allows efficient read/write access to all the parameters in the database.</p>
+<p>For minimal functionality, it is possible to start with a null implementation of NvFlowDatabaseInterface.
+GridParams provides a list of supported types, the below code initializes the database to support these types.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>static const NvFlowDatabaseInterface iface = {};
+
+static NvFlowArray&lt;const char*&gt; typenames;
+static NvFlowArray&lt;const char*&gt; displayTypenames;
+static NvFlowArray&lt;const NvFlowReflectDataType*&gt; dataTypes;
+static NvFlowArray&lt;NvFlowDatabaseType*&gt; types;
+
+// get type count
+NvFlowUint64 typeCount = 0u;
+loader.gridParamsInterface.enumerateParamTypes(gridParams, nullptr, nullptr, nullptr, &amp;typeCount);
+
+// query Flow types
+typenames.reserve(typeCount);
+typenames.size = typeCount;
+displayTypenames.reserve(typeCount);
+displayTypenames.size = typeCount;
+dataTypes.reserve(typeCount);
+dataTypes.size = typeCount;
+loader.gridParamsInterface.enumerateParamTypes(gridParams, typenames.data, displayTypenames.data, dataTypes.data, &amp;typeCount);
+
+// register types
+types.size = 0u;
+for (NvFlowUint64 typeIdx = 0u; typeIdx &lt; dataTypes.size; typeIdx++)
+{
+    types.pushBack(gridParamsSet.createType(dataTypes[typeIdx], displayTypenames[typeIdx]));
+}
+
+// as a test, create one of each type
+NvFlowUint64 stagingVersion = 0llu;
+NvFlowUint64 minActiveVersion = 0llu;
+loader.gridParamsInterface.getVersion(gridParams, &amp;stagingVersion, &amp;minActiveVersion);
+for (NvFlowUint64 typeIdx = 0u; typeIdx &lt; types.size; typeIdx++)
+{
+	gridParamsSet.createInstance&lt;&amp;iface&gt;(nullptr, stagingVersion, types[typeIdx], &quot;test&quot;, &quot;test&quot;);
+}
+</pre></div>
+</div>
+<p>Per frame updates</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// get version information for this frame&#39;s update
+NvFlowUint64 stagingVersion = 0llu;
+NvFlowUint64 minActiveVersion = 0llu;
+loader.gridParamsInterface.getVersion(gridParams, &amp;stagingVersion, &amp;minActiveVersion);
+
+// database update, this will call NvFlowDatabaseInterface if not null implementation
+gridParamsSet.update&lt;&amp;iface&gt;(nullptr, stagingVersion, minActiveVersion);
+
+// produce grid params snapshot from database
+NvFlowGridParamsDescSnapshot snapshot = {};
+gridParamsSet.getSnapshot(&amp;snapshot.snapshot, stagingVersion);
+snapshot.absoluteSimTime = absoluteSimTime;
+snapshot.deltaTime = simDeltaTime;
+snapshot.globalForceClear = globalForceClear;
+
+// submit snapshot to grid params for use on destination thread
+loader.gridParamsInterface.commitParams(gridParams, &amp;snapshot);
+</pre></div>
+</div>
+<p>Cleanup</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// mark all instances for delete, but do not free memory
+gridParamsSet.markAllInstancesForDestroy&lt;&amp;iface&gt;(nullptr);
+// frees memory
+gridParamsSet.destroy&lt;&amp;iface&gt;(nullptr);
+</pre></div>
+</div>
+</section>
 </section>
 
 
