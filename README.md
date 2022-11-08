@@ -34,7 +34,7 @@ This repository contains source releases of the PhysX and Flow SDKs used in NVID
 
 ## Documentation
 
-The user guide and API documentation are available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX). Please create an [Issue](https://github.com/NVIDIA-Omniverse/PhysX/issues/) if you find a documentation issue.
+The user guide and API documentation are available on [GitHub Pages](https://nvidia-omniverse.github.io/PhysX). Please create an [Issue](https://github.com/NVIDIA-Omniverse/PhysX/issues/) if you find any documentation issue.
 
 ## Instructions
 
