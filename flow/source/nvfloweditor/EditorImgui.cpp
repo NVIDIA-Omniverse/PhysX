@@ -399,6 +399,8 @@ void editorImgui_update(
                     ImGui::TreePop();
                 }
             }
+
+            ImGui::TreePop();
         }
 
         ImGui::End();
