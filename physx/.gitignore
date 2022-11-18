@@ -1,4 +1,6 @@
 bin/
 compiler/linux-*
 compiler/vc*
+compiler/android*
 include/PxConfig.h
+install/
