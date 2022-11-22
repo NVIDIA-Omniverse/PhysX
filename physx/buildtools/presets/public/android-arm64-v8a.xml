@@ -2,7 +2,6 @@
 <preset name="android-arm64-v8a" comment="Android-29, arm64-v8a PhysX SDK ">
   <platform targetPlatform="android" compiler="clang" />
   <CMakeSwitches>
-    <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />  
   </CMakeSwitches>
   <CMakeParams>
