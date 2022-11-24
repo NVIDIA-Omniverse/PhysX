@@ -51,61 +51,45 @@ namespace physx
 #endif
 // Hash functions
 
-// Thomas Wang's 32 bit mix
-// http://www.cris.com/~Ttwang/tech/inthash.htm
-PX_FORCE_INLINE uint32_t PxComputeHash(const uint32_t key)
-{
-	uint32_t k = key;
-	k += ~(k << 15);
-	k ^= (k >> 10);
-	k += (k << 3);
-	k ^= (k >> 6);
-	k += ~(k << 11);
-	k ^= (k >> 16);
-	return uint32_t(k);
-}
+template <typename T, size_t n>
+struct HashSized {
+	PX_FORCE_INLINE uint32_t operator()(const T key) const {
+		static_assert(n <= 4, "Unexpected key size");
+		// Thomas Wang's 32 bit mix
+		// http://www.cris.com/~Ttwang/tech/inthash.htm
+		auto k = uint32_t(key);
+		k += ~(k << 15);
+		k ^= (k >> 10);
+		k += (k << 3);
+		k ^= (k >> 6);
+		k += ~(k << 11);
+		k ^= (k >> 16);
+		return uint32_t(k);
+	}
+};
 
-PX_FORCE_INLINE uint32_t PxComputeHash(const int32_t key)
-{
-	return PxComputeHash(uint32_t(key));
-}
+template <typename T>
+struct HashSized<T, 8> {
+	PX_FORCE_INLINE uint32_t operator()(const T key) const {
+		// Thomas Wang's 64 bit mix
+		// http://www.cris.com/~Ttwang/tech/inthash.htm
+		auto k = uint64_t(key);
+		k += ~(k << 32);
+		k ^= (k >> 22);
+		k += ~(k << 13);
+		k ^= (k >> 8);
+		k += (k << 3);
+		k ^= (k >> 15);
+		k += ~(k << 27);
+		k ^= (k >> 31);
+		return uint32_t(UINT32_MAX & k);
+	}
+};
 
-// Thomas Wang's 64 bit mix
-// http://www.cris.com/~Ttwang/tech/inthash.htm
-PX_FORCE_INLINE uint32_t PxComputeHash(const uint64_t key)
+template <typename T>
+PX_FORCE_INLINE uint32_t PxComputeHash(const T key)
 {
-	uint64_t k = key;
-	k += ~(k << 32);
-	k ^= (k >> 22);
-	k += ~(k << 13);
-	k ^= (k >> 8);
-	k += (k << 3);
-	k ^= (k >> 15);
-	k += ~(k << 27);
-	k ^= (k >> 31);
-	return uint32_t(UINT32_MAX & k);
-}
-
-#if PX_APPLE_FAMILY
-// hash for size_t, to make gcc happy
-PX_INLINE uint32_t PxComputeHash(const size_t key)
-{
-#if PX_P64_FAMILY
-	return PxComputeHash(uint64_t(key));
-#else
-	return PxComputeHash(uint32_t(key));
-#endif
-}
-#endif
-
-// Hash function for pointers
-PX_INLINE uint32_t PxComputeHash(const void* ptr)
-{
-#if PX_P64_FAMILY
-	return PxComputeHash(uint64_t(ptr));
-#else
-	return PxComputeHash(uint32_t(UINT32_MAX & size_t(ptr)));
-#endif
+	return HashSized<T, sizeof(T)>()(key);
 }
 
 // Hash function for pairs
