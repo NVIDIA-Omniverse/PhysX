@@ -254,7 +254,7 @@ struct PvdDataTypeToNamespacedNameMap
 	struct PvdDataTypeToNamespacedNameMap<type>                                                                        \
 	{                                                                                                                  \
 		NamespacedName Name;                                                                                           \
-		PvdDataTypeToNamespacedNameMap<type>() : Name("physx3", #type)                                                 \
+		PvdDataTypeToNamespacedNameMap() : Name("physx3", #type)                                                       \
 		{                                                                                                              \
 		}                                                                                                              \
 	};                                                                                                                 \
@@ -262,7 +262,7 @@ struct PvdDataTypeToNamespacedNameMap
 	struct PvdDataTypeToNamespacedNameMap<const type&>                                                                 \
 	{                                                                                                                  \
 		NamespacedName Name;                                                                                           \
-		PvdDataTypeToNamespacedNameMap<const type&>() : Name("physx3", #type)                                          \
+		PvdDataTypeToNamespacedNameMap() : Name("physx3", #type)                                                       \
 		{                                                                                                              \
 		}                                                                                                              \
 	};
@@ -286,7 +286,7 @@ inline NamespacedName getPvdNamespacedNameForType()
 	struct PvdDataTypeToNamespacedNameMap<type>                                                                        \
 	{                                                                                                                  \
 		NamespacedName Name;                                                                                           \
-		PvdDataTypeToNamespacedNameMap<type>() : Name(ns, name)                                                        \
+		PvdDataTypeToNamespacedNameMap() : Name(ns, name)                                                              \
 		{                                                                                                              \
 		}                                                                                                              \
 	};
@@ -296,7 +296,7 @@ inline NamespacedName getPvdNamespacedNameForType()
 	struct PvdDataTypeToNamespacedNameMap<newType>                                                                     \
 	{                                                                                                                  \
 		NamespacedName Name;                                                                                           \
-		PvdDataTypeToNamespacedNameMap<newType>() : Name(PvdDataTypeToNamespacedNameMap<oldType>().Name)               \
+		PvdDataTypeToNamespacedNameMap() : Name(PvdDataTypeToNamespacedNameMap<oldType>().Name)                        \
 		{                                                                                                              \
 		}                                                                                                              \
 	};

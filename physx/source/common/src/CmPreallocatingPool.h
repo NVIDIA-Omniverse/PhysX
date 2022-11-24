@@ -393,7 +393,7 @@ template<class T>
 class BufferedPreallocatingPool : public PreallocatingPool<T>
 {
 	PxArray<T*> mDeletedElems;
-	PX_NOCOPY(BufferedPreallocatingPool<T>)
+	PX_NOCOPY(BufferedPreallocatingPool)
 public:
 	BufferedPreallocatingPool(PxU32 maxElements, const char* typeName) : PreallocatingPool<T>(maxElements, typeName)
 	{

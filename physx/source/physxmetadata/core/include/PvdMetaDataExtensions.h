@@ -299,7 +299,7 @@ template<typename TEnumType, typename TStorageType>
 struct IsFlagsType<PxFlags<TEnumType, TStorageType> > 
 {
 	const PxU32ToName* FlagData;
-	IsFlagsType<PxFlags<TEnumType, TStorageType> > () : FlagData( PxEnumTraits<TEnumType>().NameConversion ) {}
+	IsFlagsType() : FlagData( PxEnumTraits<TEnumType>().NameConversion ) {}
 };
 
 
