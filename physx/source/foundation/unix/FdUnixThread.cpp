@@ -252,9 +252,9 @@ __attribute__((noreturn))
 void PxThreadImpl::kill()
 {
 #if !PX_ANDROID
-	if(getThread(this)->state == _PxThreadStarted)
+	if(getThread(this)->state == ePxThreadStarted)
 		pthread_cancel(getThread(this)->thread);
-	getThread(this)->state = _PxThreadStopped;
+	getThread(this)->state = ePxThreadStopped;
 #else
 	PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
 	                              "ThreadImpl::kill() called, but is not implemented");
