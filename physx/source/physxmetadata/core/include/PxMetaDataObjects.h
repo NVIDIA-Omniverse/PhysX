@@ -495,7 +495,7 @@ struct PxPropertyToValueStructMemberMap
 	template<> struct PxPropertyToValueStructMemberMap< PxPropertyInfoName::type##_##prop >												\
 	{																																	\
 		PxU32 Offset;																													\
-		PxPropertyToValueStructMemberMap< PxPropertyInfoName::type##_##prop >() : Offset( PX_OFFSET_OF_RT( valueStruct, prop ) ) {}		\
+		PxPropertyToValueStructMemberMap() : Offset( PX_OFFSET_OF_RT( valueStruct, prop ) ) {}											\
 		template<typename TOperator> void visitProp( TOperator inOperator, valueStruct& inStruct ) { inOperator( inStruct.prop );	}	\
 	};
 	

@@ -78,7 +78,7 @@ namespace physx { namespace profile {
 		PxProfileArray<PxProfileZoneClient*>			mZoneClients;
 		volatile bool									mEventsActive;
 
-		PX_NOCOPY(ZoneImpl<TNameProvider>)
+		PX_NOCOPY(ZoneImpl)
 	public:
 		ZoneImpl( PxAllocatorCallback* inAllocator, const char* inName, uint32_t bufferSize = 0x10000 /*64k*/, const TNameProvider& inProvider = TNameProvider() )
 			: TZoneEventBufferType( inAllocator, bufferSize, PxDefaultContextProvider(), NULL, PxProfileNullEventFilter() )
