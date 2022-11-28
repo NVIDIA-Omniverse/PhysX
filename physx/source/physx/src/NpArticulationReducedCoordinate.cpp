@@ -524,7 +524,10 @@ PxArticulationSpatialTendon* NpArticulationReducedCoordinate::createSpatialTendo
 								"PxArticulationReducedCoordinate::createSpatialTendon() not allowed while the articulation is in a scene. Call will be ignored.");
 		return NULL;
 	}
-	NpArticulationSpatialTendon* tendon = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(NpArticulationSpatialTendon), "NpArticulationSpatialTendon"), NpArticulationSpatialTendon)(this);
+
+	void* tendonMem = PX_ALLOC(sizeof(NpArticulationSpatialTendon), "NpArticulationSpatialTendon");
+	PxMarkSerializedMemory(tendonMem, sizeof(NpArticulationSpatialTendon));
+	NpArticulationSpatialTendon* tendon = PX_PLACEMENT_NEW(tendonMem, NpArticulationSpatialTendon)(this);
 
 	tendon->setHandle(mSpatialTendons.size());
 	mSpatialTendons.pushBack(tendon);
@@ -546,7 +549,10 @@ PxArticulationFixedTendon* NpArticulationReducedCoordinate::createFixedTendon()
 		return NULL;
 	}
 
-	NpArticulationFixedTendon* tendon = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(NpArticulationFixedTendon), "NpArticulationFixedTendon"), NpArticulationFixedTendon)(this);
+	void* tendonMem = PX_ALLOC(sizeof(NpArticulationFixedTendon), "NpArticulationFixedTendon");
+	PxMarkSerializedMemory(tendonMem, sizeof(NpArticulationFixedTendon));
+	NpArticulationFixedTendon* tendon = PX_PLACEMENT_NEW(tendonMem, NpArticulationFixedTendon)(this);
+
 	tendon->setHandle(mFixedTendons.size());
 	mFixedTendons.pushBack(tendon);
 	return tendon;
@@ -574,7 +580,10 @@ PxArticulationSensor* NpArticulationReducedCoordinate::createSensor(PxArticulati
 		return NULL;
 	}
 
-	NpArticulationSensor* sensor = PX_NEW(NpArticulationSensor)(link, relativePose);
+	void* sensorMem = PX_ALLOC(sizeof(NpArticulationSensor), "NpArticulationSensor");
+	PxMarkSerializedMemory(sensorMem, sizeof(NpArticulationSensor));
+	NpArticulationSensor* sensor = PX_PLACEMENT_NEW(sensorMem, NpArticulationSensor)(link, relativePose);
+
 	sensor->setHandle(mSensors.size());
 	mSensors.pushBack(sensor);
 
@@ -600,7 +609,9 @@ void NpArticulationReducedCoordinate::releaseSensor(PxArticulationSensor& sensor
 	mSensors.back()->setHandle(handle);
 	mSensors.replaceWithLast(handle);
 	npSensor->~NpArticulationSensor();
-	PX_FREE(npSensor);
+
+	if (npSensor->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE(npSensor);
 
 	mTopologyChanged = true;
 }
@@ -683,7 +694,8 @@ NpArticulationReducedCoordinate::~NpArticulationReducedCoordinate()
 		if (mSpatialTendons[i])
 		{
 			mSpatialTendons[i]->~NpArticulationSpatialTendon();
-			PX_FREE(mSpatialTendons[i]);
+			if(mSpatialTendons[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+				PX_FREE(mSpatialTendons[i]);
 		}
 	}
 
@@ -692,7 +704,8 @@ NpArticulationReducedCoordinate::~NpArticulationReducedCoordinate()
 		if (mFixedTendons[i])
 		{
 			mFixedTendons[i]->~NpArticulationFixedTendon();
-			PX_FREE(mFixedTendons[i]);
+			if(mFixedTendons[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+				PX_FREE(mFixedTendons[i]);
 		}
 	}
 
@@ -701,7 +714,8 @@ NpArticulationReducedCoordinate::~NpArticulationReducedCoordinate()
 		if (mSensors[i])
 		{
 			mSensors[i]->~NpArticulationSensor();
-			PX_FREE(mSensors[i]);
+			if(mSensors[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+				PX_FREE(mSensors[i]);
 		}
 	}
 
@@ -741,11 +755,6 @@ void NpArticulationReducedCoordinate::recomputeLinkIDs()
 	}
 }
 
-//void NpSetArticulationOnJoint(PxArticulationJointReducedCoordinate& joint, PxArticulationImpl& articulation)
-//{
-//	joint.getImpl()->getCore().setArticulation(&articulation.getCore());
-//}
-
 // PX_SERIALIZATION
 void NpArticulationReducedCoordinate::requiresObjects(PxProcessPxBaseCallback& c)
 {
@@ -753,21 +762,40 @@ void NpArticulationReducedCoordinate::requiresObjects(PxProcessPxBaseCallback& c
 	const PxU32 nbLinks = mArticulationLinks.size();
 	for (PxU32 i = 0; i < nbLinks; i++)
 		c.process(*mArticulationLinks[i]);
+
+	const PxU32 nbSensors = mSensors.size();
+	for (PxU32 i = 0; i < nbSensors; i++)
+		c.process(*mSensors[i]);
+
+	const PxU32 nbSpatialTendons = mSpatialTendons.size();
+	for (PxU32 i = 0; i < nbSpatialTendons; i++)
+		c.process(*mSpatialTendons[i]);
+
+	const PxU32 nbFixedTendons = mFixedTendons.size();
+	for (PxU32 i = 0; i < nbFixedTendons; i++)
+		c.process(*mFixedTendons[i]);
+
 }
 
 void NpArticulationReducedCoordinate::exportExtraData(PxSerializationContext& stream)
 {
 	Cm::exportInlineArray(mArticulationLinks, stream);
+	Cm::exportArray(mSpatialTendons, stream);
+	Cm::exportArray(mFixedTendons, stream);
+	Cm::exportArray(mSensors, stream);
+
 	stream.writeName(mName);
 }
 
 void NpArticulationReducedCoordinate::importExtraData(PxDeserializationContext& context)
 {
 	Cm::importInlineArray(mArticulationLinks, context);
+	Cm::importArray(mSpatialTendons, context);
+	Cm::importArray(mFixedTendons, context);
+	Cm::importArray(mSensors, context);
+
 	context.readName(mName);
 }
-
-//void NpSetArticulationOnJoint(PxArticulationJointReducedCoordinate& jointBase, PxArticulationImpl& articulation);
 
 void NpArticulationReducedCoordinate::resolveReferences(PxDeserializationContext& context)
 {
@@ -776,15 +804,27 @@ void NpArticulationReducedCoordinate::resolveReferences(PxDeserializationContext
 	{
 		NpArticulationLink*& link = mArticulationLinks[i];
 		context.translatePxBase(link);
+	}
 
-		PxArticulationJointReducedCoordinate* pxJointBase = link->getInboundJoint();
-		if (pxJointBase)
-		{
-			//KS - introduced C function to do this to avoid undefined types and circular dependency problems
-			//backlinks to articulation impl can only be initialized
-			//after articulation object has been constructed.
-			//NpSetArticulationOnJoint(*pxJointBase, mImpl);
-		}
+	const PxU32 nbSensors = mSensors.size();
+	for (PxU32 i = 0; i < nbSensors; i++)
+	{
+		NpArticulationSensor*& sensor = mSensors[i];
+		context.translatePxBase(sensor);
+	}
+
+	const PxU32 nbSpatialTendons = mSpatialTendons.size();
+	for (PxU32 i = 0; i < nbSpatialTendons; i++)
+	{
+		NpArticulationSpatialTendon*& spatialTendon = mSpatialTendons[i];
+		context.translatePxBase(spatialTendon);
+	}
+
+	const PxU32 nbFixedTendons = mFixedTendons.size();
+	for (PxU32 i = 0; i < nbFixedTendons; i++)
+	{
+		NpArticulationFixedTendon*& fixedTendon = mFixedTendons[i];
+		context.translatePxBase(fixedTendon);
 	}
 
 	mAggregate = NULL;

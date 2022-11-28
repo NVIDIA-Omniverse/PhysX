@@ -37,6 +37,8 @@
 #include "ScArticulationJointCore.h"
 #include "ScArticulationSensor.h"
 #include "ScArticulationTendonCore.h"
+#include "ScArticulationAttachmentCore.h"
+#include "ScArticulationTendonJointCore.h"
 
 using namespace physx;
 using namespace Cm;
@@ -303,21 +305,66 @@ void Sc::ArticulationSensorCore::getBinaryMetaData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSensorCore, ArticulationSensorSim, mSim, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSensorCore, PxTransform, mRelativePose, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSensorCore, PxU32, mFlags, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSensorCore, PxU16, mFlags, 0)
+}
+
+void Sc::ArticulationAttachmentCore::getBinaryMetaData(PxOutputStream& stream)
+{
+	PX_DEF_BIN_METADATA_CLASS(stream, ArticulationAttachmentCore)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxVec3, mRelativeOffset, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, ArticulationAttachmentCore, mParent, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxReal, mLowLimit, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxReal, mHighLimit, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxReal, mRestLength, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxReal, mCoefficient, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxU32, mLLLinkIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, PxU32, mAttachmentIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationAttachmentCore, ArticulationSpatialTendonSim, mTendonSim, PxMetaDataFlag::ePTR)
+}
+
+void Sc::ArticulationTendonCore::getBinaryMetaData(PxOutputStream& stream)
+{
+	PX_DEF_BIN_METADATA_CLASS(stream, ArticulationTendonCore)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonCore, PxReal, mStiffness, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonCore, PxReal, mDamping, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonCore, PxReal, mOffset, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonCore, PxReal, mLimitStiffness, 0)
 }
 
 void Sc::ArticulationSpatialTendonCore::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_CLASS(stream, ArticulationSpatialTendonCore)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, ArticulationSpatialTendonCore, ArticulationTendonCore)
 
-		PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSpatialTendonCore, ArticulationSpatialTendonSim, mSim, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSpatialTendonCore, ArticulationSpatialTendonSim, mSim, PxMetaDataFlag::ePTR)
 }
 
 void Sc::ArticulationFixedTendonCore::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_CLASS(stream, ArticulationFixedTendonCore)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, ArticulationFixedTendonCore, ArticulationTendonCore)
 
-	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationSpatialTendonCore, ArticulationFixedTendonSim, mSim, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationFixedTendonCore, PxReal, mLowLimit, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationFixedTendonCore, PxReal, mHighLimit, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationFixedTendonCore, PxReal, mRestLength, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationFixedTendonCore, ArticulationFixedTendonSim, mSim, PxMetaDataFlag::ePTR)
+}
+
+void Sc::ArticulationTendonJointCore::getBinaryMetaData(PxOutputStream& stream)
+{
+	PX_DEF_BIN_METADATA_TYPEDEF(stream, PxArticulationAxis, PxU32)
+
+	PX_DEF_BIN_METADATA_CLASS(stream, ArticulationTendonJointCore)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, PxArticulationAxis, axis, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, PxReal, coefficient, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, PxReal, recipCoefficient, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, PxU32, mLLLinkIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, ArticulationTendonJointCore, mParent, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, PxU32, mLLTendonJointIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationTendonJointCore, ArticulationFixedTendonSim, mTendonSim, PxMetaDataFlag::ePTR)
 }
 
 ///////////////////////////////////////////////////////////////////////////////

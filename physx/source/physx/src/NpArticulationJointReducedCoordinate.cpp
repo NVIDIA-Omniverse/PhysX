@@ -51,7 +51,8 @@ namespace physx
 		context.translatePxBase(mParent);
 		context.translatePxBase(mChild);
 		mCore.setRoot(this);
-
+		NpArticulationReducedCoordinate* articulation = static_cast<NpArticulationReducedCoordinate*>(&mParent->getRoot());
+		mCore.setArticulation(&articulation->getCore());
 	}
 
 	//~PX_SERIALIZATION
@@ -64,7 +65,6 @@ namespace physx
 		mParent(&parent),
 		mChild(&child)
 	{
-
 		NpArticulationReducedCoordinate* articulation = static_cast<NpArticulationReducedCoordinate*>(&parent.getRoot());
 		mCore.setArticulation(&articulation->getCore());
 		mCore.setRoot(this);

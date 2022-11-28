@@ -1558,10 +1558,11 @@ void NpScene::removeFEMCloth(PxFEMCloth& femCloth, bool /*wakeOnLostTouch*/)
 	PX_UNUSED(femCloth);
 #endif
 }
+#endif
 
 PxU32 NpScene::getNbFEMCloths() const
 {
-#if PX_SUPPORT_GPU_PHYSX
+#if PX_SUPPORT_GPU_PHYSX && PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	NP_READ_CHECK(this);
 	return mFEMCloths.size();
 #else
@@ -1569,6 +1570,7 @@ PxU32 NpScene::getNbFEMCloths() const
 #endif
 }
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxU32 NpScene::getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 #if PX_SUPPORT_GPU_PHYSX
@@ -1580,6 +1582,11 @@ PxU32 NpScene::getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 sta
 	PX_UNUSED(startIndex);
 	return 0;
 #endif
+}
+#else
+PxU32 NpScene::getFEMCloths(PxFEMCloth**, PxU32, PxU32) const
+{
+	return 0;
 }
 #endif
 
@@ -1845,10 +1852,11 @@ void NpScene::removeHairSystem(PxHairSystem& hairSystem, bool /*wakeOnLostTouch*
 	PX_UNUSED(hairSystem);
 #endif
 }
+#endif
 
 PxU32 NpScene::getNbHairSystems() const
 {
-#if PX_SUPPORT_GPU_PHYSX
+#if PX_SUPPORT_GPU_PHYSX && PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	NP_READ_CHECK(this);
 	return mHairSystems.size();
 #else
@@ -1858,7 +1866,7 @@ PxU32 NpScene::getNbHairSystems() const
 
 PxU32 NpScene::getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
-#if PX_SUPPORT_GPU_PHYSX
+#if PX_SUPPORT_GPU_PHYSX && PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	NP_READ_CHECK(this);
 	return Cm::getArrayOfPointers(userBuffer, bufferSize, startIndex, mHairSystems.getEntries(), mHairSystems.size());
 #else
@@ -1868,7 +1876,6 @@ PxU32 NpScene::getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32
 	return 0;
 #endif
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

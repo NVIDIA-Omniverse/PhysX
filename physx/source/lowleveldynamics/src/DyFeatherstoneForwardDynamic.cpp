@@ -2444,7 +2444,7 @@ namespace Dy
 
 					for (PxU32 i = 0; i < dofCount; ++i)
 					{
-						const PxReal jointForce = data.mMotionMatrix[offset + i].innerProduct(spatialForce);
+						const PxReal jointForce = data.mWorldMotionMatrix[offset + i].innerProduct(spatialForce);
 						constraintForces[offset + i] = jointForce;
 					}
 				}

@@ -33,6 +33,8 @@
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #include "PxFEMCloth.h"
 #endif
+#include "PxFEMParameter.h"
+#include "PxFEMClothFlags.h"
 #include "PxsFEMClothMaterialCore.h"
 
 namespace physx
@@ -45,15 +47,12 @@ namespace physx
 		{
 		public:
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 			PxFEMParameters							parameters;
-#endif
 			PxU16									solverIterationCounts;
 			bool									dirty;
 			PxReal									wakeCounter;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 			PxFEMClothFlags							mFlags;
-#endif
+
 			// Ratio between target volume and rest volume in inflatable simulation.
 			PxReal									mRestVolumeScale;
 

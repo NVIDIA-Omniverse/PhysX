@@ -42,6 +42,7 @@
 #include "NpRigidDynamic.h"
 #include "NpArticulationReducedCoordinate.h"
 #include "NpArticulationLink.h"
+#include "NpArticulationSensor.h"
 #include "NpMaterial.h"
 #include "NpAggregate.h"
 
@@ -148,6 +149,11 @@ void PxRegisterPhysicsSerializers(PxSerializationRegistry& sr)
 	sr.registerSerializer(PxConcreteType::eARTICULATION_REDUCED_COORDINATE,			PX_NEW_SERIALIZER_ADAPTER(NpArticulationReducedCoordinate));
 	sr.registerSerializer(PxConcreteType::eARTICULATION_LINK,						PX_NEW_SERIALIZER_ADAPTER(NpArticulationLink));
 	sr.registerSerializer(PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE,	PX_NEW_SERIALIZER_ADAPTER(NpArticulationJointReducedCoordinate));
+	sr.registerSerializer(PxConcreteType::eARTICULATION_SENSOR,						PX_NEW_SERIALIZER_ADAPTER(NpArticulationSensor));
+	sr.registerSerializer(PxConcreteType::eARTICULATION_SPATIAL_TENDON,				PX_NEW_SERIALIZER_ADAPTER(NpArticulationSpatialTendon));
+	sr.registerSerializer(PxConcreteType::eARTICULATION_ATTACHMENT,					PX_NEW_SERIALIZER_ADAPTER(NpArticulationAttachment));
+	sr.registerSerializer(PxConcreteType::eARTICULATION_FIXED_TENDON,				PX_NEW_SERIALIZER_ADAPTER(NpArticulationFixedTendon));
+	sr.registerSerializer(PxConcreteType::eARTICULATION_TENDON_JOINT,				PX_NEW_SERIALIZER_ADAPTER(NpArticulationTendonJoint));
 	sr.registerSerializer(PxConcreteType::ePRUNING_STRUCTURE,						PX_NEW_SERIALIZER_ADAPTER(Sq::PruningStructure));
 }
 
@@ -167,5 +173,10 @@ void PxUnregisterPhysicsSerializers(PxSerializationRegistry& sr)
 	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_REDUCED_COORDINATE));
 	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_LINK));
 	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE));
+	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_SENSOR));
+	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_SPATIAL_TENDON));
+	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_ATTACHMENT));
+	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_FIXED_TENDON));
+	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::eARTICULATION_TENDON_JOINT));
 	PX_DELETE_SERIALIZER_ADAPTER(sr.unregisterSerializer(PxConcreteType::ePRUNING_STRUCTURE));
 }

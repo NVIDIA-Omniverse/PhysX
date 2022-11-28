@@ -43,6 +43,12 @@ namespace physx
 		{
 		public:
 
+			// PX_SERIALIZATION
+			ArticulationTendonJointCore(const PxEMPTY) : mTendonSim(NULL) {}
+			void preExportDataReset() { }
+			static void getBinaryMetaData(PxOutputStream& stream);
+			//~PX_SERIALIZATION
+
 			ArticulationTendonJointCore()
 			{
 				coefficient = PX_MAX_F32;
@@ -70,7 +76,6 @@ namespace physx
 			PxU32								mLLLinkIndex;
 			ArticulationTendonJointCore*		mParent;
 			PxU32								mLLTendonJointIndex;
-			//Dy::ArticulationTendonJoint*		mLLTendonJoint;
 			Sc::ArticulationFixedTendonSim*		mTendonSim;
 		};
 	}//namespace Sc

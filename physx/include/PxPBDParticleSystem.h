@@ -35,7 +35,6 @@
 #include "foundation/PxVec3.h"
 
 #include "PxParticleSystem.h"
-#include "PxParticlePhase.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -58,21 +57,21 @@ class PxPBDParticleSystem : public PxParticleSystem
 {
 public:
 
-	virtual								~PxPBDParticleSystem() {}
+	virtual                             ~PxPBDParticleSystem() {}
 	
 	/**
 	\brief Set wind direction and intensity
 
 	\param[in] wind The wind direction and intensity
 	*/
-	virtual		void					setWind(const PxVec3& wind) = 0;
+	virtual     void                    setWind(const PxVec3& wind) = 0;
 
 	/**
 	\brief Retrieves the wind direction and intensity.
 
 	\return The wind direction and intensity
 	*/
-	virtual		PxVec3					getWind() const = 0;
+	virtual     PxVec3                  getWind() const = 0;
 
 	/**
 	\brief Set the fluid boundary density scale
@@ -81,7 +80,7 @@ public:
 
 	\param[in] fluidBoundaryDensityScale  <b>Range:</b> (0.0, 1.0)
 	*/
-	virtual		void					setFluidBoundaryDensityScale(PxReal fluidBoundaryDensityScale) = 0;
+	virtual     void                    setFluidBoundaryDensityScale(PxReal fluidBoundaryDensityScale) = 0;
 
 	/**
 	\brief Return the fluid boundary density scale
@@ -89,7 +88,7 @@ public:
 
 	See #setFluidBoundaryDensityScale()
 	*/
-	virtual		PxReal					getFluidBoundaryDensityScale() const = 0;
+	virtual     PxReal                  getFluidBoundaryDensityScale() const = 0;
 
 	/**
 	\brief Set the fluid rest offset
@@ -98,7 +97,7 @@ public:
 
 	\param[in] fluidRestOffset  <b>Range:</b> (0, particleContactOffset)
 	*/
-	virtual		void				    setFluidRestOffset(PxReal fluidRestOffset) = 0;
+	virtual     void                    setFluidRestOffset(PxReal fluidRestOffset) = 0;
 
 	/**
 	\brief Return the fluid rest offset
@@ -106,31 +105,35 @@ public:
 
 	See #setFluidRestOffset()
 	*/
-	virtual		PxReal				    getFluidRestOffset() const = 0;
+	virtual     PxReal                  getFluidRestOffset() const = 0;
 
 	/**
 	\brief Set the particle system grid size x dimension
 
 	\param[in] gridSizeX x dimension in the particle grid
 	*/
-	virtual		void					setGridSizeX(PxU32 gridSizeX) = 0;
+	virtual     void                    setGridSizeX(PxU32 gridSizeX) = 0;
 
 	/**
 	\brief Set the particle system grid size y dimension
 
 	\param[in] gridSizeY y dimension in the particle grid
 	*/
-	virtual		void					setGridSizeY(PxU32 gridSizeY) = 0;
+	virtual     void                    setGridSizeY(PxU32 gridSizeY) = 0;
 
 	/**
 	\brief Set the particle system grid size z dimension
 
 	\param[in] gridSizeZ z dimension in the particle grid
 	*/
-	virtual		void					setGridSizeZ(PxU32 gridSizeZ) = 0;
+	virtual     void                    setGridSizeZ(PxU32 gridSizeZ) = 0;
 	
-	PX_INLINE							PxPBDParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxParticleSystem(concreteType, baseFlags) {}
-	PX_INLINE							PxPBDParticleSystem(PxBaseFlags baseFlags) : PxParticleSystem(baseFlags) {}
+	virtual     const char*             getConcreteTypeName() const PX_OVERRIDE { return "PxPBDParticleSystem"; }
+
+protected:
+	PX_INLINE                           PxPBDParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxParticleSystem(concreteType, baseFlags) {}
+	PX_INLINE                           PxPBDParticleSystem(PxBaseFlags baseFlags) : PxParticleSystem(baseFlags) {}
+	virtual     bool                    isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxPBDParticleSystem", name) || PxParticleSystem::isKindOf(name); }
 };
 
 #if PX_VC

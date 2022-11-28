@@ -176,8 +176,6 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 	PxReal x = position.x;
 	PxReal y = position.y;
 	PxReal z = position.z;
-	PxReal maxY = y;
-	PxReal maxZ = z;
 
 	for (PxU32 i = 0; i < numX; ++i)
 	{
@@ -194,11 +192,9 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 
 				z += particleSpacing;
 			}
-			maxZ = z - particleSpacing;
 			z = position.z;
 			y += particleSpacing;
 		}
-		maxY = y - particleSpacing;
 		y = position.y;
 		x += particleSpacing;
 	}

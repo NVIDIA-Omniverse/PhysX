@@ -34,11 +34,57 @@
 
 using namespace physx;
 
+// PX_SERIALIZATION
+void NpArticulationAttachment::requiresObjects(PxProcessPxBaseCallback& c)
+{
+	// Collect articulation links
+	const PxU32 nbChildren = mChildren.size();
+	for (PxU32 i = 0; i < nbChildren; i++)
+		c.process(*mChildren[i]);
+}
+
+void NpArticulationAttachment::exportExtraData(PxSerializationContext& stream)
+{
+	Cm::exportInlineArray(mChildren, stream);
+}
+
+void NpArticulationAttachment::importExtraData(PxDeserializationContext& context)
+{
+	Cm::importInlineArray(mChildren, context);
+}
+
+void NpArticulationAttachment::resolveReferences(PxDeserializationContext& context)
+{
+	context.translatePxBase(mLink);
+	context.translatePxBase(mParent);
+
+	const PxU32 nbChildren = mChildren.size();
+	for (PxU32 i = 0; i < nbChildren; i++)
+	{
+		NpArticulationAttachment*& attachment = mChildren[i];
+		context.translatePxBase(attachment);
+	}
+
+	context.translatePxBase(mTendon);
+	mCore.mParent = mParent ? &static_cast<NpArticulationAttachment*>(mParent)->mCore : NULL;
+}
+
+NpArticulationAttachment* NpArticulationAttachment::createObject(PxU8*& address, PxDeserializationContext& context)
+{
+	NpArticulationAttachment* obj = PX_PLACEMENT_NEW(address, NpArticulationAttachment(PxBaseFlags(0)));
+	address += sizeof(NpArticulationAttachment);	
+	obj->importExtraData(context);
+	obj->resolveReferences(context);
+	return obj;
+}
+
+// ~PX_SERIALIZATION
+
 NpArticulationAttachment::NpArticulationAttachment(PxArticulationAttachment* parent, const PxReal coefficient, const PxVec3 relativeOffset, PxArticulationLink* link):
+	PxArticulationAttachment(PxConcreteType::eARTICULATION_ATTACHMENT, PxBaseFlag::eOWNS_MEMORY),
+	NpBase(NpType::eARTICULATION_ATTACHMENT),
 	mLink(link), mParent(parent)
 {
-	mChildren.reserve(64);
-
 	NpArticulationAttachment* npParent = static_cast<NpArticulationAttachment*>(parent);
 
 	mCore.mRelativeOffset = link->getCMassLocalPose().transform(relativeOffset);
@@ -146,7 +192,8 @@ void NpArticulationAttachment::release()
 	attachments.replaceWithLast(mHandle);
 	this->~NpArticulationAttachment();
 
-	PX_FREE_THIS;
+	if (mBaseFlags & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE_THIS;
 }
 
 void NpArticulationAttachment::removeChild(NpArticulationAttachment* child)
@@ -168,11 +215,51 @@ void NpArticulationAttachment::removeChild(NpArticulationAttachment* child)
 	mChildren.forceSize_Unsafe(lastIndex);
 }
 
+// PX_SERIALIZATION
+
+void NpArticulationSpatialTendon::requiresObjects(PxProcessPxBaseCallback& c)
+{
+	const PxU32 nbAttachments = mAttachments.size();
+	for (PxU32 i = 0; i < nbAttachments; i++)
+		c.process(*mAttachments[i]);
+}
+
+void NpArticulationSpatialTendon::exportExtraData(PxSerializationContext& stream)
+{
+	Cm::exportInlineArray(mAttachments, stream);
+}
+
+void NpArticulationSpatialTendon::importExtraData(PxDeserializationContext& context)
+{
+	Cm::importInlineArray(mAttachments, context);
+}
+
+void NpArticulationSpatialTendon::resolveReferences(PxDeserializationContext& context)
+{	
+	const PxU32 nbAttachments = mAttachments.size();
+	for (PxU32 i = 0; i < nbAttachments; i++)
+	{
+		NpArticulationAttachment*& attachment = mAttachments[i];
+		context.translatePxBase(attachment);
+	}
+
+	context.translatePxBase(mArticulation);
+}
+
+NpArticulationSpatialTendon* NpArticulationSpatialTendon::createObject(PxU8*& address, PxDeserializationContext& context)
+{
+	NpArticulationSpatialTendon* obj = PX_PLACEMENT_NEW(address, NpArticulationSpatialTendon(PxBaseFlags(0)));
+	address += sizeof(NpArticulationSpatialTendon);	
+	obj->importExtraData(context);
+	obj->resolveReferences(context);
+	return obj;
+}
+//~PX_SERIALIZATION
+
 NpArticulationSpatialTendon::NpArticulationSpatialTendon(NpArticulationReducedCoordinate* articulation) :
 	PxArticulationSpatialTendon(PxConcreteType::eARTICULATION_SPATIAL_TENDON, PxBaseFlag::eOWNS_MEMORY),
-	NpBase(NpType::eARTICULATION_TENDON), mArticulation(articulation)
+	NpBase(NpType::eARTICULATION_SPATIAL_TENDON), mArticulation(articulation)
 {
-	mAttachments.reserve(50);
 	mLLIndex = 0xffffffff;
 	mHandle = 0xffffffff;
 }
@@ -184,7 +271,8 @@ NpArticulationSpatialTendon::~NpArticulationSpatialTendon()
 		if (mAttachments[i])
 		{
 			mAttachments[i]->~NpArticulationAttachment();
-			PX_FREE(mAttachments[i]);
+			if(mAttachments[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+				PX_FREE(mAttachments[i]);
 		}
 	}
 }
@@ -204,7 +292,9 @@ PxArticulationAttachment* NpArticulationSpatialTendon::createAttachment(PxArticu
 		PX_CHECK_AND_RETURN_NULL(parent->getTendon() == this, "PxArticulationSpatialTendon::createAttachment: Parent attachment from another tendon provided. Need valid parent from same tendon.");
 #endif
 
-	NpArticulationAttachment* npAttachment = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(NpArticulationAttachment), "NpArticulationAttachment"), NpArticulationAttachment)(parent, coefficient, relativeOffset, link);
+	void* npAttachmentMem = PX_ALLOC(sizeof(NpArticulationAttachment), "NpArticulationAttachment");
+	PxMarkSerializedMemory(npAttachmentMem, sizeof(NpArticulationAttachment));
+	NpArticulationAttachment* npAttachment = PX_PLACEMENT_NEW(npAttachmentMem, NpArticulationAttachment)(parent, coefficient, relativeOffset, link);
 
 	if (npAttachment)
 	{
@@ -330,7 +420,8 @@ void NpArticulationSpatialTendon::release()
 	spatialTendons.replaceWithLast(mHandle);
 	this->~NpArticulationSpatialTendon();
 
-	PX_FREE_THIS;
+	if (mBaseFlags & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE_THIS;
 }
 
 NpArticulationAttachment* NpArticulationSpatialTendon::getAttachment(const PxU32 index)
@@ -345,11 +436,57 @@ PxU32 NpArticulationSpatialTendon::getNbAttachments() const
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// PX_SERIALIZATION
+void NpArticulationTendonJoint::requiresObjects(PxProcessPxBaseCallback& c)
+{
+	// Collect articulation links
+	const PxU32 nbChildren = mChildren.size();
+	for (PxU32 i = 0; i < nbChildren; i++)
+		c.process(*mChildren[i]);
+}
+
+void NpArticulationTendonJoint::exportExtraData(PxSerializationContext& stream)
+{
+	Cm::exportInlineArray(mChildren, stream);
+}
+
+void NpArticulationTendonJoint::importExtraData(PxDeserializationContext& context)
+{
+	Cm::importInlineArray(mChildren, context);
+}
+
+void NpArticulationTendonJoint::resolveReferences(PxDeserializationContext& context)
+{
+	context.translatePxBase(mLink);
+	context.translatePxBase(mParent);
+
+	const PxU32 nbChildren = mChildren.size();
+	for (PxU32 i = 0; i < nbChildren; i++)
+	{
+		NpArticulationTendonJoint*& tendonJoint = mChildren[i];
+		context.translatePxBase(tendonJoint);
+	}
+		
+	context.translatePxBase(mTendon);
+	mCore.mParent = mParent ? &static_cast<NpArticulationTendonJoint*>(mParent)->mCore : NULL;
+}
+
+NpArticulationTendonJoint* NpArticulationTendonJoint::createObject(PxU8*& address, PxDeserializationContext& context)
+{
+	NpArticulationTendonJoint* obj = PX_PLACEMENT_NEW(address, NpArticulationTendonJoint(PxBaseFlags(0)));
+	address += sizeof(NpArticulationTendonJoint);	
+	obj->importExtraData(context);
+	obj->resolveReferences(context);
+	return obj;
+}
+
+// ~PX_SERIALIZATION
+
 NpArticulationTendonJoint::NpArticulationTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, 
 	const PxReal coefficient, const PxReal recipCoefficient, PxArticulationLink* link) :
-	PxArticulationTendonJoint()
+	PxArticulationTendonJoint(PxConcreteType::eARTICULATION_TENDON_JOINT, PxBaseFlag::eOWNS_MEMORY),
+	NpBase(NpType::eARTICULATION_TENDON_JOINT)
 {
-	
 	NpArticulationTendonJoint* npParent = static_cast<NpArticulationTendonJoint*>(parent);
 	mCore.mParent = parent ? &npParent->getCore() : NULL;
 	mCore.mLLTendonJointIndex = 0xffffffff;
@@ -410,14 +547,55 @@ void NpArticulationTendonJoint::release()
 	tendonJoints.replaceWithLast(mHandle);
 	this->~NpArticulationTendonJoint();
 
-	PX_FREE_THIS;
+	if (mBaseFlags & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE_THIS;
 }
+
+// PX_SERIALIZATION
+
+void NpArticulationFixedTendon::requiresObjects(PxProcessPxBaseCallback& c)
+{
+	const PxU32 nbTendonJoints = mTendonJoints.size();
+	for (PxU32 i = 0; i < nbTendonJoints; i++)
+		c.process(*mTendonJoints[i]);
+}
+
+void NpArticulationFixedTendon::exportExtraData(PxSerializationContext& stream)
+{
+	Cm::exportInlineArray(mTendonJoints, stream);
+}
+
+void NpArticulationFixedTendon::importExtraData(PxDeserializationContext& context)
+{
+	Cm::importInlineArray(mTendonJoints, context);
+}
+
+void NpArticulationFixedTendon::resolveReferences(PxDeserializationContext& context)
+{	
+	const PxU32 nbTendonJoints = mTendonJoints.size();
+	for (PxU32 i = 0; i < nbTendonJoints; i++)
+	{
+		NpArticulationTendonJoint*& tendonJoint = mTendonJoints[i];
+		context.translatePxBase(tendonJoint);
+	}
+
+	context.translatePxBase(mArticulation);
+}
+
+NpArticulationFixedTendon* NpArticulationFixedTendon::createObject(PxU8*& address, PxDeserializationContext& context)
+{
+	NpArticulationFixedTendon* obj = PX_PLACEMENT_NEW(address, NpArticulationFixedTendon(PxBaseFlags(0)));
+	address += sizeof(NpArticulationFixedTendon);	
+	obj->importExtraData(context);
+	obj->resolveReferences(context);
+	return obj;
+}
+//~PX_SERIALIZATION
 
 NpArticulationFixedTendon::NpArticulationFixedTendon(NpArticulationReducedCoordinate* articulation) :
 	PxArticulationFixedTendon(PxConcreteType::eARTICULATION_FIXED_TENDON, PxBaseFlag::eOWNS_MEMORY),
-	NpBase(NpType::eARTICULATION_TENDON), mArticulation(articulation)
+	NpBase(NpType::eARTICULATION_FIXED_TENDON), mArticulation(articulation)
 {
-	mTendonJoints.reserve(50);
 	mLLIndex = 0xffffffff;
 	mHandle = 0xffffffff;
 }
@@ -429,7 +607,10 @@ NpArticulationFixedTendon::~NpArticulationFixedTendon()
 		if (mTendonJoints[i])
 		{
 			mTendonJoints[i]->~NpArticulationTendonJoint();
-			PX_FREE(mTendonJoints[i]);
+			if (mTendonJoints[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+			{
+				PX_FREE(mTendonJoints[i]);
+			}
 		}
 	}
 }
@@ -448,7 +629,8 @@ void NpArticulationFixedTendon::release()
 	fixedTendons.replaceWithLast(mHandle);
 	this->~NpArticulationFixedTendon();
 
-	PX_FREE_THIS;
+	if (mBaseFlags & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE_THIS;
 }
 
 PxArticulationTendonJoint* NpArticulationFixedTendon::createTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient, PxArticulationLink* link)
@@ -470,7 +652,9 @@ PxArticulationTendonJoint* NpArticulationFixedTendon::createTendonJoint(PxArticu
 	}
 #endif
 
-	NpArticulationTendonJoint* npTendonJoint = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(NpArticulationTendonJoint), "NpArticulationTendonJoint"), NpArticulationTendonJoint)(parent, axis, coefficient, recipCoefficient, link);
+	void* npTendonJointtMem = PX_ALLOC(sizeof(NpArticulationTendonJoint), "NpArticulationTendonJoint");
+	PxMarkSerializedMemory(npTendonJointtMem, sizeof(NpArticulationTendonJoint));
+	NpArticulationTendonJoint* npTendonJoint = PX_PLACEMENT_NEW(npTendonJointtMem, NpArticulationTendonJoint)(parent, axis, coefficient, recipCoefficient, link);
 
 	if (npTendonJoint)
 	{

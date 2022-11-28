@@ -44,6 +44,19 @@ class NpArticulationSensor : public PxArticulationSensor, public NpBase
 {
 public:
 
+// PX_SERIALIZATION
+											NpArticulationSensor(PxBaseFlags baseFlags)
+													: PxArticulationSensor(baseFlags), NpBase(PxEmpty), mCore(PxEmpty) {}
+				void						preExportDataReset() {}
+	virtual		void						exportExtraData(PxSerializationContext& ) {}
+				void						importExtraData(PxDeserializationContext& ) {}
+				void						resolveReferences(PxDeserializationContext& );
+	virtual		void						requiresObjects(PxProcessPxBaseCallback&) {}
+	virtual		bool						isSubordinate()  const	 { return true; } 
+	static		NpArticulationSensor*		createObject(PxU8*& address, PxDeserializationContext& context);
+	static		void						getBinaryMetaData(PxOutputStream& stream);		
+//~PX_SERIALIZATION
+
 	NpArticulationSensor(PxArticulationLink* link, const PxTransform& relativePose);
 	virtual ~NpArticulationSensor() {}
 
@@ -61,8 +74,6 @@ public:
 	PX_FORCE_INLINE const Sc::ArticulationSensorCore& getSensorCore() const { return mCore; }
 	PX_FORCE_INLINE ArticulationSensorHandle	getHandle() { return mHandle; }
 	PX_FORCE_INLINE	void						setHandle(ArticulationSensorHandle handle) { mHandle = handle; }
-
-	static		void								getBinaryMetaData(PxOutputStream& stream);
 
 private:
 	PxArticulationLink* mLink;

@@ -41,7 +41,7 @@
 #include "PxActor.h"
 #include "PxFiltering.h"
 #include "PxParticleBuffer.h"
-#include "PxParticlePhase.h"
+//#include "PxParticlePhase.h"
 #include "PxParticleSolverType.h"
 #include "PxParticleSystem.h"
 #include "PxPBDParticleSystem.h"
@@ -78,34 +78,6 @@ namespace physx
 	{
 		class ParticleSystemSim;
 	}
-
-	class NpParticlePhase : public PxParticlePhase
-	{
-		PxParticleSystem*		mSystem;
-		PxParticleMaterial*		mMaterial;
-		PxU32					mPhase;
-
-	public:
-		virtual void					setFlags(PxParticlePhaseFlags flags);
-		virtual void					setFlag(PxParticlePhaseFlag::Enum flag, bool enabled);
-		virtual PxParticlePhaseFlags	getFlags() const;
-
-		virtual PxParticleMaterial*		getMaterial() const;
-		virtual void					setMaterial(PxParticleMaterial* material);
-
-		NpParticlePhase(PxParticleSystem* system, PxParticleMaterial* material, PxU32 phase)
-			: mSystem(system), mMaterial(material), mPhase(phase)
-		{
-		}
-
-		~NpParticlePhase()
-		{
-			mMaterial->release();
-			mMaterial = NULL;
-		}
-
-	};
-
 
 	template<class APIClass>
 	class NpParticleSystem : public NpActorTemplate<APIClass>
@@ -270,9 +242,6 @@ namespace physx
 				return mCore.getSim()->getLowLevelParticleSystem()->getGpuRemapId();
 			return 0xffffffff;
 		}
-
-		virtual	bool				isKindOf(const char* name) const { return !::strcmp("PxParticleSystem", name) || PxBase::isKindOf(name); }
-		virtual	const char*			getConcreteTypeName() const { return "PxParticleSystem"; }
 
 		PX_FORCE_INLINE	const Sc::ParticleSystemCore&	getCore()	const	{ return mCore; }
 		PX_FORCE_INLINE	Sc::ParticleSystemCore&			getCore()			{ return mCore; }

@@ -132,10 +132,6 @@ namespace physx
 
 		virtual void					release();
 
-		virtual	bool					isKindOf(const char* name) const { return !::strcmp("PxFEMCloth", name) || PxBase::isKindOf(name); }
-
-		virtual	const char*				getConcreteTypeName() const { return "PxFEMCloth"; }
-
 		PX_FORCE_INLINE	const Sc::FEMClothCore&	getCore() const { return mCore; }
 		PX_FORCE_INLINE	Sc::FEMClothCore&		getCore() { return mCore; }
 

@@ -9,9 +9,13 @@
 
 * CMake, minimum version 3.14
 * Python, minimum version 3.5
-* Clang, min version 3.8
-* Gcc for aarch64, min version 5.3
 * curl
+
+Compilers:
+  * For linux x86-64 builds we support Ubuntu LTS releases with their respective default compiler versions:
+    * Ubuntu 20.04 LTS with gcc 9 or clang 10
+    * Ubuntu 22.04 LTS with gcc 11 or clang 14
+  * For linux aarch64 builds we support gcc version 9
 
 
 ## Generating Makefiles:

@@ -37,10 +37,19 @@
 #include "foundation/PxUserAllocated.h"
 #include "PxScene.h"
 #include "PxParticleSystem.h"
+
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-#include "PxFLIPParticleSystem.h"
-#include "PxMPMParticleSystem.h"
+	#include "PxFLIPParticleSystem.h"
+	#include "PxMPMParticleSystem.h"
+
+	// if these assert fail adjust the type here and in the forward declaration of the #else section just below
+	PX_COMPILE_TIME_ASSERT(sizeof(physx::PxMPMParticleDataFlag::Enum) == sizeof(physx::PxU32));
+	PX_COMPILE_TIME_ASSERT(sizeof(physx::PxSparseGridDataFlag::Enum) == sizeof(physx::PxU32));
+#else
+	namespace PxMPMParticleDataFlag { enum Enum : physx::PxU32; }
+	namespace PxSparseGridDataFlag { enum Enum : physx::PxU32; }
 #endif
+
 #include "PxParticleSolverType.h"
 
 namespace physx
@@ -336,12 +345,8 @@ namespace physx
 
 #endif
 
-// jcarius: Methods that are disabled in public build must be at the end to not screw with
-// vtable offsets
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 		virtual void*	getMPMDataPointer(const Dy::ParticleSystem& psLL, PxMPMParticleDataFlag::Enum flags) = 0;
 		virtual void*	getSparseGridDataPointer(const Dy::ParticleSystem& psLL, PxSparseGridDataFlag::Enum flags, PxParticleSolverType::Enum type) = 0;
-#endif
 
 	protected:
 		PxsSimulationControllerCallback* mCallback;

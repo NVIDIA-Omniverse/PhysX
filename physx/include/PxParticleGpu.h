@@ -35,7 +35,6 @@
 #include "foundation/PxVec3.h"
 
 #include "PxParticleSystem.h"
-#include "PxParticlePhase.h"
 
 #if !PX_DOXYGEN
 namespace physx
