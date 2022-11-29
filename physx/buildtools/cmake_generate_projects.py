@@ -214,6 +214,12 @@ class CMakePreset:
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
             return outString
+        elif self.targetPlatform == 'ios64':
+            outString = outString + ' -DTARGET_BUILD_PLATFORM=ios'
+            outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=\"' + \
+                os.environ['PM_CMakeModules_PATH'] + '/ios/ios.toolchain.cmake\"'
+            outString = outString + ' -DPX_OUTPUT_ARCH=arm'
+            return outString
         return ''
 
 

@@ -88,6 +88,20 @@ PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
 /*!
 Prefetch \c count bytes starting at \c ptr.
 */
+#if PX_IOS
+PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
+{
+	const char* cp = static_cast<const char*>(ptr);
+	size_t p = reinterpret_cast<size_t>(ptr);
+	uint32_t startLine = uint32_t(p >> 5), endLine = uint32_t((p + count - 1) >> 5);
+	uint32_t lines = endLine - startLine + 1;
+	do
+	{
+		PxPrefetchLine(cp);
+		cp += 32;
+	} while(--lines);
+}
+#else
 PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
 {
 	const char* cp = reinterpret_cast<const char*>(ptr);
@@ -100,6 +114,7 @@ PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
 		cp += 64;
 	} while(--lines);
 }
+#endif
 
 #if !PX_DOXYGEN
 } // namespace physx
