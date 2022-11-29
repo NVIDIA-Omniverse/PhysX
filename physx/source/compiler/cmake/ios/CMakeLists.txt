@@ -100,6 +100,8 @@ SET_PROPERTY(TARGET PhysXPvdSDK PROPERTY FOLDER "PhysX SDK")
 SET_PROPERTY(TARGET PhysXTask PROPERTY FOLDER "PhysX SDK")
 SET_PROPERTY(TARGET PhysXFoundation PROPERTY FOLDER "PhysX SDK")
 
+# iOS apps cannot include dylibs shared libraries. 
+# Instead generate iOS Framewoks when building non-statically.
 IF(PHYSXCOMMON_LIBTYPE STREQUAL "SHARED")
 	SET(PHYSX_IOS_IDENTIFIER "com.nvidia.lib.physx")
 	SET(PHYSX_COMMON_IOS_IDENTIFIER "com.nvidia.lib.physxcommon")
