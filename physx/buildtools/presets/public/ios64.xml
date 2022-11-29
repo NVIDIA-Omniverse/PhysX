@@ -7,6 +7,6 @@
   </CMakeSwitches>
   <CMakeParams>
     <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/ios64/PhysX" comment="Install path relative to PhysX SDK root" />
-    <cmakeParam name="CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET" value="14.0" comment="iOS minimum deployemnt target" />
+    <cmakeParam name="CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET" value="14.0" comment="iOS minimum deployment target" />
   </CMakeParams>
 </preset>
