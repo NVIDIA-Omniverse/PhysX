@@ -213,7 +213,7 @@ class CMakePreset:
         elif self.targetPlatform == 'mac64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
-        elif self.targetPlatform == 'macAarch64':
+        elif self.targetPlatform == 'macArm64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
             outString = outString + ' -DPX_OUTPUT_ARCH=arm'
             return outString

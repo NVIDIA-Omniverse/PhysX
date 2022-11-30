@@ -24,17 +24,17 @@
 ##
 ## Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
 
-IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+IF(PX_OUTPUT_ARCH STREQUAL "arm")
     SET(OSX_BITNESS "-arch arm64")
     SET(CMAKE_OSX_ARCHITECTURES "arm64")
-    SET(SIMD_SET "-mfpu=neon")
+    SET(ARCH_SIMD_FLAG "") # No flags needed to enable NEON
 ELSE()
     SET(OSX_BITNESS "-arch x86_64")
     SET(CMAKE_OSX_ARCHITECTURES "x86_64")
-    SET(SIMD_SET "-msse2")
+    SET(ARCH_SIMD_FLAG "-msse2")
 ENDIF()
 
-SET(PHYSX_CXX_FLAGS "${OSX_BITNESS} ${SIMD_SET} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -Werror -ferror-limit=0 -Wall -Wextra -fstrict-aliasing -Wstrict-aliasing=2 -Weverything -Wno-unknown-warning-option -Wno-documentation-deprecated-sync -Wno-documentation-unknown-command -Wno-float-equal -Wno-padded -Wno-weak-vtables -Wno-cast-align -Wno-conversion -Wno-missing-noreturn -Wno-missing-variable-declarations -Wno-shift-sign-overflow -Wno-covered-switch-default -Wno-exit-time-destructors -Wno-global-constructors -Wno-missing-prototypes -Wno-unreachable-code -Wno-unused-macros -Wno-unused-member-function -Wno-used-but-marked-unused -Wno-weak-template-vtables -Wno-deprecated -Wno-non-virtual-dtor -Wno-invalid-noreturn -Wno-return-type-c-linkage -Wno-reserved-id-macro -Wno-c++98-compat-pedantic -Wno-unused-local-typedef -Wno-old-style-cast -Wno-newline-eof -Wno-unused-private-field -Wno-undefined-reinterpret-cast -Wno-invalid-offsetof -Wno-zero-as-null-pointer-constant -Wno-atomic-implicit-seq-cst -gdwarf-2" CACHE INTERNAL "PhysX CXX")
+SET(PHYSX_CXX_FLAGS "${OSX_BITNESS} ${ARCH_SIMD_FLAG} -std=c++11 -fno-rtti -fno-exceptions -ffunction-sections -fdata-sections -Werror -ferror-limit=0 -Wall -Wextra -fstrict-aliasing -Wstrict-aliasing=2 -Weverything -Wno-unknown-warning-option -Wno-documentation-deprecated-sync -Wno-documentation-unknown-command -Wno-float-equal -Wno-padded -Wno-weak-vtables -Wno-cast-align -Wno-conversion -Wno-missing-noreturn -Wno-missing-variable-declarations -Wno-shift-sign-overflow -Wno-covered-switch-default -Wno-exit-time-destructors -Wno-global-constructors -Wno-missing-prototypes -Wno-unreachable-code -Wno-unused-macros -Wno-unused-member-function -Wno-used-but-marked-unused -Wno-weak-template-vtables -Wno-deprecated -Wno-non-virtual-dtor -Wno-invalid-noreturn -Wno-return-type-c-linkage -Wno-reserved-id-macro -Wno-c++98-compat-pedantic -Wno-unused-local-typedef -Wno-old-style-cast -Wno-newline-eof -Wno-unused-private-field -Wno-undefined-reinterpret-cast -Wno-invalid-offsetof -Wno-zero-as-null-pointer-constant -Wno-atomic-implicit-seq-cst -Wno-suggest-destructor-override -Wno-suggest-override -Wno-alloca -Wno-switch-enum -Wno-unused-but-set-variable -Wno-shadow-field -gdwarf-2" CACHE INTERNAL "PhysX CXX")
 
 SET(CMAKE_SHARED_LINKER_FLAGS_CHECKED "")
 SET(CMAKE_SHARED_LINKER_FLAGS_PROFILE "")

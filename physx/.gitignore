@@ -1,4 +1,7 @@
 bin/
 compiler/linux-*
 compiler/vc*
+compiler/mac*
 include/PxConfig.h
+install/
+.DS_Store

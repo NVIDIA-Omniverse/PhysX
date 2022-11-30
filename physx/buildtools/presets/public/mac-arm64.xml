@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<preset name="mac-aarch64" comment="Mac-aarch64 Xcode PhysX general settings">
-  <platform targetPlatform="macAarch64" compiler="xcode" />
+<preset name="mac-arm64" comment="Mac-arm64 Xcode PhysX general settings">
+  <platform targetPlatform="macArm64" compiler="xcode" />
   <CMakeSwitches>
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libraries" />
     <cmakeSwitch name="NV_FORCE_64BIT_SUFFIX" value="True" comment="Force a 64 bit suffix for platforms that don't register properly." />
   </CMakeSwitches>
   <CMakeParams>
-    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/mac-aarch64/PhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/mac-arm64/PhysX" comment="Install path relative to PhysX SDK root" />
     <cmakeParam name="CMAKE_OSX_DEPLOYMENT_TARGET" value="11.0" comment="Mac minimum deployment target" />
   </CMakeParams>
 </preset>
