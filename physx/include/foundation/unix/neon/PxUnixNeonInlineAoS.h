@@ -3530,9 +3530,13 @@ template <> PX_FORCE_INLINE VecU32V V4U32SplatElement<3>(VecU32V a) { return vdu
 template <int index>
 PX_FORCE_INLINE Vec4V V4SplatElement(Vec4V a)
 {
-	if(index < 2)
+	if(index == 0)
 	{
-		return vdupq_lane_f32(vget_low_f32(a), index);
+		return vdupq_lane_f32(vget_low_f32(a), 0);
+	}
+	else if (index == 1)
+	{
+		return vdupq_lane_f32(vget_low_f32(a), 1);
 	}
 	else if(index == 2)
 	{
