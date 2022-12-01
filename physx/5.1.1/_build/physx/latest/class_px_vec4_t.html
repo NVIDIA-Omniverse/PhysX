@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVec4T &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVec4T</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvec4t">
+<span id="exhale-class-class-px-vec4-t"></span><h1>PxVec4T<a class="headerlink" href="#pxvec4t" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_Px.h.html#file-include-foundation-px-h"><span class="std std-ref">include/foundation/Px.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E7PxVec4T">
+<span id="_CPPv3I0E7PxVec4T"></span><span id="_CPPv2I0E7PxVec4T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Type</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_vec4_t"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><a class="headerlink" href="#_CPPv4I0E7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>4 Element vector class. </p>
+<p>This is a 4-dimensional vector class with public data members. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TEv">
+<span id="_CPPv3N7PxVec4T7PxVec4TEv"></span><span id="_CPPv2N7PxVec4T7PxVec4TEv"></span><span id="PxVec4T::PxVec4T"></span><span class="target" id="class_px_vec4_t_1a3ca0e2229b9675196f369ec235d610e4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>default constructor leaves data uninitialized. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TE6PxZERO">
+<span id="_CPPv3N7PxVec4T7PxVec4TE6PxZERO"></span><span id="_CPPv2N7PxVec4T7PxVec4TE6PxZERO"></span><span id="PxVec4T::PxVec4T__PxZERO"></span><span class="target" id="class_px_vec4_t_1ab1a1130b466c40e2ccf1c165ce30296f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="enum_group__foundation_1gac10bd69c94c165a52f6de39678ef9d4c.html#_CPPv46PxZERO" title="PxZERO"><span class="n"><span class="pre">PxZERO</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TE6PxZERO" title="Permalink to this definition"></a><br /></dt>
+<dd><p>zero constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TE4Type">
+<span id="_CPPv3N7PxVec4T7PxVec4TE4Type"></span><span id="_CPPv2N7PxVec4T7PxVec4TE4Type"></span><span id="PxVec4T::PxVec4T__Type"></span><span class="target" id="class_px_vec4_t_1ae1317e4985d59328e87d23f3264488cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assigns scalar parameter to all elements. </p>
+<p>Useful to initialize to zero or one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>a</strong> – <strong>[in]</strong> Value to assign to elements. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TE4Type4Type4Type4Type">
+<span id="_CPPv3N7PxVec4T7PxVec4TE4Type4Type4Type4Type"></span><span id="_CPPv2N7PxVec4T7PxVec4TE4Type4Type4Type4Type"></span><span id="PxVec4T::PxVec4T__Type.Type.Type.Type"></span><span class="target" id="class_px_vec4_t_1a78fbb00d61f2e89788d78885d82c06f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nx</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">ny</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nz</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nw</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TE4Type4Type4Type4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Initializes from 3 scalar parameters. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nx</strong> – <strong>[in]</strong> Value to initialize X component. </p></li>
+<li><p><strong>ny</strong> – <strong>[in]</strong> Value to initialize Y component. </p></li>
+<li><p><strong>nz</strong> – <strong>[in]</strong> Value to initialize Z component. </p></li>
+<li><p><strong>nw</strong> – <strong>[in]</strong> Value to initialize W component. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TERK7PxVec3TI4TypeE4Type">
+<span id="_CPPv3N7PxVec4T7PxVec4TERK7PxVec3TI4TypeE4Type"></span><span id="_CPPv2N7PxVec4T7PxVec4TERK7PxVec3TI4TypeE4Type"></span><span id="PxVec4T::PxVec4T__PxVec3T:Type:CR.Type"></span><span class="target" id="class_px_vec4_t_1ab7c56c40342649da9ce524648a0726e1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span>, <a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nw</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TERK7PxVec3TI4TypeE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Initializes from 3 scalar parameters. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> – <strong>[in]</strong> Value to initialize the X, Y, and Z components. </p></li>
+<li><p><strong>nw</strong> – <strong>[in]</strong> Value to initialize W component. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TEA_K4Type">
+<span id="_CPPv3N7PxVec4T7PxVec4TEA_K4Type"></span><span id="_CPPv2N7PxVec4T7PxVec4TEA_K4Type"></span><span id="PxVec4T::PxVec4T__TypeCA"></span><span class="target" id="class_px_vec4_t_1a884cd189b8791794bd6a506edc762f2a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TEA_K4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Initializes from an array of scalar parameters. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>v</strong> – <strong>[in]</strong> Value to initialize with. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T7PxVec4TERK7PxVec4T">
+<span id="_CPPv3N7PxVec4T7PxVec4TERK7PxVec4T"></span><span id="_CPPv2N7PxVec4T7PxVec4TERK7PxVec4T"></span><span id="PxVec4T::PxVec4T__PxVec4TCR"></span><span class="target" id="class_px_vec4_t_1a18b53be6a7b2d4e2254db88d631aa03b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVec4T</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxVec4T7PxVec4TERK7PxVec4T" title="PxVec4T::PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T7PxVec4TERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy ctor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TaSERK7PxVec4T">
+<span id="_CPPv3N7PxVec4TaSERK7PxVec4T"></span><span id="_CPPv2N7PxVec4TaSERK7PxVec4T"></span><span id="PxVec4T::assign-operator__PxVec4TCR"></span><span class="target" id="class_px_vec4_t_1a4ea32b792640a3e75b56bcad18fd91d6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TaSERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TixEj">
+<span id="_CPPv3N7PxVec4TixEj"></span><span id="_CPPv2N7PxVec4TixEj"></span><span id="PxVec4T::subscript-operator__unsigned-i"></span><span class="target" id="class_px_vec4_t_1ac83e2937292323f032837ffc8a583e88"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TixEj" title="Permalink to this definition"></a><br /></dt>
+<dd><p>element access </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TixEj">
+<span id="_CPPv3NK7PxVec4TixEj"></span><span id="_CPPv2NK7PxVec4TixEj"></span><span id="PxVec4T::subscript-operator__unsigned-iC"></span><span class="target" id="class_px_vec4_t_1aa22558acd69ef55ace44beb234ed8127"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TixEj" title="Permalink to this definition"></a><br /></dt>
+<dd><p>element access </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TeqERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4TeqERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4TeqERK7PxVec4T"></span><span id="PxVec4T::eq-operator__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a98efb00caf90e91d36bf1cf1142d82f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TeqERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the two vectors are exactly equal. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TneERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4TneERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4TneERK7PxVec4T"></span><span id="PxVec4T::neq-operator__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a327da57cd645464d8c77d812f5657d7e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">!=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TneERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the two vectors are not exactly equal. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T6isZeroEv">
+<span id="_CPPv3NK7PxVec4T6isZeroEv"></span><span id="_CPPv2NK7PxVec4T6isZeroEv"></span><span id="PxVec4T::isZeroC"></span><span class="target" id="class_px_vec4_t_1a25db6c6866dc27623bb8c805240a1bcc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T6isZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>tests for exact zero vector </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T8isFiniteEv">
+<span id="_CPPv3NK7PxVec4T8isFiniteEv"></span><span id="_CPPv2NK7PxVec4T8isFiniteEv"></span><span id="PxVec4T::isFiniteC"></span><span class="target" id="class_px_vec4_t_1a8f608e93734eec06d96e62cfe5c9d6cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isFinite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T8isFiniteEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if all 3 elems of the vector are finite (not NAN or INF, etc.) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T12isNormalizedEv">
+<span id="_CPPv3NK7PxVec4T12isNormalizedEv"></span><span id="_CPPv2NK7PxVec4T12isNormalizedEv"></span><span id="PxVec4T::isNormalizedC"></span><span class="target" id="class_px_vec4_t_1a77e81792349c2bcfee97dcc13e6cbed7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isNormalized</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T12isNormalizedEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>is normalized - used by API parameter validation </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T16magnitudeSquaredEv">
+<span id="_CPPv3NK7PxVec4T16magnitudeSquaredEv"></span><span id="_CPPv2NK7PxVec4T16magnitudeSquaredEv"></span><span id="PxVec4T::magnitudeSquaredC"></span><span class="target" id="class_px_vec4_t_1a9d59b8d1a93685b8c09c2469bf7dd592"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitudeSquared</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T16magnitudeSquaredEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns the squared magnitude </p>
+<p>Avoids calling <a class="reference internal" href="function_group__foundation_1ga60bf8b516d1901d3f874608bf54e7ba7.html#group__foundation_1ga60bf8b516d1901d3f874608bf54e7ba7"><span class="std std-ref">PxSqrt()</span></a>! </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T9magnitudeEv">
+<span id="_CPPv3NK7PxVec4T9magnitudeEv"></span><span id="_CPPv2NK7PxVec4T9magnitudeEv"></span><span id="PxVec4T::magnitudeC"></span><span class="target" id="class_px_vec4_t_1af9a5283b748edd29c2e87676c70d00da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitude</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T9magnitudeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns the magnitude </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TmiEv">
+<span id="_CPPv3NK7PxVec4TmiEv"></span><span id="_CPPv2NK7PxVec4TmiEv"></span><span id="PxVec4T::sub-operatorC"></span><span class="target" id="class_px_vec4_t_1af20c65d61f4f9d5b28fb9d6badf058f2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TmiEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>negation </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TplERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4TplERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4TplERK7PxVec4T"></span><span id="PxVec4T::add-operator__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1aa580e53bc1c2a9047ab8747a238d2b60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TplERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>vector addition </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TmiERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4TmiERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4TmiERK7PxVec4T"></span><span id="PxVec4T::sub-operator__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a1d0a902a58024cf7a927f8f684f2dc70"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TmiERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>vector difference </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TmlE4Type">
+<span id="_CPPv3NK7PxVec4TmlE4Type"></span><span id="_CPPv2NK7PxVec4TmlE4Type"></span><span id="PxVec4T::mul-operator__TypeC"></span><span class="target" id="class_px_vec4_t_1a3d9145e0e05cce36a478227b0518bb65"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TmlE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>scalar post-multiplication </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4TdvE4Type">
+<span id="_CPPv3NK7PxVec4TdvE4Type"></span><span id="_CPPv2NK7PxVec4TdvE4Type"></span><span id="PxVec4T::div-operator__TypeC"></span><span class="target" id="class_px_vec4_t_1a56f7166c7b4b0bd5283534883a1aff47"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">/</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4TdvE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>scalar division </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TpLERK7PxVec4T">
+<span id="_CPPv3N7PxVec4TpLERK7PxVec4T"></span><span id="_CPPv2N7PxVec4TpLERK7PxVec4T"></span><span id="PxVec4T::add-assign-operator__PxVec4TCR"></span><span class="target" id="class_px_vec4_t_1a0741a450aad1be24350214a5ba8311fa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TpLERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>vector addition </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TmIERK7PxVec4T">
+<span id="_CPPv3N7PxVec4TmIERK7PxVec4T"></span><span id="_CPPv2N7PxVec4TmIERK7PxVec4T"></span><span id="PxVec4T::sub-assign-operator__PxVec4TCR"></span><span class="target" id="class_px_vec4_t_1ac4e49428b7f27d1f4b31f337fe485cd7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TmIERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>vector difference </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TmLE4Type">
+<span id="_CPPv3N7PxVec4TmLE4Type"></span><span id="_CPPv2N7PxVec4TmLE4Type"></span><span id="PxVec4T::mul-assign-operator__Type"></span><span class="target" id="class_px_vec4_t_1aa9294be9390cf693312be17a5e0b6713"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TmLE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>scalar multiplication </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4TdVE4Type">
+<span id="_CPPv3N7PxVec4TdVE4Type"></span><span id="_CPPv2N7PxVec4TdVE4Type"></span><span id="PxVec4T::div-assign-operator__Type"></span><span class="target" id="class_px_vec4_t_1a29163a03daaff594cbb9a5ba6a79de53"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">/=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4TdVE4Type" title="Permalink to this definition"></a><br /></dt>
+<dd><p>scalar division </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T3dotERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4T3dotERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4T3dotERK7PxVec4T"></span><span id="PxVec4T::dot__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1ac053c312f5d35ed597c8f8fe5e0bdf96"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dot</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T3dotERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns the scalar product of this and other. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T13getNormalizedEv">
+<span id="_CPPv3NK7PxVec4T13getNormalizedEv"></span><span id="_CPPv2NK7PxVec4T13getNormalizedEv"></span><span id="PxVec4T::getNormalizedC"></span><span class="target" id="class_px_vec4_t_1ad8bd9269dbd45378b88b9c9294f4c058"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNormalized</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T13getNormalizedEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns a unit vector </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T9normalizeEv">
+<span id="_CPPv3N7PxVec4T9normalizeEv"></span><span id="_CPPv2N7PxVec4T9normalizeEv"></span><span id="PxVec4T::normalize"></span><span class="target" id="class_px_vec4_t_1a7d6c7c177abacb2539a68458a3e27169"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normalize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxVec4T9normalizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>normalizes the vector in place </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T8multiplyERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4T8multiplyERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4T8multiplyERK7PxVec4T"></span><span id="PxVec4T::multiply__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a80d7e21ebf456ac296f7635ed056efd5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">multiply</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T8multiplyERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a[i] * b[i], for all i. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T7minimumERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4T7minimumERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4T7minimumERK7PxVec4T"></span><span id="PxVec4T::minimum__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a84bba42b095d7de44be370711dd602b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minimum</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T7minimumERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>element-wise minimum </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T7maximumERK7PxVec4T">
+<span id="_CPPv3NK7PxVec4T7maximumERK7PxVec4T"></span><span id="_CPPv2NK7PxVec4T7maximumERK7PxVec4T"></span><span id="PxVec4T::maximum__PxVec4TCRC"></span><span class="target" id="class_px_vec4_t_1a6564002580145dbd27280c6b383f1a0e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maximum</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T"><span class="n"><span class="pre">PxVec4T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T7maximumERK7PxVec4T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>element-wise maximum </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxVec4T6getXYZEv">
+<span id="_CPPv3NK7PxVec4T6getXYZEv"></span><span id="_CPPv2NK7PxVec4T6getXYZEv"></span><span id="PxVec4T::getXYZC"></span><span class="target" id="class_px_vec4_t_1a22b8e4063d57c7a47b189266001a7297"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getXYZ</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxVec4T6getXYZEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T1xE">
+<span id="_CPPv3N7PxVec4T1xE"></span><span id="_CPPv2N7PxVec4T1xE"></span><span id="PxVec4T::x__Type"></span><span class="target" id="class_px_vec4_t_1ad926ed3c18dbb8f3b4d36eaf536e8322"></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x</span></span></span><a class="headerlink" href="#_CPPv4N7PxVec4T1xE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T1yE">
+<span id="_CPPv3N7PxVec4T1yE"></span><span id="_CPPv2N7PxVec4T1yE"></span><span id="PxVec4T::y__Type"></span><span class="target" id="class_px_vec4_t_1a361f2b9c12265dd5c885b3d2b4e9a24f"></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">y</span></span></span><a class="headerlink" href="#_CPPv4N7PxVec4T1yE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T1zE">
+<span id="_CPPv3N7PxVec4T1zE"></span><span id="_CPPv2N7PxVec4T1zE"></span><span id="PxVec4T::z__Type"></span><span class="target" id="class_px_vec4_t_1aa81d40393991d124f43a2e45f93de500"></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">z</span></span></span><a class="headerlink" href="#_CPPv4N7PxVec4T1zE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxVec4T1wE">
+<span id="_CPPv3N7PxVec4T1wE"></span><span id="_CPPv2N7PxVec4T1wE"></span><span id="PxVec4T::w__Type"></span><span class="target" id="class_px_vec4_t_1aee69750ef65f8c99cd8ef6c4fd2ae5f8"></span><a class="reference internal" href="#_CPPv4I0E7PxVec4T" title="PxVec4T::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">w</span></span></span><a class="headerlink" href="#_CPPv4N7PxVec4T1wE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

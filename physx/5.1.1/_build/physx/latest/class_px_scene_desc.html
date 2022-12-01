@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneDesc &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSceneDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenedesc">
+<span id="exhale-class-class-px-scene-desc"></span><h1>PxSceneDesc<a class="headerlink" href="#pxscenedesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneDesc.h.html#file-include-pxscenedesc-h"><span class="std std-ref">include/PxSceneDesc.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSceneQueryDesc</span></code> (<a class="reference internal" href="class_px_scene_query_desc.html#exhale-class-class-px-scene-query-desc"><span class="std std-ref">PxSceneQueryDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv411PxSceneDesc">
+<span id="_CPPv311PxSceneDesc"></span><span id="_CPPv211PxSceneDesc"></span><span id="PxSceneDesc"></span><span class="target" id="class_px_scene_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene_query_desc.html#_CPPv416PxSceneQueryDesc" title="PxSceneQueryDesc"><span class="n"><span class="pre">PxSceneQueryDesc</span></span></a><a class="headerlink" href="#_CPPv411PxSceneDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for scenes. </p>
+<p>See <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>.</p>
+<p>This struct must be initialized with the same <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> values used to initialize <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a6dcded7be00c17004432a04a78569db1"><span class="std std-ref">PxPhysics.createScene</span></a> <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc11PxSceneDescERK17PxTolerancesScale">
+<span id="_CPPv3N11PxSceneDesc11PxSceneDescERK17PxTolerancesScale"></span><span id="_CPPv2N11PxSceneDesc11PxSceneDescERK17PxTolerancesScale"></span><span id="PxSceneDesc::PxSceneDesc__PxTolerancesScaleCR"></span><span class="target" id="group__physics_1ga4c492a0dcf6d132176a51a98fd4fabfc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneDesc</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxSceneDesc11PxSceneDescERK17PxTolerancesScale" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constructor sets to default. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__physics_1gad4570e95f9c2141e75775aafc07227eb.html#group__physics_1gad4570e95f9c2141e75775aafc07227eb"><span class="std std-ref">PxCreatePhysics()</span></a> <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> <a class="reference internal" href="#class_px_scene_desc_1abc7769532392c8e47ec4580677145e34"><span class="std std-ref">bounceThresholdVelocity</span></a> <a class="reference internal" href="#class_px_scene_desc_1af707e0c97624aaf6fa9ab2e82aadbecf"><span class="std std-ref">frictionOffsetThreshold</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> scale values for the tolerances in the scene, these must be the same values passed into <a class="reference internal" href="function_group__physics_1gad4570e95f9c2141e75775aafc07227eb.html#group__physics_1gad4570e95f9c2141e75775aafc07227eb"><span class="std std-ref">PxCreatePhysics()</span></a>. The affected tolerances are bounceThresholdVelocity and frictionOffsetThreshold.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12setToDefaultERK17PxTolerancesScale">
+<span id="_CPPv3N11PxSceneDesc12setToDefaultERK17PxTolerancesScale"></span><span id="_CPPv2N11PxSceneDesc12setToDefaultERK17PxTolerancesScale"></span><span id="PxSceneDesc::setToDefault__PxTolerancesScaleCR"></span><span class="target" id="group__physics_1gaceefbd126e4ee0301452c1067cfc4634"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12setToDefaultERK17PxTolerancesScale" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__physics_1gad4570e95f9c2141e75775aafc07227eb.html#group__physics_1gad4570e95f9c2141e75775aafc07227eb"><span class="std std-ref">PxCreatePhysics()</span></a> <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> <a class="reference internal" href="#class_px_scene_desc_1abc7769532392c8e47ec4580677145e34"><span class="std std-ref">bounceThresholdVelocity</span></a> <a class="reference internal" href="#class_px_scene_desc_1af707e0c97624aaf6fa9ab2e82aadbecf"><span class="std std-ref">frictionOffsetThreshold</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> scale values for the tolerances in the scene, these must be the same values passed into <a class="reference internal" href="function_group__physics_1gad4570e95f9c2141e75775aafc07227eb.html#group__physics_1gad4570e95f9c2141e75775aafc07227eb"><span class="std std-ref">PxCreatePhysics()</span></a>. The affected tolerances are bounceThresholdVelocity and frictionOffsetThreshold.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxSceneDesc7isValidEv">
+<span id="_CPPv3NK11PxSceneDesc7isValidEv"></span><span id="_CPPv2NK11PxSceneDesc7isValidEv"></span><span id="PxSceneDesc::isValidC"></span><span class="target" id="group__physics_1ga821af0fa10fb890b61515dcfc1910f03"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxSceneDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12setToDefaultEv">
+<span id="_CPPv3N11PxSceneDesc12setToDefaultEv"></span><span id="_CPPv2N11PxSceneDesc12setToDefaultEv"></span><span id="PxSceneDesc::setToDefault"></span><span class="target" id="group__physics_1ga0f1cfbf194a7af09b29f0ecb4e095553"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc7gravityE">
+<span id="_CPPv3N11PxSceneDesc7gravityE"></span><span id="_CPPv2N11PxSceneDesc7gravityE"></span><span id="PxSceneDesc::gravity__PxVec3"></span><span class="target" id="class_px_scene_desc_1a9b0de35c38c43b8aeff6e6f29bf0db20"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gravity</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc7gravityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gravity vector. </p>
+<p><strong>Range:</strong> force vector<strong>Default:</strong> Zero</p>
+<p>
+When setting gravity, you should probably also set bounce threshold. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a575ed34c73adbd61892d728a688479f3"><span class="std std-ref">PxScene.setGravity()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a6fe48dbf9144be415d63f1d2f3ce0b16"><span class="std std-ref">PxScene.getGravity()</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23simulationEventCallbackE">
+<span id="_CPPv3N11PxSceneDesc23simulationEventCallbackE"></span><span id="_CPPv2N11PxSceneDesc23simulationEventCallbackE"></span><span id="PxSceneDesc::simulationEventCallback__PxSimulationEventCallbackP"></span><span class="target" id="class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"></span><a class="reference internal" href="class_px_simulation_event_callback.html#_CPPv425PxSimulationEventCallback" title="PxSimulationEventCallback"><span class="n"><span class="pre">PxSimulationEventCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">simulationEventCallback</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23simulationEventCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Possible notification callback. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback"><span class="std std-ref">PxSimulationEventCallback</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a8951e43f8e23c320c1c90dd552135171"><span class="std std-ref">PxScene.getSimulationEventCallback()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc21contactModifyCallbackE">
+<span id="_CPPv3N11PxSceneDesc21contactModifyCallbackE"></span><span id="_CPPv2N11PxSceneDesc21contactModifyCallbackE"></span><span id="PxSceneDesc::contactModifyCallback__PxContactModifyCallbackP"></span><span class="target" id="class_px_scene_desc_1a2000ccfa6287d160b88967769de34b90"></span><a class="reference internal" href="class_px_contact_modify_callback.html#_CPPv423PxContactModifyCallback" title="PxContactModifyCallback"><span class="n"><span class="pre">PxContactModifyCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactModifyCallback</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc21contactModifyCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Possible asynchronous callback for contact modification. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_contact_modify_callback.html#class_px_contact_modify_callback"><span class="std std-ref">PxContactModifyCallback</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1aeec3367a4461c1ab2e552acdb8c0609e"><span class="std std-ref">PxScene.setContactModifyCallback()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a1978693b355df49712d7e59c10c4115d"><span class="std std-ref">PxScene.getContactModifyCallback()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc24ccdContactModifyCallbackE">
+<span id="_CPPv3N11PxSceneDesc24ccdContactModifyCallbackE"></span><span id="_CPPv2N11PxSceneDesc24ccdContactModifyCallbackE"></span><span id="PxSceneDesc::ccdContactModifyCallback__PxCCDContactModifyCallbackP"></span><span class="target" id="class_px_scene_desc_1aae577616d3e898347924de90e16188bb"></span><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html#_CPPv426PxCCDContactModifyCallback" title="PxCCDContactModifyCallback"><span class="n"><span class="pre">PxCCDContactModifyCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">ccdContactModifyCallback</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc24ccdContactModifyCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Possible asynchronous callback for contact modification. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_contact_modify_callback.html#class_px_contact_modify_callback"><span class="std std-ref">PxContactModifyCallback</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1aeec3367a4461c1ab2e552acdb8c0609e"><span class="std std-ref">PxScene.setContactModifyCallback()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a1978693b355df49712d7e59c10c4115d"><span class="std std-ref">PxScene.getContactModifyCallback()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc16filterShaderDataE">
+<span id="_CPPv3N11PxSceneDesc16filterShaderDataE"></span><span id="_CPPv2N11PxSceneDesc16filterShaderDataE"></span><span id="PxSceneDesc::filterShaderData__voidCP"></span><span class="target" id="class_px_scene_desc_1ad9ceb142127cc259aa2f5d322a1494e2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">filterShaderData</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc16filterShaderDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shared global filter data which will get passed into the filter shader. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a5ab05d2a2c908d98aed4ca642c5f394d"><span class="std std-ref">PxScene.setFilterShaderData()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a5d004fdc88ed31447aa57ee4f98c14ea"><span class="std std-ref">PxScene.getFilterShaderData()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The provided data will get copied to internal buffers and this copy will be used for filtering calls.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc20filterShaderDataSizeE">
+<span id="_CPPv3N11PxSceneDesc20filterShaderDataSizeE"></span><span id="_CPPv2N11PxSceneDesc20filterShaderDataSizeE"></span><span id="PxSceneDesc::filterShaderDataSize__PxU32"></span><span class="target" id="class_px_scene_desc_1a710c03915bbaaa9bdf23925d535c3883"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filterShaderDataSize</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc20filterShaderDataSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size (in bytes) of the shared global filter data <a class="reference internal" href="#class_px_scene_desc_1ad9ceb142127cc259aa2f5d322a1494e2"><span class="std std-ref">filterShaderData</span></a>. </p>
+<p><strong>Default:</strong> 0</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="#class_px_scene_desc_1ad9ceb142127cc259aa2f5d322a1494e2"><span class="std std-ref">filterShaderData</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1ace291f68b365a4f1aaa291ba940eff9a"><span class="std std-ref">PxScene.getFilterShaderDataSize()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12filterShaderE">
+<span id="_CPPv3N11PxSceneDesc12filterShaderE"></span><span id="_CPPv2N11PxSceneDesc12filterShaderE"></span><span id="PxSceneDesc::filterShader__PxSimulationFilterShader"></span><span class="target" id="class_px_scene_desc_1a9410287c6ea926dad9e2b2374541ad38"></span><a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#_CPPv424PxSimulationFilterShader" title="PxSimulationFilterShader"><span class="n"><span class="pre">PxSimulationFilterShader</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filterShader</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12filterShaderE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The custom filter shader to use for collision filtering. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1aa3f57314433de21448966c1d9004d71a"><span class="std std-ref">PxScene.getFilterShader()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter is compulsory. If you don’t want to define your own filter shader you can use the default shader <a class="reference internal" href="function_group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f.html#group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f"><span class="std std-ref">PxDefaultSimulationFilterShader</span></a> which can be found in the PhysX extensions library.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc14filterCallbackE">
+<span id="_CPPv3N11PxSceneDesc14filterCallbackE"></span><span id="_CPPv2N11PxSceneDesc14filterCallbackE"></span><span id="PxSceneDesc::filterCallback__PxSimulationFilterCallbackP"></span><span class="target" id="class_px_scene_desc_1af7b94475075eb9b43ca32650cd169cc1"></span><a class="reference internal" href="class_px_simulation_filter_callback.html#_CPPv426PxSimulationFilterCallback" title="PxSimulationFilterCallback"><span class="n"><span class="pre">PxSimulationFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">filterCallback</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc14filterCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A custom collision filter callback which can be used to implement more complex filtering operations which need access to the simulation state, for example. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a2b4c17b1a16df239e5d6a2e0e6f8b633"><span class="std std-ref">PxScene.getFilterCallback()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc21kineKineFilteringModeE">
+<span id="_CPPv3N11PxSceneDesc21kineKineFilteringModeE"></span><span id="_CPPv2N11PxSceneDesc21kineKineFilteringModeE"></span><span id="PxSceneDesc::kineKineFilteringMode__PxPairFilteringMode::Enum"></span><span class="target" id="class_px_scene_desc_1a90e220df7cb1f25852d4cc62cecd8869"></span><a class="reference internal" href="struct_px_pair_filtering_mode.html#_CPPv419PxPairFilteringMode" title="PxPairFilteringMode"><span class="n"><span class="pre">PxPairFilteringMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4EnumE" title="PxPairFilteringMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">kineKineFilteringMode</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc21kineKineFilteringModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filtering mode for kinematic-kinematic pairs in the broadphase. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a464ca27835cd3bfe25854b99b6940c71"><span class="std std-ref">PxPairFilteringMode::eDEFAULT</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode"><span class="std std-ref">PxPairFilteringMode</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1ad33763d5f9ee70bf79608d07594ead11"><span class="std std-ref">PxScene.getKinematicKinematicFilteringMode()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23staticKineFilteringModeE">
+<span id="_CPPv3N11PxSceneDesc23staticKineFilteringModeE"></span><span id="_CPPv2N11PxSceneDesc23staticKineFilteringModeE"></span><span id="PxSceneDesc::staticKineFilteringMode__PxPairFilteringMode::Enum"></span><span class="target" id="class_px_scene_desc_1a1ff29795e987f8f9b347545468915de2"></span><a class="reference internal" href="struct_px_pair_filtering_mode.html#_CPPv419PxPairFilteringMode" title="PxPairFilteringMode"><span class="n"><span class="pre">PxPairFilteringMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4EnumE" title="PxPairFilteringMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticKineFilteringMode</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23staticKineFilteringModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filtering mode for static-kinematic pairs in the broadphase. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a464ca27835cd3bfe25854b99b6940c71"><span class="std std-ref">PxPairFilteringMode::eDEFAULT</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode"><span class="std std-ref">PxPairFilteringMode</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a9fd01bd95bb91adf32f2020a51230cb6"><span class="std std-ref">PxScene.getStaticKinematicFilteringMode()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc14broadPhaseTypeE">
+<span id="_CPPv3N11PxSceneDesc14broadPhaseTypeE"></span><span id="_CPPv2N11PxSceneDesc14broadPhaseTypeE"></span><span id="PxSceneDesc::broadPhaseType__PxBroadPhaseType::Enum"></span><span class="target" id="class_px_scene_desc_1a3c27c85987bc2be98578f0130f455157"></span><a class="reference internal" href="struct_px_broad_phase_type.html#_CPPv416PxBroadPhaseType" title="PxBroadPhaseType"><span class="n"><span class="pre">PxBroadPhaseType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4EnumE" title="PxBroadPhaseType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">broadPhaseType</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc14broadPhaseTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Selects the broad-phase algorithm to use. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_broad_phase_type.html#struct_px_broad_phase_type_1ac7422f895533bff02d0043d35a2b7ddaa1b87eb104aead3b1583907c8b81b0833"><span class="std std-ref">PxBroadPhaseType::ePABP</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_type.html#struct_px_broad_phase_type"><span class="std std-ref">PxBroadPhaseType</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a5ac224256bfbe7380ea3dad4dc6dac06"><span class="std std-ref">PxScene.getBroadPhaseType()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc18broadPhaseCallbackE">
+<span id="_CPPv3N11PxSceneDesc18broadPhaseCallbackE"></span><span id="_CPPv2N11PxSceneDesc18broadPhaseCallbackE"></span><span id="PxSceneDesc::broadPhaseCallback__PxBroadPhaseCallbackP"></span><span class="target" id="class_px_scene_desc_1aee15ebe1d7155c19866972ecf5cbdd91"></span><a class="reference internal" href="class_px_broad_phase_callback.html#_CPPv420PxBroadPhaseCallback" title="PxBroadPhaseCallback"><span class="n"><span class="pre">PxBroadPhaseCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">broadPhaseCallback</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc18broadPhaseCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Broad-phase callback. </p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase_callback.html#class_px_broad_phase_callback"><span class="std std-ref">PxBroadPhaseCallback</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a4c3269f14110636d8e2beee333bfdd71"><span class="std std-ref">PxScene.getBroadPhaseCallback()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a353da44d631c07cacd2f8d85f08cbc09"><span class="std std-ref">PxScene.setBroadPhaseCallback()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc6limitsE">
+<span id="_CPPv3N11PxSceneDesc6limitsE"></span><span id="_CPPv2N11PxSceneDesc6limitsE"></span><span id="PxSceneDesc::limits__PxSceneLimits"></span><span class="target" id="class_px_scene_desc_1ab996312333ef4fdf5f77fcc16b84923e"></span><a class="reference internal" href="class_px_scene_limits.html#_CPPv413PxSceneLimits" title="PxSceneLimits"><span class="n"><span class="pre">PxSceneLimits</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">limits</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc6limitsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Expected scene limits. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_limits.html#class_px_scene_limits"><span class="std std-ref">PxSceneLimits</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a76d9b31b013e4d666e3b5fdea3448887"><span class="std std-ref">PxScene.getLimits()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12frictionTypeE">
+<span id="_CPPv3N11PxSceneDesc12frictionTypeE"></span><span id="_CPPv2N11PxSceneDesc12frictionTypeE"></span><span id="PxSceneDesc::frictionType__PxFrictionType::Enum"></span><span class="target" id="class_px_scene_desc_1ab1f18b0666adb645d92fc2f53373b1e9"></span><a class="reference internal" href="struct_px_friction_type.html#_CPPv414PxFrictionType" title="PxFrictionType"><span class="n"><span class="pre">PxFrictionType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_friction_type.html#_CPPv4N14PxFrictionType4EnumE" title="PxFrictionType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionType</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12frictionTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Selects the friction algorithm to use for simulation. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_friction_type.html#struct_px_friction_type_1a603c53fd85805e2528a338252496a96bacf891c8b96deb40e1e475237fe4f4047"><span class="std std-ref">PxFrictionType::ePATCH</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_friction_type.html#struct_px_friction_type"><span class="std std-ref">PxFrictionType</span></a> PxScene.setFrictionType(), <a class="reference internal" href="class_px_scene.html#class_px_scene_1aaca4a2838bc3bf7ffece380c8c7f0f4e"><span class="std std-ref">PxScene.getFrictionType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>frictionType cannot be modified after the first call to any of <a class="reference internal" href="class_px_scene.html#class_px_scene_1a2d154a207b905e73d7771a6c1160d8aa"><span class="std std-ref">PxScene::simulate</span></a>, PxScene::solve and <a class="reference internal" href="class_px_scene.html#class_px_scene_1a698947ec5653ac7a2c466122f393e477"><span class="std std-ref">PxScene::collide</span></a></p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc10solverTypeE">
+<span id="_CPPv3N11PxSceneDesc10solverTypeE"></span><span id="_CPPv2N11PxSceneDesc10solverTypeE"></span><span id="PxSceneDesc::solverType__PxSolverType::Enum"></span><span class="target" id="class_px_scene_desc_1a166d622a6ea49c6e58be0b1d123f03ab"></span><a class="reference internal" href="struct_px_solver_type.html#_CPPv412PxSolverType" title="PxSolverType"><span class="n"><span class="pre">PxSolverType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_solver_type.html#_CPPv4N12PxSolverType4EnumE" title="PxSolverType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">solverType</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc10solverTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Selects the solver algorithm to use. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_solver_type.html#struct_px_solver_type_1a96adc2f8785c6b18805a18b03289dbe6ae450cc99d8cedb7faff78689f1bc84f5"><span class="std std-ref">PxSolverType::ePGS</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_solver_type.html#struct_px_solver_type"><span class="std std-ref">PxSolverType</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3bdf9385ce8be6ca3a4bf2e3f2a0ffec"><span class="std std-ref">PxScene.getSolverType()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23bounceThresholdVelocityE">
+<span id="_CPPv3N11PxSceneDesc23bounceThresholdVelocityE"></span><span id="_CPPv2N11PxSceneDesc23bounceThresholdVelocityE"></span><span id="PxSceneDesc::bounceThresholdVelocity__PxReal"></span><span class="target" id="class_px_scene_desc_1abc7769532392c8e47ec4580677145e34"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bounceThresholdVelocity</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23bounceThresholdVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A contact with a relative velocity below this will not bounce. </p>
+<p>A typical value for simulation. stability is about 0.2 * gravity.</p>
+<p><strong>Range:</strong> (0, PX_MAX_F32)<strong>Default:</strong> 0.2 * <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale_1a629358a15988697feaa85759d5c57e33"><span class="std std-ref">PxTolerancesScale::speed</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a1e102ec1b29dea3b588b7507561e656e"><span class="std std-ref">PxScene.setBounceThresholdVelocity()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a36f1319b6695b33823529924f389ca3e"><span class="std std-ref">PxScene.getBounceThresholdVelocity()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23frictionOffsetThresholdE">
+<span id="_CPPv3N11PxSceneDesc23frictionOffsetThresholdE"></span><span id="_CPPv2N11PxSceneDesc23frictionOffsetThresholdE"></span><span id="PxSceneDesc::frictionOffsetThreshold__PxReal"></span><span class="target" id="class_px_scene_desc_1af707e0c97624aaf6fa9ab2e82aadbecf"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionOffsetThreshold</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23frictionOffsetThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A threshold of contact separation distance used to decide if a contact point will experience friction forces. </p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0.04 * <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale_1a7d93bf20de0e5b54783eda5bb64effeb"><span class="std std-ref">PxTolerancesScale::length</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1afaf16dccb544d2a9282a970cb5caecf3"><span class="std std-ref">PxScene.setFrictionOffsetThreshold()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1ac02554e87f89db490aca6803056db522"><span class="std std-ref">PxScene.getFrictionOffsetThreshold()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the separation distance of a contact point is greater than the threshold then the contact point will not experience friction forces.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the aggregated contact offset of a pair of shapes is large it might be desirable to neglect friction for contact points whose separation distance is sufficiently large that the shape surfaces are clearly separated.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter can be used to tune the separation distance of contact points at which friction starts to have an effect. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc27frictionCorrelationDistanceE">
+<span id="_CPPv3N11PxSceneDesc27frictionCorrelationDistanceE"></span><span id="_CPPv2N11PxSceneDesc27frictionCorrelationDistanceE"></span><span id="PxSceneDesc::frictionCorrelationDistance__PxReal"></span><span class="target" id="class_px_scene_desc_1aa6124268a3ad7077baff423165f050bf"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionCorrelationDistance</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc27frictionCorrelationDistanceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Friction correlation distance used to decide whether contacts are close enough to be merged into a single friction anchor point or not. </p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0.025f * <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale_1a7d93bf20de0e5b54783eda5bb64effeb"><span class="std std-ref">PxTolerancesScale::length</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a095ecb05d6deba9234389298b9cd3bd1"><span class="std std-ref">PxScene.setFrictionCorrelationDistance()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1af9dc23e5316b363b6340aae29cdb853d"><span class="std std-ref">PxScene.getFrictionCorrelationDistance()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the correlation distance is larger than the distance between contact points generated between a pair of shapes, some of the contacts may not experience frictional forces.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter can be used to tune the correlation distance used in the solver. Contact points can be merged into a single friction anchor if the distance between the contacts is smaller than correlation distance.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc5flagsE">
+<span id="_CPPv3N11PxSceneDesc5flagsE"></span><span id="_CPPv2N11PxSceneDesc5flagsE"></span><span id="PxSceneDesc::flags__PxSceneFlags"></span><span class="target" id="class_px_scene_desc_1a9510b1233fb0ab03e9c1d5be44ff5a38"></span><a class="reference internal" href="typedef_group__physics_1ga54a626a9a6d80543048bffc654814704.html#_CPPv412PxSceneFlags" title="PxSceneFlags"><span class="n"><span class="pre">PxSceneFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags used to select scene options. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag_1ab4c347372b4433d34d983da780916c53a29717fa631812cc31261d73055762e03"><span class="std std-ref">PxSceneFlag::eENABLE_PCM</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a> <a class="reference internal" href="typedef_group__physics_1ga54a626a9a6d80543048bffc654814704.html#group__physics_1ga54a626a9a6d80543048bffc654814704"><span class="std std-ref">PxSceneFlags</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a0acbc97457d54775b6402f3790c3513b"><span class="std std-ref">PxScene.getFlags()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a6610c08a5a92c894dcac9d658e48b7de"><span class="std std-ref">PxScene.setFlag()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc13cpuDispatcherE">
+<span id="_CPPv3N11PxSceneDesc13cpuDispatcherE"></span><span id="_CPPv2N11PxSceneDesc13cpuDispatcherE"></span><span id="PxSceneDesc::cpuDispatcher__PxCpuDispatcherP"></span><span class="target" id="class_px_scene_desc_1ac74f5f6c12d72b873716f82c2225b725"></span><a class="reference internal" href="class_px_cpu_dispatcher.html#_CPPv415PxCpuDispatcher" title="PxCpuDispatcher"><span class="n"><span class="pre">PxCpuDispatcher</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">cpuDispatcher</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc13cpuDispatcherE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The CPU task dispatcher for the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cpu_dispatcher.html#class_px_cpu_dispatcher"><span class="std std-ref">PxCpuDispatcher</span></a>, <a class="reference internal" href="class_px_scene.html#class_px_scene_1a6329c94cc092aff2193c1307e033f6bf"><span class="std std-ref">PxScene::getCpuDispatcher</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc18cudaContextManagerE">
+<span id="_CPPv3N11PxSceneDesc18cudaContextManagerE"></span><span id="_CPPv2N11PxSceneDesc18cudaContextManagerE"></span><span id="PxSceneDesc::cudaContextManager__PxCudaContextManagerP"></span><span class="target" id="class_px_scene_desc_1ad55a6e9d290779839659bb2763db2e2a"></span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">cudaContextManager</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc18cudaContextManagerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The CUDA context manager for the scene. </p>
+<p><strong>Platform specific:</strong> Applies to PC GPU only.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a>, <a class="reference internal" href="class_px_scene.html#class_px_scene_1ac74778bafc058fbd4e8abd8006c323e8"><span class="std std-ref">PxScene::getCudaContextManager</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc8userDataE">
+<span id="_CPPv3N11PxSceneDesc8userDataE"></span><span id="_CPPv2N11PxSceneDesc8userDataE"></span><span id="PxSceneDesc::userData__voidP"></span><span class="target" id="class_px_scene_desc_1a63d40516cfbbe7d167d89e6fe55e3834"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Will be copied to <a class="reference internal" href="class_px_scene.html#class_px_scene_1a64fbe5f25cef90d47fcb1c6428efe15a"><span class="std std-ref">PxScene::userData</span></a>. </p>
+<p><strong>Default:</strong> NULL </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc15solverBatchSizeE">
+<span id="_CPPv3N11PxSceneDesc15solverBatchSizeE"></span><span id="_CPPv2N11PxSceneDesc15solverBatchSizeE"></span><span id="PxSceneDesc::solverBatchSize__PxU32"></span><span class="target" id="class_px_scene_desc_1a26b321b928708c10a047b38ec9127797"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">solverBatchSize</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc15solverBatchSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the number of actors required to spawn a separate rigid body solver island task chain. </p>
+<p>This parameter defines the minimum number of actors required to spawn a separate rigid body solver task chain. Setting a low value will potentially cause more task chains to be generated. This may result in the overhead of spawning tasks can become a limiting performance factor. Setting a high value will potentially cause fewer islands to be generated. This may reduce thread scaling (fewer task chains spawned) and may detrimentally affect performance if some bodies in the scene have large solver iteration counts because all constraints in a given island are solved by the maximum number of solver iterations requested by any body in the island.</p>
+<p>Note that a rigid body solver task chain is spawned as soon as either a sufficient number of rigid bodies or articulations are batched together.</p>
+<p><strong>Default:</strong> 128</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1aad9cc8bf329f4de4b407436f5cd38c98"><span class="std std-ref">PxScene.setSolverBatchSize()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1add966317a1feb083e273fd8c12f454b5"><span class="std std-ref">PxScene.getSolverBatchSize()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc27solverArticulationBatchSizeE">
+<span id="_CPPv3N11PxSceneDesc27solverArticulationBatchSizeE"></span><span id="_CPPv2N11PxSceneDesc27solverArticulationBatchSizeE"></span><span id="PxSceneDesc::solverArticulationBatchSize__PxU32"></span><span class="target" id="class_px_scene_desc_1a57fd72417c89bd73fc398678ae153c52"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">solverArticulationBatchSize</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc27solverArticulationBatchSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the number of articulations required to spawn a separate rigid body solver island task chain. </p>
+<p>This parameter defines the minimum number of articulations required to spawn a separate rigid body solver task chain. Setting a low value will potentially cause more task chains to be generated. This may result in the overhead of spawning tasks can become a limiting performance factor. Setting a high value will potentially cause fewer islands to be generated. This may reduce thread scaling (fewer task chains spawned) and may detrimentally affect performance if some bodies in the scene have large solver iteration counts because all constraints in a given island are solved by the maximum number of solver iterations requested by any body in the island.</p>
+<p>Note that a rigid body solver task chain is spawned as soon as either a sufficient number of rigid bodies or articulations are batched together.</p>
+<p><strong>Default:</strong> 16</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0db918a532ef4d36474bf3f46cfad5a8"><span class="std std-ref">PxScene.setSolverArticulationBatchSize()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1af11e6f5eedaa53bb4a1e3420e1c2c531"><span class="std std-ref">PxScene.getSolverArticulationBatchSize()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc19nbContactDataBlocksE">
+<span id="_CPPv3N11PxSceneDesc19nbContactDataBlocksE"></span><span id="_CPPv2N11PxSceneDesc19nbContactDataBlocksE"></span><span id="PxSceneDesc::nbContactDataBlocks__PxU32"></span><span class="target" id="class_px_scene_desc_1a625cdbae7d2149a9df472fb4f9c06f83"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbContactDataBlocks</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc19nbContactDataBlocksE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Setting to define the number of 16K blocks that will be initially reserved to store contact, friction, and contact cache data. </p>
+<p>This is the number of 16K memory blocks that will be automatically allocated from the user allocator when the scene is instantiated. Further 16k memory blocks may be allocated during the simulation up to maxNbContactDataBlocks.</p>
+<p><strong>Default:</strong> 0</p>
+<p><strong>Range:</strong> [0, PX_MAX_U32]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a6dcded7be00c17004432a04a78569db1"><span class="std std-ref">PxPhysics::createScene</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a148be23880c4e2d67f9f772066a9f966"><span class="std std-ref">PxScene::setNbContactDataBlocks</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This value cannot be larger than maxNbContactDataBlocks because that defines the maximum number of 16k blocks that can be allocated by the SDK.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc22maxNbContactDataBlocksE">
+<span id="_CPPv3N11PxSceneDesc22maxNbContactDataBlocksE"></span><span id="_CPPv2N11PxSceneDesc22maxNbContactDataBlocksE"></span><span id="PxSceneDesc::maxNbContactDataBlocks__PxU32"></span><span class="target" id="class_px_scene_desc_1a8791132cbe8cce32f051e5eaab774d35"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxNbContactDataBlocks</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc22maxNbContactDataBlocksE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Setting to define the maximum number of 16K blocks that can be allocated to store contact, friction, and contact cache data. </p>
+<p>As the complexity of a scene increases, the SDK may require to allocate new 16k blocks in addition to the blocks it has already allocated. This variable controls the maximum number of blocks that the SDK can allocate.</p>
+<p>In the case that the scene is sufficiently complex that all the permitted 16K blocks are used, contacts will be dropped and a warning passed to the error stream.</p>
+<p>If a warning is reported to the error stream to indicate the number of 16K blocks is insufficient for the scene complexity then the choices are either (i) re-tune the number of 16K data blocks until a number is found that is sufficient for the scene complexity, (ii) to simplify the scene or (iii) to opt to not increase the memory requirements of physx and accept some dropped contacts.</p>
+<p><strong>Default:</strong> 65536</p>
+<p><strong>Range:</strong> [0, PX_MAX_U32]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_scene_desc_1a625cdbae7d2149a9df472fb4f9c06f83"><span class="std std-ref">nbContactDataBlocks</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a148be23880c4e2d67f9f772066a9f966"><span class="std std-ref">PxScene.setNbContactDataBlocks()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc18maxBiasCoefficientE">
+<span id="_CPPv3N11PxSceneDesc18maxBiasCoefficientE"></span><span id="_CPPv2N11PxSceneDesc18maxBiasCoefficientE"></span><span id="PxSceneDesc::maxBiasCoefficient__PxReal"></span><span class="target" id="class_px_scene_desc_1a65bbe399965691dec83ba3fe1a5082ec"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxBiasCoefficient</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc18maxBiasCoefficientE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum bias coefficient used in the constraint solver. </p>
+<p>When geometric errors are found in the constraint solver, either as a result of shapes penetrating or joints becoming separated or violating limits, a bias is introduced in the solver position iterations to correct these errors. This bias is proportional to 1/dt, meaning that the bias becomes increasingly strong as the time-step passed to PxScene::simulate(…) becomes smaller. This coefficient allows the application to restrict how large the bias coefficient is, to reduce how violent error corrections are. This can improve simulation quality in cases where either variable time-steps or extremely small time-steps are used.</p>
+<p><strong>Default:</strong> PX_MAX_F32</p>
+<p><strong> Range</strong> [0, PX_MAX_F32] </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1ad39d664710b2b611b9d837b5573907c1"><span class="std std-ref">PxScene.setMaxBiasCoefficient()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a7ddd344a1f1ab1447998d14765769a2a"><span class="std std-ref">PxScene.getMaxBiasCoefficient()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc29contactReportStreamBufferSizeE">
+<span id="_CPPv3N11PxSceneDesc29contactReportStreamBufferSizeE"></span><span id="_CPPv2N11PxSceneDesc29contactReportStreamBufferSizeE"></span><span id="PxSceneDesc::contactReportStreamBufferSize__PxU32"></span><span class="target" id="class_px_scene_desc_1a02d696140e9828477c8aa493a048f48a"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactReportStreamBufferSize</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc29contactReportStreamBufferSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of the contact report stream (in bytes). </p>
+<p>The contact report stream buffer is used during the simulation to store all the contact reports. If the size is not sufficient, the buffer will grow by a factor of two. It is possible to disable the buffer growth by setting the flag <a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag_1ab4c347372b4433d34d983da780916c53a8644817a9a2916453433702614672565"><span class="std std-ref">PxSceneFlag::eDISABLE_CONTACT_REPORT_BUFFER_RESIZE</span></a>. In that case the buffer will not grow but contact reports not stored in the buffer will not get sent in the contact report callbacks.</p>
+<p><strong>Default:</strong> 8192</p>
+<p><strong>Range:</strong> (0, PX_MAX_U32]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1ac7b1dccad5d20304653f21c91b09258a"><span class="std std-ref">PxScene.getContactReportStreamBufferSize()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12ccdMaxPassesE">
+<span id="_CPPv3N11PxSceneDesc12ccdMaxPassesE"></span><span id="_CPPv2N11PxSceneDesc12ccdMaxPassesE"></span><span id="PxSceneDesc::ccdMaxPasses__PxU32"></span><span class="target" id="class_px_scene_desc_1a65aa4ceefbbd6aebd75ea879d7c385f9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ccdMaxPasses</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12ccdMaxPassesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Maximum number of CCD passes. </p>
+<p>The CCD performs multiple passes, where each pass every object advances to its time of first impact. This value defines how many passes the CCD system should perform.</p>
+<p><strong>Default:</strong> 1 <strong>Range:</strong> [1, PX_MAX_U32]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1aed46505d6eac63a508c7a2d7e39cd5fb"><span class="std std-ref">PxScene.setCCDMaxPasses()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab0033036e31f91c68d520185ef6c1703"><span class="std std-ref">PxScene.getCCDMaxPasses()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The CCD system is a multi-pass best-effort conservative advancement approach. After the defined number of passes has been completed, any remaining time is dropped. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This defines the maximum number of passes the CCD can perform. It may perform fewer if additional passes are not necessary.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12ccdThresholdE">
+<span id="_CPPv3N11PxSceneDesc12ccdThresholdE"></span><span id="_CPPv2N11PxSceneDesc12ccdThresholdE"></span><span id="PxSceneDesc::ccdThreshold__PxReal"></span><span class="target" id="class_px_scene_desc_1a5b8bb05a5b151da44d30986e729172c7"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ccdThreshold</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12ccdThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>CCD threshold. </p>
+<p>CCD performs sweeps against shapes if and only if the relative motion of the shapes is fast-enough that a collision would be missed by the discrete contact generation. However, in some circumstances, e.g. when the environment is constructed from large convex shapes, this approach may produce undesired simulation artefacts. This parameter defines the minimum relative motion that would be required to force CCD between shapes. The smaller of this value and the sum of the thresholds calculated for the shapes involved will be used.</p>
+<p><strong>Default:</strong> PX_MAX_F32 <strong>Range:</strong> [Eps, PX_MAX_F32]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a4cb0da095037f01823eb5e277e186bb8"><span class="std std-ref">PxScene.setCCDThreshold()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1abb0c98a86c570467521cff66174f129d"><span class="std std-ref">PxScene.getCCDThreshold()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is not advisable to set this to a very small value as this may lead to CCD “jamming” and detrimentally effect performance. This value should be at least larger than the translation caused by a single frame’s gravitational effect</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc16ccdMaxSeparationE">
+<span id="_CPPv3N11PxSceneDesc16ccdMaxSeparationE"></span><span id="_CPPv2N11PxSceneDesc16ccdMaxSeparationE"></span><span id="PxSceneDesc::ccdMaxSeparation__PxReal"></span><span class="target" id="class_px_scene_desc_1a74dc6e8ebde591ca823a3ea4807fca33"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ccdMaxSeparation</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc16ccdMaxSeparationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A threshold for speculative CCD. </p>
+<p>Used to control whether bias, restitution or a combination of the two are used to resolve the contacts.</p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0.04 * <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale_1a7d93bf20de0e5b54783eda5bb64effeb"><span class="std std-ref">PxTolerancesScale::length</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a5c351b4babd520464a9ee5f79d63b252"><span class="std std-ref">PxScene.setCCDMaxSeparation()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1af4ac23232be477a54cce65fa5f22c0d7"><span class="std std-ref">PxScene.getCCDMaxSeparation()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This only has any effect on contacting pairs where one of the bodies has <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag_1a5fd4878ae66a98c030a9d976e8ba8596af13d6aa80b364fe2cef81a0039e37d45"><span class="std std-ref">PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD</span></a> raised.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc21wakeCounterResetValueE">
+<span id="_CPPv3N11PxSceneDesc21wakeCounterResetValueE"></span><span id="_CPPv2N11PxSceneDesc21wakeCounterResetValueE"></span><span id="PxSceneDesc::wakeCounterResetValue__PxReal"></span><span class="target" id="class_px_scene_desc_1a79e2c9c06f711272a48d7f07451117b7"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wakeCounterResetValue</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc21wakeCounterResetValueE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The wake counter reset value. </p>
+<p>Calling wakeUp() on objects which support sleeping will set their wake counter value to the specified reset value.</p>
+<p><strong>Range:</strong> (0, PX_MAX_F32)<strong>Default:</strong> 0.4 (which corresponds to 20 frames for a time step of 0.02)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic_1a4f1b9e9f437d8b8f27a6e9c2d9ea22fd"><span class="std std-ref">PxRigidDynamic::wakeUp()</span></a> <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1a48f00a3365ed0140df7fc58b6a09a170"><span class="std std-ref">PxArticulationReducedCoordinate::wakeUp()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a287734b244b7ff6e40496e65d166ae95"><span class="std std-ref">PxScene.getWakeCounterResetValue()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc12sanityBoundsE">
+<span id="_CPPv3N11PxSceneDesc12sanityBoundsE"></span><span id="_CPPv2N11PxSceneDesc12sanityBoundsE"></span><span id="PxSceneDesc::sanityBounds__PxBounds3"></span><span class="target" id="class_px_scene_desc_1a8d6ba51fe74a6c5ea4a46709abb89168"></span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sanityBounds</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc12sanityBoundsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The bounds used to sanity check user-set positions of actors and articulation links. </p>
+<p>These bounds are used to check the position values of rigid actors inserted into the scene, and positions set for rigid actors already within the scene.</p>
+<p><strong>Range:</strong> any valid <a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> <strong>Default:</strong> (-PX_MAX_BOUNDS_EXTENTS, PX_MAX_BOUNDS_EXTENTS) on each axis </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc17gpuDynamicsConfigE">
+<span id="_CPPv3N11PxSceneDesc17gpuDynamicsConfigE"></span><span id="_CPPv2N11PxSceneDesc17gpuDynamicsConfigE"></span><span id="PxSceneDesc::gpuDynamicsConfig__PxgDynamicsMemoryConfig"></span><span class="target" id="class_px_scene_desc_1ab90ebca71afa21639bd99693df30e197"></span><a class="reference internal" href="struct_pxg_dynamics_memory_config.html#_CPPv423PxgDynamicsMemoryConfig" title="PxgDynamicsMemoryConfig"><span class="n"><span class="pre">PxgDynamicsMemoryConfig</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuDynamicsConfig</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc17gpuDynamicsConfigE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The pre-allocations performed in the GPU dynamics pipeline. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc19gpuMaxNumPartitionsE">
+<span id="_CPPv3N11PxSceneDesc19gpuMaxNumPartitionsE"></span><span id="_CPPv2N11PxSceneDesc19gpuMaxNumPartitionsE"></span><span id="PxSceneDesc::gpuMaxNumPartitions__PxU32"></span><span class="target" id="class_px_scene_desc_1a3673610cdfbcb84103e2c3840754ecac"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMaxNumPartitions</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc19gpuMaxNumPartitionsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Limitation for the partitions in the GPU dynamics pipeline. </p>
+<p>This variable must be power of 2. A value greater than 32 is currently not supported. <strong>Range:</strong> (1, 32)</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc25gpuMaxNumStaticPartitionsE">
+<span id="_CPPv3N11PxSceneDesc25gpuMaxNumStaticPartitionsE"></span><span id="_CPPv2N11PxSceneDesc25gpuMaxNumStaticPartitionsE"></span><span id="PxSceneDesc::gpuMaxNumStaticPartitions__PxU32"></span><span class="target" id="class_px_scene_desc_1a4195ca22f2985e7742824813345c1411"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuMaxNumStaticPartitions</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc25gpuMaxNumStaticPartitionsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Limitation for the number of static rigid body partitions in the GPU dynamics pipeline. </p>
+<p><strong>Range:</strong> (1, 255)<strong>Default:</strong> 16 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc17gpuComputeVersionE">
+<span id="_CPPv3N11PxSceneDesc17gpuComputeVersionE"></span><span id="_CPPv2N11PxSceneDesc17gpuComputeVersionE"></span><span id="PxSceneDesc::gpuComputeVersion__PxU32"></span><span class="target" id="class_px_scene_desc_1ac02177181688e06f18f504e3ba6327a7"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gpuComputeVersion</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc17gpuComputeVersionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines which compute version the GPU dynamics should target. </p>
+<p>DO NOT MODIFY </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc19contactPairSlabSizeE">
+<span id="_CPPv3N11PxSceneDesc19contactPairSlabSizeE"></span><span id="_CPPv2N11PxSceneDesc19contactPairSlabSizeE"></span><span id="PxSceneDesc::contactPairSlabSize__PxU32"></span><span class="target" id="class_px_scene_desc_1a7c6006613a08cb8725d381462f09f9ee"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactPairSlabSize</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc19contactPairSlabSizeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the size of a contact pool slab. </p>
+<p>Contact pairs and associated data are allocated using a pool allocator. Increasing the slab size can trade off some performance spikes when a large number of new contacts are found for an increase in overall memory usage.</p>
+<p><strong>Range:</strong>(1, PX_MAX_U32)<strong>Default:</strong> 256 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc16sceneQuerySystemE">
+<span id="_CPPv3N11PxSceneDesc16sceneQuerySystemE"></span><span id="_CPPv2N11PxSceneDesc16sceneQuerySystemE"></span><span id="PxSceneDesc::sceneQuerySystem__PxSceneQuerySystemP"></span><span class="target" id="class_px_scene_desc_1a92ff6aa4df83d50aef208baa427a7e3d"></span><a class="reference internal" href="class_px_scene_query_system.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><span class="n"><span class="pre">PxSceneQuerySystem</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">sceneQuerySystem</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc16sceneQuerySystemE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The scene query sub-system for the scene. </p>
+<p>If left to NULL, <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> will use its usual internal sub-system. If non-NULL, all SQ-related calls will be re-routed to the user-provided implementation. An external SQ implementation is available in the Extensions library (see PxCreateExternalSceneQuerySystem). This can also be fully re-implemented by users if needed.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc15staticStructureE">
+<span id="_CPPv3N11PxSceneDesc15staticStructureE"></span><span id="_CPPv2N11PxSceneDesc15staticStructureE"></span><span id="PxSceneDesc::staticStructure__PxPruningStructureType::Enum"></span><span class="target" id="class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><span class="n"><span class="pre">PxPruningStructureType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv4N22PxPruningStructureType4EnumE" title="PxPruningStructureType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticStructure</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc15staticStructureE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the structure used to store static objects (<a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a> actors). </p>
+<p>There are usually a lot more static actors than dynamic actors in a scene, so they are stored in a separate structure. The idea is that when dynamic actors move each frame, the static structure remains untouched and does not need updating.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type"><span class="std std-ref">PxPruningStructureType</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1ac3a35443cd8eea94bb409ae7054bd5d0"><span class="std std-ref">PxSceneSQSystem.getStaticStructure()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> are allowed here.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc16dynamicStructureE">
+<span id="_CPPv3N11PxSceneDesc16dynamicStructureE"></span><span id="_CPPv2N11PxSceneDesc16dynamicStructureE"></span><span id="PxSceneDesc::dynamicStructure__PxPruningStructureType::Enum"></span><span class="target" id="class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><span class="n"><span class="pre">PxPruningStructureType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv4N22PxPruningStructureType4EnumE" title="PxPruningStructureType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicStructure</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc16dynamicStructureE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the structure used to store dynamic objects (non-PxRigidStatic actors). </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type"><span class="std std-ref">PxPruningStructureType</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1ac303c58627edc223f87b58e7bead675b"><span class="std std-ref">PxSceneSQSystem.getDynamicStructure()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc26dynamicTreeRebuildRateHintE">
+<span id="_CPPv3N11PxSceneDesc26dynamicTreeRebuildRateHintE"></span><span id="_CPPv2N11PxSceneDesc26dynamicTreeRebuildRateHintE"></span><span id="PxSceneDesc::dynamicTreeRebuildRateHint__PxU32"></span><span class="target" id="class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicTreeRebuildRateHint</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc26dynamicTreeRebuildRateHintE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Hint for how much work should be done per simulation frame to rebuild the pruning structures. </p>
+<p>This parameter gives a hint on the distribution of the workload for rebuilding the dynamic AABB tree pruning structure <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>. It specifies the desired number of simulation frames the rebuild process should take. Higher values will decrease the workload per frame but the pruning structure will get more and more outdated the longer the rebuild takes (which can make scene queries less efficient).</p>
+<p><strong>Range:</strong> [4, PX_MAX_U32)<strong>Default:</strong> 100</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">PxSceneQuerySystemBase.setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">PxSceneQuerySystemBase.getDynamicTreeRebuildRateHint()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only used for <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> pruning structures.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both staticStructure &amp; dynamicStructure can use a <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>, in which case this parameter is used for both.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter gives only a hint. The rebuild process might still take more or less time depending on the number of objects involved.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc26dynamicTreeSecondaryPrunerE">
+<span id="_CPPv3N11PxSceneDesc26dynamicTreeSecondaryPrunerE"></span><span id="_CPPv2N11PxSceneDesc26dynamicTreeSecondaryPrunerE"></span><span id="PxSceneDesc::dynamicTreeSecondaryPruner__PxDynamicTreeSecondaryPruner::Enum"></span><span class="target" id="class_px_scene_query_desc_1a3a4cce055a1dfcef121e5cbfa32c994a"></span><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#_CPPv428PxDynamicTreeSecondaryPruner" title="PxDynamicTreeSecondaryPruner"><span class="n"><span class="pre">PxDynamicTreeSecondaryPruner</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4EnumE" title="PxDynamicTreeSecondaryPruner::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicTreeSecondaryPruner</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc26dynamicTreeSecondaryPrunerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Secondary pruner for dynamic tree. </p>
+<p>This is used for <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> structures, to control how objects added to the system at runtime are managed.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#struct_px_dynamic_tree_secondary_pruner_1a59044cb326526cadb6aee4f6f43651b9a392c31147721a69b07ae5d95a4f43626"><span class="std std-ref">PxDynamicTreeSecondaryPruner::eINCREMENTAL</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#struct_px_dynamic_tree_secondary_pruner"><span class="std std-ref">PxDynamicTreeSecondaryPruner</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both staticStructure &amp; dynamicStructure can use a <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>, in which case this parameter is used for both.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc22staticBVHBuildStrategyE">
+<span id="_CPPv3N11PxSceneDesc22staticBVHBuildStrategyE"></span><span id="_CPPv2N11PxSceneDesc22staticBVHBuildStrategyE"></span><span id="PxSceneDesc::staticBVHBuildStrategy__PxBVHBuildStrategy::Enum"></span><span class="target" id="class_px_scene_query_desc_1aad1db6725ecbfa670a2e2ae4c962094c"></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv418PxBVHBuildStrategy" title="PxBVHBuildStrategy"><span class="n"><span class="pre">PxBVHBuildStrategy</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv4N18PxBVHBuildStrategy4EnumE" title="PxBVHBuildStrategy::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticBVHBuildStrategy</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc22staticBVHBuildStrategyE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Build strategy for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. </p>
+<p>This parameter is used to refine / control the build strategy of <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy_1a76258a5d936088c608f7fa8604c1f257a4e832172e80308327843b9fe1ea686ba"><span class="std std-ref">PxBVHBuildStrategy::eFAST</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy"><span class="std std-ref">PxBVHBuildStrategy</span></a> <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23dynamicBVHBuildStrategyE">
+<span id="_CPPv3N11PxSceneDesc23dynamicBVHBuildStrategyE"></span><span id="_CPPv2N11PxSceneDesc23dynamicBVHBuildStrategyE"></span><span id="PxSceneDesc::dynamicBVHBuildStrategy__PxBVHBuildStrategy::Enum"></span><span class="target" id="class_px_scene_query_desc_1ab8839b0985dacf362b578c4fb56a04e9"></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv418PxBVHBuildStrategy" title="PxBVHBuildStrategy"><span class="n"><span class="pre">PxBVHBuildStrategy</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv4N18PxBVHBuildStrategy4EnumE" title="PxBVHBuildStrategy::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicBVHBuildStrategy</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23dynamicBVHBuildStrategyE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Build strategy for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. </p>
+<p>This parameter is used to refine / control the build strategy of <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy_1a76258a5d936088c608f7fa8604c1f257a4e832172e80308327843b9fe1ea686ba"><span class="std std-ref">PxBVHBuildStrategy::eFAST</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy"><span class="std std-ref">PxBVHBuildStrategy</span></a> <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc22staticNbObjectsPerNodeE">
+<span id="_CPPv3N11PxSceneDesc22staticNbObjectsPerNodeE"></span><span id="_CPPv2N11PxSceneDesc22staticNbObjectsPerNodeE"></span><span id="PxSceneDesc::staticNbObjectsPerNode__PxU32"></span><span class="target" id="class_px_scene_query_desc_1a36f5bd70b61785be6e5d5f3925810a92"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticNbObjectsPerNode</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc22staticNbObjectsPerNodeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of objects per node for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. </p>
+<p>This parameter is used to refine / control the number of objects per node for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p>This parameter has an impact on how quickly the structure gets built, and on the per-frame cost of maintaining the structure. Increasing this value gives smaller AABB-trees that use less memory, are faster to build and update, but it can lead to slower queries.</p>
+<p><strong>Default:</strong> 4</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc23dynamicNbObjectsPerNodeE">
+<span id="_CPPv3N11PxSceneDesc23dynamicNbObjectsPerNodeE"></span><span id="_CPPv2N11PxSceneDesc23dynamicNbObjectsPerNodeE"></span><span id="PxSceneDesc::dynamicNbObjectsPerNode__PxU32"></span><span class="target" id="class_px_scene_query_desc_1a0d87ef7a15face2d81bd7706c501db4d"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicNbObjectsPerNode</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc23dynamicNbObjectsPerNodeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of objects per node for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. </p>
+<p>This parameter is used to refine / control the number of objects per node for <a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p>This parameter has an impact on how quickly the structure gets built, and on the per-frame cost of maintaining the structure. Increasing this value gives smaller AABB-trees that use less memory, are faster to build and update, but it can lead to slower queries.</p>
+<p><strong>Default:</strong> 4</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxSceneDesc20sceneQueryUpdateModeE">
+<span id="_CPPv3N11PxSceneDesc20sceneQueryUpdateModeE"></span><span id="_CPPv2N11PxSceneDesc20sceneQueryUpdateModeE"></span><span id="PxSceneDesc::sceneQueryUpdateMode__PxSceneQueryUpdateMode::Enum"></span><span class="target" id="class_px_scene_query_desc_1a54b9676f564ae717785955e88a60ebd2"></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sceneQueryUpdateMode</span></span></span><a class="headerlink" href="#_CPPv4N11PxSceneDesc20sceneQueryUpdateModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the scene query update mode. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4aa9f1900ad863b24a136a6bf7061718e5"><span class="std std-ref">PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_ENABLED</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af0c895a275b63c869e019adb1d898757"><span class="std std-ref">PxSceneQuerySystemBase.setUpdateMode()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ae385445780b7feb60422b7beddd13750"><span class="std std-ref">PxSceneQuerySystemBase.getUpdateMode()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

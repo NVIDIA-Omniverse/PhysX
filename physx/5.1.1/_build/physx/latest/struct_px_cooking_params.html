@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxCookingParams &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxCookingParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcookingparams">
+<span id="exhale-struct-struct-px-cooking-params"></span><h1>PxCookingParams<a class="headerlink" href="#pxcookingparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxCooking.h.html#file-include-cooking-pxcooking-h"><span class="std std-ref">include/cooking/PxCooking.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415PxCookingParams">
+<span id="_CPPv315PxCookingParams"></span><span id="_CPPv215PxCookingParams"></span><span id="PxCookingParams"></span><span class="target" id="struct_px_cooking_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCookingParams</span></span></span><a class="headerlink" href="#_CPPv415PxCookingParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure describing parameters affecting mesh cooking. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSetCookingParams() PxGetCookingParams() </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale">
+<span id="_CPPv3N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale"></span><span id="_CPPv2N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale"></span><span id="PxCookingParams::PxCookingParams__PxTolerancesScaleCR"></span><span class="target" id="struct_px_cooking_params_1a738bc9799f789da5c453cadae5eaec47"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCookingParams</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sc</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxCookingParams15PxCookingParamsERK17PxTolerancesScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams15areaTestEpsilonE">
+<span id="_CPPv3N15PxCookingParams15areaTestEpsilonE"></span><span id="_CPPv2N15PxCookingParams15areaTestEpsilonE"></span><span id="PxCookingParams::areaTestEpsilon__float"></span><span class="target" id="struct_px_cooking_params_1aec2fbb426b8c0bb2daee1e31b8e2adc2"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">areaTestEpsilon</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams15areaTestEpsilonE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Zero-size area epsilon used in convex hull computation. </p>
+<p>If the area of a triangle of the hull is below this value, the triangle will be rejected. This test is done only if <a class="reference internal" href="struct_px_convex_flag.html#struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a12c7c442cadd1e3474fc613944981c44"><span class="std std-ref">PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES</span></a> is used.</p>
+<p><strong>Default value:</strong> 0.06f*PxTolerancesScale.length*PxTolerancesScale.length<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_convex_flag.html#struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a12c7c442cadd1e3474fc613944981c44"><span class="std std-ref">PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES</span></a></p>
+</div>
+</p>
+<p><strong>Range:</strong> (0.0f, PX_MAX_F32) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams14planeToleranceE">
+<span id="_CPPv3N15PxCookingParams14planeToleranceE"></span><span id="_CPPv2N15PxCookingParams14planeToleranceE"></span><span id="PxCookingParams::planeTolerance__float"></span><span class="target" id="struct_px_cooking_params_1a45e4d60211cdd58d80a10dad39da64c9"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">planeTolerance</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams14planeToleranceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Plane tolerance used in convex hull computation. </p>
+<p>The value is used during hull construction. When a new point is about to be added to the hull it gets dropped when the point is closer to the hull than the planeTolerance. The planeTolerance is increased according to the hull size.</p>
+<p>If 0.0f is set all points are accepted when the convex hull is created. This may lead to edge cases where the new points may be merged into an existing polygon and the polygons plane equation might slightly change therefore. This might lead to failures during polygon merging phase in the hull computation.</p>
+<p>It is recommended to use the default value, however if it is required that all points needs to be accepted or huge thin convexes are created, it might be required to lower the default value.</p>
+<p><strong>Default value:</strong> 0.0007f</p>
+<p><strong>Range:</strong> &lt;0.0f, PX_MAX_F32) </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The plane tolerance is used only within <a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#struct_px_convex_mesh_cooking_type_1a5a2ae723aca74c185675cd7ba2c9c115a18916173251aae02128c79b69af46906"><span class="std std-ref">PxConvexMeshCookingType::eQUICKHULL</span></a> algorithm.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams21convexMeshCookingTypeE">
+<span id="_CPPv3N15PxCookingParams21convexMeshCookingTypeE"></span><span id="_CPPv2N15PxCookingParams21convexMeshCookingTypeE"></span><span id="PxCookingParams::convexMeshCookingType__PxConvexMeshCookingType::Enum"></span><span class="target" id="struct_px_cooking_params_1afbc71c4ade3b80715855125413d58f97"></span><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#_CPPv423PxConvexMeshCookingType" title="PxConvexMeshCookingType"><span class="n"><span class="pre">PxConvexMeshCookingType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#_CPPv4N23PxConvexMeshCookingType4EnumE" title="PxConvexMeshCookingType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convexMeshCookingType</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams21convexMeshCookingTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convex hull creation algorithm. </p>
+<p><strong>Default value:</strong> <a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#struct_px_convex_mesh_cooking_type_1a5a2ae723aca74c185675cd7ba2c9c115a18916173251aae02128c79b69af46906"><span class="std std-ref">PxConvexMeshCookingType::eQUICKHULL</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#struct_px_convex_mesh_cooking_type"><span class="std std-ref">PxConvexMeshCookingType</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams30suppressTriangleMeshRemapTableE">
+<span id="_CPPv3N15PxCookingParams30suppressTriangleMeshRemapTableE"></span><span id="_CPPv2N15PxCookingParams30suppressTriangleMeshRemapTableE"></span><span id="PxCookingParams::suppressTriangleMeshRemapTable__b"></span><span class="target" id="struct_px_cooking_params_1a50426ff06726ccab3f5e0503077778a6"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">suppressTriangleMeshRemapTable</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams30suppressTriangleMeshRemapTableE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>When true, the face remap table is not created. </p>
+<p>This saves a significant amount of memory, but the SDK will not be able to provide the remap information for internal mesh triangles returned by collisions, sweeps or raycasts hits.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams24buildTriangleAdjacenciesE">
+<span id="_CPPv3N15PxCookingParams24buildTriangleAdjacenciesE"></span><span id="_CPPv2N15PxCookingParams24buildTriangleAdjacenciesE"></span><span id="PxCookingParams::buildTriangleAdjacencies__b"></span><span class="target" id="struct_px_cooking_params_1aaeff18c0f923a7c886bc29bea730c966"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buildTriangleAdjacencies</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams24buildTriangleAdjacenciesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>When true, the triangle adjacency information is created. </p>
+<p>You can get the adjacency triangles for a given triangle from getTriangle.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams12buildGPUDataE">
+<span id="_CPPv3N15PxCookingParams12buildGPUDataE"></span><span id="_CPPv2N15PxCookingParams12buildGPUDataE"></span><span id="PxCookingParams::buildGPUData__b"></span><span class="target" id="struct_px_cooking_params_1ad9c00d38bdcca1c324bba906706d1c63"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buildGPUData</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams12buildGPUDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>When true, addigional information required for GPU-accelerated rigid body simulation is created. </p>
+<p>This can increase memory usage and cooking times for convex meshes and triangle meshes.</p>
+<p><strong>Default value:</strong> false </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams5scaleE">
+<span id="_CPPv3N15PxCookingParams5scaleE"></span><span id="_CPPv2N15PxCookingParams5scaleE"></span><span id="PxCookingParams::scale__PxTolerancesScale"></span><span class="target" id="struct_px_cooking_params_1a6a51be76bb79ac1dd9a2788f54569c60"></span><a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tolerance scale is used to check if cooked triangles are not too huge. </p>
+<p>This check will help with simulation stability.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> values have to match the values used when creating a <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> instance.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams20meshPreprocessParamsE">
+<span id="_CPPv3N15PxCookingParams20meshPreprocessParamsE"></span><span id="_CPPv2N15PxCookingParams20meshPreprocessParamsE"></span><span id="PxCookingParams::meshPreprocessParams__PxMeshPreprocessingFlags"></span><span class="target" id="struct_px_cooking_params_1a6561b14b68f097c135fe6d83f68908ce"></span><a class="reference internal" href="typedef_group__cooking_1ga0a0051ee56690c138fac87d780cca9b4.html#_CPPv424PxMeshPreprocessingFlags" title="PxMeshPreprocessingFlags"><span class="n"><span class="pre">PxMeshPreprocessingFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshPreprocessParams</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams20meshPreprocessParamsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh pre-processing parameters. </p>
+<p>Used to control options like whether the mesh cooking performs vertex welding before cooking.</p>
+<p><strong>Default value:</strong> 0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams17meshWeldToleranceE">
+<span id="_CPPv3N15PxCookingParams17meshWeldToleranceE"></span><span id="_CPPv2N15PxCookingParams17meshWeldToleranceE"></span><span id="PxCookingParams::meshWeldTolerance__PxReal"></span><span class="target" id="struct_px_cooking_params_1a19bb7e28765df5c8ec1a86a45004c7b6"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshWeldTolerance</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams17meshWeldToleranceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh weld tolerance. </p>
+<p>If mesh welding is enabled, this controls the distance at which vertices are welded. If mesh welding is not enabled, this value defines the acceptance distance for mesh validation. Provided no two vertices are within this distance, the mesh is considered to be clean. If not, a warning will be emitted. Having a clean, welded mesh is required to achieve the best possible performance.</p>
+<p>The default vertex welding uses a snap-to-grid approach. This approach effectively truncates each vertex to integer values using meshWeldTolerance. Once these snapped vertices are produced, all vertices that snap to a given vertex on the grid are remapped to reference a single vertex. Following this, all triangles’ indices are remapped to reference this subset of clean vertices. It should be noted that the vertices that we do not alter the position of the vertices; the snap-to-grid is only performed to identify nearby vertices.</p>
+<p>The mesh validation approach also uses the same snap-to-grid approach to identify nearby vertices. If more than one vertex snaps to a given grid coordinate, we ensure that the distance between the vertices is at least meshWeldTolerance. If this is not the case, a warning is emitted.</p>
+<p><strong>Default value:</strong> 0.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams12midphaseDescE">
+<span id="_CPPv3N15PxCookingParams12midphaseDescE"></span><span id="_CPPv2N15PxCookingParams12midphaseDescE"></span><span id="PxCookingParams::midphaseDesc__PxMidphaseDesc"></span><span class="target" id="struct_px_cooking_params_1a8015768aa6024f1283cab006abdb63b5"></span><a class="reference internal" href="class_px_midphase_desc.html#_CPPv414PxMidphaseDesc" title="PxMidphaseDesc"><span class="n"><span class="pre">PxMidphaseDesc</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">midphaseDesc</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams12midphaseDescE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Controls the desired midphase desc structure for triangle meshes. </p>
+<p><strong>Default value:</strong> <a class="reference internal" href="struct_px_mesh_mid_phase.html#struct_px_mesh_mid_phase_1a49f740883fbfb1a49631c28818c219f4a42051af73b6c6b3a5ac4df2928b6d446"><span class="std std-ref">PxMeshMidPhase::eBVH34</span></a> <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_b_v_h33_midphase_desc.html#struct_px_b_v_h33_midphase_desc"><span class="std std-ref">PxBVH33MidphaseDesc</span></a>, <a class="reference internal" href="struct_px_b_v_h34_midphase_desc.html#struct_px_b_v_h34_midphase_desc"><span class="std std-ref">PxBVH34MidphaseDesc</span></a>, <a class="reference internal" href="class_px_midphase_desc.html#class_px_midphase_desc"><span class="std std-ref">PxMidphaseDesc</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams13gaussMapLimitE">
+<span id="_CPPv3N15PxCookingParams13gaussMapLimitE"></span><span id="_CPPv2N15PxCookingParams13gaussMapLimitE"></span><span id="PxCookingParams::gaussMapLimit__PxU32"></span><span class="target" id="struct_px_cooking_params_1a6be147977f9bd24a55dc3cd16ed390bc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gaussMapLimit</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams13gaussMapLimitE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Vertex limit beyond which additional acceleration structures are computed for each convex mesh. </p>
+<p>Increase that limit to reduce memory usage. Computing the extra structures all the time does not guarantee optimal performance. There is a per-platform break-even point below which the extra structures actually hurt performance.</p>
+<p><strong>Default value:</strong> 32 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxCookingParams19maxWeightRatioInTetE">
+<span id="_CPPv3N15PxCookingParams19maxWeightRatioInTetE"></span><span id="_CPPv2N15PxCookingParams19maxWeightRatioInTetE"></span><span id="PxCookingParams::maxWeightRatioInTet__PxReal"></span><span class="target" id="struct_px_cooking_params_1a0586dc85213dc49cf0525a63337b59ce"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxWeightRatioInTet</span></span></span><a class="headerlink" href="#_CPPv4N15PxCookingParams19maxWeightRatioInTetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Maximum mass ratio allowed on vertices touched by a single tet. </p>
+<p>If a any tetrahedron exceeds the mass ratio, the masses will get smoothed locally until the maximum mass ratio is matched. Value should not be below 1. Smoothing might not fully converge for values &lt;1.5. The smaller the maximum allowed ratio, the better the stability during simulation.</p>
+<p><strong>Default value:</strong> FLT_MAX </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxFEMClothMaterial &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxFEMClothMaterial</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxfemclothmaterial">
+<span id="exhale-class-class-px-f-e-m-cloth-material"></span><h1>PxFEMClothMaterial<a class="headerlink" href="#pxfemclothmaterial" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxFEMClothMaterial.h.html#file-include-pxfemclothmaterial-h"><span class="std std-ref">include/PxFEMClothMaterial.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxFEMMaterial</span></code> (<a class="reference internal" href="class_px_f_e_m_material.html#exhale-class-class-px-f-e-m-material"><span class="std std-ref">PxFEMMaterial</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv418PxFEMClothMaterial">
+<span id="_CPPv318PxFEMClothMaterial"></span><span id="_CPPv218PxFEMClothMaterial"></span><span id="PxFEMClothMaterial"></span><span class="target" id="class_px_f_e_m_cloth_material"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFEMClothMaterial</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_f_e_m_material.html#_CPPv413PxFEMMaterial" title="PxFEMMaterial"><span class="n"><span class="pre">PxFEMMaterial</span></span></a><a class="headerlink" href="#_CPPv418PxFEMClothMaterial" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Material class to represent a set of FEM material properties. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a032681c21425d986392fba7fa6af4454"><span class="std std-ref">PxPhysics.createFEMClothMaterial</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial12setThicknessE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial12setThicknessE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial12setThicknessE6PxReal"></span><span id="PxFEMClothMaterial::setThickness__PxReal"></span><span class="target" id="class_px_f_e_m_cloth_material_1a9a578d8b4ec2433a1888deb8304d7e2f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setThickness</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">thickness</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial12setThicknessE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material thickness. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_f_e_m_cloth_material_1aa4d62a643a03841b632b3ac6c3a5314c"><span class="std std-ref">getThickness</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>thickness</strong> – <strong>[in]</strong> Material thickness.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial12getThicknessEv">
+<span id="_CPPv3NK18PxFEMClothMaterial12getThicknessEv"></span><span id="_CPPv2NK18PxFEMClothMaterial12getThicknessEv"></span><span id="PxFEMClothMaterial::getThicknessC"></span><span class="target" id="class_px_f_e_m_cloth_material_1aa4d62a643a03841b632b3ac6c3a5314c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getThickness</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial12getThicknessEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the material thickness. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setDamping() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>thickness.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial20setElasticityDampingE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial20setElasticityDampingE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial20setElasticityDampingE6PxReal"></span><span id="PxFEMClothMaterial::setElasticityDamping__PxReal"></span><span class="target" id="class_px_f_e_m_cloth_material_1a7d98ee66464ba02e60670cb99db42582"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setElasticityDamping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">damping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial20setElasticityDampingE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the elasticity damping for the internal cloth solver. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_f_e_m_cloth_material_1a8d1b4da3efe3b76b226ccf5fc1554d9a"><span class="std std-ref">getElasticityDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>damping</strong> – <strong>[in]</strong> The elasticity damping term. <strong>Range:</strong> [0.0, Inf)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial20getElasticityDampingEv">
+<span id="_CPPv3NK18PxFEMClothMaterial20getElasticityDampingEv"></span><span id="_CPPv2NK18PxFEMClothMaterial20getElasticityDampingEv"></span><span id="PxFEMClothMaterial::getElasticityDampingC"></span><span class="target" id="class_px_f_e_m_cloth_material_1a8d1b4da3efe3b76b226ccf5fc1554d9a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getElasticityDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial20getElasticityDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the elasticity damping term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_f_e_m_cloth_material_1a7d98ee66464ba02e60670cb99db42582"><span class="std std-ref">setElasticityDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The elasticity damping term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial17setBendingDampingE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial17setBendingDampingE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial17setBendingDampingE6PxReal"></span><span id="PxFEMClothMaterial::setBendingDamping__PxReal"></span><span class="target" id="class_px_f_e_m_cloth_material_1adccbaf28e39a66421066b1f7c2cf1f71"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBendingDamping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">damping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial17setBendingDampingE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the bending coefficient for bending constraints. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_f_e_m_cloth_material_1a46c19359fd365b5b9d4b09f55a02e9ab"><span class="std std-ref">getBendingDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>damping</strong> – <strong>[in]</strong> The bending coefficient. <strong>Range:</strong> [0.0, Inf)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial17getBendingDampingEv">
+<span id="_CPPv3NK18PxFEMClothMaterial17getBendingDampingEv"></span><span id="_CPPv2NK18PxFEMClothMaterial17getBendingDampingEv"></span><span id="PxFEMClothMaterial::getBendingDampingC"></span><span class="target" id="class_px_f_e_m_cloth_material_1a46c19359fd365b5b9d4b09f55a02e9ab"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBendingDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial17getBendingDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the bending coefficient for bending constraints. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_f_e_m_cloth_material_1adccbaf28e39a66421066b1f7c2cf1f71"><span class="std std-ref">setBendingDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The bending coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial19getConcreteTypeNameEv">
+<span id="_CPPv3NK18PxFEMClothMaterial19getConcreteTypeNameEv"></span><span id="_CPPv2NK18PxFEMClothMaterial19getConcreteTypeNameEv"></span><span id="PxFEMClothMaterial::getConcreteTypeNameC"></span><span class="target" id="class_px_f_e_m_cloth_material_1a2d4d6d9416880d2faf33bd569e3fab1d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial16setYoungsModulusE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial16setYoungsModulusE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial16setYoungsModulusE6PxReal"></span><span id="PxFEMClothMaterial::setYoungsModulus__PxReal"></span><span class="target" id="class_px_f_e_m_material_1a1c44d6c80c84757efca8ac871de25760"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setYoungsModulus</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">young</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial16setYoungsModulusE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets young’s modulus which defines the body’s stiffness. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1a56e00f83e57017f227720960e9ccf233"><span class="std std-ref">getYoungsModulus()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>young</strong> – <strong>[in]</strong> Young’s modulus. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial16getYoungsModulusEv">
+<span id="_CPPv3NK18PxFEMClothMaterial16getYoungsModulusEv"></span><span id="_CPPv2NK18PxFEMClothMaterial16getYoungsModulusEv"></span><span id="PxFEMClothMaterial::getYoungsModulusC"></span><span class="target" id="class_px_f_e_m_material_1a56e00f83e57017f227720960e9ccf233"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getYoungsModulus</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial16getYoungsModulusEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the young’s modulus value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1a1c44d6c80c84757efca8ac871de25760"><span class="std std-ref">setYoungsModulus()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The young’s modulus value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial11setPoissonsE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial11setPoissonsE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial11setPoissonsE6PxReal"></span><span id="PxFEMClothMaterial::setPoissons__PxReal"></span><span class="target" id="class_px_f_e_m_material_1a872409cdf5fb5f186d45e1d90b048331"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPoissons</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">poisson</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial11setPoissonsE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the Poisson’s ratio which defines the body’s volume preservation. </p>
+<p>Completely incompressible materials have a poisson ratio of 0.5. Its value should not be set to exactly 0.5 because this leads to numerical problems.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1ac8a4b504b4240486d03d6e03e0e5a777"><span class="std std-ref">getPoissons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>poisson</strong> – <strong>[in]</strong> Poisson’s ratio. <strong>Range:</strong> [0, 0.5)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial11getPoissonsEv">
+<span id="_CPPv3NK18PxFEMClothMaterial11getPoissonsEv"></span><span id="_CPPv2NK18PxFEMClothMaterial11getPoissonsEv"></span><span id="PxFEMClothMaterial::getPoissonsC"></span><span class="target" id="class_px_f_e_m_material_1ac8a4b504b4240486d03d6e03e0e5a777"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPoissons</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial11getPoissonsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the Poisson’s ratio. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1a872409cdf5fb5f186d45e1d90b048331"><span class="std std-ref">setPoissons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The Poisson’s ratio.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial18setDynamicFrictionE6PxReal">
+<span id="_CPPv3N18PxFEMClothMaterial18setDynamicFrictionE6PxReal"></span><span id="_CPPv2N18PxFEMClothMaterial18setDynamicFrictionE6PxReal"></span><span id="PxFEMClothMaterial::setDynamicFriction__PxReal"></span><span class="target" id="class_px_f_e_m_material_1af240fb02cef431811e1d20c0eca96003"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDynamicFriction</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dynamicFriction</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial18setDynamicFrictionE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the dynamic friction value which defines the strength of resistance when two objects slide relative to each other while in contact. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1a3d8452cc9a4161b44f20d816fddd4ee8"><span class="std std-ref">getDynamicFriction()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dynamicFriction</strong> – <strong>[in]</strong> The dynamic friction value. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial18getDynamicFrictionEv">
+<span id="_CPPv3NK18PxFEMClothMaterial18getDynamicFrictionEv"></span><span id="_CPPv2NK18PxFEMClothMaterial18getDynamicFrictionEv"></span><span id="PxFEMClothMaterial::getDynamicFrictionC"></span><span class="target" id="class_px_f_e_m_material_1a3d8452cc9a4161b44f20d816fddd4ee8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDynamicFriction</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial18getDynamicFrictionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the dynamic friction value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_material_1af240fb02cef431811e1d20c0eca96003"><span class="std std-ref">setDynamicFriction()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The dynamic friction value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial7releaseEv">
+<span id="_CPPv3N18PxFEMClothMaterial7releaseEv"></span><span id="_CPPv2N18PxFEMClothMaterial7releaseEv"></span><span id="PxFEMClothMaterial::release"></span><span class="target" id="class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of the object and releases it if the new reference count is zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial17getReferenceCountEv">
+<span id="_CPPv3NK18PxFEMClothMaterial17getReferenceCountEv"></span><span id="_CPPv2NK18PxFEMClothMaterial17getReferenceCountEv"></span><span id="PxFEMClothMaterial::getReferenceCountC"></span><span class="target" id="class_px_ref_counted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial16acquireReferenceEv">
+<span id="_CPPv3N18PxFEMClothMaterial16acquireReferenceEv"></span><span id="_CPPv2N18PxFEMClothMaterial16acquireReferenceEv"></span><span id="PxFEMClothMaterial::acquireReference"></span><span class="target" id="class_px_ref_counted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN18PxFEMClothMaterial2isEP1Tv">
+<span id="_CPPv3I0EN18PxFEMClothMaterial2isEv"></span><span id="_CPPv2I0EN18PxFEMClothMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN18PxFEMClothMaterial2isEP1Tv" title="PxFEMClothMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN18PxFEMClothMaterial2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK18PxFEMClothMaterial2isEPK1Tv">
+<span id="_CPPv3I0ENK18PxFEMClothMaterial2isEv"></span><span id="_CPPv2I0ENK18PxFEMClothMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK18PxFEMClothMaterial2isEPK1Tv" title="PxFEMClothMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK18PxFEMClothMaterial2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial15getConcreteTypeEv">
+<span id="_CPPv3NK18PxFEMClothMaterial15getConcreteTypeEv"></span><span id="_CPPv2NK18PxFEMClothMaterial15getConcreteTypeEv"></span><span id="PxFEMClothMaterial::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N18PxFEMClothMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N18PxFEMClothMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxFEMClothMaterial::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N18PxFEMClothMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N18PxFEMClothMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="PxFEMClothMaterial::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial12getBaseFlagsEv">
+<span id="_CPPv3NK18PxFEMClothMaterial12getBaseFlagsEv"></span><span id="_CPPv2NK18PxFEMClothMaterial12getBaseFlagsEv"></span><span id="PxFEMClothMaterial::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial12isReleasableEv">
+<span id="_CPPv3NK18PxFEMClothMaterial12isReleasableEv"></span><span id="_CPPv2NK18PxFEMClothMaterial12isReleasableEv"></span><span id="PxFEMClothMaterial::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial8userDataE">
+<span id="_CPPv3N18PxFEMClothMaterial8userDataE"></span><span id="_CPPv2N18PxFEMClothMaterial8userDataE"></span><span id="PxFEMClothMaterial::userData__voidP"></span><span class="target" id="class_px_base_material_1a3c1e944e2b05981f594c91cdd4ec9041"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial18PxFEMClothMaterialE6PxType11PxBaseFlags">
+<span id="_CPPv3N18PxFEMClothMaterial18PxFEMClothMaterialE6PxType11PxBaseFlags"></span><span id="_CPPv2N18PxFEMClothMaterial18PxFEMClothMaterialE6PxType11PxBaseFlags"></span><span id="PxFEMClothMaterial::PxFEMClothMaterial__PxType.PxBaseFlags"></span><span class="target" id="class_px_f_e_m_cloth_material_1a386da463499ed215dfeda696ce56f517"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFEMClothMaterial</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial18PxFEMClothMaterialE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial18PxFEMClothMaterialE11PxBaseFlags">
+<span id="_CPPv3N18PxFEMClothMaterial18PxFEMClothMaterialE11PxBaseFlags"></span><span id="_CPPv2N18PxFEMClothMaterial18PxFEMClothMaterialE11PxBaseFlags"></span><span id="PxFEMClothMaterial::PxFEMClothMaterial__PxBaseFlags"></span><span class="target" id="class_px_f_e_m_cloth_material_1a624e608410577c207a16485a5bc2daf5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFEMClothMaterial</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial18PxFEMClothMaterialE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterialD0Ev">
+<span id="_CPPv3N18PxFEMClothMaterialD0Ev"></span><span id="_CPPv2N18PxFEMClothMaterialD0Ev"></span><span id="PxFEMClothMaterial::~PxFEMClothMaterial"></span><span class="target" id="class_px_f_e_m_cloth_material_1ad75f065ec72d87b78d8c1e0260a34611"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxFEMClothMaterial</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterialD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxFEMClothMaterial8isKindOfEPKc">
+<span id="_CPPv3NK18PxFEMClothMaterial8isKindOfEPKc"></span><span id="_CPPv2NK18PxFEMClothMaterial8isKindOfEPKc"></span><span id="PxFEMClothMaterial::isKindOf__cCPC"></span><span class="target" id="class_px_f_e_m_cloth_material_1a472923f932a0bff5cfa8b251cacfcb89"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxFEMClothMaterial8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial14onRefCountZeroEv">
+<span id="_CPPv3N18PxFEMClothMaterial14onRefCountZeroEv"></span><span id="_CPPv2N18PxFEMClothMaterial14onRefCountZeroEv"></span><span id="PxFEMClothMaterial::onRefCountZero"></span><span class="target" id="class_px_ref_counted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK18PxFEMClothMaterial9typeMatchEbv">
+<span id="_CPPv3I0ENK18PxFEMClothMaterial9typeMatchEv"></span><span id="_CPPv2I0ENK18PxFEMClothMaterial9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK18PxFEMClothMaterial9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial13mConcreteTypeE">
+<span id="_CPPv3N18PxFEMClothMaterial13mConcreteTypeE"></span><span id="_CPPv2N18PxFEMClothMaterial13mConcreteTypeE"></span><span id="PxFEMClothMaterial::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial10mBaseFlagsE">
+<span id="_CPPv3N18PxFEMClothMaterial10mBaseFlagsE"></span><span id="_CPPv2N18PxFEMClothMaterial10mBaseFlagsE"></span><span id="PxFEMClothMaterial::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFEMClothMaterial16mBuiltInRefCountE">
+<span id="_CPPv3N18PxFEMClothMaterial16mBuiltInRefCountE"></span><span id="_CPPv2N18PxFEMClothMaterial16mBuiltInRefCountE"></span><span id="PxFEMClothMaterial::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N18PxFEMClothMaterial16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Px1DConstraint &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Px1DConstraint</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="px1dconstraint">
+<span id="exhale-struct-struct-px1-d-constraint"></span><h1>Px1DConstraint<a class="headerlink" href="#px1dconstraint" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxConstraintDesc.h.html#file-include-pxconstraintdesc-h"><span class="std std-ref">include/PxConstraintDesc.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414Px1DConstraint">
+<span id="_CPPv314Px1DConstraint"></span><span id="_CPPv214Px1DConstraint"></span><span id="Px1DConstraint"></span><span class="target" id="struct_px1_d_constraint"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Px1DConstraint</span></span></span><a class="headerlink" href="#_CPPv414Px1DConstraint" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A one-dimensional constraint. </p>
+<p>A constraint is expressed as a set of 1-dimensional constraint rows which define the required constraint on the objects’ velocities.</p>
+<p>Each constraint is either a hard constraint or a spring. We define the velocity at the constraint to be the quantity</p>
+<p>v = body0vel.dot(lin0,ang0) - body1vel.dot(lin1, ang1)</p>
+<p>For a hard constraint, the solver attempts to generate</p>
+<p><ol class="loweralpha">
+<li><p>a set of velocities for the objects which, when integrated, respect the constraint errors:</p>
+<p>v + (geometricError / timestep) = velocityTarget</p>
+</li>
+<li><p>a set of velocities for the objects which respect the constraints:</p>
+<p>v = velocityTarget</p>
+</li>
+</ol>
+</p>
+<p>Hard constraints support restitution: if the impact velocity exceeds the bounce threshold, then the target velocity of the constraint will be set to restitution * -v</p>
+<p>Alternatively, the solver can attempt to resolve the velocity constraint as an implicit spring:</p>
+<p>F = stiffness * -geometricError + damping * (velocityTarget - v)</p>
+<p>where F is the constraint force or acceleration. Springs are fully implicit: that is, the force or acceleration is a function of the position and velocity after the solve.</p>
+<p>All constraints support limits on the minimum or maximum impulse applied. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint7linear0E">
+<span id="_CPPv3N14Px1DConstraint7linear0E"></span><span id="_CPPv2N14Px1DConstraint7linear0E"></span><span id="Px1DConstraint::linear0__PxVec3"></span><span class="target" id="struct_px1_d_constraint_1ac56cab2d459ade70824f04821404889c"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linear0</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint7linear0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>linear component of velocity jacobian in world space </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint14geometricErrorE">
+<span id="_CPPv3N14Px1DConstraint14geometricErrorE"></span><span id="_CPPv2N14Px1DConstraint14geometricErrorE"></span><span id="Px1DConstraint::geometricError__PxReal"></span><span class="target" id="struct_px1_d_constraint_1ae3ad7c8d4370c7b26634bd8e5046ba9a"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">geometricError</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint14geometricErrorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>geometric error of the constraint along this axis </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint8angular0E">
+<span id="_CPPv3N14Px1DConstraint8angular0E"></span><span id="_CPPv2N14Px1DConstraint8angular0E"></span><span id="Px1DConstraint::angular0__PxVec3"></span><span class="target" id="struct_px1_d_constraint_1afaf3f8a6b645f3b48c123ab94016b1c2"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angular0</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint8angular0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>angular component of velocity jacobian in world space </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint14velocityTargetE">
+<span id="_CPPv3N14Px1DConstraint14velocityTargetE"></span><span id="_CPPv2N14Px1DConstraint14velocityTargetE"></span><span id="Px1DConstraint::velocityTarget__PxReal"></span><span class="target" id="struct_px1_d_constraint_1a467f316062f0cb43f525bfbda8debfa5"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">velocityTarget</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint14velocityTargetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>velocity target for the constraint along this axis </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint7linear1E">
+<span id="_CPPv3N14Px1DConstraint7linear1E"></span><span id="_CPPv2N14Px1DConstraint7linear1E"></span><span id="Px1DConstraint::linear1__PxVec3"></span><span class="target" id="struct_px1_d_constraint_1a9523a9ebd2707f8d442ca4a0bf4da573"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linear1</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint7linear1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>linear component of velocity jacobian in world space </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint10minImpulseE">
+<span id="_CPPv3N14Px1DConstraint10minImpulseE"></span><span id="_CPPv2N14Px1DConstraint10minImpulseE"></span><span id="Px1DConstraint::minImpulse__PxReal"></span><span class="target" id="struct_px1_d_constraint_1ac551561bbc886a7da26567e4f9cf4ce4"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minImpulse</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint10minImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>minimum impulse the solver may apply to enforce this constraint </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint8angular1E">
+<span id="_CPPv3N14Px1DConstraint8angular1E"></span><span id="_CPPv2N14Px1DConstraint8angular1E"></span><span id="Px1DConstraint::angular1__PxVec3"></span><span class="target" id="struct_px1_d_constraint_1ab7a1efaff54cb4d2fd6e3e7cc01a2503"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angular1</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint8angular1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>angular component of velocity jacobian in world space </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint10maxImpulseE">
+<span id="_CPPv3N14Px1DConstraint10maxImpulseE"></span><span id="_CPPv2N14Px1DConstraint10maxImpulseE"></span><span id="Px1DConstraint::maxImpulse__PxReal"></span><span class="target" id="struct_px1_d_constraint_1ad4a0113d0c4cf939f9abc3df65120848"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint10maxImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>maximum impulse the solver may apply to enforce this constraint </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint9stiffnessE">
+<span id="_CPPv3N14Px1DConstraint9stiffnessE"></span><span id="_CPPv2N14Px1DConstraint9stiffnessE"></span><span id="Px1DConstraint::stiffness__PxReal"></span><span class="target" id="struct_px1_d_constraint_1a5bbb41ebffef415b52f7ee3b17b24e9e"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stiffness</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint9stiffnessE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>spring parameter, for spring constraints </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint7dampingE">
+<span id="_CPPv3N14Px1DConstraint7dampingE"></span><span id="_CPPv2N14Px1DConstraint7dampingE"></span><span id="Px1DConstraint::damping__PxReal"></span><span class="target" id="struct_px1_d_constraint_1ac5dc79c3d9b9f4c81ffb4ec77941fb40"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damping</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint7dampingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>damping parameter, for spring constraints </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint6springE">
+<span id="_CPPv3N14Px1DConstraint6springE"></span><span id="_CPPv2N14Px1DConstraint6springE"></span><span class="target" id="struct_px1_d_constraint_1a152fceed114b26ab926c0fb6fc060a95"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414Px1DConstraint" title="Px1DConstraint"><span class="n"><span class="pre">Px1DConstraint</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">SpringModifiers</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">spring</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint6springE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint11restitutionE">
+<span id="_CPPv3N14Px1DConstraint11restitutionE"></span><span id="_CPPv2N14Px1DConstraint11restitutionE"></span><span id="Px1DConstraint::restitution__PxReal"></span><span class="target" id="struct_px1_d_constraint_1a913d1b17c7ed6bb8ae18e5fd6135c103"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>restitution parameter for determining additional “bounce” </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint17velocityThresholdE">
+<span id="_CPPv3N14Px1DConstraint17velocityThresholdE"></span><span id="_CPPv2N14Px1DConstraint17velocityThresholdE"></span><span id="Px1DConstraint::velocityThreshold__PxReal"></span><span class="target" id="struct_px1_d_constraint_1a01a90f96995025e7d3216c50b4506c0b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">velocityThreshold</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint17velocityThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>minimum impact velocity for bounce </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint6bounceE">
+<span id="_CPPv3N14Px1DConstraint6bounceE"></span><span id="_CPPv2N14Px1DConstraint6bounceE"></span><span class="target" id="struct_px1_d_constraint_1a2906a92cb96654ca1086411981f1615c"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414Px1DConstraint" title="Px1DConstraint"><span class="n"><span class="pre">Px1DConstraint</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">RestitutionModifiers</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bounce</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint6bounceE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint4modsE">
+<span id="_CPPv3N14Px1DConstraint4modsE"></span><span id="_CPPv2N14Px1DConstraint4modsE"></span><span class="target" id="struct_px1_d_constraint_1ab142b7fb251d50606e8a410a79552fcf"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414Px1DConstraint" title="Px1DConstraint"><span class="n"><span class="pre">Px1DConstraint</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">[anonymous]</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mods</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint4modsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint14forInternalUseE">
+<span id="_CPPv3N14Px1DConstraint14forInternalUseE"></span><span id="_CPPv2N14Px1DConstraint14forInternalUseE"></span><span id="Px1DConstraint::forInternalUse__PxReal"></span><span class="target" id="struct_px1_d_constraint_1afe3ef2ec367fddacd4cbb925efd1f8be"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">forInternalUse</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint14forInternalUseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>for internal use only </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint5flagsE">
+<span id="_CPPv3N14Px1DConstraint5flagsE"></span><span id="_CPPv2N14Px1DConstraint5flagsE"></span><span id="Px1DConstraint::flags__PxU16"></span><span class="target" id="struct_px1_d_constraint_1a4fa4372a941804afe9cb779e5fdabd34"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a set of Px1DConstraintFlags </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14Px1DConstraint9solveHintE">
+<span id="_CPPv3N14Px1DConstraint9solveHintE"></span><span id="_CPPv2N14Px1DConstraint9solveHintE"></span><span id="Px1DConstraint::solveHint__PxU16"></span><span class="target" id="struct_px1_d_constraint_1a6c9b5b544322e92ba2c072f159770cd4"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">solveHint</span></span></span><a class="headerlink" href="#_CPPv4N14Px1DConstraint9solveHintE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constraint optimization hint, should be an element of <a class="reference internal" href="struct_px_constraint_solve_hint.html#struct_px_constraint_solve_hint"><span class="std std-ref">PxConstraintSolveHint</span></a> </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

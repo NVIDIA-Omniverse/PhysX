@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxArticulationSpatialTendon &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxArticulationSpatialTendon</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxarticulationspatialtendon">
+<span id="exhale-class-class-px-articulation-spatial-tendon"></span><h1>PxArticulationSpatialTendon<a class="headerlink" href="#pxarticulationspatialtendon" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxArticulationTendon.h.html#file-include-pxarticulationtendon-h"><span class="std std-ref">include/PxArticulationTendon.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxArticulationTendon</span></code> (<a class="reference internal" href="class_px_articulation_tendon.html#exhale-class-class-px-articulation-tendon"><span class="std std-ref">PxArticulationTendon</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv427PxArticulationSpatialTendon">
+<span id="_CPPv327PxArticulationSpatialTendon"></span><span id="_CPPv227PxArticulationSpatialTendon"></span><span id="PxArticulationSpatialTendon"></span><span class="target" id="class_px_articulation_spatial_tendon"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationSpatialTendon</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_articulation_tendon.html#_CPPv420PxArticulationTendon" title="PxArticulationTendon"><span class="n"><span class="pre">PxArticulationTendon</span></span></a><a class="headerlink" href="#_CPPv427PxArticulationSpatialTendon" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A spatial tendon that attaches to an articulation. </p>
+<p>A spatial tendon attaches to multiple links in an articulation using a set of PxArticulationAttachments. The tendon is defined as a tree of attachment points, where each attachment can have an arbitrary number of children. Each leaf of the attachment tree defines a subtendon between itself and the root attachment. The subtendon then applies forces at the leaf, and an equal but opposing force at the root, in order to satisfy the spring-damper and limit constraints that the user sets up. Attachments in between the root and leaf do not exert any force on the articulation, but define the geometry of the tendon from which the length is computed together with the attachment coefficients. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon16createAttachmentEP24PxArticulationAttachmentK6PxRealK6PxVec3P18PxArticulationLink">
+<span id="_CPPv3N27PxArticulationSpatialTendon16createAttachmentEP24PxArticulationAttachmentK6PxRealK6PxVec3P18PxArticulationLink"></span><span id="_CPPv2N27PxArticulationSpatialTendon16createAttachmentEP24PxArticulationAttachmentK6PxRealK6PxVec3P18PxArticulationLink"></span><span id="PxArticulationSpatialTendon::createAttachment__PxArticulationAttachmentP.PxRealC.PxVec3C.PxArticulationLinkP"></span><span class="target" id="class_px_articulation_spatial_tendon_1a6ffb3af4e4bf8a6d707a9dd69783d837"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_articulation_attachment.html#_CPPv424PxArticulationAttachment" title="PxArticulationAttachment"><span class="n"><span class="pre">PxArticulationAttachment</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createAttachment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_articulation_attachment.html#_CPPv424PxArticulationAttachment" title="PxArticulationAttachment"><span class="n"><span class="pre">PxArticulationAttachment</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">parent</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coefficient</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">relativeOffset</span></span>, <a class="reference internal" href="class_px_articulation_link.html#_CPPv418PxArticulationLink" title="PxArticulationLink"><span class="n"><span class="pre">PxArticulationLink</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">link</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon16createAttachmentEP24PxArticulationAttachmentK6PxRealK6PxVec3P18PxArticulationLink" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an articulation attachment and adds it to the list of children in the parent attachment. </p>
+<p>Creating an attachment is not allowed while the articulation is in a scene. In order to add the attachment, remove and then re-add the articulation to the scene.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>releaseAttachment() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – <strong>[in]</strong> The parent attachment. Can be NULL for the root attachment of a tendon. </p></li>
+<li><p><strong>coefficient</strong> – <strong>[in]</strong> A user-defined scale that the accumulated length is scaled by. </p></li>
+<li><p><strong>relativeOffset</strong> – <strong>[in]</strong> An offset vector in the link’s actor frame to the point where the tendon attachment is attached to the link. </p></li>
+<li><p><strong>link</strong> – <strong>[in]</strong> The link that this attachment is associated with.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The newly-created attachment if creation was successful, otherwise a null pointer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon14getAttachmentsEPP24PxArticulationAttachment5PxU325PxU32">
+<span id="_CPPv3NK27PxArticulationSpatialTendon14getAttachmentsEPP24PxArticulationAttachment5PxU325PxU32"></span><span id="_CPPv2NK27PxArticulationSpatialTendon14getAttachmentsEPP24PxArticulationAttachment5PxU325PxU32"></span><span id="PxArticulationSpatialTendon::getAttachments__PxArticulationAttachmentPP.PxU32.PxU32C"></span><span class="target" id="class_px_articulation_spatial_tendon_1a9e2960bdae34659f7ac4dd9772bb1441"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttachments</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_articulation_attachment.html#_CPPv424PxArticulationAttachment" title="PxArticulationAttachment"><span class="n"><span class="pre">PxArticulationAttachment</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon14getAttachmentsEPP24PxArticulationAttachment5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fills a user-provided buffer of attachment pointers with the set of attachments. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_articulation_spatial_tendon_1ae9c48fd757677ada02da67a088744d93"><span class="std std-ref">getNbAttachments</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[in]</strong> The user-provided buffer. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> The size of the buffer. If this is not large enough to contain all the pointers to attachments, only as many as can fit are written. Use getNbAttachments to size for all attachments. </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first attachment pointer to be retrieved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The number of attachments that were filled into the user buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon16getNbAttachmentsEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon16getNbAttachmentsEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon16getNbAttachmentsEv"></span><span id="PxArticulationSpatialTendon::getNbAttachmentsC"></span><span class="target" id="class_px_articulation_spatial_tendon_1ae9c48fd757677ada02da67a088744d93"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbAttachments</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon16getNbAttachmentsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of attachments in the tendon. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of attachments. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon19getConcreteTypeNameEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon19getConcreteTypeNameEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon19getConcreteTypeNameEv"></span><span id="PxArticulationSpatialTendon::getConcreteTypeNameC"></span><span class="target" id="class_px_articulation_spatial_tendon_1abc8914e5ec18b93f931dd46a5ced0fed"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the string name of the dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The string name. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendonD0Ev">
+<span id="_CPPv3N27PxArticulationSpatialTendonD0Ev"></span><span id="_CPPv2N27PxArticulationSpatialTendonD0Ev"></span><span id="PxArticulationSpatialTendon::~PxArticulationSpatialTendon"></span><span class="target" id="class_px_articulation_spatial_tendon_1a0ad4541ba3b2496a0a5c9ef3bb3287b3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxArticulationSpatialTendon</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendonD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon12setStiffnessEK6PxReal">
+<span id="_CPPv3N27PxArticulationSpatialTendon12setStiffnessEK6PxReal"></span><span id="_CPPv2N27PxArticulationSpatialTendon12setStiffnessEK6PxReal"></span><span id="PxArticulationSpatialTendon::setStiffness__PxRealC"></span><span class="target" id="class_px_articulation_tendon_1a3c65300598aa0cd44c65983a6f428544"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStiffness</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stiffness</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon12setStiffnessEK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the spring stiffness term acting on the tendon length. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1a5d6b1b957ca153e9fa522929e51a52ee"><span class="std std-ref">getStiffness()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stiffness</strong> – <strong>[in]</strong> The spring stiffness. <strong>Default:</strong> 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon12getStiffnessEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon12getStiffnessEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon12getStiffnessEv"></span><span id="PxArticulationSpatialTendon::getStiffnessC"></span><span class="target" id="class_px_articulation_tendon_1a5d6b1b957ca153e9fa522929e51a52ee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStiffness</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon12getStiffnessEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the spring stiffness of the tendon. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1a3c65300598aa0cd44c65983a6f428544"><span class="std std-ref">setStiffness()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The spring stiffness.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon10setDampingEK6PxReal">
+<span id="_CPPv3N27PxArticulationSpatialTendon10setDampingEK6PxReal"></span><span id="_CPPv2N27PxArticulationSpatialTendon10setDampingEK6PxReal"></span><span id="PxArticulationSpatialTendon::setDamping__PxRealC"></span><span class="target" id="class_px_articulation_tendon_1a93326260a5d8d4ae1e996cb03e3fb24e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDamping</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">damping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon10setDampingEK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the damping term acting both on the tendon length and tendon-length limits. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1a3b6587bf6cefa114f5bd86509f5db9bb"><span class="std std-ref">getDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>damping</strong> – <strong>[in]</strong> The damping term. <strong>Default:</strong> 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon10getDampingEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon10getDampingEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon10getDampingEv"></span><span id="PxArticulationSpatialTendon::getDampingC"></span><span class="target" id="class_px_articulation_tendon_1a3b6587bf6cefa114f5bd86509f5db9bb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon10getDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the damping term acting both on the tendon length and tendon-length limits. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1a93326260a5d8d4ae1e996cb03e3fb24e"><span class="std std-ref">setDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The damping term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon17setLimitStiffnessEK6PxReal">
+<span id="_CPPv3N27PxArticulationSpatialTendon17setLimitStiffnessEK6PxReal"></span><span id="_CPPv2N27PxArticulationSpatialTendon17setLimitStiffnessEK6PxReal"></span><span id="PxArticulationSpatialTendon::setLimitStiffness__PxRealC"></span><span class="target" id="class_px_articulation_tendon_1acf234ec555169efa42842bfeacca14f5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLimitStiffness</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stiffness</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon17setLimitStiffnessEK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the limit stiffness term acting on the tendon’s length limits. </p>
+<p>For spatial tendons, this parameter applies to all its leaf attachments / sub-tendons.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1ac0bf3f9ca828eed1672e088c1293bda1"><span class="std std-ref">getLimitStiffness()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stiffness</strong> – <strong>[in]</strong> The limit stiffness term. <strong>Default:</strong> 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon17getLimitStiffnessEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon17getLimitStiffnessEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon17getLimitStiffnessEv"></span><span id="PxArticulationSpatialTendon::getLimitStiffnessC"></span><span class="target" id="class_px_articulation_tendon_1ac0bf3f9ca828eed1672e088c1293bda1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLimitStiffness</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon17getLimitStiffnessEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the limit stiffness term acting on the tendon’s length limits. </p>
+<p>For spatial tendons, this parameter applies to all its leaf attachments / sub-tendons.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1acf234ec555169efa42842bfeacca14f5"><span class="std std-ref">setLimitStiffness()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The limit stiffness term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon9setOffsetEK6PxRealb">
+<span id="_CPPv3N27PxArticulationSpatialTendon9setOffsetEK6PxRealb"></span><span id="_CPPv2N27PxArticulationSpatialTendon9setOffsetEK6PxRealb"></span><span id="PxArticulationSpatialTendon::setOffset__PxRealC.b"></span><span class="target" id="class_px_articulation_tendon_1a53370a64400690c5f3166f395e7b51f4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setOffset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">autowake</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon9setOffsetEK6PxRealb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the length offset term for the tendon. </p>
+<p>An offset defines an amount to be added to the accumulated length computed for the tendon. It allows the application to actuate the tendon by shortening or lengthening it.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1ae4ac5e40edcd1f0e88fd3680165f04ae"><span class="std std-ref">getOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>offset</strong> – <strong>[in]</strong> The offset term. <strong>Default:</strong> 0 </p></li>
+<li><p><strong>autowake</strong> – <strong>[in]</strong> If true and the articulation is in a scene, the call wakes up the articulation and increases the wake counter to <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a79e2c9c06f711272a48d7f07451117b7"><span class="std std-ref">PxSceneDesc::wakeCounterResetValue</span></a> if the counter value is below the reset value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon9getOffsetEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon9getOffsetEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon9getOffsetEv"></span><span id="PxArticulationSpatialTendon::getOffsetC"></span><span class="target" id="class_px_articulation_tendon_1ae4ac5e40edcd1f0e88fd3680165f04ae"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon9getOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the length offset term for the tendon. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon_1a53370a64400690c5f3166f395e7b51f4"><span class="std std-ref">setOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The offset term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon15getArticulationEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon15getArticulationEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon15getArticulationEv"></span><span id="PxArticulationSpatialTendon::getArticulationC"></span><span class="target" id="class_px_articulation_tendon_1af1145865e69dfb8615531d77b7321a89"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#_CPPv431PxArticulationReducedCoordinate" title="PxArticulationReducedCoordinate"><span class="n"><span class="pre">PxArticulationReducedCoordinate</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getArticulation</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon15getArticulationEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the articulation that the tendon is a part of. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The articulation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon7releaseEv">
+<span id="_CPPv3N27PxArticulationSpatialTendon7releaseEv"></span><span id="_CPPv2N27PxArticulationSpatialTendon7releaseEv"></span><span id="PxArticulationSpatialTendon::release"></span><span class="target" id="class_px_articulation_tendon_1a8f1e99cc93cc09842eba17e90d648d23"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases a tendon to remove it from the articulation and free its associated memory. </p>
+<p>When an articulation is released, its attached tendons are automatically released.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Releasing a tendon is not allowed while the articulation is in a scene. In order to release the tendon, remove and then re-add the articulation to the scene. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN27PxArticulationSpatialTendon2isEP1Tv">
+<span id="_CPPv3I0EN27PxArticulationSpatialTendon2isEv"></span><span id="_CPPv2I0EN27PxArticulationSpatialTendon2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN27PxArticulationSpatialTendon2isEP1Tv" title="PxArticulationSpatialTendon::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN27PxArticulationSpatialTendon2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK27PxArticulationSpatialTendon2isEPK1Tv">
+<span id="_CPPv3I0ENK27PxArticulationSpatialTendon2isEv"></span><span id="_CPPv2I0ENK27PxArticulationSpatialTendon2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK27PxArticulationSpatialTendon2isEPK1Tv" title="PxArticulationSpatialTendon::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK27PxArticulationSpatialTendon2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon15getConcreteTypeEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon15getConcreteTypeEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon15getConcreteTypeEv"></span><span id="PxArticulationSpatialTendon::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N27PxArticulationSpatialTendon11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N27PxArticulationSpatialTendon11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxArticulationSpatialTendon::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N27PxArticulationSpatialTendon12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N27PxArticulationSpatialTendon12setBaseFlagsE11PxBaseFlags"></span><span id="PxArticulationSpatialTendon::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon12getBaseFlagsEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon12getBaseFlagsEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon12getBaseFlagsEv"></span><span id="PxArticulationSpatialTendon::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon12isReleasableEv">
+<span id="_CPPv3NK27PxArticulationSpatialTendon12isReleasableEv"></span><span id="_CPPv2NK27PxArticulationSpatialTendon12isReleasableEv"></span><span id="PxArticulationSpatialTendon::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon8userDataE">
+<span id="_CPPv3N27PxArticulationSpatialTendon8userDataE"></span><span id="_CPPv2N27PxArticulationSpatialTendon8userDataE"></span><span id="PxArticulationSpatialTendon::userData__voidP"></span><span class="target" id="class_px_articulation_tendon_1a61d3b9fc35a295e52d62d40efee702b3"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE6PxType11PxBaseFlags">
+<span id="_CPPv3N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE6PxType11PxBaseFlags"></span><span id="_CPPv2N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE6PxType11PxBaseFlags"></span><span id="PxArticulationSpatialTendon::PxArticulationSpatialTendon__PxType.PxBaseFlags"></span><span class="target" id="class_px_articulation_spatial_tendon_1a5907187d420cef7c2f7a4320c1f592c2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationSpatialTendon</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE11PxBaseFlags">
+<span id="_CPPv3N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE11PxBaseFlags"></span><span id="_CPPv2N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE11PxBaseFlags"></span><span id="PxArticulationSpatialTendon::PxArticulationSpatialTendon__PxBaseFlags"></span><span class="target" id="class_px_articulation_spatial_tendon_1a097485803d27ca421c177ca3085013be"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationSpatialTendon</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon27PxArticulationSpatialTendonE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxArticulationSpatialTendon8isKindOfEPKc">
+<span id="_CPPv3NK27PxArticulationSpatialTendon8isKindOfEPKc"></span><span id="_CPPv2NK27PxArticulationSpatialTendon8isKindOfEPKc"></span><span id="PxArticulationSpatialTendon::isKindOf__cCPC"></span><span class="target" id="class_px_base_1addfc067afca2f67bda6c497b14424962"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">superClass</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK27PxArticulationSpatialTendon8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK27PxArticulationSpatialTendon9typeMatchEbv">
+<span id="_CPPv3I0ENK27PxArticulationSpatialTendon9typeMatchEv"></span><span id="_CPPv2I0ENK27PxArticulationSpatialTendon9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK27PxArticulationSpatialTendon9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon13mConcreteTypeE">
+<span id="_CPPv3N27PxArticulationSpatialTendon13mConcreteTypeE"></span><span id="_CPPv2N27PxArticulationSpatialTendon13mConcreteTypeE"></span><span id="PxArticulationSpatialTendon::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon10mBaseFlagsE">
+<span id="_CPPv3N27PxArticulationSpatialTendon10mBaseFlagsE"></span><span id="_CPPv2N27PxArticulationSpatialTendon10mBaseFlagsE"></span><span id="PxArticulationSpatialTendon::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxArticulationSpatialTendon16mBuiltInRefCountE">
+<span id="_CPPv3N27PxArticulationSpatialTendon16mBuiltInRefCountE"></span><span id="_CPPv2N27PxArticulationSpatialTendon16mBuiltInRefCountE"></span><span id="PxArticulationSpatialTendon::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N27PxArticulationSpatialTendon16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

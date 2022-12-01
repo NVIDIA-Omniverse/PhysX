@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTriggerPair &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTriggerPair</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtriggerpair">
+<span id="exhale-struct-struct-px-trigger-pair"></span><h1>PxTriggerPair<a class="headerlink" href="#pxtriggerpair" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#file-include-pxsimulationeventcallback-h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv413PxTriggerPair">
+<span id="_CPPv313PxTriggerPair"></span><span id="_CPPv213PxTriggerPair"></span><span id="PxTriggerPair"></span><span class="target" id="struct_px_trigger_pair"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriggerPair</span></span></span><a class="headerlink" href="#_CPPv413PxTriggerPair" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor for a trigger pair. </p>
+<p>An array of these structs gets passed to the <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback::onTrigger()</span></a> report.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback.onTrigger()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The shape pointers might reference deleted shapes. This will be the case if <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag_1a60e71a2948b030140f840766a3f7ac2fa201281be698379417370bf7b0aeeb78e"><span class="std std-ref">PxPairFlag::eNOTIFY_TOUCH_LOST</span></a> events were requested for the pair and one of the involved shapes gets deleted. Check the <a class="reference internal" href="#struct_px_trigger_pair_1aa4e5f001e8736f5033c52291486c655b"><span class="std std-ref">flags</span></a> member to see whether that is the case. Do not dereference a pointer to a deleted shape. The pointer to a deleted shape is only provided such that user data structures which might depend on the pointer value can be updated.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair13PxTriggerPairEv">
+<span id="_CPPv3N13PxTriggerPair13PxTriggerPairEv"></span><span id="_CPPv2N13PxTriggerPair13PxTriggerPairEv"></span><span id="PxTriggerPair::PxTriggerPair"></span><span class="target" id="struct_px_trigger_pair_1ac29350125c032d174fa1d72dad95ab15"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriggerPair</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxTriggerPair13PxTriggerPairEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair12triggerShapeE">
+<span id="_CPPv3N13PxTriggerPair12triggerShapeE"></span><span id="_CPPv2N13PxTriggerPair12triggerShapeE"></span><span id="PxTriggerPair::triggerShape__PxShapeP"></span><span class="target" id="struct_px_trigger_pair_1ad9010d4ddceacd431e8733a010dee664"></span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">triggerShape</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair12triggerShapeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The shape that has been marked as a trigger. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair12triggerActorE">
+<span id="_CPPv3N13PxTriggerPair12triggerActorE"></span><span id="_CPPv2N13PxTriggerPair12triggerActorE"></span><span id="PxTriggerPair::triggerActor__PxActorP"></span><span class="target" id="struct_px_trigger_pair_1a537aa026b15e54d5403d5a5a7fdac2f9"></span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">triggerActor</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair12triggerActorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The actor to which triggerShape is attached. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair10otherShapeE">
+<span id="_CPPv3N13PxTriggerPair10otherShapeE"></span><span id="_CPPv2N13PxTriggerPair10otherShapeE"></span><span id="PxTriggerPair::otherShape__PxShapeP"></span><span class="target" id="struct_px_trigger_pair_1a483aaaaecb45e77230879bb0b303b8df"></span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">otherShape</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair10otherShapeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The shape causing the trigger event. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>(see <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback::onTrigger()</span></a>) If collision between trigger shapes is enabled, then this member might point to a trigger shape as well. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair10otherActorE">
+<span id="_CPPv3N13PxTriggerPair10otherActorE"></span><span id="_CPPv2N13PxTriggerPair10otherActorE"></span><span id="PxTriggerPair::otherActor__PxActorP"></span><span class="target" id="struct_px_trigger_pair_1a671cb3c2cd937771085e76b4d99495c7"></span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">otherActor</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair10otherActorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The actor to which otherShape is attached. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair6statusE">
+<span id="_CPPv3N13PxTriggerPair6statusE"></span><span id="_CPPv2N13PxTriggerPair6statusE"></span><span id="PxTriggerPair::status__PxPairFlag::Enum"></span><span class="target" id="struct_px_trigger_pair_1ab02c51a235d45757e48ecaad5fb7c091"></span><a class="reference internal" href="struct_px_pair_flag.html#_CPPv410PxPairFlag" title="PxPairFlag"><span class="n"><span class="pre">PxPairFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pair_flag.html#_CPPv4N10PxPairFlag4EnumE" title="PxPairFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">status</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair6statusE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Type of trigger event (eNOTIFY_TOUCH_FOUND or eNOTIFY_TOUCH_LOST). eNOTIFY_TOUCH_PERSISTS events are not supported. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxTriggerPair5flagsE">
+<span id="_CPPv3N13PxTriggerPair5flagsE"></span><span id="_CPPv2N13PxTriggerPair5flagsE"></span><span id="PxTriggerPair::flags__PxTriggerPairFlags"></span><span class="target" id="struct_px_trigger_pair_1aa4e5f001e8736f5033c52291486c655b"></span><a class="reference internal" href="typedef_group__physics_1gae5d4ef1b3321702c4431da8fe72b8f7f.html#_CPPv418PxTriggerPairFlags" title="PxTriggerPairFlags"><span class="n"><span class="pre">PxTriggerPairFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N13PxTriggerPair5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Additional information on the pair (see <a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a>) </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

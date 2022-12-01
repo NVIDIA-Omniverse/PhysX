@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Listing for include/extensions/PxParticleExt.h &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Program Listing for include/extensions/PxParticleExt.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="program-listing-for-include-extensions-pxparticleext-h">
+<span id="program-listing-file-include-extensions-pxparticleext-h"></span><h1>Program Listing for include/extensions/PxParticleExt.h<a class="headerlink" href="#program-listing-for-include-extensions-pxparticleext-h" title="Permalink to this headline"></a></h1>
+<p>↰ Return to documentation for <a class="reference internal" href="file_include_extensions_PxParticleExt.h.html#file-include-extensions-pxparticleext-h"><span class="std std-ref">include/extensions/PxParticleExt.h</span></a></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_PARTICLE_EXT_H</span>
+<span class="cp">#define PX_PARTICLE_EXT_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxParticleSystem.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxParticleBuffer.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxArray.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxHashMap.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxUserAllocated.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxAttachment.h&quot;</span><span class="cp"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="k">namespace</span><span class="w"> </span><span class="nn">ExtGpu</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxParticleBufferDesc</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">positions</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">velocities</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="o">*</span><span class="w">  </span><span class="n">phases</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxParticleVolume</span><span class="o">*</span><span class="w"> </span><span class="n">volumes</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">numActiveParticles</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">maxParticles</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">numVolumes</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">maxVolumes</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleBufferDesc</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">positions</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">velocities</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">phases</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">volumes</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">numActiveParticles</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">numVolumes</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxParticleAndDiffuseBufferDesc</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxParticleBufferDesc</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxDiffuseParticleParams</span><span class="w"> </span><span class="n">diffuseParams</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxDiffuseParticles</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxActiveDiffuseParticles</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleAndDiffuseBufferDesc</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxParticleBufferDesc</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxParticleRigidDesc</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxParticleRigidDesc</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">rigidOffsets</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">rigidCoefficients</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">rigidTranslations</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">rigidRotations</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">rigidLocalPositions</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">rigidLocalNormals</span><span class="p">(</span><span class="nb">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">maxRigids</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">numActiveRigids</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="o">*</span><span class="w">      </span><span class="n">rigidOffsets</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="o">*</span><span class="w">     </span><span class="n">rigidCoefficients</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">     </span><span class="n">rigidTranslations</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxQuat</span><span class="o">*</span><span class="w">     </span><span class="n">rigidRotations</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">     </span><span class="n">rigidLocalPositions</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">     </span><span class="n">rigidLocalNormals</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">       </span><span class="n">maxRigids</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">       </span><span class="n">numActiveRigids</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleClothBufferHelper</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">release</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxCloths</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumCloths</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxSprings</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumSprings</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxTriangles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumTriangles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxParticles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumParticles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">addCloth</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleCloth</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particleCloth</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleSpring</span><span class="o">*</span><span class="w"> </span><span class="n">springs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numSprings</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">restPositions</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numParticles</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">addCloth</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">blendScale</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">restVolume</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">pressure</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleSpring</span><span class="o">*</span><span class="w"> </span><span class="n">springs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numSprings</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">restPositions</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numParticles</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleClothDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">getParticleClothDesc</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">protected</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxParticleClothBufferHelper</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxParticleVolumeMesh</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleVolumeBufferHelper</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">release</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxVolumes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumVolumes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxTriangles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumTriangles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleVolume</span><span class="o">*</span><span class="w"> </span><span class="nf">getParticleVolumes</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleVolumeMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">getParticleVolumeMeshes</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="nf">getTriangles</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">addVolume</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleVolume</span><span class="o">&amp;</span><span class="w"> </span><span class="n">volume</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleVolumeMesh</span><span class="o">&amp;</span><span class="w"> </span><span class="n">volumeMesh</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">addVolume</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleOffset</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numParticles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numTriangles</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">protected</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxParticleVolumeBufferHelper</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleRigidBufferHelper</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">release</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxRigids</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumRigids</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getMaxParticles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="nf">getNumParticles</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">addRigid</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">translation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxQuat</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rotation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">coefficient</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">localPositions</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">localNormals</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">numParticles</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxParticleRigidDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">getParticleRigidDesc</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">protected</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxParticleRigidBufferHelper</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxParticleAttachmentBuffer</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxUserAllocated</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxParticleRigidAttachment</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mAttachments</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxParticleRigidFilterPair</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mFilters</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxHashMap</span><span class="o">&lt;</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mReferencedBodies</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxRigidActor</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">mNewReferencedBodies</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxRigidActor</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">mDestroyedRefrencedBodies</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">mParticleBuffer</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleRigidAttachment</span><span class="o">*</span><span class="w"> </span><span class="n">mDeviceAttachments</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxParticleRigidFilterPair</span><span class="o">*</span><span class="w"> </span><span class="n">mDeviceFilters</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">mNumDeviceAttachments</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">mNumDeviceFilters</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">mCudaContextManager</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleSystem</span><span class="o">&amp;</span><span class="w"> </span><span class="n">mParticleSystem</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">mDirty</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_NOCOPY</span><span class="p">(</span><span class="n">PxParticleAttachmentBuffer</span><span class="p">)</span><span class="w"></span>
+
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxParticleAttachmentBuffer</span><span class="p">(</span><span class="n">PxParticleBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particleBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxParticleSystem</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particleSystem</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">~</span><span class="n">PxParticleAttachmentBuffer</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// adds attachment to attachment buffer - localPose is in actor space for attachments to all types of rigids.</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">addRigidAttachment</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">rigidBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleID</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">localPose</span><span class="p">,</span><span class="w"> </span><span class="n">PxConeLimitedConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">coneLimit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">removeRigidAttachment</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">rigidBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleID</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">addRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">rigidBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleID</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">removeRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">rigidBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleID</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">copyToDevice</span><span class="p">(</span><span class="n">CUstream</span><span class="w"> </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">PxParticleRigidBufferHelper</span><span class="o">*</span><span class="w">            </span><span class="nf">PxCreateParticleRigidBufferHelper</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxRigids</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleClothBufferHelper</span><span class="o">*</span><span class="w">            </span><span class="nf">PxCreateParticleClothBufferHelper</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxCloths</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxTriangles</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxSprings</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxParticles</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleVolumeBufferHelper</span><span class="o">*</span><span class="w">           </span><span class="nf">PxCreateParticleVolumeBufferHelper</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxVolumes</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxTriangles</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleAttachmentBuffer</span><span class="o">*</span><span class="w">             </span><span class="nf">PxCreateParticleAttachmentBuffer</span><span class="p">(</span><span class="n">PxParticleBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particleBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxParticleSystem</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particleSystem</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w">                       </span><span class="nf">PxCreateAndPopulateParticleBuffer</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleAndDiffuseBuffer</span><span class="o">*</span><span class="w">             </span><span class="nf">PxCreateAndPopulateParticleAndDiffuseBuffer</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleAndDiffuseBufferDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleClothBuffer</span><span class="o">*</span><span class="w">                  </span><span class="nf">PxCreateAndPopulateParticleClothBuffer</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleClothDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">clothDesc</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxPartitionedParticleCloth</span><span class="o">&amp;</span><span class="w"> </span><span class="n">output</span><span class="p">,</span><span class="w"> </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxParticleRigidBuffer</span><span class="o">*</span><span class="w">                  </span><span class="nf">PxCreateAndPopulateParticleRigidBuffer</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleBufferDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">ExtGpu</span><span class="o">::</span><span class="n">PxParticleRigidDesc</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rigidDesc</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w"> </span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace ExtGpu</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

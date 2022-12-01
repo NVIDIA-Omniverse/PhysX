@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+.theme-switcher {
+  border-radius: 50%;
+  position: fixed;
+  right: 1.6em;
+  bottom: 1.4em;
+  z-index: 3;
+  border: none;
+  height: 2.2em;
+  width: 2.2em;
+  color: #333333;
+  background-color: #fcfcfc;
+  font-size: 20px;
+  -webkit-box-shadow: 0px 3px 14px 4px rgba(0, 0, 0, 0.62);
+  box-shadow: 0px 3px 14px 4px rgba(0, 0, 0, 0.62);
+}

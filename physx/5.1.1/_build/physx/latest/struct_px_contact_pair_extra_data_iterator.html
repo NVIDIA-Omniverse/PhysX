@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxContactPairExtraDataIterator &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxContactPairExtraDataIterator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontactpairextradataiterator">
+<span id="exhale-struct-struct-px-contact-pair-extra-data-iterator"></span><h1>PxContactPairExtraDataIterator<a class="headerlink" href="#pxcontactpairextradataiterator" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#file-include-pxsimulationeventcallback-h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv430PxContactPairExtraDataIterator">
+<span id="_CPPv330PxContactPairExtraDataIterator"></span><span id="_CPPv230PxContactPairExtraDataIterator"></span><span id="PxContactPairExtraDataIterator"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairExtraDataIterator</span></span></span><a class="headerlink" href="#_CPPv430PxContactPairExtraDataIterator" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A class to iterate over a contact pair extra data stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_header.html#struct_px_contact_pair_header_1a2a9619192f15e1a60104c90b83f67e33"><span class="std std-ref">PxContactPairHeader.extraDataStream</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator30PxContactPairExtraDataIteratorEPK4PxU85PxU32">
+<span id="_CPPv3N30PxContactPairExtraDataIterator30PxContactPairExtraDataIteratorEPK4PxU85PxU32"></span><span id="_CPPv2N30PxContactPairExtraDataIterator30PxContactPairExtraDataIteratorEPK4PxU85PxU32"></span><span id="PxContactPairExtraDataIterator::PxContactPairExtraDataIterator__PxU8CP.PxU32"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1a394efbbca6fbb6296c8334525d8dacee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairExtraDataIterator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">stream</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator30PxContactPairExtraDataIteratorEPK4PxU85PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stream</strong> – <strong>[in]</strong> Pointer to the start of the stream. </p></li>
+<li><p><strong>size</strong> – <strong>[in]</strong> Size of the stream in bytes. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator11nextItemSetEv">
+<span id="_CPPv3N30PxContactPairExtraDataIterator11nextItemSetEv"></span><span id="_CPPv2N30PxContactPairExtraDataIterator11nextItemSetEv"></span><span id="PxContactPairExtraDataIterator::nextItemSet"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1ab4d5be775f4b765e561a2a5d42b66f6d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nextItemSet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator11nextItemSetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Advances the iterator to next set of extra data items. </p>
+<p>The contact pair extra data stream contains sets of items as requested by the corresponding <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> flags <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag_1a60e71a2948b030140f840766a3f7ac2facac6889c907f5e9dcf8e6ea56da1f99e"><span class="std std-ref">PxPairFlag::ePRE_SOLVER_VELOCITY</span></a>, <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag_1a60e71a2948b030140f840766a3f7ac2fa9502180b279a27e884468c3cb7c64544"><span class="std std-ref">PxPairFlag::ePOST_SOLVER_VELOCITY</span></a>, <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag_1a60e71a2948b030140f840766a3f7ac2fa31be9ac6da5a882091927851a2c73c59"><span class="std std-ref">PxPairFlag::eCONTACT_EVENT_POSE</span></a>. A set can contain one item of each plus the <a class="reference internal" href="struct_px_contact_pair_index.html#struct_px_contact_pair_index"><span class="std std-ref">PxContactPairIndex</span></a> item. This method parses the stream and points the iterator member variables to the corresponding items of the current set, if they are available. If CCD is not enabled, you should only get one set of items. If CCD with multiple passes is enabled, you might get more than one item set.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_velocity.html#struct_px_contact_pair_velocity"><span class="std std-ref">PxContactPairVelocity</span></a> <a class="reference internal" href="struct_px_contact_pair_pose.html#struct_px_contact_pair_pose"><span class="std std-ref">PxContactPairPose</span></a> <a class="reference internal" href="struct_px_contact_pair_index.html#struct_px_contact_pair_index"><span class="std std-ref">PxContactPairIndex</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Even though contact pair extra data is requested per shape pair, you will not get an item set per shape pair but one per actor pair. If, for example, an actor has two shapes and both collide with another actor, then there will only be one item set (since it applies to both shape pairs).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if there was another set of extra data items in the stream, else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator7currPtrE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator7currPtrE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator7currPtrE"></span><span id="PxContactPairExtraDataIterator::currPtr__PxU8CP"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1ac54b5d820140765076bc39255d679750"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">currPtr</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator7currPtrE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Current pointer in the stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator6endPtrE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator6endPtrE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator6endPtrE"></span><span id="PxContactPairExtraDataIterator::endPtr__PxU8CP"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1aff63eb915e6527e8d807ed6cdac48a7b"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">endPtr</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator6endPtrE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to the end of the stream. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator17preSolverVelocityE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator17preSolverVelocityE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator17preSolverVelocityE"></span><span id="PxContactPairExtraDataIterator::preSolverVelocity__PxContactPairVelocityCP"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1abec5ba2e81dc6604bf322fe4cb1810e1"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair_velocity.html#_CPPv421PxContactPairVelocity" title="PxContactPairVelocity"><span class="n"><span class="pre">PxContactPairVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">preSolverVelocity</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator17preSolverVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to the current pre solver velocity item in the stream. </p>
+<p>NULL if there is none.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_velocity.html#struct_px_contact_pair_velocity"><span class="std std-ref">PxContactPairVelocity</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator18postSolverVelocityE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator18postSolverVelocityE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator18postSolverVelocityE"></span><span id="PxContactPairExtraDataIterator::postSolverVelocity__PxContactPairVelocityCP"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1a8e2656d684789f0f05c135d5f5c5fa25"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair_velocity.html#_CPPv421PxContactPairVelocity" title="PxContactPairVelocity"><span class="n"><span class="pre">PxContactPairVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">postSolverVelocity</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator18postSolverVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to the current post solver velocity item in the stream. </p>
+<p>NULL if there is none.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_velocity.html#struct_px_contact_pair_velocity"><span class="std std-ref">PxContactPairVelocity</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator9eventPoseE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator9eventPoseE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator9eventPoseE"></span><span id="PxContactPairExtraDataIterator::eventPose__PxContactPairPoseCP"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1adcdd22f0243e8e2ffc81241a8831074c"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair_pose.html#_CPPv417PxContactPairPose" title="PxContactPairPose"><span class="n"><span class="pre">PxContactPairPose</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">eventPose</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator9eventPoseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to the current contact event pose item in the stream. </p>
+<p>NULL if there is none.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_pose.html#struct_px_contact_pair_pose"><span class="std std-ref">PxContactPairPose</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N30PxContactPairExtraDataIterator16contactPairIndexE">
+<span id="_CPPv3N30PxContactPairExtraDataIterator16contactPairIndexE"></span><span id="_CPPv2N30PxContactPairExtraDataIterator16contactPairIndexE"></span><span id="PxContactPairExtraDataIterator::contactPairIndex__PxU32"></span><span class="target" id="struct_px_contact_pair_extra_data_iterator_1a137240c7c0d90d99f78800108a311256"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactPairIndex</span></span></span><a class="headerlink" href="#_CPPv4N30PxContactPairExtraDataIterator16contactPairIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The contact pair index of the current item set in the stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_index.html#struct_px_contact_pair_index"><span class="std std-ref">PxContactPairIndex</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

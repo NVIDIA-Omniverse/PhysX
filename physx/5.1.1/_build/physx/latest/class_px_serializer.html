@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSerializer &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSerializer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxserializer">
+<span id="exhale-class-class-px-serializer"></span><h1>PxSerializer<a class="headerlink" href="#pxserializer" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxSerializer.h.html#file-include-common-pxserializer-h"><span class="std std-ref">include/common/PxSerializer.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSerializerDefaultAdapter&lt;</span> <span class="pre">T</span> <span class="pre">&gt;</span></code> (<a class="reference internal" href="class_px_serializer_default_adapter.html#exhale-class-class-px-serializer-default-adapter"><span class="std std-ref">PxSerializerDefaultAdapter</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxSerializer">
+<span id="_CPPv312PxSerializer"></span><span id="_CPPv212PxSerializer"></span><span id="PxSerializer"></span><span class="target" id="class_px_serializer"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSerializer</span></span></span><a class="headerlink" href="#_CPPv412PxSerializer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Serialization interface class. </p>
+<p><a class="reference internal" href="#class_px_serializer"><span class="std std-ref">PxSerializer</span></a> is used to extend serializable <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> classes with serialization functionality. The interface is structured such that per-class adapter instances can be used as opposed to per-object adapter instances, avoiding per object allocations. Hence the methods take a reference to <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> as a parameter.</p>
+<p>The <a class="reference internal" href="#class_px_serializer"><span class="std std-ref">PxSerializer</span></a> interface needs to be implemented for binary or RepX serialization to work on custom types. If only RepX serialization is needed, some methods can be left empty, as they are only needed for binary serialization.</p>
+<p>A default implementation is available as a template adapter (<a class="reference internal" href="class_px_serializer_default_adapter.html#class_px_serializer_default_adapter"><span class="std std-ref">PxSerializerDefaultAdapter</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serializer_default_adapter.html#class_px_serializer_default_adapter"><span class="std std-ref">PxSerializerDefaultAdapter</span></a>, <a class="reference internal" href="define_group__extensions_1ga8695b63c3fd0f8e29ecce92c64e8f79b.html#group__extensions_1ga8695b63c3fd0f8e29ecce92c64e8f79b"><span class="std std-ref">PX_NEW_SERIALIZER_ADAPTER</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1abd271148a20f6ec9ed37f752ff6d7791"><span class="std std-ref">PxSerializationRegistry::registerSerializer</span></a> </p>
+</div>
+</p>
+<p>Subclassed by <a class="reference internal" href="class_px_serializer_default_adapter.html#class_px_serializer_default_adapter"><span class="std std-ref">PxSerializerDefaultAdapter&lt; T &gt;</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-basics-needed-for-binary--and-repx-serialization">Basics needed for Binary- and RepX-Serialization</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer19getConcreteTypeNameEv">
+<span id="_CPPv3NK12PxSerializer19getConcreteTypeNameEv"></span><span id="_CPPv2NK12PxSerializer19getConcreteTypeNameEv"></span><span id="PxSerializer::getConcreteTypeNameC"></span><span class="target" id="class_px_serializer_1ab419390747f92b7f44c2bcb6d020096d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer15requiresObjectsER6PxBaseR23PxProcessPxBaseCallback">
+<span id="_CPPv3NK12PxSerializer15requiresObjectsER6PxBaseR23PxProcessPxBaseCallback"></span><span id="_CPPv2NK12PxSerializer15requiresObjectsER6PxBaseR23PxProcessPxBaseCallback"></span><span id="PxSerializer::requiresObjects__PxBaseR.PxProcessPxBaseCallbackRC"></span><span class="target" id="class_px_serializer_1af5db22cae0884acf0c53dc8f6daf719f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">requiresObjects</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="p"><span class="pre">&amp;</span></span>, <a class="reference internal" href="class_px_process_px_base_callback.html#_CPPv423PxProcessPxBaseCallback" title="PxProcessPxBaseCallback"><span class="n"><span class="pre">PxProcessPxBaseCallback</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer15requiresObjectsER6PxBaseR23PxProcessPxBaseCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds required objects to the collection. </p>
+<p>This method does not add the required objects recursively, e.g. objects required by required objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization::complete</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer13isSubordinateEv">
+<span id="_CPPv3NK12PxSerializer13isSubordinateEv"></span><span id="_CPPv2NK12PxSerializer13isSubordinateEv"></span><span id="PxSerializer::isSubordinateC"></span><span class="target" id="class_px_serializer_1a19e217a30a3a820cdf27cb9c7650d75d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSubordinate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer13isSubordinateEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-functionality-needed-for-binary-serialization-only">Functionality needed for Binary Serialization only</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer15exportExtraDataER6PxBaseR22PxSerializationContext">
+<span id="_CPPv3NK12PxSerializer15exportExtraDataER6PxBaseR22PxSerializationContext"></span><span id="_CPPv2NK12PxSerializer15exportExtraDataER6PxBaseR22PxSerializationContext"></span><span id="PxSerializer::exportExtraData__PxBaseR.PxSerializationContextRC"></span><span class="target" id="class_px_serializer_1ac3531178852e0c6e43519aa254ceb823"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">exportExtraData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="p"><span class="pre">&amp;</span></span>, <a class="reference internal" href="class_px_serialization_context.html#_CPPv422PxSerializationContext" title="PxSerializationContext"><span class="n"><span class="pre">PxSerializationContext</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer15exportExtraDataER6PxBaseR22PxSerializationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Exports object’s extra data to stream. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer10exportDataER6PxBaseR22PxSerializationContext">
+<span id="_CPPv3NK12PxSerializer10exportDataER6PxBaseR22PxSerializationContext"></span><span id="_CPPv2NK12PxSerializer10exportDataER6PxBaseR22PxSerializationContext"></span><span id="PxSerializer::exportData__PxBaseR.PxSerializationContextRC"></span><span class="target" id="class_px_serializer_1ab764ac0639b0616549f934de0b31df9f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">exportData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="p"><span class="pre">&amp;</span></span>, <a class="reference internal" href="class_px_serialization_context.html#_CPPv422PxSerializationContext" title="PxSerializationContext"><span class="n"><span class="pre">PxSerializationContext</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer10exportDataER6PxBaseR22PxSerializationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Exports object’s data to stream. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer18registerReferencesER6PxBaseR22PxSerializationContext">
+<span id="_CPPv3NK12PxSerializer18registerReferencesER6PxBaseR22PxSerializationContext"></span><span id="_CPPv2NK12PxSerializer18registerReferencesER6PxBaseR22PxSerializationContext"></span><span id="PxSerializer::registerReferences__PxBaseR.PxSerializationContextRC"></span><span class="target" id="class_px_serializer_1a0352b843a22c461c9f9c3d3c6bea5b44"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerReferences</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">obj</span></span>, <a class="reference internal" href="class_px_serialization_context.html#_CPPv422PxSerializationContext" title="PxSerializationContext"><span class="n"><span class="pre">PxSerializationContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">s</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer18registerReferencesER6PxBaseR22PxSerializationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Register references that the object maintains to other objects. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer12getClassSizeEv">
+<span id="_CPPv3NK12PxSerializer12getClassSizeEv"></span><span id="_CPPv2NK12PxSerializer12getClassSizeEv"></span><span id="PxSerializer::getClassSizeC"></span><span class="target" id="class_px_serializer_1ab293fa6c552244823bbb9ab79ab3dcae"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClassSize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer12getClassSizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns size needed to create the class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>sizeof class instance. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxSerializer12createObjectERP4PxU8R24PxDeserializationContext">
+<span id="_CPPv3NK12PxSerializer12createObjectERP4PxU8R24PxDeserializationContext"></span><span id="_CPPv2NK12PxSerializer12createObjectERP4PxU8R24PxDeserializationContext"></span><span id="PxSerializer::createObject__PxU8PR.PxDeserializationContextRC"></span><span class="target" id="class_px_serializer_1a1fadfa942cb290428004ef688825dfb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createObject</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">address</span></span>, <a class="reference internal" href="class_px_deserialization_context.html#_CPPv424PxDeserializationContext" title="PxDeserializationContext"><span class="n"><span class="pre">PxDeserializationContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">context</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxSerializer12createObjectERP4PxU8R24PxDeserializationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create object at a given address, resolve references and import extra data. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>address</strong> – Location at which object is created. Address is increased by the size of the created object. </p></li>
+<li><p><strong>context</strong> – Context for reading external data and resolving references. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Created <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> pointer (needs to be identical to address before increment). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxSerializerD0Ev">
+<span id="_CPPv3N12PxSerializerD0Ev"></span><span id="_CPPv2N12PxSerializerD0Ev"></span><span id="PxSerializer::~PxSerializer"></span><span class="target" id="class_px_serializer_1a96746551fdacb2df8da8f2887817ff5f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSerializer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxSerializerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

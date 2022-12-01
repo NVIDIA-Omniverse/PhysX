@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxConvexFlag &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxConvexFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxconvexflag">
+<span id="exhale-struct-struct-px-convex-flag"></span><h1>PxConvexFlag<a class="headerlink" href="#pxconvexflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxConvexMeshDesc.h.html#file-include-cooking-pxconvexmeshdesc-h"><span class="std std-ref">include/cooking/PxConvexMeshDesc.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv412PxConvexFlag">
+<span id="_CPPv312PxConvexFlag"></span><span id="_CPPv212PxConvexFlag"></span><span id="PxConvexFlag"></span><span class="target" id="struct_px_convex_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexFlag</span></span></span><a class="headerlink" href="#_CPPv412PxConvexFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags which describe the format and behavior of a convex mesh. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4EnumE">
+<span id="_CPPv3N12PxConvexFlag4EnumE"></span><span id="_CPPv2N12PxConvexFlag4EnumE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15e16_BIT_INDICESE">
+<span id="_CPPv3N12PxConvexFlag4Enum15e16_BIT_INDICESE"></span><span id="_CPPv2N12PxConvexFlag4Enum15e16_BIT_INDICESE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a18b6c42727636f294561c735de5dc37b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">e16_BIT_INDICES</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15e16_BIT_INDICESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Denotes the use of 16-bit vertex indices in PxConvexMeshDesc::triangles or <a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc_1a1b710dc3c2ef759a6bef8bd888e1ecf8"><span class="std std-ref">PxConvexMeshDesc::polygons</span></a>. </p>
+<p>(otherwise, 32-bit indices are assumed) <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc_1a4e760fc52d1f0f9e55c919320bed1cef"><span class="std std-ref">PxConvexMeshDesc.indices</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE">
+<span id="_CPPv3N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE"></span><span id="_CPPv2N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6ad3153afeb45ae6488b40fc4698919c6b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOMPUTE_CONVEX</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Automatically recomputes the hull from the vertices. </p>
+<p>If this flag is not set, you must provide the entire geometry manually.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#struct_px_convex_mesh_cooking_type"><span class="std std-ref">PxConvexMeshCookingType</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are two different algorithms for hull computation, please see <a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#struct_px_convex_mesh_cooking_type"><span class="std std-ref">PxConvexMeshCookingType</span></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum26eCHECK_ZERO_AREA_TRIANGLESE">
+<span id="_CPPv3N12PxConvexFlag4Enum26eCHECK_ZERO_AREA_TRIANGLESE"></span><span id="_CPPv2N12PxConvexFlag4Enum26eCHECK_ZERO_AREA_TRIANGLESE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a12c7c442cadd1e3474fc613944981c44"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCHECK_ZERO_AREA_TRIANGLES</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum26eCHECK_ZERO_AREA_TRIANGLESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Checks and removes almost zero-area triangles during convex hull computation. </p>
+<p>The rejected area size is specified in <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1aec2fbb426b8c0bb2daee1e31b8e2adc2"><span class="std std-ref">PxCookingParams::areaTestEpsilon</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params"><span class="std std-ref">PxCookingParams</span></a> <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1aec2fbb426b8c0bb2daee1e31b8e2adc2"><span class="std std-ref">PxCookingParams::areaTestEpsilon</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag is only used in combination with eCOMPUTE_CONVEX.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15eQUANTIZE_INPUTE">
+<span id="_CPPv3N12PxConvexFlag4Enum15eQUANTIZE_INPUTE"></span><span id="_CPPv2N12PxConvexFlag4Enum15eQUANTIZE_INPUTE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6ae10437ca01f341cb3afff0bd2c40529d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eQUANTIZE_INPUT</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15eQUANTIZE_INPUTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Quantizes the input vertices using the k-means clustering. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The input vertices are quantized to <a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc_1a8dc525326a4835f94311f4e44ca219f2"><span class="std std-ref">PxConvexMeshDesc::quantizedCount</span></a> see <a class="reference external" href="http://en.wikipedia.org/wiki/K-means_clustering">http://en.wikipedia.org/wiki/K-means_clustering</a> </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum24eDISABLE_MESH_VALIDATIONE">
+<span id="_CPPv3N12PxConvexFlag4Enum24eDISABLE_MESH_VALIDATIONE"></span><span id="_CPPv2N12PxConvexFlag4Enum24eDISABLE_MESH_VALIDATIONE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a10a876ecefb45e1c7dbaec2afed5c3ad"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDISABLE_MESH_VALIDATION</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum24eDISABLE_MESH_VALIDATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Disables the convex mesh validation to speed-up hull creation. </p>
+<p>Please use separate validation function in checked/debug builds. Creating a convex mesh with invalid input data without prior validation may result in undefined behavior.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_cooking.html#class_px_cooking_1aea8a3c270cc6db602ad250c82c1225bc"><span class="std std-ref">PxCooking::validateConvexMesh</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15ePLANE_SHIFTINGE">
+<span id="_CPPv3N12PxConvexFlag4Enum15ePLANE_SHIFTINGE"></span><span id="_CPPv2N12PxConvexFlag4Enum15ePLANE_SHIFTINGE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a62cbe73f95f10cb93b5d471affef7c89"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePLANE_SHIFTING</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15ePLANE_SHIFTINGE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enables plane shifting vertex limit algorithm. </p>
+<p>Plane shifting is an alternative algorithm for the case when the computed hull has more vertices than the specified vertex limit.</p>
+<p>The default algorithm computes the full hull, and an OBB around the input vertices. This OBB is then sliced with the hull planes until the vertex limit is reached.The default algorithm requires the vertex limit to be set to at least 8, and typically produces results that are much better quality than are produced by plane shifting.</p>
+<p>When plane shifting is enabled, the hull computation stops when vertex limit is reached. The hull planes are then shifted to contain all input vertices, and the new plane intersection points are then used to generate the final hull with the given vertex limit.Plane shifting may produce sharp edges to vertices very far away from the input cloud, and does not guarantee that all input vertices are inside the resulting hull.However, it can be used with a vertex limit as low as 4. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum25eFAST_INERTIA_COMPUTATIONE">
+<span id="_CPPv3N12PxConvexFlag4Enum25eFAST_INERTIA_COMPUTATIONE"></span><span id="_CPPv2N12PxConvexFlag4Enum25eFAST_INERTIA_COMPUTATIONE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6ac694e25cda4aa49e1afb054b08bfc207"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFAST_INERTIA_COMPUTATION</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum25eFAST_INERTIA_COMPUTATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Inertia tensor computation is faster using SIMD code, but the precision is lower, which may result in incorrect inertia for very thin hulls. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15eGPU_COMPATIBLEE">
+<span id="_CPPv3N12PxConvexFlag4Enum15eGPU_COMPATIBLEE"></span><span id="_CPPv2N12PxConvexFlag4Enum15eGPU_COMPATIBLEE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a8126f89c7d2dac99246261ca6a7ae067"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eGPU_COMPATIBLE</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15eGPU_COMPATIBLEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convex hulls are created with respect to GPU simulation limitations. </p>
+<p>Vertex limit is set to 64 and vertex limit per face is internally set to 32. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Can be used only with eCOMPUTE_CONVEX flag. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexFlag4Enum15eSHIFT_VERTICESE">
+<span id="_CPPv3N12PxConvexFlag4Enum15eSHIFT_VERTICESE"></span><span id="_CPPv2N12PxConvexFlag4Enum15eSHIFT_VERTICESE"></span><span class="target" id="struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a99ab52dd1e60d72bc99834e1b8093d78"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSHIFT_VERTICES</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexFlag4Enum15eSHIFT_VERTICESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convex hull input vertices are shifted to be around origin to provide better computation stability. </p>
+<p>It is recommended to provide input vertices around the origin, otherwise use this flag to improve numerical stability. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Is used only with eCOMPUTE_CONVEX flag. </p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

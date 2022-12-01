@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxParticleCloth &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxParticleCloth</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxparticlecloth">
+<span id="exhale-struct-struct-px-particle-cloth"></span><h1>PxParticleCloth<a class="headerlink" href="#pxparticlecloth" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticleBuffer.h.html#file-include-pxparticlebuffer-h"><span class="std std-ref">include/PxParticleBuffer.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415PxParticleCloth">
+<span id="_CPPv315PxParticleCloth"></span><span id="_CPPv215PxParticleCloth"></span><span id="PxParticleCloth"></span><span class="target" id="struct_px_particle_cloth"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleCloth</span></span></span><a class="headerlink" href="#_CPPv415PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Particle cloth structure. </p>
+<p>Holds information about a single piece of cloth that is part of a <a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a>. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticleClothleERK15PxParticleCloth">
+<span id="_CPPv3NK15PxParticleClothleERK15PxParticleCloth"></span><span id="_CPPv2NK15PxParticleClothleERK15PxParticleCloth"></span><span id="PxParticleCloth::lte-operator__PxParticleClothCRC"></span><span class="target" id="struct_px_particle_cloth_1a985384ad69ce1d4dace6722e5f923bff"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15PxParticleClothleERK15PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticleClothgeERK15PxParticleCloth">
+<span id="_CPPv3NK15PxParticleClothgeERK15PxParticleCloth"></span><span id="_CPPv2NK15PxParticleClothgeERK15PxParticleCloth"></span><span id="PxParticleCloth::gte-operator__PxParticleClothCRC"></span><span class="target" id="struct_px_particle_cloth_1a9cd5ec0ecd649d3295182bdbe46cf411"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&gt;=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15PxParticleClothgeERK15PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticleClothltERK15PxParticleCloth">
+<span id="_CPPv3NK15PxParticleClothltERK15PxParticleCloth"></span><span id="_CPPv2NK15PxParticleClothltERK15PxParticleCloth"></span><span id="PxParticleCloth::lt-operator__PxParticleClothCRC"></span><span class="target" id="struct_px_particle_cloth_1acdacce8a7bcdb27181fc5e75baaa36f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15PxParticleClothltERK15PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticleClothgtERK15PxParticleCloth">
+<span id="_CPPv3NK15PxParticleClothgtERK15PxParticleCloth"></span><span id="_CPPv2NK15PxParticleClothgtERK15PxParticleCloth"></span><span id="PxParticleCloth::gt-operator__PxParticleClothCRC"></span><span class="target" id="struct_px_particle_cloth_1a10fe25c73c3c93cbe3a5755b8394ca19"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&gt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15PxParticleClothgtERK15PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxParticleClotheqERK15PxParticleCloth">
+<span id="_CPPv3NK15PxParticleClotheqERK15PxParticleCloth"></span><span id="_CPPv2NK15PxParticleClotheqERK15PxParticleCloth"></span><span id="PxParticleCloth::eq-operator__PxParticleClothCRC"></span><span class="target" id="struct_px_particle_cloth_1a94614b0fb4a984061691f4fa44f6ec92"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15PxParticleClotheqERK15PxParticleCloth" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth16startVertexIndexE">
+<span id="_CPPv3N15PxParticleCloth16startVertexIndexE"></span><span id="_CPPv2N15PxParticleCloth16startVertexIndexE"></span><span id="PxParticleCloth::startVertexIndex__PxU32"></span><span class="target" id="struct_px_particle_cloth_1a1e6a7f2ab58ff6698cf49619e17e2a5a"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startVertexIndex</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth16startVertexIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Index of the first particle of this cloth in the position/velocity buffers of the parent <a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth11numVerticesE">
+<span id="_CPPv3N15PxParticleCloth11numVerticesE"></span><span id="_CPPv2N15PxParticleCloth11numVerticesE"></span><span id="PxParticleCloth::numVertices__PxU32"></span><span class="target" id="struct_px_particle_cloth_1a10f9b7d9804906dae6297c50892170cd"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numVertices</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth11numVerticesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of particles of this piece of cloth. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth15clothBlendScaleE">
+<span id="_CPPv3N15PxParticleCloth15clothBlendScaleE"></span><span id="_CPPv2N15PxParticleCloth15clothBlendScaleE"></span><span id="PxParticleCloth::clothBlendScale__PxReal"></span><span class="target" id="struct_px_particle_cloth_1aa63f15229b7415d5d7b2c4d0da40a4f5"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clothBlendScale</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth15clothBlendScaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Used internally. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth10restVolumeE">
+<span id="_CPPv3N15PxParticleCloth10restVolumeE"></span><span id="_CPPv2N15PxParticleCloth10restVolumeE"></span><span id="PxParticleCloth::restVolume__PxReal"></span><span class="target" id="struct_px_particle_cloth_1a0180f027d3ec7a358b118b3dee2f7db7"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restVolume</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth10restVolumeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The rest volume of this piece of cloth, used for inflatable simulation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth8pressureE">
+<span id="_CPPv3N15PxParticleCloth8pressureE"></span><span id="_CPPv2N15PxParticleCloth8pressureE"></span><span id="PxParticleCloth::pressure__PxReal"></span><span class="target" id="struct_px_particle_cloth_1aa6ff56dd513b8229c1ed7dc92b9df37c"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pressure</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth8pressureE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The factor of the rest volume to specify the target volume for this piece of cloth, used for inflatable simulation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth18startTriangleIndexE">
+<span id="_CPPv3N15PxParticleCloth18startTriangleIndexE"></span><span id="_CPPv2N15PxParticleCloth18startTriangleIndexE"></span><span id="PxParticleCloth::startTriangleIndex__PxU32"></span><span class="target" id="struct_px_particle_cloth_1a9f9b19106399536d22a76025c4c372d0"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startTriangleIndex</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth18startTriangleIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The index of the first triangle of this piece of cloth in the triangle list. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxParticleCloth12numTrianglesE">
+<span id="_CPPv3N15PxParticleCloth12numTrianglesE"></span><span id="_CPPv2N15PxParticleCloth12numTrianglesE"></span><span id="PxParticleCloth::numTriangles__PxU32"></span><span class="target" id="struct_px_particle_cloth_1a5cf6d27e1bd4f7239b36ae1ad652f1cc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numTriangles</span></span></span><a class="headerlink" href="#_CPPv4N15PxParticleCloth12numTrianglesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of triangles of this piece of cloth. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxHashBase &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxHashBase</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxhashbase">
+<span id="exhale-class-class-px-hash-base"></span><h1>PxHashBase<a class="headerlink" href="#pxhashbase" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxHashInternals.h.html#file-include-foundation-pxhashinternals-h"><span class="std std-ref">include/foundation/PxHashInternals.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">private</span> <span class="pre">PxAllocator</span></code> (<a class="reference internal" href="class_px_allocator.html#exhale-class-class-px-allocator"><span class="std std-ref">PxAllocator</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I00000_bE10PxHashBase">
+<span id="_CPPv3I00000_bE10PxHashBase"></span><span id="_CPPv2I00000_bE10PxHashBase"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Entry</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">HashFn</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">GetKey</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAllocator</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compacting</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_hash_base"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashBase</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">private</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><a class="headerlink" href="#_CPPv4I00000_bE10PxHashBase" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase9EntryTypeE">
+<span id="_CPPv3N10PxHashBase9EntryTypeE"></span><span id="_CPPv2N10PxHashBase9EntryTypeE"></span><span id="PxHashBase::EntryType"></span><span class="target" id="class_px_hash_base_1a43a919fd04b6861dcd91d39eb8b62a2d"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EntryType</span></span></span><a class="headerlink" href="#_CPPv4N10PxHashBase9EntryTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase10PxHashBaseE8uint32_tf">
+<span id="_CPPv3N10PxHashBase10PxHashBaseE8uint32_tf"></span><span id="_CPPv2N10PxHashBase10PxHashBaseE8uint32_tf"></span><span id="PxHashBase::PxHashBase__uint32_t.float"></span><span class="target" id="class_px_hash_base_1a3b4bd95181f000e944adca76e4f0b44b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashBase</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initialTableSize</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">64</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loadFactor</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.75f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase10PxHashBaseE8uint32_tf" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase10PxHashBaseE8uint32_tfRK11PxAllocator">
+<span id="_CPPv3N10PxHashBase10PxHashBaseE8uint32_tfRK11PxAllocator"></span><span id="_CPPv2N10PxHashBase10PxHashBaseE8uint32_tfRK11PxAllocator"></span><span id="PxHashBase::PxHashBase__uint32_t.float.PxAllocatorCR"></span><span class="target" id="class_px_hash_base_1aef71bef1874a30044d1a35f049efaa69"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashBase</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initialTableSize</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">loadFactor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase10PxHashBaseE8uint32_tfRK11PxAllocator" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase10PxHashBaseERK11PxAllocator">
+<span id="_CPPv3N10PxHashBase10PxHashBaseERK11PxAllocator"></span><span id="_CPPv2N10PxHashBase10PxHashBaseERK11PxAllocator"></span><span id="PxHashBase::PxHashBase__PxAllocatorCR"></span><span class="target" id="class_px_hash_base_1a6fc1f016a3140ce6bf95b04ae12af475"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHashBase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase10PxHashBaseERK11PxAllocator" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBaseD0Ev">
+<span id="_CPPv3N10PxHashBaseD0Ev"></span><span id="_CPPv2N10PxHashBaseD0Ev"></span><span id="PxHashBase::~PxHashBase"></span><span class="target" id="class_px_hash_base_1aafc709438661ff6300448e354303f45c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxHashBase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBaseD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase6createERK3KeyRb">
+<span id="_CPPv3N10PxHashBase6createERK3KeyRb"></span><span id="_CPPv2N10PxHashBase6createERK3KeyRb"></span><span id="PxHashBase::create__KeyCR.bR"></span><span class="target" id="class_px_hash_base_1a807cd2c1785fda527ade0636192d0d50"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">create</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">exists</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase6createERK3KeyRb" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4findERK3Key">
+<span id="_CPPv3NK10PxHashBase4findERK3Key"></span><span id="_CPPv2NK10PxHashBase4findERK3Key"></span><span id="PxHashBase::find__KeyCRC"></span><span class="target" id="class_px_hash_base_1aa883f43ebeb20479504509a351251732"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4findERK3Key" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase5eraseERK3KeyR5Entry">
+<span id="_CPPv3N10PxHashBase5eraseERK3KeyR5Entry"></span><span id="_CPPv2N10PxHashBase5eraseERK3KeyR5Entry"></span><span id="PxHashBase::erase__KeyCR.EntryR"></span><span class="target" id="class_px_hash_base_1a9972ad57496e77f18c6d9c995ec6c749"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span>, <a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">e</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase5eraseERK3KeyR5Entry" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase5eraseERK3Key">
+<span id="_CPPv3N10PxHashBase5eraseERK3Key"></span><span id="_CPPv2N10PxHashBase5eraseERK3Key"></span><span id="PxHashBase::erase__KeyCR"></span><span class="target" id="class_px_hash_base_1adad7d8da2cbeeec527c2cdf6d302db8f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase5eraseERK3Key" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4sizeEv">
+<span id="_CPPv3NK10PxHashBase4sizeEv"></span><span id="_CPPv2NK10PxHashBase4sizeEv"></span><span id="PxHashBase::sizeC"></span><span class="target" id="class_px_hash_base_1a4de44ca3c52ec3faa6d4449d929cdac3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4sizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase8capacityEv">
+<span id="_CPPv3NK10PxHashBase8capacityEv"></span><span id="_CPPv2NK10PxHashBase8capacityEv"></span><span id="PxHashBase::capacityC"></span><span class="target" id="class_px_hash_base_1a25ad69716948af89b0cae7add0c588bd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capacity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase8capacityEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase5clearEv">
+<span id="_CPPv3N10PxHashBase5clearEv"></span><span id="_CPPv2N10PxHashBase5clearEv"></span><span id="PxHashBase::clear"></span><span class="target" id="class_px_hash_base_1a0cf0305b72e38f882e2349443fb380ad"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase5clearEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase7reserveE8uint32_t">
+<span id="_CPPv3N10PxHashBase7reserveE8uint32_t"></span><span id="_CPPv2N10PxHashBase7reserveE8uint32_t"></span><span id="PxHashBase::reserve__uint32_t"></span><span class="target" id="class_px_hash_base_1a391dc0c7474e595f24e40830cfbeef0d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase7reserveE8uint32_t" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase10getEntriesEv">
+<span id="_CPPv3NK10PxHashBase10getEntriesEv"></span><span id="_CPPv2NK10PxHashBase10getEntriesEv"></span><span id="PxHashBase::getEntriesC"></span><span class="target" id="class_px_hash_base_1a3481721cff707e5cc33da77ebb6f7d0f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getEntries</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase10getEntriesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase12insertUniqueERK3Key">
+<span id="_CPPv3N10PxHashBase12insertUniqueERK3Key"></span><span id="_CPPv2N10PxHashBase12insertUniqueERK3Key"></span><span id="PxHashBase::insertUnique__KeyCR"></span><span class="target" id="class_px_hash_base_1a4caac1311caf44b3bc666806218dcb89"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">insertUnique</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase12insertUniqueERK3Key" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase3EOLE">
+<span id="_CPPv3N10PxHashBase3EOLE"></span><span id="_CPPv2N10PxHashBase3EOLE"></span><span id="PxHashBase::EOL__uint32_tC"></span><span class="target" id="class_px_hash_base_1ae6df0ce1d25858165faac4823136abdc"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EOL</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0xffffffff</span></span><a class="headerlink" href="#_CPPv4N10PxHashBase3EOLE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4IterE">
+<span id="_CPPv3N10PxHashBase4IterE"></span><span id="_CPPv2N10PxHashBase4IterE"></span><span id="PxHashBase::Iter"></span><span class="target" id="class_px_hash_base_1_1_iter"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iter</span></span></span><a class="headerlink" href="#_CPPv4N10PxHashBase4IterE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4Iter4IterER10PxHashBase">
+<span id="_CPPv3N10PxHashBase4Iter4IterER10PxHashBase"></span><span id="_CPPv2N10PxHashBase4Iter4IterER10PxHashBase"></span><span id="PxHashBase::Iter::Iter__PxHashBaseR"></span><span class="target" id="class_px_hash_base_1_1_iter_1ac76f8a8150280e035b390bf0bac1ca89"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase"><span class="n"><span class="pre">PxHashBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase4Iter4IterER10PxHashBase" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4Iter5checkEv">
+<span id="_CPPv3NK10PxHashBase4Iter5checkEv"></span><span id="_CPPv2NK10PxHashBase4Iter5checkEv"></span><span id="PxHashBase::Iter::checkC"></span><span class="target" id="class_px_hash_base_1_1_iter_1ad0dd91d5601a919bcd31482198fb06ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">check</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4Iter5checkEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4ItermlEv">
+<span id="_CPPv3NK10PxHashBase4ItermlEv"></span><span id="_CPPv2NK10PxHashBase4ItermlEv"></span><span id="PxHashBase::Iter::mul-operatorC"></span><span class="target" id="class_px_hash_base_1_1_iter_1a3d265257917cfce7776720873b6e8edc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4ItermlEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4ItermlEv">
+<span id="_CPPv3N10PxHashBase4ItermlEv"></span><span id="_CPPv2N10PxHashBase4ItermlEv"></span><span id="PxHashBase::Iter::mul-operator"></span><span class="target" id="class_px_hash_base_1_1_iter_1ad53fa6f0cefc82da16be69b7ff332573"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase4ItermlEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4IterptEv">
+<span id="_CPPv3NK10PxHashBase4IterptEv"></span><span id="_CPPv2NK10PxHashBase4IterptEv"></span><span id="PxHashBase::Iter::pointer-operatorC"></span><span class="target" id="class_px_hash_base_1_1_iter_1ad098102d1935680d7f85e98f18b7c2bf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-&gt;</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4IterptEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4IterptEv">
+<span id="_CPPv3N10PxHashBase4IterptEv"></span><span id="_CPPv2N10PxHashBase4IterptEv"></span><span id="PxHashBase::Iter::pointer-operator"></span><span class="target" id="class_px_hash_base_1_1_iter_1afe248a674d060869af700d37b2d328c3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-&gt;</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase4IterptEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4IterppEv">
+<span id="_CPPv3N10PxHashBase4IterppEv"></span><span id="_CPPv2N10PxHashBase4IterppEv"></span><span id="PxHashBase::Iter::inc-operator"></span><span class="target" id="class_px_hash_base_1_1_iter_1abf8dddea5949c03031b64b51291fe310"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxHashBase4IterE" title="PxHashBase::Iter"><span class="n"><span class="pre">Iter</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">++</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase4IterppEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase4IterppEi">
+<span id="_CPPv3N10PxHashBase4IterppEi"></span><span id="_CPPv2N10PxHashBase4IterppEi"></span><span id="PxHashBase::Iter::inc-operator__i"></span><span class="target" id="class_px_hash_base_1_1_iter_1ac401c21ca2839ca919acf7bbde1af878"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxHashBase4IterE" title="PxHashBase::Iter"><span class="n"><span class="pre">Iter</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">++</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase4IterppEi" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxHashBase4Iter4doneEv">
+<span id="_CPPv3NK10PxHashBase4Iter4doneEv"></span><span id="_CPPv2NK10PxHashBase4Iter4doneEv"></span><span id="PxHashBase::Iter::doneC"></span><span class="target" id="class_px_hash_base_1_1_iter_1a7fa7515ec88a57dff0f144435fa9818d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">done</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10PxHashBase4Iter4doneEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase15PxEraseIteratorE">
+<span id="_CPPv3N10PxHashBase15PxEraseIteratorE"></span><span id="_CPPv2N10PxHashBase15PxEraseIteratorE"></span><span id="PxHashBase::PxEraseIterator"></span><span class="target" id="class_px_hash_base_1_1_px_erase_iterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxEraseIterator</span></span></span><a class="headerlink" href="#_CPPv4N10PxHashBase15PxEraseIteratorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Iterate over entries in a hash base and allow entry erase while iterating </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase15PxEraseIterator15PxEraseIteratorER10PxHashBase">
+<span id="_CPPv3N10PxHashBase15PxEraseIterator15PxEraseIteratorER10PxHashBase"></span><span id="_CPPv2N10PxHashBase15PxEraseIterator15PxEraseIteratorER10PxHashBase"></span><span id="PxHashBase::PxEraseIterator::PxEraseIterator__PxHashBaseR"></span><span class="target" id="class_px_hash_base_1_1_px_erase_iterator_1a432d2a36468c34f2a300e6017fc31961"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxEraseIterator</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase"><span class="n"><span class="pre">PxHashBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase15PxEraseIterator15PxEraseIteratorER10PxHashBase" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase15PxEraseIterator19eraseCurrentGetNextEb">
+<span id="_CPPv3N10PxHashBase15PxEraseIterator19eraseCurrentGetNextEb"></span><span id="_CPPv2N10PxHashBase15PxEraseIterator19eraseCurrentGetNextEb"></span><span id="PxHashBase::PxEraseIterator::eraseCurrentGetNext__b"></span><span class="target" id="class_px_hash_base_1_1_px_erase_iterator_1acc4eb725a4cf08c8e97dce3e7705c47f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00000_bE10PxHashBase" title="PxHashBase::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">eraseCurrentGetNext</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">eraseCurrent</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase15PxEraseIterator19eraseCurrentGetNextEb" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxHashBase15PxEraseIterator5resetEv">
+<span id="_CPPv3N10PxHashBase15PxEraseIterator5resetEv"></span><span id="_CPPv2N10PxHashBase15PxEraseIterator5resetEv"></span><span id="PxHashBase::PxEraseIterator::reset"></span><span class="target" id="class_px_hash_base_1_1_px_erase_iterator_1aa784aec6503ed9638efce24ddfd91ad8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxHashBase15PxEraseIterator5resetEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

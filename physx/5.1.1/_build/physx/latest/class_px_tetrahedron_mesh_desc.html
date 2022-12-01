@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTetrahedronMeshDesc &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTetrahedronMeshDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtetrahedronmeshdesc">
+<span id="exhale-class-class-px-tetrahedron-mesh-desc"></span><h1>PxTetrahedronMeshDesc<a class="headerlink" href="#pxtetrahedronmeshdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxTetrahedronMeshDesc.h.html#file-include-cooking-pxtetrahedronmeshdesc-h"><span class="std std-ref">include/cooking/PxTetrahedronMeshDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxTetrahedronMeshDesc">
+<span id="_CPPv321PxTetrahedronMeshDesc"></span><span id="_CPPv221PxTetrahedronMeshDesc"></span><span id="PxTetrahedronMeshDesc"></span><span class="target" id="class_px_tetrahedron_mesh_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></span><a class="headerlink" href="#_CPPv421PxTetrahedronMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for <a class="reference internal" href="class_px_tetrahedron_mesh.html#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> (contains only pure geometric data). </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_tetrahedron_mesh.html#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormatE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc12PxMeshFormatE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc12PxMeshFormatE"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a57533942c6ba5e8e485df4436ccd24fa"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshFormat</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormatE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the tetrahedron structure of a mesh. </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormat9eTET_MESHE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc12PxMeshFormat9eTET_MESHE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc12PxMeshFormat9eTET_MESHE"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a57533942c6ba5e8e485df4436ccd24faa10ec2b83c961cce85632404b7940133c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTET_MESH</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormat9eTET_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Normal tetmesh with arbitrary tetrahedra. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormat9eHEX_MESHE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc12PxMeshFormat9eHEX_MESHE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc12PxMeshFormat9eHEX_MESHE"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a57533942c6ba5e8e485df4436ccd24faa721d0b034472c24294cf479e65d8ee8e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHEX_MESH</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormat9eHEX_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>6 tetrahedra in a row will form a hexahedron </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescEv">
+<span id="_CPPv3N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescEv"></span><span id="_CPPv2N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescEv"></span><span id="PxTetrahedronMeshDesc::PxTetrahedronMeshDesc"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a2f60f966aa06a1d3c2893d97e59c6f75"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to build an empty tetmesh description. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescERN5physx7PxArrayIN5physx6PxVec3EEERN5physx7PxArrayIN5physx5PxU32EEEKN21PxTetrahedronMeshDesc12PxMeshFormatE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescERN5physx7PxArrayIN5physx6PxVec3EEERN5physx7PxArrayIN5physx5PxU32EEEKN21PxTetrahedronMeshDesc12PxMeshFormatE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescERN5physx7PxArrayIN5physx6PxVec3EEERN5physx7PxArrayIN5physx5PxU32EEEKN21PxTetrahedronMeshDesc12PxMeshFormatE"></span><span id="PxTetrahedronMeshDesc::PxTetrahedronMeshDesc__physx::PxArray:physx::PxVec3:R.physx::PxArray:physx::PxU32:R.PxTetrahedronMeshDesc::PxMeshFormatC"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a70a3c3b9042e71478dd4f4ca12a38693"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxArray</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxVec3</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshVertices</span></span>, <span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxArray</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">physx</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshTetIndices</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescERN5physx7PxArrayIN5physx6PxVec3EEERN5physx7PxArrayIN5physx5PxU32EEEKN21PxTetrahedronMeshDesc12PxMeshFormatE" title="PxTetrahedronMeshDesc::PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxMeshFormat</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">meshFormat</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N21PxTetrahedronMeshDesc12PxMeshFormat9eTET_MESHE" title="PxTetrahedronMeshDesc::eTET_MESH"><span class="n"><span class="pre">eTET_MESH</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc21PxTetrahedronMeshDescERN5physx7PxArrayIN5physx6PxVec3EEERN5physx7PxArrayIN5physx5PxU32EEEKN21PxTetrahedronMeshDesc12PxMeshFormatE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to build a tetmeshdescription that links to the vertices and indices provided. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxTetrahedronMeshDesc7isValidEv">
+<span id="_CPPv3NK21PxTetrahedronMeshDesc7isValidEv"></span><span id="_CPPv2NK21PxTetrahedronMeshDesc7isValidEv"></span><span id="PxTetrahedronMeshDesc::isValidC"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1ab9e5acbfd96a841580c2fa23a1654224"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK21PxTetrahedronMeshDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc15materialIndicesE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc15materialIndicesE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc15materialIndicesE"></span><span id="PxTetrahedronMeshDesc::materialIndices__PxTypedStridedData:PxFEMMaterialTableIndex:"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a1e0a5880522a4469a1e19427e5c4eddc"></span><a class="reference internal" href="struct_px_typed_strided_data.html#_CPPv4I0E18PxTypedStridedData" title="PxTypedStridedData"><span class="n"><span class="pre">PxTypedStridedData</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="typedef_group__common_1ga5243c1bcb1d89211d250682abb0d70cf.html#_CPPv423PxFEMMaterialTableIndex" title="PxFEMMaterialTableIndex"><span class="n"><span class="pre">PxFEMMaterialTableIndex</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndices</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc15materialIndicesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Optional pointer to first material index, or NULL. </p>
+<p>There are PxTetrahedronMesh::numTriangles indices in total. Caller may add materialIndexStride bytes to the pointer to access the next triangle.</p>
+<p>When a tetrahedron mesh collides with another object, a material is required at the collision point. If materialIndices is NULL, then the material of the <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> instance is used. Otherwise, if the point of contact is on a tetrahedron with index i, then the material index is determined as: PxFEMMaterialTableIndex index = *(PxFEMMaterialTableIndex *)(((PxU8*)materialIndices) + materialIndexStride * i);</p>
+<p>If the contact point falls on a vertex or an edge, a tetrahedron adjacent to the vertex or edge is selected, and its index used to look up a material. The selection is arbitrary but consistent over time.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>materialIndexStride </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc6pointsE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc6pointsE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc6pointsE"></span><span id="PxTetrahedronMeshDesc::points__PxBoundedData"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a000c67b04ecc0472a0ccdb678aaf2a38"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">points</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc6pointsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to first vertex point. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc12tetrahedronsE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc12tetrahedronsE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc12tetrahedronsE"></span><span id="PxTetrahedronMeshDesc::tetrahedrons__PxBoundedData"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a6d0af67a88b7cf06de75dec49f4a354c"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tetrahedrons</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc12tetrahedronsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to first tetrahedron. </p>
+<p>Caller may add tetrhedronStrideBytes bytes to the pointer to access the next tetrahedron.</p>
+<p>These are quadruplets of 0 based indices: vert0 vert1 vert2 vert3 vert0 vert1 vert2 vert3 vert0 vert1 vert2 vert3 …</p>
+<p>where vertex is either a 32 or 16 bit unsigned integer. There are numTetrahedrons*4 indices.</p>
+<p>This is declared as a void pointer because it is actually either an PxU16 or a PxU32 pointer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc5flagsE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc5flagsE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc5flagsE"></span><span id="PxTetrahedronMeshDesc::flags__PxMeshFlags"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a70a1fa1e99a19eeb1fb61fb368e30171"></span><a class="reference internal" href="typedef_group__geomutils_1gaec23462a84179db8a8ea77e5115d5fb1.html#_CPPv411PxMeshFlags" title="PxMeshFlags"><span class="n"><span class="pre">PxMeshFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags bits, combined from values of the enum <a class="reference internal" href="struct_px_mesh_flag.html#struct_px_mesh_flag"><span class="std std-ref">PxMeshFlag</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxTetrahedronMeshDesc14tetsPerElementE">
+<span id="_CPPv3N21PxTetrahedronMeshDesc14tetsPerElementE"></span><span id="_CPPv2N21PxTetrahedronMeshDesc14tetsPerElementE"></span><span id="PxTetrahedronMeshDesc::tetsPerElement__PxU16"></span><span class="target" id="class_px_tetrahedron_mesh_desc_1a54aacca3c3ee8f8c6d06d49f1c7bb94e"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tetsPerElement</span></span></span><a class="headerlink" href="#_CPPv4N21PxTetrahedronMeshDesc14tetsPerElementE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Used for simulation meshes only. </p>
+<p>Defines if this tet mesh should be simulated as a tet mesh, or if a set of tetrahedra should be used to represent another shape, e.g. a hexahedral mesh constructed from 6 elements. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

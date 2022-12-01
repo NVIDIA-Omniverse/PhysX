@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxGpuParticleData &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxGpuParticleData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxgpuparticledata">
+<span id="exhale-struct-struct-px-gpu-particle-data"></span><h1>PxGpuParticleData<a class="headerlink" href="#pxgpuparticledata" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticleGpu.h.html#file-include-pxparticlegpu-h"><span class="std std-ref">include/PxParticleGpu.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv417PxGpuParticleData">
+<span id="_CPPv317PxGpuParticleData"></span><span id="_CPPv217PxGpuParticleData"></span><span id="PxGpuParticleData"></span><span class="target" id="struct_px_gpu_particle_data"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGpuParticleData</span></span></span><a class="headerlink" href="#_CPPv417PxGpuParticleData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure that holds simulation parameters of a <a class="reference internal" href="class_px_gpu_particle_system.html#class_px_gpu_particle_system"><span class="std std-ref">PxGpuParticleSystem</span></a>. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData7mPeriodE">
+<span id="_CPPv3N17PxGpuParticleData7mPeriodE"></span><span id="_CPPv2N17PxGpuParticleData7mPeriodE"></span><span id="PxGpuParticleData::mPeriod__PxVec3"></span><span class="target" id="struct_px_gpu_particle_data_1a65a52649e67089b75bab262b9353fd4c"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mPeriod</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData7mPeriodE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of the unit cell for periodic boundary conditions. If 0, the size of the simulation domain is specified by the mGridSize * mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData10mGridSizeXE">
+<span id="_CPPv3N17PxGpuParticleData10mGridSizeXE"></span><span id="_CPPv2N17PxGpuParticleData10mGridSizeXE"></span><span id="PxGpuParticleData::mGridSizeX__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1abf849bf1bb62fcea162a00be0e6eab64"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mGridSizeX</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData10mGridSizeXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of the x-dimension of the background simulation grid. Translates to an absolute size of mGridSizeX * mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData10mGridSizeYE">
+<span id="_CPPv3N17PxGpuParticleData10mGridSizeYE"></span><span id="_CPPv2N17PxGpuParticleData10mGridSizeYE"></span><span id="PxGpuParticleData::mGridSizeY__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a965aa3458eb77f73c3f0dd4975b2b322"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mGridSizeY</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData10mGridSizeYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of the y-dimension of the background simulation grid. Translates to an absolute size of mGridSizeY * mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData10mGridSizeZE">
+<span id="_CPPv3N17PxGpuParticleData10mGridSizeZE"></span><span id="_CPPv2N17PxGpuParticleData10mGridSizeZE"></span><span id="PxGpuParticleData::mGridSizeZ__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a8f2c157bcce98acc1710cd6d7e2edc44"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mGridSizeZ</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData10mGridSizeZE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Size of the z-dimension of the background simulation grid. Translates to an absolute size of mGridSizeZ * mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData24mParticleContactDistanceE">
+<span id="_CPPv3N17PxGpuParticleData24mParticleContactDistanceE"></span><span id="_CPPv2N17PxGpuParticleData24mParticleContactDistanceE"></span><span id="PxGpuParticleData::mParticleContactDistance__PxReal"></span><span class="target" id="struct_px_gpu_particle_data_1a0045073d5846dcf49fef300ee217122f"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mParticleContactDistance</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData24mParticleContactDistanceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Two particles start interacting if their distance is lower than mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData27mParticleContactDistanceInvE">
+<span id="_CPPv3N17PxGpuParticleData27mParticleContactDistanceInvE"></span><span id="_CPPv2N17PxGpuParticleData27mParticleContactDistanceInvE"></span><span id="PxGpuParticleData::mParticleContactDistanceInv__PxReal"></span><span class="target" id="struct_px_gpu_particle_data_1ae87c1dea522004224e4d9a8b7c70cb88"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mParticleContactDistanceInv</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData27mParticleContactDistanceInvE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>1.f / mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData26mParticleContactDistanceSqE">
+<span id="_CPPv3N17PxGpuParticleData26mParticleContactDistanceSqE"></span><span id="_CPPv2N17PxGpuParticleData26mParticleContactDistanceSqE"></span><span id="PxGpuParticleData::mParticleContactDistanceSq__PxReal"></span><span class="target" id="struct_px_gpu_particle_data_1ae02f1a9ec5c9854b2d63726876b74380"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mParticleContactDistanceSq</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData26mParticleContactDistanceSqE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>mParticleContactDistance * mParticleContactDistance. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData13mNumParticlesE">
+<span id="_CPPv3N17PxGpuParticleData13mNumParticlesE"></span><span id="_CPPv2N17PxGpuParticleData13mNumParticlesE"></span><span id="PxGpuParticleData::mNumParticles__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a87314c2c884f3465ec1eb9265b3f96dc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNumParticles</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData13mNumParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of particles in this particle system. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData13mMaxParticlesE">
+<span id="_CPPv3N17PxGpuParticleData13mMaxParticlesE"></span><span id="_CPPv2N17PxGpuParticleData13mMaxParticlesE"></span><span id="PxGpuParticleData::mMaxParticles__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a8788798b09979a47d5c4a89e4d1de368"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mMaxParticles</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData13mMaxParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum number of particles that can be simulated in this particle system. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData16mMaxNeighborhoodE">
+<span id="_CPPv3N17PxGpuParticleData16mMaxNeighborhoodE"></span><span id="_CPPv2N17PxGpuParticleData16mMaxNeighborhoodE"></span><span id="PxGpuParticleData::mMaxNeighborhood__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a6b5124fe4c87e47b5bc07284367b8376"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mMaxNeighborhood</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData16mMaxNeighborhoodE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum number of particles considered when computing neighborhood based particle interactions. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData20mMaxDiffuseParticlesE">
+<span id="_CPPv3N17PxGpuParticleData20mMaxDiffuseParticlesE"></span><span id="_CPPv2N17PxGpuParticleData20mMaxDiffuseParticlesE"></span><span id="PxGpuParticleData::mMaxDiffuseParticles__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1ab51142f39e82b03dc0ba0030ca708de0"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mMaxDiffuseParticles</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData20mMaxDiffuseParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum number of diffuse particles that can be simulated using this particle system. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxGpuParticleData19mNumParticleBuffersE">
+<span id="_CPPv3N17PxGpuParticleData19mNumParticleBuffersE"></span><span id="_CPPv2N17PxGpuParticleData19mNumParticleBuffersE"></span><span id="PxGpuParticleData::mNumParticleBuffers__PxU32"></span><span class="target" id="struct_px_gpu_particle_data_1a84649ea9c2abca9774810a656d136768"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mNumParticleBuffers</span></span></span><a class="headerlink" href="#_CPPv4N17PxGpuParticleData19mNumParticleBuffersE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of particle buffers that are simulated in this particle system. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

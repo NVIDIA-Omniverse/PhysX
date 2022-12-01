@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxCooking &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxCooking</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcooking">
+<span id="exhale-class-class-px-cooking"></span><h1>PxCooking<a class="headerlink" href="#pxcooking" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxCooking.h.html#file-include-cooking-pxcooking-h"><span class="std std-ref">include/cooking/PxCooking.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv49PxCooking">
+<span id="_CPPv39PxCooking"></span><span id="_CPPv29PxCooking"></span><span id="PxCooking"></span><span class="target" id="class_px_cooking"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCooking</span></span></span><a class="headerlink" href="#_CPPv49PxCooking" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Provides methods to cook (where cooking means to prepare the data and convert it to the right format potentially including the construction of acceleration structures and other support data) all kind of simulation data. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxCooking7releaseEv">
+<span id="_CPPv3N9PxCooking7releaseEv"></span><span id="_CPPv2N9PxCooking7releaseEv"></span><span id="PxCooking::release"></span><span class="target" id="class_px_cooking_1acf1f0cfa4c76ccbe42e84af17a90fb3e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxCooking7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Closes this instance of the interface. </p>
+<p>This function should be called to cleanly shut down the Cooking library before application exit.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function is required to be called to release foundation usage. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxCooking9setParamsERK15PxCookingParams">
+<span id="_CPPv3N9PxCooking9setParamsERK15PxCookingParams"></span><span id="_CPPv2N9PxCooking9setParamsERK15PxCookingParams"></span><span id="PxCooking::setParams__PxCookingParamsCR"></span><span class="target" id="class_px_cooking_1afebe112057bd03660dd78dee384d5321"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParams</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxCooking9setParamsERK15PxCookingParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets cooking parameters. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a83607708fd1cb2f58a3d758a558f5b28"><span class="std std-ref">getParams()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> – <strong>[in]</strong> Cooking parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking9getParamsEv">
+<span id="_CPPv3NK9PxCooking9getParamsEv"></span><span id="_CPPv2NK9PxCooking9getParamsEv"></span><span id="PxCooking::getParamsC"></span><span class="target" id="class_px_cooking_1a83607708fd1cb2f58a3d758a558f5b28"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking9getParamsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets cooking parameters. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params"><span class="std std-ref">PxCookingParams</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Current cooking parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16platformMismatchEv">
+<span id="_CPPv3NK9PxCooking16platformMismatchEv"></span><span id="_CPPv2NK9PxCooking16platformMismatchEv"></span><span id="PxCooking::platformMismatchC"></span><span class="target" id="class_px_cooking_1a82e0864b92d51d409f3134cc8f740102"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">platformMismatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16platformMismatchEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Checks endianness is the same between cooking &amp; target platforms. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if there is and endian mismatch. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16cookTriangleMeshERK18PxTriangleMeshDescR14PxOutputStreamPN27PxTriangleMeshCookingResult4EnumE">
+<span id="_CPPv3NK9PxCooking16cookTriangleMeshERK18PxTriangleMeshDescR14PxOutputStreamPN27PxTriangleMeshCookingResult4EnumE"></span><span id="_CPPv2NK9PxCooking16cookTriangleMeshERK18PxTriangleMeshDescR14PxOutputStreamPN27PxTriangleMeshCookingResult4EnumE"></span><span id="PxCooking::cookTriangleMesh__PxTriangleMeshDescCR.PxOutputStreamR.PxTriangleMeshCookingResult::EnumPC"></span><span class="target" id="class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_desc.html#_CPPv418PxTriangleMeshDesc" title="PxTriangleMeshDesc"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span>, <a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#_CPPv427PxTriangleMeshCookingResult" title="PxTriangleMeshCookingResult"><span class="n"><span class="pre">PxTriangleMeshCookingResult</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#_CPPv4N27PxTriangleMeshCookingResult4EnumE" title="PxTriangleMeshCookingResult::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">condition</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16cookTriangleMeshERK18PxTriangleMeshDescR14PxOutputStreamPN27PxTriangleMeshCookingResult4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a triangle mesh. </p>
+<p>The results are written to the stream.</p>
+<p>To create a triangle mesh object it is necessary to first ‘cook’ the mesh data into a form which allows the SDK to perform efficient collision detection.</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> allows a mesh description to be cooked into a binary stream suitable for loading and performing collision detection at runtime.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#struct_px_triangle_mesh_cooking_result_1abe8e2312c47cc522a546c34ea337fb64"><span class="std std-ref">PxTriangleMeshCookingResult::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The triangle mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+<li><p><strong>condition</strong> – <strong>[out]</strong> Result from triangle mesh cooking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDescR19PxInsertionCallbackPN27PxTriangleMeshCookingResult4EnumE">
+<span id="_CPPv3NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDescR19PxInsertionCallbackPN27PxTriangleMeshCookingResult4EnumE"></span><span id="_CPPv2NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDescR19PxInsertionCallbackPN27PxTriangleMeshCookingResult4EnumE"></span><span id="PxCooking::createTriangleMesh__PxTriangleMeshDescCR.PxInsertionCallbackR.PxTriangleMeshCookingResult::EnumPC"></span><span class="target" id="class_px_cooking_1aed8fc39263baf82f0feafde2303c919d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_desc.html#_CPPv418PxTriangleMeshDesc" title="PxTriangleMeshDesc"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span>, <a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#_CPPv427PxTriangleMeshCookingResult" title="PxTriangleMeshCookingResult"><span class="n"><span class="pre">PxTriangleMeshCookingResult</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#_CPPv4N27PxTriangleMeshCookingResult4EnumE" title="PxTriangleMeshCookingResult::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">condition</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDescR19PxInsertionCallbackPN27PxTriangleMeshCookingResult4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a triangle mesh without going through a stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookTriangleMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> can be obtained through <a class="reference internal" href="class_px_physics.html#class_px_physics_1a696d1f05c8b5f5bbcae4c80713be5d35"><span class="std std-ref">PxPhysics::getPhysicsInsertionCallback()</span></a> or <a class="reference internal" href="#class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"><span class="std std-ref">PxCooking::getStandaloneInsertionCallback()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The triangle mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+<li><p><strong>condition</strong> – <strong>[out]</strong> Result from triangle mesh cooking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> pointer on success. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDesc">
+<span id="_CPPv3NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDesc"></span><span id="_CPPv2NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDesc"></span><span id="PxCooking::createTriangleMesh__PxTriangleMeshDescCRC"></span><span class="target" id="class_px_cooking_1a0010ecbf7ea589a19287a57e00c8faa0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_desc.html#_CPPv418PxTriangleMeshDesc" title="PxTriangleMeshDesc"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18createTriangleMeshERK18PxTriangleMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a triangle mesh without going through a stream. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookTriangleMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The triangle mesh descriptor to read the mesh from.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> pointer on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking20validateTriangleMeshERK18PxTriangleMeshDesc">
+<span id="_CPPv3NK9PxCooking20validateTriangleMeshERK18PxTriangleMeshDesc"></span><span id="_CPPv2NK9PxCooking20validateTriangleMeshERK18PxTriangleMeshDesc"></span><span id="PxCooking::validateTriangleMesh__PxTriangleMeshDescCRC"></span><span class="target" id="class_px_cooking_1afca9fe3e3bb8b4943d35475f80f37d2e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">validateTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_desc.html#_CPPv418PxTriangleMeshDesc" title="PxTriangleMeshDesc"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking20validateTriangleMeshERK18PxTriangleMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Verifies if the triangle mesh is valid. </p>
+<p>Prints an error message for each inconsistency found.</p>
+<p>The following conditions are true for a valid triangle mesh:<ol class="lowerroman simple">
+<li><p>There are no duplicate vertices (within specified vertexWeldTolerance. See <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1a19bb7e28765df5c8ec1a86a45004c7b6"><span class="std std-ref">PxCookingParams::meshWeldTolerance</span></a>)</p></li>
+<li><p>There are no large triangles (within specified <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a>.)</p></li>
+</ol>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The triangle mesh descriptor to read the mesh from.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if all the validity conditions hold, false otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16cookSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR14PxOutputStream">
+<span id="_CPPv3NK9PxCooking16cookSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR14PxOutputStream"></span><span id="_CPPv2NK9PxCooking16cookSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR14PxOutputStream"></span><span id="PxCooking::cookSoftBodyMesh__PxTetrahedronMeshDescCR.PxTetrahedronMeshDescCR.PxSoftBodySimulationDataDescCR.PxOutputStreamRC"></span><span class="target" id="class_px_cooking_1a7a35687880224ce3e3a2d5c29bf29acf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookSoftBodyMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html#_CPPv428PxSoftBodySimulationDataDesc" title="PxSoftBodySimulationDataDesc"><span class="n"><span class="pre">PxSoftBodySimulationDataDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softbodyDataDesc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16cookSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a softbody mesh. </p>
+<p>The results are written to the stream.</p>
+<p>To create a softbody mesh object it is necessary to first ‘cook’ the mesh data into a form which allows the SDK to perform efficient collision detection and to store data used during the FEM calculations.</p>
+<p><a class="reference internal" href="#class_px_cooking_1a7a35687880224ce3e3a2d5c29bf29acf"><span class="std std-ref">cookSoftBodyMesh()</span></a> allows a mesh description to be cooked into a binary stream suitable for loading and performing collision detection at runtime.</p>
+<p>Example</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#struct_px_triangle_mesh_cooking_result_1abe8e2312c47cc522a546c34ea337fb64"><span class="std std-ref">PxTriangleMeshCookingResult::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the simulation mesh from. </p></li>
+<li><p><strong>collisionMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the collision mesh from. </p></li>
+<li><p><strong>softbodyDataDesc</strong> – <strong>[in]</strong> The softbody data descriptor to read mapping information from. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR19PxInsertionCallback"></span><span id="PxCooking::createSoftBodyMesh__PxTetrahedronMeshDescCR.PxTetrahedronMeshDescCR.PxSoftBodySimulationDataDescCR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1a37c1136a67992414409ee9ee3e216187"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html#_CPPv428PxSoftBodySimulationDataDesc" title="PxSoftBodySimulationDataDesc"><span class="n"><span class="pre">PxSoftBodySimulationDataDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softbodyDataDesc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDescR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a softbody mesh without going through a stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookSoftBodyMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> can be obtained through <a class="reference internal" href="class_px_physics.html#class_px_physics_1a696d1f05c8b5f5bbcae4c80713be5d35"><span class="std std-ref">PxPhysics::getPhysicsInsertionCallback()</span></a> or <a class="reference internal" href="#class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"><span class="std std-ref">PxCooking::getStandaloneInsertionCallback()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the simulation mesh from. </p></li>
+<li><p><strong>collisionMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the collision mesh from. </p></li>
+<li><p><strong>softbodyDataDesc</strong> – <strong>[in]</strong> The softbody data descriptor to read mapping information from. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> pointer on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDesc">
+<span id="_CPPv3NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDesc"></span><span id="_CPPv2NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDesc"></span><span id="PxCooking::createSoftBodyMesh__PxTetrahedronMeshDescCR.PxTetrahedronMeshDescCR.PxSoftBodySimulationDataDescCRC"></span><span class="target" id="class_px_cooking_1afd564cafd455d80d7718ae13b4552664"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMeshDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html#_CPPv428PxSoftBodySimulationDataDesc" title="PxSoftBodySimulationDataDesc"><span class="n"><span class="pre">PxSoftBodySimulationDataDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softbodyDataDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18createSoftBodyMeshERK21PxTetrahedronMeshDescRK21PxTetrahedronMeshDescRK28PxSoftBodySimulationDataDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a softbody mesh without going through a stream. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookSoftBodyMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the simulation mesh from. </p></li>
+<li><p><strong>collisionMeshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the collision mesh from. </p></li>
+<li><p><strong>softbodyDataDesc</strong> – <strong>[in]</strong> The softbody data descriptor to read mapping information from. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> pointer on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking19cookTetrahedronMeshERK21PxTetrahedronMeshDescR14PxOutputStream">
+<span id="_CPPv3NK9PxCooking19cookTetrahedronMeshERK21PxTetrahedronMeshDescR14PxOutputStream"></span><span id="_CPPv2NK9PxCooking19cookTetrahedronMeshERK21PxTetrahedronMeshDescR14PxOutputStream"></span><span id="PxCooking::cookTetrahedronMesh__PxTetrahedronMeshDescCR.PxOutputStreamRC"></span><span class="target" id="class_px_cooking_1a06555179e2c785aa57d6ebb3fe2647da"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookTetrahedronMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshDesc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking19cookTetrahedronMeshERK21PxTetrahedronMeshDescR14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a tetrahedron mesh. </p>
+<p>The results are written to the stream.</p>
+<p>To create a tetrahedron mesh object it is necessary to first ‘cook’ the mesh data into a form which allows the SDK to perform efficient collision detection.</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> allows a mesh description to be cooked into a binary stream suitable for loading and performing collision detection at runtime.</p>
+<p>Example</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a74dd1804487589805f172d951d27d8c2"><span class="std std-ref">PxPhysics.createTetrahedronMesh()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDescR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDescR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDescR19PxInsertionCallback"></span><span id="PxCooking::createTetrahedronMesh__PxTetrahedronMeshDescCR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1a3f4241882e816761a013fc06d6f36d5b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh.html#_CPPv417PxTetrahedronMesh" title="PxTetrahedronMesh"><span class="n"><span class="pre">PxTetrahedronMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createTetrahedronMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshDesc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDescR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a tetrahedron mesh without going through a stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a06555179e2c785aa57d6ebb3fe2647da"><span class="std std-ref">cookTetrahedronMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookTetrahedronMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> can be obtained through <a class="reference internal" href="class_px_physics.html#class_px_physics_1a696d1f05c8b5f5bbcae4c80713be5d35"><span class="std std-ref">PxPhysics::getPhysicsInsertionCallback()</span></a> or <a class="reference internal" href="#class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"><span class="std std-ref">PxCooking::getStandaloneInsertionCallback()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_tetrahedron_mesh.html#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> pointer on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDesc">
+<span id="_CPPv3NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDesc"></span><span id="_CPPv2NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDesc"></span><span id="PxCooking::createTetrahedronMesh__PxTetrahedronMeshDescCRC"></span><span class="target" id="class_px_cooking_1af3c27c430da4132e0073e1f3da3b8dbb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh.html#_CPPv417PxTetrahedronMesh" title="PxTetrahedronMesh"><span class="n"><span class="pre">PxTetrahedronMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createTetrahedronMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking21createTetrahedronMeshERK21PxTetrahedronMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a tetrahedron mesh without going through a stream. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a06555179e2c785aa57d6ebb3fe2647da"><span class="std std-ref">cookTetrahedronMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookTetrahedronMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>meshDesc</strong> – <strong>[in]</strong> The tetrahedron mesh descriptor to read the mesh from. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_tetrahedron_mesh.html#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> pointer on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking20computeModelsMappingER21PxTetrahedronMeshDataRK21PxTetrahedronMeshDataRK23PxSoftBodyCollisionDataPK13PxBoundedData">
+<span id="_CPPv3NK9PxCooking20computeModelsMappingER21PxTetrahedronMeshDataRK21PxTetrahedronMeshDataRK23PxSoftBodyCollisionDataPK13PxBoundedData"></span><span id="_CPPv2NK9PxCooking20computeModelsMappingER21PxTetrahedronMeshDataRK21PxTetrahedronMeshDataRK23PxSoftBodyCollisionDataPK13PxBoundedData"></span><span id="PxCooking::computeModelsMapping__PxTetrahedronMeshDataR.PxTetrahedronMeshDataCR.PxSoftBodyCollisionDataCR.PxBoundedDataCPC"></span><span class="target" id="class_px_cooking_1a223657abf123a8f66babb6f39b364c89"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_collision_mesh_mapping_data.html#_CPPv426PxCollisionMeshMappingData" title="PxCollisionMeshMappingData"><span class="n"><span class="pre">PxCollisionMeshMappingData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">computeModelsMapping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_tetrahedron_mesh_data.html#_CPPv421PxTetrahedronMeshData" title="PxTetrahedronMeshData"><span class="n"><span class="pre">PxTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMesh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_data.html#_CPPv421PxTetrahedronMeshData" title="PxTetrahedronMeshData"><span class="n"><span class="pre">PxTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMesh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_collision_data.html#_CPPv423PxSoftBodyCollisionData" title="PxSoftBodyCollisionData"><span class="n"><span class="pre">PxSoftBodyCollisionData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexToTet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking20computeModelsMappingER21PxTetrahedronMeshDataRK21PxTetrahedronMeshDataRK23PxSoftBodyCollisionDataPK13PxBoundedData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the mapping between collision and simulation mesh. </p>
+<p>The softbody deformation is computed on the simulation mesh. To deform the collision mesh accordingly it needs to be specified how its vertices need to be placed and updated inside the deformation mesh. This method computes that embedding information.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_tet_maker.html#class_px_tet_maker_1a152ef2d2547fb78b28cf8f7bfbf971f5"><span class="std std-ref">PxTetMaker::createVoxelTetrahedronMesh</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMesh</strong> – <strong>[in]</strong> A tetrahedral mesh that defines the shape of the simulation mesh which is used to compute the body’s deformation </p></li>
+<li><p><strong>collisionMesh</strong> – <strong>[in]</strong> A tetrahedral mesh that defines the shape of the collision mesh which is used for collision detection </p></li>
+<li><p><strong>collisionData</strong> – <strong>[in]</strong> A data container that contains acceleration structures and surface information of the collision mesh </p></li>
+<li><p><strong>vertexToTet</strong> – <strong>[in]</strong> Optional indices (array of integers) that specifies the index of the tetrahedron in the simulation mesh that contains a collision mesh vertex. If not provided, the embedding will be computed internally. If the simulation mesh is obtained from <a class="reference internal" href="class_px_tet_maker.html#class_px_tet_maker_1a152ef2d2547fb78b28cf8f7bfbf971f5"><span class="std std-ref">PxTetMaker::createVoxelTetrahedronMesh</span></a>, then the vertexToTet map createVoxelTetrahedronMesh returned should be used here. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_collision_mesh_mapping_data.html#class_px_collision_mesh_mapping_data"><span class="std std-ref">PxCollisionMeshMappingData</span></a> pointer that describes how the collision mesh is embedded into the simulation mesh</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking20computeCollisionDataERK21PxTetrahedronMeshDesc">
+<span id="_CPPv3NK9PxCooking20computeCollisionDataERK21PxTetrahedronMeshDesc"></span><span id="_CPPv2NK9PxCooking20computeCollisionDataERK21PxTetrahedronMeshDesc"></span><span id="PxCooking::computeCollisionData__PxTetrahedronMeshDescCRC"></span><span class="target" id="class_px_cooking_1a2381fa090c3eb595f31745d4f12389ce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html#_CPPv430PxCollisionTetrahedronMeshData" title="PxCollisionTetrahedronMeshData"><span class="n"><span class="pre">PxCollisionTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">computeCollisionData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMeshDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking20computeCollisionDataERK21PxTetrahedronMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes data to accelerate collision detection of tetrahedral meshes. </p>
+<p>Computes data structures to speed up collision detection with tetrahedral meshes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>collisionMeshDesc</strong> – <strong>[in]</strong> Raw tetrahedral mesh descriptor wich will be used for collision detection </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html#class_px_collision_tetrahedron_mesh_data"><span class="std std-ref">PxCollisionTetrahedronMeshData</span></a> pointer that describes the collision mesh </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking21computeSimulationDataERK21PxTetrahedronMeshDesc">
+<span id="_CPPv3NK9PxCooking21computeSimulationDataERK21PxTetrahedronMeshDesc"></span><span id="_CPPv2NK9PxCooking21computeSimulationDataERK21PxTetrahedronMeshDesc"></span><span id="PxCooking::computeSimulationData__PxTetrahedronMeshDescCRC"></span><span class="target" id="class_px_cooking_1a8586f6f193f4ca511ee1b09d9db260c1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html#_CPPv431PxSimulationTetrahedronMeshData" title="PxSimulationTetrahedronMeshData"><span class="n"><span class="pre">PxSimulationTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">computeSimulationData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#_CPPv421PxTetrahedronMeshDesc" title="PxTetrahedronMeshDesc"><span class="n"><span class="pre">PxTetrahedronMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMeshDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking21computeSimulationDataERK21PxTetrahedronMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes data to accelerate collision detection of tetrahedral meshes. </p>
+<p>Computes data to compute and store a softbody’s deformation using FEM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>simulationMeshDesc</strong> – <strong>[in]</strong> Raw tetrahedral mesh descriptor wich will be used for FEM simulation </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html#class_px_simulation_tetrahedron_mesh_data"><span class="std std-ref">PxSimulationTetrahedronMeshData</span></a> pointer that describes the simulation mesh </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking20assembleSoftBodyMeshER21PxTetrahedronMeshDataR24PxSoftBodySimulationDataR21PxTetrahedronMeshDataR23PxSoftBodyCollisionDataR26PxCollisionMeshMappingDataR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking20assembleSoftBodyMeshER21PxTetrahedronMeshDataR24PxSoftBodySimulationDataR21PxTetrahedronMeshDataR23PxSoftBodyCollisionDataR26PxCollisionMeshMappingDataR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking20assembleSoftBodyMeshER21PxTetrahedronMeshDataR24PxSoftBodySimulationDataR21PxTetrahedronMeshDataR23PxSoftBodyCollisionDataR26PxCollisionMeshMappingDataR19PxInsertionCallback"></span><span id="PxCooking::assembleSoftBodyMesh__PxTetrahedronMeshDataR.PxSoftBodySimulationDataR.PxTetrahedronMeshDataR.PxSoftBodyCollisionDataR.PxCollisionMeshMappingDataR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1aa4df9e9a14ef7f0594446522cb959895"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">assembleSoftBodyMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_tetrahedron_mesh_data.html#_CPPv421PxTetrahedronMeshData" title="PxTetrahedronMeshData"><span class="n"><span class="pre">PxTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMesh</span></span>, <a class="reference internal" href="class_px_soft_body_simulation_data.html#_CPPv424PxSoftBodySimulationData" title="PxSoftBodySimulationData"><span class="n"><span class="pre">PxSoftBodySimulationData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationData</span></span>, <a class="reference internal" href="class_px_tetrahedron_mesh_data.html#_CPPv421PxTetrahedronMeshData" title="PxTetrahedronMeshData"><span class="n"><span class="pre">PxTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMesh</span></span>, <a class="reference internal" href="class_px_soft_body_collision_data.html#_CPPv423PxSoftBodyCollisionData" title="PxSoftBodyCollisionData"><span class="n"><span class="pre">PxSoftBodyCollisionData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionData</span></span>, <a class="reference internal" href="class_px_collision_mesh_mapping_data.html#_CPPv426PxCollisionMeshMappingData" title="PxCollisionMeshMappingData"><span class="n"><span class="pre">PxCollisionMeshMappingData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mappingData</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking20assembleSoftBodyMeshER21PxTetrahedronMeshDataR24PxSoftBodySimulationDataR21PxTetrahedronMeshDataR23PxSoftBodyCollisionDataR26PxCollisionMeshMappingDataR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bundles all data required for softbody simulation. </p>
+<p>Creates a container that provides everything to create a <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> createSoftBody() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMesh</strong> – <strong>[in]</strong> The geometry (tetrahedral mesh) to be used as simulation mesh </p></li>
+<li><p><strong>simulationData</strong> – <strong>[in]</strong> Additional non-tetmesh data that contains mass information etc. for the simulation mesh </p></li>
+<li><p><strong>collisionMesh</strong> – <strong>[in]</strong> The geometry (tetrahedral mesh) to be used for collision detection </p></li>
+<li><p><strong>collisionData</strong> – <strong>[in]</strong> Additional non-tetmesh data that contains surface information, acceleration structures etc. for the simulation mesh </p></li>
+<li><p><strong>mappingData</strong> – <strong>[in]</strong> Mapping that describes how the collision mesh’s vertices are embedded into the simulation mesh </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> pointer that represents a softbody mesh bundling all data (simulation mesh, collision mesh etc.)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking20assembleSoftBodyMeshER31PxSimulationTetrahedronMeshDataR30PxCollisionTetrahedronMeshDataR26PxCollisionMeshMappingDataR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking20assembleSoftBodyMeshER31PxSimulationTetrahedronMeshDataR30PxCollisionTetrahedronMeshDataR26PxCollisionMeshMappingDataR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking20assembleSoftBodyMeshER31PxSimulationTetrahedronMeshDataR30PxCollisionTetrahedronMeshDataR26PxCollisionMeshMappingDataR19PxInsertionCallback"></span><span id="PxCooking::assembleSoftBodyMesh__PxSimulationTetrahedronMeshDataR.PxCollisionTetrahedronMeshDataR.PxCollisionMeshMappingDataR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1aa98672a6cac46e364a91932085c067a9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">assembleSoftBodyMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html#_CPPv431PxSimulationTetrahedronMeshData" title="PxSimulationTetrahedronMeshData"><span class="n"><span class="pre">PxSimulationTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulationMesh</span></span>, <a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html#_CPPv430PxCollisionTetrahedronMeshData" title="PxCollisionTetrahedronMeshData"><span class="n"><span class="pre">PxCollisionTetrahedronMeshData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collisionMesh</span></span>, <a class="reference internal" href="class_px_collision_mesh_mapping_data.html#_CPPv426PxCollisionMeshMappingData" title="PxCollisionMeshMappingData"><span class="n"><span class="pre">PxCollisionMeshMappingData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mappingData</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking20assembleSoftBodyMeshER31PxSimulationTetrahedronMeshDataR30PxCollisionTetrahedronMeshDataR26PxCollisionMeshMappingDataR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bundles all data required for softbody simulation. </p>
+<p>Creates a container that provides everything to create a <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> createSoftBody() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulationMesh</strong> – <strong>[in]</strong> Container that provides all information about the simulation mesh (geometry, mass distribution etc.) </p></li>
+<li><p><strong>collisionMesh</strong> – <strong>[in]</strong> Container that provides all information about the collision mesh (geometry, surface information, acceleration structures etc.) </p></li>
+<li><p><strong>mappingData</strong> – <strong>[in]</strong> Mapping that describes how the collision mesh’s vertices are embedded into the simulation mesh </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> pointer that represents a softbody mesh bundling all data (simulation mesh, collision mesh etc.)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking14cookConvexMeshERK16PxConvexMeshDescR14PxOutputStreamPN25PxConvexMeshCookingResult4EnumE">
+<span id="_CPPv3NK9PxCooking14cookConvexMeshERK16PxConvexMeshDescR14PxOutputStreamPN25PxConvexMeshCookingResult4EnumE"></span><span id="_CPPv2NK9PxCooking14cookConvexMeshERK16PxConvexMeshDescR14PxOutputStreamPN25PxConvexMeshCookingResult4EnumE"></span><span id="PxCooking::cookConvexMesh__PxConvexMeshDescCR.PxOutputStreamR.PxConvexMeshCookingResult::EnumPC"></span><span class="target" id="class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookConvexMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh_desc.html#_CPPv416PxConvexMeshDesc" title="PxConvexMeshDesc"><span class="n"><span class="pre">PxConvexMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span>, <a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#_CPPv425PxConvexMeshCookingResult" title="PxConvexMeshCookingResult"><span class="n"><span class="pre">PxConvexMeshCookingResult</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#_CPPv4N25PxConvexMeshCookingResult4EnumE" title="PxConvexMeshCookingResult::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">condition</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking14cookConvexMeshERK16PxConvexMeshDescR14PxOutputStreamPN25PxConvexMeshCookingResult4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a convex mesh. </p>
+<p>The results are written to the stream.</p>
+<p>To create a triangle mesh object it is necessary to first ‘cook’ the mesh data into a form which allows the SDK to perform efficient collision detection.</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> allows a mesh description to be cooked into a binary stream suitable for loading and performing collision detection at runtime.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a29bea4d23794e1521a0a6cbfa8e62464"><span class="std std-ref">cookTriangleMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#struct_px_convex_mesh_cooking_result_1ac1c7b1cbfc80b0af00bec95faf1ebf42"><span class="std std-ref">PxConvexMeshCookingResult::Enum</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The number of vertices and the number of convex polygons in a cooked convex mesh is limited to 255. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If those limits are exceeded in either the user-provided data or the final cooked mesh, an error is reported.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The convex mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+<li><p><strong>condition</strong> – <strong>[out]</strong> Result from convex mesh cooking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16createConvexMeshERK16PxConvexMeshDescR19PxInsertionCallbackPN25PxConvexMeshCookingResult4EnumE">
+<span id="_CPPv3NK9PxCooking16createConvexMeshERK16PxConvexMeshDescR19PxInsertionCallbackPN25PxConvexMeshCookingResult4EnumE"></span><span id="_CPPv2NK9PxCooking16createConvexMeshERK16PxConvexMeshDescR19PxInsertionCallbackPN25PxConvexMeshCookingResult4EnumE"></span><span id="PxCooking::createConvexMesh__PxConvexMeshDescCR.PxInsertionCallbackR.PxConvexMeshCookingResult::EnumPC"></span><span class="target" id="class_px_cooking_1a282c2ba36ea6362f18d3033d798e7863"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createConvexMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh_desc.html#_CPPv416PxConvexMeshDesc" title="PxConvexMeshDesc"><span class="n"><span class="pre">PxConvexMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span>, <a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#_CPPv425PxConvexMeshCookingResult" title="PxConvexMeshCookingResult"><span class="n"><span class="pre">PxConvexMeshCookingResult</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#_CPPv4N25PxConvexMeshCookingResult4EnumE" title="PxConvexMeshCookingResult::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">condition</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16createConvexMeshERK16PxConvexMeshDescR19PxInsertionCallbackPN25PxConvexMeshCookingResult4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a convex mesh without going through a stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookConvexMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> can be obtained through <a class="reference internal" href="class_px_physics.html#class_px_physics_1a696d1f05c8b5f5bbcae4c80713be5d35"><span class="std std-ref">PxPhysics::getPhysicsInsertionCallback()</span></a> or <a class="reference internal" href="#class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"><span class="std std-ref">PxCooking::getStandaloneInsertionCallback()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The convex mesh descriptor to read the mesh from. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+<li><p><strong>condition</strong> – <strong>[out]</strong> Result from convex mesh cooking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_convex_mesh.html#class_px_convex_mesh"><span class="std std-ref">PxConvexMesh</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16createConvexMeshERK16PxConvexMeshDesc">
+<span id="_CPPv3NK9PxCooking16createConvexMeshERK16PxConvexMeshDesc"></span><span id="_CPPv2NK9PxCooking16createConvexMeshERK16PxConvexMeshDesc"></span><span id="PxCooking::createConvexMesh__PxConvexMeshDescCRC"></span><span class="target" id="class_px_cooking_1a884cf7fa00d9f894e3fbc3747e7ca0a2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createConvexMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh_desc.html#_CPPv416PxConvexMeshDesc" title="PxConvexMeshDesc"><span class="n"><span class="pre">PxConvexMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16createConvexMeshERK16PxConvexMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a convex mesh without going through a stream. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookConvexMesh, but the produced mesh is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The convex mesh descriptor to read the mesh from. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_convex_mesh.html#class_px_convex_mesh"><span class="std std-ref">PxConvexMesh</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18validateConvexMeshERK16PxConvexMeshDesc">
+<span id="_CPPv3NK9PxCooking18validateConvexMeshERK16PxConvexMeshDesc"></span><span id="_CPPv2NK9PxCooking18validateConvexMeshERK16PxConvexMeshDesc"></span><span id="PxCooking::validateConvexMesh__PxConvexMeshDescCRC"></span><span class="target" id="class_px_cooking_1aea8a3c270cc6db602ad250c82c1225bc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">validateConvexMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_convex_mesh_desc.html#_CPPv416PxConvexMeshDesc" title="PxConvexMeshDesc"><span class="n"><span class="pre">PxConvexMeshDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18validateConvexMeshERK16PxConvexMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Verifies if the convex mesh is valid. </p>
+<p>Prints an error message for each inconsistency found.</p>
+<p>The convex mesh descriptor must contain an already created convex mesh - the vertices, indices and polygons must be provided. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function should be used if <a class="reference internal" href="struct_px_convex_flag.html#struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a10a876ecefb45e1c7dbaec2afed5c3ad"><span class="std std-ref">PxConvexFlag::eDISABLE_MESH_VALIDATION</span></a> is planned to be used in release builds.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The convex mesh descriptor to read the mesh from.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if all the validity conditions hold, false otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking19computeHullPolygonsERK20PxSimpleTriangleMeshR19PxAllocatorCallbackR5PxU32RP6PxVec3R5PxU32RP5PxU32R5PxU32RP13PxHullPolygon">
+<span id="_CPPv3NK9PxCooking19computeHullPolygonsERK20PxSimpleTriangleMeshR19PxAllocatorCallbackR5PxU32RP6PxVec3R5PxU32RP5PxU32R5PxU32RP13PxHullPolygon"></span><span id="_CPPv2NK9PxCooking19computeHullPolygonsERK20PxSimpleTriangleMeshR19PxAllocatorCallbackR5PxU32RP6PxVec3R5PxU32RP5PxU32R5PxU32RP13PxHullPolygon"></span><span id="PxCooking::computeHullPolygons__PxSimpleTriangleMeshCR.PxAllocatorCallbackR.PxU32R.PxVec3PR.PxU32R.PxU32PR.PxU32R.PxHullPolygonPRC"></span><span class="target" id="class_px_cooking_1a75c77a6b39563de7b2d3736e0aaac85b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeHullPolygons</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_simple_triangle_mesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mesh</span></span>, <a class="reference internal" href="class_px_allocator_callback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><span class="n"><span class="pre">PxAllocatorCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inCallback</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nbVerts</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vertices</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nbIndices</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">indices</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nbPolygons</span></span>, <a class="reference internal" href="struct_px_hull_polygon.html#_CPPv413PxHullPolygon" title="PxHullPolygon"><span class="n"><span class="pre">PxHullPolygon</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hullPolygons</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking19computeHullPolygonsERK20PxSimpleTriangleMeshR19PxAllocatorCallbackR5PxU32RP6PxVec3R5PxU32RP5PxU32R5PxU32RP13PxHullPolygon" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computed hull polygons from given vertices and triangles. </p>
+<p>Polygons are needed for <a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc"><span class="std std-ref">PxConvexMeshDesc</span></a> rather than triangles.</p>
+<p>Please note that the resulting polygons may have different number of vertices. Some vertices may be removed. The output vertices, indices and polygons must be used to construct a hull.</p>
+<p>The provided <a class="reference internal" href="class_px_allocator_callback.html#class_px_allocator_callback"><span class="std std-ref">PxAllocatorCallback</span></a> does allocate the out array’s. It is the user responsibility to deallocated those array’s.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="typedef_group__cooking_1ga36d3375ae49e62c3842c3fbe0c620651.html#group__cooking_1ga36d3375ae49e62c3842c3fbe0c620651"><span class="std std-ref">PxConvexFlags</span></a> <a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc"><span class="std std-ref">PxConvexMeshDesc</span></a> <a class="reference internal" href="class_px_simple_triangle_mesh.html#class_px_simple_triangle_mesh"><span class="std std-ref">PxSimpleTriangleMesh</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – <strong>[in]</strong> Simple triangle mesh containing vertices and triangles used to compute polygons. </p></li>
+<li><p><strong>inCallback</strong> – <strong>[in]</strong> Memory allocator for out array allocations. </p></li>
+<li><p><strong>nbVerts</strong> – <strong>[out]</strong> Number of vertices used by polygons. </p></li>
+<li><p><strong>vertices</strong> – <strong>[out]</strong> Vertices array used by polygons. </p></li>
+<li><p><strong>nbIndices</strong> – <strong>[out]</strong> Number of indices used by polygons. </p></li>
+<li><p><strong>indices</strong> – <strong>[out]</strong> Indices array used by polygons. </p></li>
+<li><p><strong>nbPolygons</strong> – <strong>[out]</strong> Number of created polygons. </p></li>
+<li><p><strong>hullPolygons</strong> – <strong>[out]</strong> Polygons array. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking15cookHeightFieldERK17PxHeightFieldDescR14PxOutputStream">
+<span id="_CPPv3NK9PxCooking15cookHeightFieldERK17PxHeightFieldDescR14PxOutputStream"></span><span id="_CPPv2NK9PxCooking15cookHeightFieldERK17PxHeightFieldDescR14PxOutputStream"></span><span id="PxCooking::cookHeightField__PxHeightFieldDescCR.PxOutputStreamRC"></span><span class="target" id="class_px_cooking_1abf4f0fe5c9a709cde84338c5bdf7cde4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookHeightField</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field_desc.html#_CPPv417PxHeightFieldDesc" title="PxHeightFieldDesc"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking15cookHeightFieldERK17PxHeightFieldDescR14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a heightfield. </p>
+<p>The results are written to the stream.</p>
+<p>To create a heightfield object there is an option to precompute some of calculations done while loading the heightfield data.</p>
+<p><a class="reference internal" href="#class_px_cooking_1abf4f0fe5c9a709cde84338c5bdf7cde4"><span class="std std-ref">cookHeightField()</span></a> allows a heightfield description to be cooked into a binary stream suitable for loading and performing collision detection at runtime.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a1806546c22306e8d44b7ff7719fbcc99"><span class="std std-ref">PxPhysics.createHeightField()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The heightfield descriptor to read the HF from. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking17createHeightFieldERK17PxHeightFieldDescR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking17createHeightFieldERK17PxHeightFieldDescR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking17createHeightFieldERK17PxHeightFieldDescR19PxInsertionCallback"></span><span id="PxCooking::createHeightField__PxHeightFieldDescCR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1ac84fd602f1ae4bedf4ed0a1019a30566"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field.html#_CPPv413PxHeightField" title="PxHeightField"><span class="n"><span class="pre">PxHeightField</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createHeightField</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field_desc.html#_CPPv417PxHeightFieldDesc" title="PxHeightFieldDesc"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking17createHeightFieldERK17PxHeightFieldDescR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a heightfield mesh and inserts it into <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="#class_px_cooking_1afebe112057bd03660dd78dee384d5321"><span class="std std-ref">setParams()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The heightfield descriptor to read the HF from. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking17createHeightFieldERK17PxHeightFieldDesc">
+<span id="_CPPv3NK9PxCooking17createHeightFieldERK17PxHeightFieldDesc"></span><span id="_CPPv2NK9PxCooking17createHeightFieldERK17PxHeightFieldDesc"></span><span id="PxCooking::createHeightField__PxHeightFieldDescCRC"></span><span class="target" id="class_px_cooking_1a98172d7bacea33e8130ab944bf7b8ee6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field.html#_CPPv413PxHeightField" title="PxHeightField"><span class="n"><span class="pre">PxHeightField</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createHeightField</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field_desc.html#_CPPv417PxHeightFieldDesc" title="PxHeightFieldDesc"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking17createHeightFieldERK17PxHeightFieldDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a heightfield mesh and inserts it into <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1ade8e845a8a4253292aed0ef93177ffa1"><span class="std std-ref">cookConvexMesh()</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a29dcbbe128cef11eaf4ce5696c216dfd"><span class="std std-ref">PxPhysics.createTriangleMesh()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The heightfield descriptor to read the HF from. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking7cookBVHERK9PxBVHDescR14PxOutputStream">
+<span id="_CPPv3NK9PxCooking7cookBVHERK9PxBVHDescR14PxOutputStream"></span><span id="_CPPv2NK9PxCooking7cookBVHERK9PxBVHDescR14PxOutputStream"></span><span id="PxCooking::cookBVH__PxBVHDescCR.PxOutputStreamRC"></span><span class="target" id="class_px_cooking_1a142cbc47a0cce7eca032e6d40f133937"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookBVH</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h_desc.html#_CPPv49PxBVHDesc" title="PxBVHDesc"><span class="n"><span class="pre">PxBVHDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking7cookBVHERK9PxBVHDescR14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks a bounding volume hierarchy. </p>
+<p>The results are written to the stream.</p>
+<p><a class="reference internal" href="#class_px_cooking_1a142cbc47a0cce7eca032e6d40f133937"><span class="std std-ref">cookBVH()</span></a> allows a BVH description to be cooked into a binary stream suitable for loading and performing BVH detection at runtime.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_b_v_h.html#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> <a class="reference internal" href="class_px_rigid_actor_ext.html#class_px_rigid_actor_ext_1aa9a87cc3fb664926a444280bfb1ebe43"><span class="std std-ref">PxRigidActorExt::getRigidActorShapeLocalBoundsList</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The BVH descriptor. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking16cookBVHStructureERK18PxBVHStructureDescR14PxOutputStream">
+<span id="_CPPv3NK9PxCooking16cookBVHStructureERK18PxBVHStructureDescR14PxOutputStream"></span><span id="_CPPv2NK9PxCooking16cookBVHStructureERK18PxBVHStructureDescR14PxOutputStream"></span><span id="PxCooking::cookBVHStructure__PxBVHStructureDescCR.PxOutputStreamRC"></span><span class="target" id="class_px_cooking_1a57efcf3224b978fc6e7a056a579cec92"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cookBVHStructure</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__cooking_1ga04c009088c378257f5b9688e6641d9b1.html#_CPPv418PxBVHStructureDesc" title="PxBVHStructureDesc"><span class="n"><span class="pre">PxBVHStructureDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking16cookBVHStructureERK18PxBVHStructureDescR14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Backward compatibility helper. </p>
+<p>Cooks a bounding volume hierarchy. The results are written to the stream.</p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The BVH descriptor. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> User stream to output the cooked data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true on success. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking9createBVHERK9PxBVHDescR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking9createBVHERK9PxBVHDescR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking9createBVHERK9PxBVHDescR19PxInsertionCallback"></span><span id="PxCooking::createBVH__PxBVHDescCR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1a1d72cd0311c88c0d6d236e62e52d5282"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h.html#_CPPv45PxBVH" title="PxBVH"><span class="n"><span class="pre">PxBVH</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createBVH</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h_desc.html#_CPPv49PxBVHDesc" title="PxBVHDesc"><span class="n"><span class="pre">PxBVHDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking9createBVHERK9PxBVHDescR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a bounding volume hierarchy without going through a stream. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a142cbc47a0cce7eca032e6d40f133937"><span class="std std-ref">cookBVH()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookBVH, but the produced BVH is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> can be obtained through <a class="reference internal" href="class_px_physics.html#class_px_physics_1a696d1f05c8b5f5bbcae4c80713be5d35"><span class="std std-ref">PxPhysics::getPhysicsInsertionCallback()</span></a> or <a class="reference internal" href="#class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"><span class="std std-ref">PxCooking::getStandaloneInsertionCallback()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The BVH descriptor. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_b_v_h.html#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking9createBVHERK9PxBVHDesc">
+<span id="_CPPv3NK9PxCooking9createBVHERK9PxBVHDesc"></span><span id="_CPPv2NK9PxCooking9createBVHERK9PxBVHDesc"></span><span id="PxCooking::createBVH__PxBVHDescCRC"></span><span class="target" id="class_px_cooking_1a958ff1b93fcac33c4d95cf81b97fc91c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h.html#_CPPv45PxBVH" title="PxBVH"><span class="n"><span class="pre">PxBVH</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createBVH</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h_desc.html#_CPPv49PxBVHDesc" title="PxBVHDesc"><span class="n"><span class="pre">PxBVHDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking9createBVHERK9PxBVHDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cooks and creates a bounding volume hierarchy without going through a stream. </p>
+<p>Convenience function for standalone objects.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1a142cbc47a0cce7eca032e6d40f133937"><span class="std std-ref">cookBVH()</span></a> <a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does the same as cookBVH, but the produced BVH is not stored into a stream but is either directly inserted in <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>, or created as a standalone object. Use this method if you are unable to cook offline.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The BVH descriptor. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_b_v_h.html#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> pointer on success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxCooking18createBVHStructureERK18PxBVHStructureDescR19PxInsertionCallback">
+<span id="_CPPv3NK9PxCooking18createBVHStructureERK18PxBVHStructureDescR19PxInsertionCallback"></span><span id="_CPPv2NK9PxCooking18createBVHStructureERK18PxBVHStructureDescR19PxInsertionCallback"></span><span id="PxCooking::createBVHStructure__PxBVHStructureDescCR.PxInsertionCallbackRC"></span><span class="target" id="class_px_cooking_1a879fab8bb04570732c5d8e7d93f719d0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga45b098e03b461fde11a7346ae409a926.html#_CPPv414PxBVHStructure" title="PxBVHStructure"><span class="n"><span class="pre">PxBVHStructure</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createBVHStructure</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__cooking_1ga04c009088c378257f5b9688e6641d9b1.html#_CPPv418PxBVHStructureDesc" title="PxBVHStructureDesc"><span class="n"><span class="pre">PxBVHStructureDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxCooking18createBVHStructureERK18PxBVHStructureDescR19PxInsertionCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Backward compatibility helper. </p>
+<p>Cooks and creates a bounding volume hierarchy without going through a stream.</p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>desc</strong> – <strong>[in]</strong> The BVH descriptor. </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_b_v_h.html#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> pointer on success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxCooking30getStandaloneInsertionCallbackEv">
+<span id="_CPPv3N9PxCooking30getStandaloneInsertionCallbackEv"></span><span id="_CPPv2N9PxCooking30getStandaloneInsertionCallbackEv"></span><span id="PxCooking::getStandaloneInsertionCallback"></span><span class="target" id="class_px_cooking_1a8aae719140d45c8a44c3b7f4ba5a3f06"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getStandaloneInsertionCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxCooking30getStandaloneInsertionCallbackEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets standalone object insertion interface. </p>
+<p>This interface allows the creation of standalone objects that can exist without a <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> object.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_cooking_1aed8fc39263baf82f0feafde2303c919d"><span class="std std-ref">PxCooking::createTriangleMesh</span></a> PxCooking::createHeightfield <a class="reference internal" href="#class_px_cooking_1a3f4241882e816761a013fc06d6f36d5b"><span class="std std-ref">PxCooking::createTetrahedronMesh</span></a> <a class="reference internal" href="#class_px_cooking_1a1d72cd0311c88c0d6d236e62e52d5282"><span class="std std-ref">PxCooking::createBVH</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxCookingD0Ev">
+<span id="_CPPv3N9PxCookingD0Ev"></span><span id="_CPPv2N9PxCookingD0Ev"></span><span id="PxCooking::~PxCooking"></span><span class="target" id="class_px_cooking_1a22a1e6a4a68af0bb0f6568bb59108938"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxCooking</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxCookingD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

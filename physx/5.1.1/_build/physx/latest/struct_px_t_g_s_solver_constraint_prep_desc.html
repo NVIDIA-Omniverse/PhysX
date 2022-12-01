@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTGSSolverConstraintPrepDesc &mdash; physx 5.1.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTGSSolverConstraintPrepDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtgssolverconstraintprepdesc">
+<span id="exhale-struct-struct-px-t-g-s-solver-constraint-prep-desc"></span><h1>PxTGSSolverConstraintPrepDesc<a class="headerlink" href="#pxtgssolverconstraintprepdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#file-include-solver-pxsolverdefs-h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxTGSSolverConstraintPrepDescBase</span></code> (<a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc_base.html#exhale-struct-struct-px-t-g-s-solver-constraint-prep-desc-base"><span class="std std-ref">PxTGSSolverConstraintPrepDescBase</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv429PxTGSSolverConstraintPrepDesc">
+<span id="_CPPv329PxTGSSolverConstraintPrepDesc"></span><span id="_CPPv229PxTGSSolverConstraintPrepDesc"></span><span id="PxTGSSolverConstraintPrepDesc"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc_base.html#_CPPv433PxTGSSolverConstraintPrepDescBase" title="PxTGSSolverConstraintPrepDescBase"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDescBase</span></span></a><a class="headerlink" href="#_CPPv429PxTGSSolverConstraintPrepDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc4rowsE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc4rowsE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc4rowsE"></span><span id="PxTGSSolverConstraintPrepDesc::rows__Px1DConstraintP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a6d22cbffa472183363fdb9b38400db09"></span><a class="reference internal" href="struct_px1_d_constraint.html#_CPPv414Px1DConstraint" title="Px1DConstraint"><span class="n"><span class="pre">Px1DConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">rows</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc4rowsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The start of the constraint rows. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc7numRowsE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc7numRowsE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc7numRowsE"></span><span id="PxTGSSolverConstraintPrepDesc::numRows__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a6fa8f15b3d25c668667d45ab0493d637"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numRows</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc7numRowsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of rows. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc13linBreakForceE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc13linBreakForceE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc13linBreakForceE"></span><span id="PxTGSSolverConstraintPrepDesc::linBreakForce__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a2e6f1bfe2c789007a302b614b730daaa"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linBreakForce</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc13linBreakForceE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc13angBreakForceE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc13angBreakForceE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc13angBreakForceE"></span><span id="PxTGSSolverConstraintPrepDesc::angBreakForce__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a8aa125210bc7775041c4ed07b5d0beca"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angBreakForce</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc13angBreakForceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Break forces. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc20minResponseThresholdE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc20minResponseThresholdE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc20minResponseThresholdE"></span><span id="PxTGSSolverConstraintPrepDesc::minResponseThreshold__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1abb4e61b97d7c31cda50f046a6997905b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minResponseThreshold</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc20minResponseThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The minimum response threshold. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc9writebackE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc9writebackE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc9writebackE"></span><span id="PxTGSSolverConstraintPrepDesc::writeback__voidP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a4e898ee147ebd910c17f972b36469c2f"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">writeback</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc9writebackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to constraint writeback structure. Reports back joint breaking. If not required, set to NULL. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc20disablePreprocessingE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc20disablePreprocessingE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc20disablePreprocessingE"></span><span id="PxTGSSolverConstraintPrepDesc::disablePreprocessing__b"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1ac90d6c44134ff6338c99f129334f877b"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">disablePreprocessing</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc20disablePreprocessingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Disable joint pre-processing. Pre-processing can improve stability but under certain circumstances, e.g. when some invInertia rows are zero/almost zero, can cause instabilities. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc13improvedSlerpE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc13improvedSlerpE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc13improvedSlerpE"></span><span id="PxTGSSolverConstraintPrepDesc::improvedSlerp__b"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a16112a28791d053030749d7a16dba358"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">improvedSlerp</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc13improvedSlerpE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Use improved slerp model. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc20driveLimitsAreForcesE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc20driveLimitsAreForcesE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc20driveLimitsAreForcesE"></span><span id="PxTGSSolverConstraintPrepDesc::driveLimitsAreForces__b"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a40bead37a891a1e5bdac959256e7f1bc"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">driveLimitsAreForces</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc20driveLimitsAreForcesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates whether drive limits are forces. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc14extendedLimitsE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc14extendedLimitsE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc14extendedLimitsE"></span><span id="PxTGSSolverConstraintPrepDesc::extendedLimits__b"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1ab0a996ed090bea6630a56bc00a4637d3"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extendedLimits</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc14extendedLimitsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Indicates whether extended limits are used. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc17disableConstraintE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc17disableConstraintE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc17disableConstraintE"></span><span id="PxTGSSolverConstraintPrepDesc::disableConstraint__b"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a448cb337881652f9fe00c881a0768007"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">disableConstraint</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc17disableConstraintE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Disables constraint. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc16body0WorldOffsetE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc16body0WorldOffsetE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc16body0WorldOffsetE"></span><span id="PxTGSSolverConstraintPrepDesc::body0WorldOffset__PxVec3p"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a004cef1f505727db9863d4a4790c326e"></span><a class="reference internal" href="typedef_group__foundation_1gae19453ec87b14571419b155915cd2553.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">body0WorldOffset</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc16body0WorldOffsetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Body0 world offset. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc4cA2wE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc4cA2wE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc4cA2wE"></span><span id="PxTGSSolverConstraintPrepDesc::cA2w__PxVec3p"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a594325665626281def4de0ca49ea63ec"></span><a class="reference internal" href="typedef_group__foundation_1gae19453ec87b14571419b155915cd2553.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cA2w</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc4cA2wE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Location of anchor point A in world space. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc4cB2wE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc4cB2wE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc4cB2wE"></span><span id="PxTGSSolverConstraintPrepDesc::cB2w__PxVec3p"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_1a5f000c7b9593185de8f7adefdb879a4c"></span><a class="reference internal" href="typedef_group__foundation_1gae19453ec87b14571419b155915cd2553.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cB2w</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc4cB2wE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Location of anchor point B in world space. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc13invMassScalesE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc13invMassScalesE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc13invMassScalesE"></span><span id="PxTGSSolverConstraintPrepDesc::invMassScales__PxConstraintInvMassScale"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1aae266269124532f1dee273c75209d9fb"></span><a class="reference internal" href="struct_px_constraint_inv_mass_scale.html#_CPPv424PxConstraintInvMassScale" title="PxConstraintInvMassScale"><span class="n"><span class="pre">PxConstraintInvMassScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invMassScales</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc13invMassScalesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The local mass scaling for this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc4descE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc4descE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc4descE"></span><span id="PxTGSSolverConstraintPrepDesc::desc__PxSolverConstraintDescP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a6a53ca0ea9f69a6581f2b44ed1ea8aa4"></span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">desc</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc4descE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Output: The <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> filled in by contact prep. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc5body0E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc5body0E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc5body0E"></span><span id="PxTGSSolverConstraintPrepDesc::body0__PxTGSSolverBodyVelCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a1b333a2fea69f88f1c11c9f812052e0f"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc5body0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc5body1E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc5body1E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc5body1E"></span><span id="PxTGSSolverConstraintPrepDesc::body1__PxTGSSolverBodyVelCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1ac428634b273386f0edf5e17ea3fd0049"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc5body1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc8body0TxIE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc8body0TxIE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc8body0TxIE"></span><span id="PxTGSSolverConstraintPrepDesc::body0TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a51d8370090983c269966739e14979e4a"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0TxI</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc8body0TxIE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#struct_px_t_g_s_solver_body_tx_inertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc8body1TxIE">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc8body1TxIE"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc8body1TxIE"></span><span id="PxTGSSolverConstraintPrepDesc::body1TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1abf87509917d688f2296b3e4ca1883bc2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1TxI</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc8body1TxIE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#struct_px_t_g_s_solver_body_tx_inertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc9bodyData0E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc9bodyData0E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc9bodyData0E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyData0__PxTGSSolverBodyDataCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a1bf247709055aaa9e9c702d76de6c866"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData0</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc9bodyData0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#struct_px_t_g_s_solver_body_data"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc9bodyData1E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc9bodyData1E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc9bodyData1E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyData1__PxTGSSolverBodyDataCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a93cdc318c9c74323988c5204870b6733"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData1</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc9bodyData1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#struct_px_t_g_s_solver_body_data"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyFrame0E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc10bodyFrame0E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc10bodyFrame0E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyFrame0__PxTransform"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1aeba37ba193902e0141dc9cd4d6cacaf2"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame0</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyFrame0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The world-space transform of the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyFrame1E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc10bodyFrame1E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc10bodyFrame1E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyFrame1__PxTransform"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a6a22f7cd3293b9877ec97560b1862e8c"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame1</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyFrame1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The world-space transform of the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyState0E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc10bodyState0E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc10bodyState0E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyState0__PxSolverContactDesc::BodyState"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a661a0d94ab747d3f6e71deb44179f74a"></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState0</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyState0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: Defines what kind of actor the first body is. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyState1E">
+<span id="_CPPv3N29PxTGSSolverConstraintPrepDesc10bodyState1E"></span><span id="_CPPv2N29PxTGSSolverConstraintPrepDesc10bodyState1E"></span><span id="PxTGSSolverConstraintPrepDesc::bodyState1__PxSolverContactDesc::BodyState"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a00e4ad46100575375c9fcddd86a166b3"></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState1</span></span></span><a class="headerlink" href="#_CPPv4N29PxTGSSolverConstraintPrepDesc10bodyState1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: Defines what kind of actor the second body is. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Nov 30, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
