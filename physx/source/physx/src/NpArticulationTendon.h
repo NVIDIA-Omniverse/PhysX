@@ -83,10 +83,25 @@ public:
 	NpArticulationTendonJointArray() : PxInlineArray<NpArticulationTendonJoint*, 4>("NpArticulationTendonJointArray") {}
 };
 
-class NpArticulationAttachment : public PxArticulationAttachment
+class NpArticulationAttachment : public PxArticulationAttachment, public NpBase
 {
 
 public:
+
+// PX_SERIALIZATION
+											NpArticulationAttachment(PxBaseFlags baseFlags)
+													: PxArticulationAttachment(baseFlags), NpBase(PxEmpty), mHandle(PxEmpty), mChildren(PxEmpty), mCore(PxEmpty) {}
+				void						preExportDataReset() { mCore.preExportDataReset(); }
+	virtual		void						exportExtraData(PxSerializationContext& );
+				void						importExtraData(PxDeserializationContext& );
+				void						resolveReferences(PxDeserializationContext& );
+	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
+	virtual		bool						isSubordinate()  const	 { return true; } 
+	static		NpArticulationAttachment*	createObject(PxU8*& address, PxDeserializationContext& context);
+	static		void						getBinaryMetaData(PxOutputStream& stream);		
+//~PX_SERIALIZATION
+
+
 	NpArticulationAttachment(PxArticulationAttachment* parent, const PxReal coefficient, const PxVec3 relativeOffset, PxArticulationLink* link);
 
 	virtual ~NpArticulationAttachment();
@@ -122,8 +137,6 @@ public:
 
 	void removeChild(NpArticulationAttachment* child);
 
-	static void getBinaryMetaData(PxOutputStream& stream);
-
 	PxArticulationLink*					mLink;				//the link this attachment attach to 
 	PxArticulationAttachment*			mParent;
 	ArticulationAttachmentHandle		mHandle;
@@ -136,6 +149,19 @@ public:
 class NpArticulationSpatialTendon : public PxArticulationSpatialTendon, public NpBase
 {
 public:
+
+// PX_SERIALIZATION
+											NpArticulationSpatialTendon(PxBaseFlags baseFlags)
+													: PxArticulationSpatialTendon(baseFlags), NpBase(PxEmpty), mAttachments(PxEmpty), mCore(PxEmpty) {}
+				void						preExportDataReset() { mCore.preExportDataReset(); }
+	virtual		void						exportExtraData(PxSerializationContext& );
+				void						importExtraData(PxDeserializationContext& );
+				void						resolveReferences(PxDeserializationContext& );
+	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
+	virtual		bool						isSubordinate()  const	 { return true; } 
+	static		NpArticulationSpatialTendon* createObject(PxU8*& address, PxDeserializationContext& context);
+	static		void						getBinaryMetaData(PxOutputStream& stream);		
+//~PX_SERIALIZATION
 
 	NpArticulationSpatialTendon(NpArticulationReducedCoordinate* articulation);
 
@@ -170,8 +196,6 @@ public:
 
 	PX_FORCE_INLINE NpArticulationAttachmentArray&		getAttachments() { return mAttachments; }
 
-	static void getBinaryMetaData(PxOutputStream& stream);
-
 private:
 	NpArticulationAttachmentArray				mAttachments;
 	NpArticulationReducedCoordinate*			mArticulation;
@@ -180,9 +204,21 @@ private:
 	ArticulationTendonHandle					mHandle;
 };
 
-class NpArticulationTendonJoint  : public PxArticulationTendonJoint
+class NpArticulationTendonJoint  : public PxArticulationTendonJoint, public NpBase
 {
 public:
+	// PX_SERIALIZATION
+	NpArticulationTendonJoint(PxBaseFlags baseFlags) : PxArticulationTendonJoint(baseFlags), NpBase(PxEmpty), mChildren(PxEmpty), mCore(PxEmpty), mHandle(PxEmpty) {}
+	void						preExportDataReset() { mCore.preExportDataReset(); }
+	virtual		void			exportExtraData(PxSerializationContext& );
+	void						importExtraData(PxDeserializationContext& );
+	void						resolveReferences(PxDeserializationContext& );
+	virtual		void			requiresObjects(PxProcessPxBaseCallback&);
+	virtual		bool			isSubordinate()  const	 { return true; } 
+	static		NpArticulationTendonJoint*	createObject(PxU8*& address, PxDeserializationContext& context);
+	static		void						getBinaryMetaData(PxOutputStream& stream);		
+	//~PX_SERIALIZATION
+
 	NpArticulationTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient, PxArticulationLink* link);
 
 	virtual ~NpArticulationTendonJoint(){}
@@ -209,8 +245,6 @@ public:
 
 	void removeChild(NpArticulationTendonJoint* child);
 
-	static void getBinaryMetaData(PxOutputStream& stream);
-
 	PxArticulationLink*					mLink;				//the link this joint associated with 
 	PxArticulationTendonJoint*			mParent;
 	NpArticulationTendonJointArray		mChildren;
@@ -223,6 +257,17 @@ public:
 class NpArticulationFixedTendon : public PxArticulationFixedTendon, public NpBase
 {
 public:
+	// PX_SERIALIZATION
+	NpArticulationFixedTendon(PxBaseFlags baseFlags): PxArticulationFixedTendon(baseFlags), NpBase(PxEmpty), mTendonJoints(PxEmpty), mCore(PxEmpty), mHandle(PxEmpty) {}
+	void						preExportDataReset() {}
+	virtual		void			exportExtraData(PxSerializationContext& );
+	void						importExtraData(PxDeserializationContext& );
+	void						resolveReferences(PxDeserializationContext& );
+	virtual		void						requiresObjects(PxProcessPxBaseCallback&);
+	virtual		bool						isSubordinate()  const	 { return true; } 
+	static		NpArticulationFixedTendon* createObject(PxU8*& address, PxDeserializationContext& context);
+	static		void						getBinaryMetaData(PxOutputStream& stream);
+	//~PX_SERIALIZATION
 
 	NpArticulationFixedTendon(NpArticulationReducedCoordinate* articulation);
 
@@ -262,8 +307,6 @@ public:
 	PX_FORCE_INLINE Sc::ArticulationFixedTendonCore&			getTendonCore() { return mCore; }
 
 	PX_FORCE_INLINE NpArticulationTendonJointArray&		getTendonJoints() { return mTendonJoints; }
-
-	static void getBinaryMetaData(PxOutputStream& stream);
 
 private:
 	NpArticulationTendonJointArray				mTendonJoints;

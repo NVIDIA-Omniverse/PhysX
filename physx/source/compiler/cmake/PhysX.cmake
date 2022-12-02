@@ -63,6 +63,7 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxCustomParticleSystemSolverCallback.h
 	${PHYSX_ROOT_DIR}/include/PxDeletionListener.h
 	${PHYSX_ROOT_DIR}/include/PxFEMParameter.h
+	${PHYSX_ROOT_DIR}/include/PxFEMClothFlags.h
 	${PHYSX_ROOT_DIR}/include/PxFiltering.h
 	${PHYSX_ROOT_DIR}/include/PxForceMode.h
 	${PHYSX_ROOT_DIR}/include/PxHairSystemFlag.h
@@ -71,7 +72,6 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxNodeIndex.h
 	${PHYSX_ROOT_DIR}/include/PxParticleBuffer.h
 	${PHYSX_ROOT_DIR}/include/PxParticleGpu.h
-	${PHYSX_ROOT_DIR}/include/PxParticlePhase.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSolverType.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystem.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystemFlag.h

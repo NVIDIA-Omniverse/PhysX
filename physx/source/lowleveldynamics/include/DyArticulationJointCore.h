@@ -54,8 +54,6 @@ namespace physx
 			ArticulationJointCore(const PxEMPTY&) : jointDirtyFlag(PxEmpty) 
 			{ 
 				PX_COMPILE_TIME_ASSERT(sizeof(PxArticulationMotions) == sizeof(PxU8)); 
-				PxMemSet(dofIds, 0, sizeof(dofIds));
-				PxMemSet(invDofIds, 0, sizeof(invDofIds));
 			}
 			//~PX_SERIALIZATION
 

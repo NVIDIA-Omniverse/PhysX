@@ -70,7 +70,7 @@ namespace physx
 		/**
 		\brief Sets material vorticity confinement coefficient
 
-		\param[in] vorticityConfinement Material vorticity confinement coefficient.
+		\param[in] vorticityConfinement Material vorticity confinement coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getVorticityConfinement()
 		*/
@@ -87,7 +87,7 @@ namespace physx
 		/**
 		\brief Sets material surface tension coefficient
 
-		\param[in] surfaceTension Material surface tension coefficient.
+		\param[in] surfaceTension Material surface tension coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getSurfaceTension()
 		*/
@@ -104,7 +104,7 @@ namespace physx
 		/**
 		\brief Sets material cohesion coefficient
 
-		\param[in] cohesion Material cohesion coefficient.
+		\param[in] cohesion Material cohesion coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getCohesion()
 		*/
@@ -121,7 +121,7 @@ namespace physx
 		/**
 		\brief Sets material lift coefficient
 
-		\param[in] lift Material lift coefficient.
+		\param[in] lift Material lift coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getLift()
 		*/
@@ -138,7 +138,7 @@ namespace physx
 		/**
 		\brief Sets material drag coefficient
 
-		\param[in] drag Material drag coefficient.
+		\param[in] drag Material drag coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getDrag()
 		*/
@@ -171,7 +171,7 @@ namespace physx
 		\brief Sets material particle friction scale. This allows the application to scale up/down the frictional effect between particles independent of the friction 
 		coefficient, which also defines frictional behavior between the particle and rigid bodies/soft bodies/cloth etc.
 
-		\param[in] scale particle friction scale
+		\param[in] scale particle friction scale. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getParticleFrictionScale()
 		*/
@@ -188,7 +188,7 @@ namespace physx
 		/**
 		\brief Sets material particle adhesion scale value. This is the adhesive value between particles defined as a scaled multiple of the adhesion parameter.
 
-		\param[in] adhesion particle adhesion scale value
+		\param[in] adhesion particle adhesion scale value. <b>Range:</b> [0, PX_MAX_F32)
 
 		@see #getParticleAdhesionScale()
 		*/

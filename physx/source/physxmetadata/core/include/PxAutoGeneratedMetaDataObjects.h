@@ -75,6 +75,7 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_FEMSoftBodyMaterials, PxPhysics, PxFEMSoftBodyMaterial * > FEMSoftBodyMaterials;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_FEMClothMaterials, PxPhysics, PxFEMClothMaterial * > FEMClothMaterials;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_PBDMaterials, PxPhysics, PxPBDMaterial * > PBDMaterials;
+		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_CustomMaterials, PxPhysics, PxCustomMaterial *, void * > CustomMaterials;
 
 		PX_PHYSX_CORE_API PxPhysicsGeneratedInfo();
 		template<typename TReturnType, typename TOperator>
@@ -94,7 +95,7 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 13; }
+		static PxU32 instancePropertyCount() { return 14; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -114,7 +115,8 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 			inOperator( FEMSoftBodyMaterials, inStartIndex + 10 );; 
 			inOperator( FEMClothMaterials, inStartIndex + 11 );; 
 			inOperator( PBDMaterials, inStartIndex + 12 );; 
-			return 13 + inStartIndex;
+			inOperator( CustomMaterials, inStartIndex + 13 );; 
+			return 14 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxPhysics>

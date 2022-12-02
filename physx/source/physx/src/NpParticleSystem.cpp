@@ -1123,38 +1123,6 @@ namespace physx
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	void NpParticlePhase::setFlags(PxParticlePhaseFlags flags)
-	{
-		mPhase = (mPhase & (~PxParticlePhaseFlag::eParticlePhaseFlagsMask)) | PxU32(flags);
-	}
-	void NpParticlePhase::setFlag(PxParticlePhaseFlag::Enum flag, bool enabled)
-	{
-		if (enabled)
-			mPhase |= flag;
-		else
-			mPhase &= (~flag);
-	}
-
-	PxParticlePhaseFlags NpParticlePhase::getFlags() const
-	{
-		return PxParticlePhaseFlags(mPhase & PxParticlePhaseFlag::eParticlePhaseFlagsMask);
-	}
-
-	PxParticleMaterial* NpParticlePhase::getMaterial() const
-	{
-		return mMaterial;
-	}
-	void NpParticlePhase::setMaterial(PxParticleMaterial* material)
-	{
-		//Acquire and release materials as required
-		material->acquireReference();
-		if(mMaterial)
-			mMaterial->release();
-
-		mMaterial = material;
-	}
-
 	PxU32 NpCustomParticleSystem::createPhase(PxParticleMaterial* material, const PxParticlePhaseFlags flags)
 	{
 		if (material->getConcreteType() == PxConcreteType::eCUSTOM_MATERIAL)

@@ -64,9 +64,6 @@ using namespace Gu;
 #define DefineMetaData_PxActor(x) \
 	PX_DEF_BIN_METADATA_ITEM(stream,	x, void,			userData,		PxMetaDataFlag::ePTR)
 
-#define DefineMetaData_NpArticulationReducedCoordinate(x) \
-	PX_DEF_BIN_METADATA_ITEM(stream,	x, void,			userData,		PxMetaDataFlag::ePTR)
-
 #define DefineMetaData_NpRigidActorTemplate(x) \
 	PX_DEF_BIN_METADATA_ITEM(stream,	x, NpShapeManager,	mShapeManager,	0)
 //	PX_DEF_BIN_METADATA_ITEM(stream,	x, PxU32,			mIndex,			0)
@@ -440,30 +437,21 @@ void NpArticulationLinkArray::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream,	NpArticulationLinkArray, NpArticulationLink, mBufferUsed, mCapacity, PxMetaDataFlag::eCONTROL_FLIP|PxMetaDataFlag::eCOUNT_MASK_MSB|PxMetaDataFlag::ePTR, 0)
 }
 
-//void PxArticulationImpl::getBinaryMetaData(PxOutputStream& stream)
-//{
-//	PX_DEF_BIN_METADATA_CLASS(stream,	PxArticulationImpl)
-//	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	PxArticulationImpl, NpBase)
-//
-//	PX_DEF_BIN_METADATA_ITEM(stream,	PxArticulationImpl, ArticulationCore,	mCore,		0)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationImpl, NpArticulationLinkArray, mArticulationLinks, 0)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationImpl, PxU32, mNumShapes, 0)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationImpl, NpAggregate, mAggregate, PxMetaDataFlag::ePTR)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationImpl, char, mName, PxMetaDataFlag::ePTR)
-//	PX_DEF_BIN_METADATA_EXTRA_NAME(stream, PxArticulationImpl, mName, 0)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationImpl, PxU32, mCacheVersion, 0)
-//}
+void NpArticulationAttachmentArray::getBinaryMetaData(PxOutputStream& stream)
+{
+	PX_DEF_BIN_METADATA_CLASS(stream,	NpArticulationAttachmentArray)
+	PX_DEF_BIN_METADATA_ITEMS(stream,	NpArticulationAttachmentArray,	NpArticulationAttachment,	mBuffer,		PxMetaDataFlag::ePTR, 4)
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationAttachmentArray,	bool,				mBufferUsed,	0)
+	// PT: OMG this is so painful... I can't put the padding explicitely in the template
+	{ PxMetaDataEntry tmp = {"char", "mPadding", 1 + PxU32(PX_OFFSET_OF_RT(NpArticulationAttachmentArray, mBufferUsed)), 3, 3, 0, PxMetaDataFlag::ePADDING, 0}; PX_STORE_METADATA(stream, tmp); }
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationAttachmentArray,	NpArticulationAttachment,	mData,		PxMetaDataFlag::ePTR)	// ###
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationAttachmentArray,	PxU32,				mSize,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationAttachmentArray,	PxU32,				mCapacity,		0)
 
-//void PxArticulationJointImpl::getBinaryMetaData(PxOutputStream& stream)
-//{
-//	PX_DEF_BIN_METADATA_CLASS(stream, PxArticulationJointImpl)
-//	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	PxArticulationJointImpl, NpBase)
-//
-//	PX_DEF_BIN_METADATA_ITEM(stream,	PxArticulationJointImpl, ArticulationJointCore,	mCore,	0)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationJointImpl, NpArticulationLink, mParent, PxMetaDataFlag::ePTR)
-//	PX_DEF_BIN_METADATA_ITEM(stream, PxArticulationJointImpl, NpArticulationLink, mChild, PxMetaDataFlag::ePTR)
-//}
+	//------ Extra-data ------
 
+	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream,	NpArticulationAttachmentArray, NpArticulationAttachment, mBufferUsed, mCapacity, PxMetaDataFlag::eCONTROL_FLIP|PxMetaDataFlag::eCOUNT_MASK_MSB|PxMetaDataFlag::ePTR, 0)
+}
 
 namespace
 {
@@ -488,6 +476,7 @@ struct ShadowArray##T : public PxArray<T*>												\
 		PX_DEF_BIN_METADATA_ITEM(stream, ShadowArray##T, T, mData, PxMetaDataFlag::ePTR)\
 		PX_DEF_BIN_METADATA_ITEM(stream, ShadowArray##T, PxU32, mSize, 0)				\
 		PX_DEF_BIN_METADATA_ITEM(stream, ShadowArray##T, PxU32, mCapacity, 0)			\
+		PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream,	ShadowArray##T, T, mData, mCapacity, PxMetaDataFlag::eCOUNT_MASK_MSB|PxMetaDataFlag::ePTR, 0) \
 	}																					\
 };
 
@@ -504,11 +493,14 @@ void NpArticulationReducedCoordinate::getBinaryMetaData(PxOutputStream& stream)
 	ShadowArrayNpArticulationFixedTendon::getBinaryMetaData(stream);
 	ShadowArrayNpArticulationSensor::getBinaryMetaData(stream);
 
+	//sticking this here, since typedefs are only allowed to declared once.
+	PX_DEF_BIN_METADATA_TYPEDEF(stream, ArticulationTendonHandle, PxU32)
+
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationReducedCoordinate)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationReducedCoordinate, PxBase)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationReducedCoordinate, NpBase)
 
-	DefineMetaData_NpArticulationReducedCoordinate(NpArticulationReducedCoordinate)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, void, userData, PxMetaDataFlag::ePTR)
 
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, ArticulationCore, mCore, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, NpArticulationLinkArray, mArticulationLinks, 0)
@@ -523,72 +515,99 @@ void NpArticulationReducedCoordinate::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, ShadowArrayNpArticulationSpatialTendon, mSpatialTendons, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, ShadowArrayNpArticulationFixedTendon, mFixedTendons, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationReducedCoordinate, ShadowArrayNpArticulationSensor, mSensors, 0)
-	
 }
 
 void NpArticulationSensor::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationSensor)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, PxArticulationLink, mLink, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, Sc::ArticulationSensorCore, mCore, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, PxU32, mHandle, 0)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationSensor, PxBase)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationSensor, NpBase)
+
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, void, userData, PxMetaDataFlag::ePTR)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, PxArticulationLink, mLink, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, ArticulationSensorCore, mCore, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSensor, PxU32, mHandle, 0)
 }
 
 void NpArticulationAttachment::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationAttachment)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationAttachment, PxBase)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationAttachment, NpBase)
+
+	PX_DEF_BIN_METADATA_TYPEDEF(stream, ArticulationAttachmentHandle, PxU32);
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, void, userData, PxMetaDataFlag::ePTR)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, PxArticulationLink, mLink, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, PxArticulationAttachment, mParent, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, ArticulationAttachmentHandle, mHandle, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, NpArticulationAttachmentArray, mChildren, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, NpArticulationSpatialTendon, mTendon, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, Sc::ArticulationAttachmentCore, mCore, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, void, userData, PxMetaDataFlag::ePTR)
-}
-
-void NpArticulationAttachmentArray::getBinaryMetaData(PxOutputStream& stream)
-{
-	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationAttachmentArray)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachmentArray, NpArticulationAttachment*, mData, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachmentArray, PxU32, mSize, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachmentArray, PxU32, mCapacity, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationAttachment, ArticulationAttachmentCore, mCore, 0)
 }
 
 void NpArticulationTendonJoint::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationTendonJoint)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationTendonJoint, PxBase)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationTendonJoint, NpBase)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, void, userData, PxMetaDataFlag::ePTR)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, PxArticulationLink, mLink, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, PxArticulationTendonJoint, mParent, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, NpArticulationTendonJointArray, mChildren, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, NpArticulationFixedTendon, mTendon, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, Sc::ArticulationTendonJointCore, mCore, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, ArticulationTendonJointCore, mCore, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, PxU32, mHandle, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJoint, void, userData, PxMetaDataFlag::ePTR)
 }
 
 void NpArticulationTendonJointArray::getBinaryMetaData(PxOutputStream& stream)
 {
-	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationTendonJointArray)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJointArray, NpArticulationTendonJoint*, mData, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJointArray, PxU32, mSize, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationTendonJointArray, PxU32, mCapacity, 0)
+	PX_DEF_BIN_METADATA_CLASS(stream,	NpArticulationTendonJointArray)
+	PX_DEF_BIN_METADATA_ITEMS(stream,	NpArticulationTendonJointArray,	NpArticulationTendonJoint,	mBuffer, PxMetaDataFlag::ePTR, 4)
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationTendonJointArray,	bool,				mBufferUsed,	0)
+		// PT: OMG this is so painful... I can't put the padding explicitely in the template
+	{ PxMetaDataEntry tmp = {"char", "mPadding", 1 + PxU32(PX_OFFSET_OF_RT(NpArticulationTendonJointArray, mBufferUsed)), 3, 3, 0, PxMetaDataFlag::ePADDING, 0}; PX_STORE_METADATA(stream, tmp); }
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationTendonJointArray,	NpArticulationTendonJoint,	mData, PxMetaDataFlag::ePTR)	// ###
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationTendonJointArray,	PxU32,				mSize,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	NpArticulationTendonJointArray,	PxU32,				mCapacity,		0)
+
+	//------ Extra-data ------
+
+	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream,	NpArticulationTendonJointArray, NpArticulationTendonJoint, mBufferUsed, mCapacity, PxMetaDataFlag::eCONTROL_FLIP|PxMetaDataFlag::eCOUNT_MASK_MSB|PxMetaDataFlag::ePTR, 0)
 }
 
 void NpArticulationSpatialTendon::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationSpatialTendon)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, ArticulationTendonHandle, mHandle, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, NpArticulationReducedCoordinate, mAttachments, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, NpArticulationAttachmentArray, mArticulation, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, Sc::ArticulationSpatialTendonCore, mCore, 0)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationSpatialTendon, PxBase)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationSpatialTendon, NpBase)
+
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, void, userData, PxMetaDataFlag::ePTR)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, NpArticulationAttachmentArray, mAttachments, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, NpArticulationReducedCoordinate, mArticulation, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, PxU32, mLLIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, ArticulationSpatialTendonCore, mCore, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationSpatialTendon, ArticulationTendonHandle, mHandle, 0)
 }
 
 void NpArticulationFixedTendon::getBinaryMetaData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_VCLASS(stream, NpArticulationFixedTendon)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, ArticulationTendonHandle, mHandle, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, NpArticulationTendonJointArray, mTendonJoints, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, NpArticulationAttachmentArray, mArticulation, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, PxU32, mLLIndex, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, Sc::ArticulationFixedTendonCore, mCore, 0)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationFixedTendon, PxBase)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpArticulationFixedTendon, NpBase)
+
 	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, void, userData, PxMetaDataFlag::ePTR)
+
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, NpArticulationTendonJointArray, mTendonJoints, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, NpArticulationReducedCoordinate, mArticulation, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, PxU32, mLLIndex, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, ArticulationFixedTendonCore, mCore, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, NpArticulationFixedTendon, ArticulationTendonHandle, mHandle, 0)
 }
 
 void NpArticulationLink::getBinaryMetaData(PxOutputStream& stream)
@@ -750,7 +769,6 @@ template<> void PxsMPMMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 void PxGetPhysicsBinaryMetaData(PxOutputStream& stream)
 {
 	getFoundationMetaData(stream);
-	
 	getBinaryMetaData_PxMeshScale(stream);
 
 	Gu::ConvexMesh::getBinaryMetaData(stream);
@@ -777,6 +795,12 @@ void PxGetPhysicsBinaryMetaData(PxOutputStream& stream)
 	Sc::ConstraintCore::getBinaryMetaData(stream);
 	Sc::ArticulationCore::getBinaryMetaData(stream);
 	Sc::ArticulationJointCore::getBinaryMetaData(stream);
+	Sc::ArticulationSensorCore::getBinaryMetaData(stream);
+	Sc::ArticulationTendonCore::getBinaryMetaData(stream);
+	Sc::ArticulationSpatialTendonCore::getBinaryMetaData(stream);
+	Sc::ArticulationAttachmentCore::getBinaryMetaData(stream);
+	Sc::ArticulationFixedTendonCore::getBinaryMetaData(stream);
+	Sc::ArticulationTendonJointCore::getBinaryMetaData(stream);
 
 	NpConnector::getBinaryMetaData(stream);
 	NpConnectorArray::getBinaryMetaData(stream);
@@ -801,6 +825,13 @@ void PxGetPhysicsBinaryMetaData(PxOutputStream& stream)
 	NpArticulationLink::getBinaryMetaData(stream);
 	NpArticulationJointReducedCoordinate::getBinaryMetaData(stream);
 	NpArticulationLinkArray::getBinaryMetaData(stream);
+	NpArticulationSensor::getBinaryMetaData(stream);
+	NpArticulationSpatialTendon::getBinaryMetaData(stream);
+	NpArticulationFixedTendon::getBinaryMetaData(stream);
+	NpArticulationAttachment::getBinaryMetaData(stream);
+	NpArticulationAttachmentArray::getBinaryMetaData(stream);
+	NpArticulationTendonJoint::getBinaryMetaData(stream);
+	NpArticulationTendonJointArray::getBinaryMetaData(stream);
 	NpShapeManager::getBinaryMetaData(stream);
 	NpAggregate::getBinaryMetaData(stream);
 }

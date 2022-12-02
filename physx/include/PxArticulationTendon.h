@@ -56,7 +56,7 @@ namespace physx
 	/**
 	\brief Defines a spatial tendon attachment point on a link.
 	*/
-	class PxArticulationAttachment
+	class PxArticulationAttachment : public PxBase
 	{
 
 	public:
@@ -180,14 +180,26 @@ namespace physx
 		*/
 		virtual		void							release() = 0;
 
-					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
+					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.	
+
+		/**
+		\brief Returns the string name of the dynamic type.
+
+		\return The string name.
+		*/
+		virtual	const char*						getConcreteTypeName() const { return "PxArticulationAttachment"; }
+
+	protected:
+
+		PX_INLINE	PxArticulationAttachment(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE	PxArticulationAttachment(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	};
 
 
 	/**
 	\brief Defines a fixed-tendon joint on an articulation joint degree of freedom.
 	*/
-	class PxArticulationTendonJoint
+	class PxArticulationTendonJoint : public PxBase
 	{
 
 	public:
@@ -253,6 +265,18 @@ namespace physx
 		virtual		void							release() = 0;
 
 					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
+
+		/**
+		\brief Returns the string name of the dynamic type.
+
+		\return The string name.
+		*/
+		virtual	const char*							getConcreteTypeName() const { return "PxArticulationTendonJoint"; }
+
+	protected:
+
+		PX_INLINE	PxArticulationTendonJoint(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE	PxArticulationTendonJoint(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	};
 
 
