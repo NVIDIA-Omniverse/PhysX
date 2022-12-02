@@ -233,10 +233,9 @@ namespace Sc
 		
 		virtual	void	applyActorData(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, void* /*waitEvent*/, void* /*signalEvent*/) {}
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 		virtual void*	getMPMDataPointer(const Dy::ParticleSystem& /*psLL*/, PxMPMParticleDataFlag::Enum /*flags*/) { return NULL; }
 		virtual void*	getSparseGridDataPointer(const Dy::ParticleSystem& /*psLL*/, PxSparseGridDataFlag::Enum /*flags*/, PxParticleSolverType::Enum /*type*/) { return NULL; }
-#endif
+
 		virtual void    allocatePBDMaterialsBuffer(PxPhysXGpu* /*physxGpu*/, Dy::ParticleSystemCore& /*core*/, PxU64* /*gpuMemStat*/) {}
 		virtual void    allocateFLIPMaterialsBuffer(PxPhysXGpu* /*physxGpu*/, Dy::ParticleSystemCore& /*core*/, PxU64* /*gpuMemStat*/) {}
 		virtual void    allocateMPMMaterialsBuffer(PxPhysXGpu* /*physxGpu*/, Dy::ParticleSystemCore& /*core*/, PxU64* /*gpuMemStat*/) {}

@@ -578,9 +578,10 @@ namespace physx
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addSoftBodyAttachment when the attachment is created.
 		*/
 		virtual		void					removeSoftBodyAttachment(PxSoftBody* softbody0, PxU32 handle) = 0;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+
 		/**
 		\brief Creates collision filter between a tetrahedron in a soft body and a triangle in a cloth.
+		\warning Feature under development, only for internal usage.
 
 		\param[in] cloth The cloth actor used for collision filter
 		\param[in] triIdx The index of the triangle in the cloth mesh to be filtered.
@@ -590,6 +591,7 @@ namespace physx
 
 		/**
 		\brief Removes collision filter between a tetrahedron in a soft body and a triangle in a cloth.
+		\warning Feature under development, only for internal usage.
 
 		\param[in] cloth The cloth actor used for collision filter
 		\param[in] triIdx The index of the triangle in the cloth mesh to be filtered.
@@ -604,6 +606,8 @@ namespace physx
 		The soft body keeps track of these attachments but the cloth does not.
 
 		This method attaches a point inside a tetrahedron of the collision mesh to a cloth.
+
+		\warning Feature under development, only for internal usage.
 
 		\param[in] cloth The cloth actor used for the attachment
 		\param[in] triIdx The index of a triangle in the cloth mesh that contains the point to be attached to the soft body
@@ -623,11 +627,13 @@ namespace physx
 
 		This method removes a previously-created attachment between a point inside a collision mesh tetrahedron and a point inside a cloth mesh.
 
+		\warning Feature under development, only for internal usage.
+
 		\param[in] cloth The cloth actor used for the attachment
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addClothAttachment when the attachment is created
 		*/
 		virtual		void					removeClothAttachment(PxFEMCloth* cloth, PxU32 handle) = 0;
-#endif
+
 		/**
 		\brief Access to the vertices of the simulation mesh on the host
 
@@ -712,11 +718,15 @@ namespace physx
 
 		\return The GPU index, or 0xFFFFFFFF if the soft body is not in a scene.
 		*/
-		virtual		PxU32					getGpuSoftBodyIndex() = 0;
+		virtual		PxU32			getGpuSoftBodyIndex() = 0;
+	
+		virtual		const char*		getConcreteTypeName() const PX_OVERRIDE { return "PxSoftBody";  }
+
 
 	protected:
 		PX_INLINE					PxSoftBody(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
 		PX_INLINE					PxSoftBody(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
+		virtual		bool			isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxSoftBody", name) || PxActor::isKindOf(name); }
 	};
 
 #if PX_VC

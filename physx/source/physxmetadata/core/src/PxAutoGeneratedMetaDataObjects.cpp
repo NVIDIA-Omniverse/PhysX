@@ -76,6 +76,9 @@ PxU32 getPxPhysics_FEMClothMaterials( const PxPhysics* inObj, PxFEMClothMaterial
 PxU32 getNbPxPhysics_FEMClothMaterials( const PxPhysics* inObj ) { return inObj->getNbFEMClothMaterials(  ); }
 PxU32 getPxPhysics_PBDMaterials( const PxPhysics* inObj, PxPBDMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getPBDMaterials( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_PBDMaterials( const PxPhysics* inObj ) { return inObj->getNbPBDMaterials(  ); }
+PxU32 getPxPhysics_CustomMaterials( const PxPhysics* inObj, PxCustomMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getCustomMaterials( outBuffer, inBufSize ); }
+PxU32 getNbPxPhysics_CustomMaterials( const PxPhysics* inObj ) { return inObj->getNbCustomMaterials(  ); }
+PxCustomMaterial * createPxPhysics_CustomMaterials( PxPhysics* inObj, void * inCreateParam ){ return inObj->createCustomMaterial( inCreateParam ); }
 PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
 	: TolerancesScale( "TolerancesScale", getPxPhysics_TolerancesScale)
 	, TriangleMeshes( "TriangleMeshes", getPxPhysics_TriangleMeshes, getNbPxPhysics_TriangleMeshes, createPxPhysics_TriangleMeshes )
@@ -90,6 +93,7 @@ PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
 	, FEMSoftBodyMaterials( "FEMSoftBodyMaterials", getPxPhysics_FEMSoftBodyMaterials, getNbPxPhysics_FEMSoftBodyMaterials )
 	, FEMClothMaterials( "FEMClothMaterials", getPxPhysics_FEMClothMaterials, getNbPxPhysics_FEMClothMaterials )
 	, PBDMaterials( "PBDMaterials", getPxPhysics_PBDMaterials, getNbPxPhysics_PBDMaterials )
+	, CustomMaterials( "CustomMaterials", getPxPhysics_CustomMaterials, getNbPxPhysics_CustomMaterials, createPxPhysics_CustomMaterials )
 {}
 PX_PHYSX_CORE_API PxPhysicsGeneratedValues::PxPhysicsGeneratedValues( const PxPhysics* inSource )
 		:TolerancesScale( getPxPhysics_TolerancesScale( inSource ) )

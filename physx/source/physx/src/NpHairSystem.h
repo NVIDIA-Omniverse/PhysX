@@ -149,8 +149,6 @@ namespace physx
 		virtual void				release() PX_OVERRIDE;
 
 		virtual PxActorType::Enum	getType() const PX_OVERRIDE { return PxActorType::eHAIRSYSTEM; }
-		virtual bool				isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxHairSystem", name) || PxBase::isKindOf(name); }
-		virtual const char*			getConcreteTypeName() const PX_OVERRIDE { return "PxHairSystem"; }
 
 		virtual PxBounds3			getWorldBounds(float inflation = 1.01f) const PX_OVERRIDE;
 

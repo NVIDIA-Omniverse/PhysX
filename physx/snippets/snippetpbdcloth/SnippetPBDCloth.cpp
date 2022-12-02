@@ -151,7 +151,6 @@ static void initCloth(const PxU32 numX, const PxU32 numZ, const PxVec3& position
 	PxReal x = position.x;
 	PxReal y = position.y;
 	PxReal z = position.z;
-	PxReal maxZ = z;
 
 	// Define springs and triangles
 	PxArray<PxParticleSpring> springs;
@@ -200,7 +199,6 @@ static void initCloth(const PxU32 numX, const PxU32 numZ, const PxVec3& position
 
 			z += particleSpacing;
 		}
-		maxZ = z - particleSpacing;
 		z = position.z;
 		x += particleSpacing;
 	}

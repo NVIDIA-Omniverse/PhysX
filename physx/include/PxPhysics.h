@@ -518,6 +518,21 @@ public:
 		return createShape(geometry, &materialPtr, 1, isExclusive, shapeFlags);
 	}
 
+	/**
+	\brief Creates a shape which may be attached to one or more softbody actors
+
+	The shape will be created with a reference count of 1.
+
+	\param	[in] geometry		The geometry for the shape
+	\param	[in] material		The material for the shape
+	\param	[in] isExclusive	Whether this shape is exclusive to a single actor or maybe be shared
+	\param	[in] shapeFlags		The PxShapeFlags to be set
+	\return The shape
+
+	\note Shared shapes are not mutable when they are attached to an actor
+
+	@see PxShape
+	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
 											const PxFEMSoftBodyMaterial& material,
 											bool isExclusive = false,
@@ -528,6 +543,21 @@ public:
 	}
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+	/**
+	\brief Creates a shape which may be attached to one or more FEMCloth actors
+
+	The shape will be created with a reference count of 1.
+
+	\param	[in] geometry		The geometry for the shape
+	\param	[in] material		The material for the shape
+	\param	[in] isExclusive	Whether this shape is exclusive to a single actor or maybe be shared
+	\param	[in] shapeFlags		The PxShapeFlags to be set
+	\return The shape
+
+	\note Shared shapes are not mutable when they are attached to an actor
+
+	@see PxShape
+	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
 											const PxFEMClothMaterial& material,
 											bool isExclusive = false,
@@ -567,13 +597,11 @@ public:
 									bool isExclusive = false,
 									PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE) = 0;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual PxShape* createShape(	const PxGeometry& geometry,
 									PxFEMClothMaterial*const * materials,
 									PxU16 materialCount,
 									bool isExclusive = false,
 									PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE) = 0;
-#endif
 
 	/**
 	\brief Return the number of shapes that currently exist.
@@ -633,9 +661,9 @@ public:
 	virtual PxArticulationReducedCoordinate* createArticulationReducedCoordinate() = 0;
 
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
 	\brief Creates a FEM-based cloth with all fields initialized to their default values.
+	\warning Feature under development, only for internal usage.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new FEM-cloth
@@ -643,7 +671,6 @@ public:
 	@see PxFEMCloth
 	*/
 	virtual PxFEMCloth* createFEMCloth(PxCudaContextManager& cudaContextManager) = 0;
-#endif
 
 	/**
 	\brief Creates a FEM-based soft body with all fields initialized to their default values.
@@ -655,9 +682,9 @@ public:
 	*/
 	virtual PxSoftBody* createSoftBody(PxCudaContextManager& cudaContextManager) = 0;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
 	\brief Creates a hair system with all fields initialized to their default values.
+	\warning Feature under development, only for internal usage.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new hair system
@@ -665,8 +692,6 @@ public:
 	@see PxHairSystem
 	*/
 	virtual PxHairSystem* createHairSystem(PxCudaContextManager& cudaContextManager) = 0;
-#endif
-
 
 	/**
 	\brief Creates a particle system with a position-based dynamics (PBD) solver.
@@ -682,9 +707,9 @@ public:
 	*/
 	virtual PxPBDParticleSystem* createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood = 96) = 0;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
 	\brief Creates a particle system with a fluid-implicit particle solver (FLIP).
+	\warning Feature under development, only for internal usage.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new particle system
@@ -695,6 +720,7 @@ public:
 
 	/**
 	\brief Creates a particle system with a material-point-method solver (MPM).
+	\warning Feature under development, only for internal usage.
 
 	A MPM particle system can be used to simulate fluid dynamics and deformable body effects using particles.
 
@@ -707,6 +733,7 @@ public:
 
 	/**
 	\brief Creates a customizable particle system to simulate effects that are not supported by PhysX natively (e.g. molecular dynamics).
+	\warning Feature under development, only for internal usage.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\param[in] maxNeighborhood The maximum number of particles considered in neighborhood-based particle interaction calculations (e.g. fluid density constraints).
@@ -715,7 +742,7 @@ public:
 	@see PxCustomParticleSystem
 	*/
 	virtual PxCustomParticleSystem* createCustomParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood) = 0;
-#endif
+
 	/**
 	\brief Create a buffer for reading and writing data across host and device memory spaces.
 
@@ -863,9 +890,9 @@ public:
 	*/
 	virtual PxU32 getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
 	\brief Creates a new FEM cloth material with certain default properties.
+	\warning Feature under development, only for internal usage.
 
 	\return The new FEM material.
 
@@ -876,7 +903,6 @@ public:
 	@see PxFEMClothMaterial
 	*/
 	virtual PxFEMClothMaterial* createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
-#endif
 
 	/**
 	\brief Return the number of FEM cloth materials that currently exist.
@@ -948,9 +974,9 @@ public:
 	*/
 	virtual PxU32 getPBDMaterials(PxPBDMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 	
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
 	\brief Creates a new FLIP material with certain default properties.
+	\warning Feature under development, only for internal usage.
 
 	\param	[in]  friction				The friction parameter
 	\param	[in]  damping				The velocity damping parameter
@@ -965,6 +991,7 @@ public:
 
 	/**
 	\brief Return the number of FLIP materials that currently exist.
+	\warning Feature under development, only for internal usage.
 
 	\return Number of FLIP materials.
 
@@ -974,6 +1001,7 @@ public:
 
 	/**
 	\brief Writes the array of FLIP material pointers to a user buffer.
+	\warning Feature under development, only for internal usage.
 
 	Returns the number of pointers written.
 
@@ -990,6 +1018,7 @@ public:
 	
 	/**
 	\brief Creates a new MPM material with certain default properties.
+	\warning Feature under development, only for internal usage.
 	
 	\param	[in]  friction						The friction parameter
 	\param	[in]  damping						The velocity damping parameter
@@ -1012,6 +1041,7 @@ public:
 
 	/**
 	\brief Return the number of MPM materials that currently exist.
+	\warning Feature under development, only for internal usage.
 
 	\return Number of MPM materials.
 
@@ -1021,6 +1051,7 @@ public:
 
 	/**
 	\brief Writes the array of MPM material pointers to a user buffer.
+	\warning Feature under development, only for internal usage.
 
 	Returns the number of pointers written.
 
@@ -1037,12 +1068,40 @@ public:
 
 	/**
 	\brief Creates a new material for custom particle systems.
+	\warning Feature under development, only for internal usage.
 
 	\param[in] gpuBuffer A pointer to a GPU buffer containing material parameters.
 	\return the new material.
 	*/
 	virtual PxCustomMaterial* createCustomMaterial(void* gpuBuffer) = 0;
-#endif
+
+	/**
+	\brief Return the number of custom materials that currently exist.
+	\warning Feature under development, only for internal usage.
+
+	\return Number of custom materials.
+
+	@see getCustomMaterials()
+	*/
+	virtual PxU32 getNbCustomMaterials() const = 0;
+
+	/**
+	\brief Writes the array of custom material pointers to a user buffer.
+	\warning Feature under development, only for internal usage.
+
+	Returns the number of pointers written.
+
+	The ordering of the materials in the array is not specified.
+
+	\param	[out] userBuffer	The buffer to receive material pointers.
+	\param	[in]  bufferSize	The number of material pointers which can be stored in the buffer.
+	\param	[in]  startIndex	Index of first material pointer to be retrieved.
+	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
+
+	@see getNbCustomMaterials() PxCustomMaterial
+	*/
+	virtual PxU32 getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
 
 	//@}
 	/** @name Deletion Listeners

@@ -478,10 +478,10 @@ public:
 	@see PxPhysics.createFEMSoftBodyMaterial() getSoftBodyMaterials() 
 	*/
 	virtual		void	setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount) = 0;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 
 	/**
 	\brief Assigns FEM cloth material(s) to the shape. Will remove existing materials from the shape.
+	\warning Feature under development, only for internal usage.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake the associated actor up automatically.
 
@@ -491,7 +491,7 @@ public:
 	@see PxPhysics.createFEMClothMaterial() getClothMaterials() 
 	*/
 	virtual		void	setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount) = 0;
-#endif
+
 	/**
 	\brief Returns the number of materials assigned to the shape.
 
@@ -534,10 +534,10 @@ public:
 	@see PxFEMSoftBodyMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 
 	/**
 	\brief Retrieve all the FEM cloth material pointers associated with the shape.
+	\warning Feature under development, only for internal usage.
 
 	You can retrieve the number of material pointers by calling #getNbMaterials()
 
@@ -551,7 +551,7 @@ public:
 	@see PxFEMClothMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-#endif
+
 	/**
 	\brief Retrieve material from given triangle index.
 

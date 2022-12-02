@@ -71,7 +71,7 @@ public:
 	/**
 	\brief Sets velocity damping term
 
-	\param[in] damping Velocity damping term.
+	\param[in] damping Velocity damping term. <b>Range:</b> [0, PX_MAX_F32)
 
 	@see #getDamping
 	*/
@@ -88,7 +88,7 @@ public:
 	/**
 	\brief Sets adhesion term
 
-	\param[in] adhesion adhesion coefficient.
+	\param[in] adhesion adhesion coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
 	@see #getAdhesion
 	*/
@@ -105,7 +105,7 @@ public:
 	/**
 	\brief Sets gravity scale term
 
-	\param[in] scale gravity scale coefficient.
+	\param[in] scale gravity scale coefficient. <b>Range:</b> (-PX_MAX_F32, PX_MAX_F32)
 
 	@see #getAdhesion
 	*/
@@ -123,7 +123,7 @@ public:
 	\brief Sets material adhesion radius scale. This is multiplied by the particle rest offset to compute the fall-off distance
 	at which point adhesion ceases to operate.
 
-	\param[in] scale Material adhesion radius scale.
+	\param[in] scale Material adhesion radius scale. <b>Range:</b> [0, PX_MAX_F32)
 
 	@see #getAdhesionRadiusScale
 	*/

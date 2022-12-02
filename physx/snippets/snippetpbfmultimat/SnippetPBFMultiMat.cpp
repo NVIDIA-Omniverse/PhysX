@@ -118,21 +118,16 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 
 	// We are applying different material parameters for each section
 	const PxU32 maxMaterials = 3;
-	PxPBDMaterial* materials[maxMaterials];
 	PxU32 phases[maxMaterials];
 	for (PxU32 i = 0; i < maxMaterials; ++i)
 	{
 		PxPBDMaterial* mat = gPhysics->createPBDMaterial(0.05f, i / (maxMaterials - 1.0f), 0.f, 10.002f* (i + 1), 0.5f, 0.005f * i, 0.01f, 0.f, 0.f);
-		materials[i] = mat;
-
 		phases[i] = gParticleSystem->createPhase(mat, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
 	}
 
 	PxReal x = position.x;
 	PxReal y = position.y;
 	PxReal z = position.z;
-	PxReal maxY = y;
-	PxReal maxZ = z;
 
 	for (PxU32 i = 0; i < numX; ++i)
 	{
@@ -149,11 +144,9 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 
 				z += particleSpacing;
 			}
-			maxZ = z - particleSpacing;
 			z = position.z;
 			y += particleSpacing;
 		}
-		maxY = y - particleSpacing;
 		y = position.y;
 		x += particleSpacing;
 	}

@@ -490,6 +490,11 @@ PxShape* NpPhysics::createShape(const PxGeometry& geometry, PxFEMClothMaterial*c
 
 	return NpFactory::getInstance().createShape(geometry, shapeFlags, materials, materialCount, isExclusive);
 }
+#else
+PxShape* NpPhysics::createShape(const PxGeometry&, PxFEMClothMaterial*const *, PxU16, bool, PxShapeFlags)
+{
+	return NULL;
+}
 #endif
 
 PxU32 NpPhysics::getNbShapes()	const
@@ -523,13 +528,6 @@ PxSoftBody* NpPhysics::createSoftBody(PxCudaContextManager& cudaContextManager)
 	return NpFactory::getInstance().createSoftBody(cudaContextManager);
 }
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-PxFEMCloth* NpPhysics::createFEMCloth(PxCudaContextManager& cudaContextManager)
-{
-	return NpFactory::getInstance().createFEMCloth(cudaContextManager);
-}
-#endif
-
 PxPBDParticleSystem* NpPhysics::createPBDParticleSystem(PxCudaContextManager& cudaContexManager, PxU32 maxNeighborhood)
 {
 	return NpFactory::getInstance().createPBDParticleSystem(maxNeighborhood, cudaContexManager);
@@ -550,10 +548,39 @@ PxCustomParticleSystem* NpPhysics::createCustomParticleSystem(PxCudaContextManag
 {
 	return NpFactory::getInstance().createCustomParticleSystem(cudaContexManager, maxNeighborhood);
 }
+
+	PxFEMCloth* NpPhysics::createFEMCloth(PxCudaContextManager& cudaContextManager)
+	{
+		return NpFactory::getInstance().createFEMCloth(cudaContextManager);
+	}
+
 PxHairSystem* NpPhysics::createHairSystem(PxCudaContextManager& cudaContextManager)
 {
 	return NpFactory::getInstance().createHairSystem(cudaContextManager);
 }
+#else
+	PxFLIPParticleSystem* NpPhysics::createFLIPParticleSystem(PxCudaContextManager&)
+	{
+		return NULL;
+	}
+
+	PxMPMParticleSystem* NpPhysics::createMPMParticleSystem(PxCudaContextManager&)
+	{
+		return NULL;
+	}
+
+	PxCustomParticleSystem* NpPhysics::createCustomParticleSystem(PxCudaContextManager&, PxU32)
+	{
+		return NULL;
+	}
+	PxFEMCloth* NpPhysics::createFEMCloth(PxCudaContextManager&)
+	{
+		return NULL;
+	}
+	PxHairSystem* NpPhysics::createHairSystem(PxCudaContextManager&)
+	{
+		return NULL;
+	}
 #endif
 
 PxBuffer* NpPhysics::createBuffer(PxU64 byteSize, PxBufferType::Enum bufferType, PxCudaContextManager* cudaContexManager)
@@ -867,6 +894,11 @@ PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal youngs, PxReal pois
 	PxFEMClothMaterial* m = NpFactory::getInstance().createFEMClothMaterial(youngs, poissons, dynamicFriction);
 	return addFEMClothMaterial(static_cast<NpFEMClothMaterial*>(m));
 }
+#else
+PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal, PxReal, PxReal)
+{
+	return NULL;
+}
 #endif
 
 PxU32 NpPhysics::getNbFEMClothMaterials() const
@@ -1079,19 +1111,33 @@ NpFLIPMaterial* NpPhysics::addFLIPMaterial(NpFLIPMaterial* m)
 	return NULL;
 #endif
 }
+#endif
 
+
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxFLIPMaterial* NpPhysics::createFLIPMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, PxReal viscosity, PxReal gravityScale)
 {
 	PxFLIPMaterial* m = NpFactory::getInstance().createFLIPMaterial(friction, damping, maxVelocity, viscosity, gravityScale);
 	return addFLIPMaterial(static_cast<NpFLIPMaterial*>(m));
 }
+#else
+PxFLIPMaterial* NpPhysics::createFLIPMaterial(PxReal, PxReal, PxReal, PxReal, PxReal)
+{
+	return NULL;
+}
+#endif
 
 PxU32 NpPhysics::getNbFLIPMaterials() const
 {
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
 	return mMasterFLIPMaterialManager.getNumMaterials();
+#else
+	return 0;
+#endif
 }
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxU32 NpPhysics::getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
@@ -1109,7 +1155,15 @@ PxU32 NpPhysics::getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize,
 	}
 	return writeCount;
 }
+#else
+PxU32 NpPhysics::getFLIPMaterials(PxFLIPMaterial** , PxU32, PxU32) const
+{
+	return 0;
+}
+#endif
 
+
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 void NpPhysics::removeFLIPMaterialFromTable(NpFLIPMaterial& m)
 {
 #if PX_SUPPORT_GPU_PHYSX
@@ -1181,19 +1235,32 @@ NpMPMMaterial* NpPhysics::addMPMMaterial(NpMPMMaterial* m)
 	return NULL;
 #endif
 }
+#endif // PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxMPMMaterial* NpPhysics::createMPMMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, bool isPlastic, PxReal youngsModulus, PxReal poissons, PxReal hardening, PxReal criticalCompression, PxReal criticalStretch, PxReal tensileDamageSensitivity, PxReal compressiveDamageSensitivity, PxReal attractiveForceResidual, PxReal gravityScale)
 {
 	PxMPMMaterial* m = NpFactory::getInstance().createMPMMaterial(friction, damping, maxVelocity, isPlastic, youngsModulus, poissons, hardening, criticalCompression, criticalStretch, tensileDamageSensitivity, compressiveDamageSensitivity, attractiveForceResidual, gravityScale);
 	return addMPMMaterial(static_cast<NpMPMMaterial*>(m));
 }
+#else
+PxMPMMaterial* NpPhysics::createMPMMaterial(PxReal, PxReal, PxReal, bool, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal)
+{
+	return NULL;
+}
+#endif
 
 PxU32 NpPhysics::getNbMPMMaterials() const
 {
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
 	return mMasterMPMMaterialManager.getNumMaterials();
+#else
+	return 0;
+#endif
 }
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxU32 NpPhysics::getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
@@ -1211,7 +1278,14 @@ PxU32 NpPhysics::getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, P
 	}
 	return writeCount;
 }
+#else
+PxU32 NpPhysics::getMPMMaterials(PxMPMMaterial**, PxU32, PxU32) const
+{
+	return 0;
+}
+#endif
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 void NpPhysics::removeMPMMaterialFromTable(NpMPMMaterial& m)
 {
 #if PX_SUPPORT_GPU_PHYSX
@@ -1281,19 +1355,32 @@ NpCustomMaterial* NpPhysics::addCustomMaterial(NpCustomMaterial* m)
 	return NULL;
 #endif
 }
+#endif
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxCustomMaterial* NpPhysics::createCustomMaterial(void* gpuBuffer)
 {
 	PxCustomMaterial* m = NpFactory::getInstance().createCustomMaterial(gpuBuffer);
 	return addCustomMaterial(static_cast<NpCustomMaterial*>(m));
 }
+#else
+PxCustomMaterial* NpPhysics::createCustomMaterial(void*)
+{
+	return NULL;
+}
+#endif
 
 PxU32 NpPhysics::getNbCustomMaterials() const
 {
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
 	return mMasterCustomMaterialManager.getNumMaterials();
+#else
+	return 0;
+#endif
 }
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 PxU32 NpPhysics::getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
@@ -1311,7 +1398,14 @@ PxU32 NpPhysics::getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferS
 	}
 	return writeCount;
 }
+#else
+PxU32 NpPhysics::getCustomMaterials(PxCustomMaterial**, PxU32, PxU32) const
+{
+	return 0;
+}
+#endif
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 void NpPhysics::removeCustomMaterialFromTable(NpCustomMaterial& m)
 {
 #if PX_SUPPORT_GPU_PHYSX
@@ -1347,7 +1441,7 @@ void NpPhysics::updateCustomMaterial(NpCustomMaterial& m)
 	PX_UNUSED(m);
 #endif
 }
-#endif
+#endif // PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -89,15 +89,6 @@ void initPhysics(bool /*interactive*/)
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
 	
 	PxCudaContextManagerDesc cudaContextManagerDesc;
-
-#ifdef RENDER_SNIPPET
-	cudaContextManagerDesc.interopMode = PxCudaInteropMode::OGL_INTEROP;	//Choose interop mode. As the snippets use OGL, we select OGL_INTEROP
-																			//when using D3D, cudaContextManagerDesc.graphicsDevice must be set as the graphics device pointer.
-#else
-	cudaContextManagerDesc.interopMode = PxCudaInteropMode::NO_INTEROP;
-#endif
-	
-
 	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());	//Create the CUDA context manager, required for GRB to dispatch CUDA kernels.
 	if( gCudaContextManager )
 	{

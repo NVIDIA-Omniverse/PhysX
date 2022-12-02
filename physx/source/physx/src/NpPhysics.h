@@ -142,25 +142,21 @@ public:
 	virtual		PxRigidDynamic*						createRigidDynamic(const PxTransform&)	PX_OVERRIDE;
 	virtual		PxArticulationReducedCoordinate*	createArticulationReducedCoordinate()	PX_OVERRIDE;
 	virtual		PxSoftBody*							createSoftBody(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual		PxHairSystem*				createHairSystem(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxFEMCloth*					createFEMCloth(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-#endif
 	virtual		PxPBDParticleSystem*		createPBDParticleSystem(PxCudaContextManager& cudaContexManager, PxU32 maxNeighborhood)	PX_OVERRIDE;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual		PxFLIPParticleSystem*		createFLIPParticleSystem(PxCudaContextManager& cudaContexManager)	PX_OVERRIDE;
 	virtual		PxMPMParticleSystem*		createMPMParticleSystem(PxCudaContextManager& cudaContexManager)	PX_OVERRIDE;
 	virtual		PxCustomParticleSystem*		createCustomParticleSystem(PxCudaContextManager& cudaContexManager, PxU32 maxNeighborhood)	PX_OVERRIDE;
-#endif
+
 	virtual		PxBuffer*					createBuffer(PxU64 byteSize, PxBufferType::Enum bufferType, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 	virtual		PxConstraint*				createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize)	PX_OVERRIDE;
 	virtual		PxAggregate*				createAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE;
 
 	virtual		PxShape*					createShape(const PxGeometry&, PxMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
 	virtual		PxShape*					createShape(const PxGeometry&, PxFEMSoftBodyMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual		PxShape*					createShape(const PxGeometry&, PxFEMClothMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
-#endif
+
 	virtual		PxU32						getNbShapes()	const	PX_OVERRIDE;
 	virtual		PxU32						getShapes(PxShape** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const	PX_OVERRIDE;
 
@@ -172,9 +168,7 @@ public:
 	virtual		PxU32						getNbFEMSoftBodyMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual		PxFEMClothMaterial*			createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)	PX_OVERRIDE;
-#endif
 	virtual		PxU32						getNbFEMClothMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getFEMClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
@@ -182,7 +176,6 @@ public:
 	virtual		PxU32						getNbPBDMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getPBDMaterials(PxPBDMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 	
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	virtual		PxFLIPMaterial*				createFLIPMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, PxReal viscosity, PxReal gravityScale)	PX_OVERRIDE;
 	virtual		PxU32						getNbFLIPMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
@@ -192,10 +185,9 @@ public:
 	virtual		PxU32						getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
 	virtual		PxCustomMaterial*			createCustomMaterial(void* gpuBuffer)	PX_OVERRIDE;
-	// PT: what's going on here? Incomplete API?
-	virtual		PxU32						getNbCustomMaterials() const	/*PX_OVERRIDE*/;
-	virtual		PxU32						getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	/*PX_OVERRIDE*/;
-#endif
+	virtual		PxU32						getNbCustomMaterials() const	PX_OVERRIDE;
+	virtual		PxU32						getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
+
 	virtual		PxTriangleMesh*				createTriangleMesh(PxInputStream&)	PX_OVERRIDE;
 	virtual		PxU32						getNbTriangleMeshes()	const	PX_OVERRIDE;
 	virtual		PxU32						getTriangleMeshes(PxTriangleMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const	PX_OVERRIDE;

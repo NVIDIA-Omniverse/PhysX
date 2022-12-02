@@ -186,17 +186,17 @@ static const char* gUpdatePhaseNames[UpdatePhases::eMAX_NUM_UPDATE_STAGES] =
 	"physXSceneSimulate"
 };
 
-struct ProfilerCallback : public physx::PxProfilerCallback
+struct ProfileZones
 {
 	PxU64 times[UpdatePhases::eMAX_NUM_UPDATE_STAGES];
 
-	ProfilerCallback()
+	ProfileZones()
 	{
 		for (int i = 0; i < UpdatePhases::eMAX_NUM_UPDATE_STAGES; ++i)
 			times[i] = 0;
 	}
 
-	~ProfilerCallback()
+	void print()
 	{
 		for (int i = 0; i < UpdatePhases::eMAX_NUM_UPDATE_STAGES; ++i)
 		{
@@ -205,33 +205,46 @@ struct ProfilerCallback : public physx::PxProfilerCallback
 		}
 	}
 
-	virtual void* zoneStart(const char* eventName, bool, uint64_t)
-	{
-		for (int i = 0; i < UpdatePhases::eMAX_NUM_UPDATE_STAGES; ++i)
-		{
-			if (!strcmp(gUpdatePhaseNames[i], eventName))
-			{
-				times[i] -= SnippetUtils::getCurrentTimeCounterValue();
-				break;
-			}
-		}
-		return NULL;
-	}
-	virtual void zoneEnd(void* /*profilerData*/, const char* eventName, bool, uint64_t)
+	void zoneStart(UpdatePhases::Enum zoneId)
 	{
 		PxU64 time = SnippetUtils::getCurrentTimeCounterValue();
+		times[zoneId] -= time;
+	}
 
-		for (int i = 0; i < UpdatePhases::eMAX_NUM_UPDATE_STAGES; ++i)
-		{
-			if (!strcmp(gUpdatePhaseNames[i], eventName))
-			{
-				times[i] += time;
-				break;
-			}
-		}
+	void zoneEnd(UpdatePhases::Enum zoneId)
+	{
+		PxU64 time = SnippetUtils::getCurrentTimeCounterValue();
+		times[zoneId] += time;
 	}
 };
-ProfilerCallback gProfilerCallback;
+ProfileZones gProfileZones;
+
+class ScopedProfileZone
+{
+private:
+	ScopedProfileZone(const ScopedProfileZone&);
+	ScopedProfileZone& operator=(const ScopedProfileZone&);
+
+public:
+	ScopedProfileZone(ProfileZones& zones, UpdatePhases::Enum zoneId)
+		: mZones(zones)
+		, mZoneId(zoneId)
+	{
+		zones.zoneStart(zoneId);
+	}
+
+	~ScopedProfileZone()
+	{
+		mZones.zoneEnd(mZoneId);
+	}
+
+
+private:
+	ProfileZones& mZones;
+	UpdatePhases::Enum mZoneId;
+};
+
+#define SNIPPET_PROFILE_ZONE(zoneId) ScopedProfileZone PX_CONCAT(_scoped, __LINE__)(gProfileZones, zoneId)
 
 //TaskVehicleUpdates allows vehicle updates to be performed concurrently across
 //multiple threads.
@@ -333,11 +346,6 @@ void initPhysX()
 	gPvd = PxCreatePvd(*gFoundation);
 	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
 	gPvd->connect(*transport,PxPvdInstrumentationFlag::ePROFILE);
-
-	// PVD sets itself up as the profiler during the "connect" call above. We override this with
-	// our own callback. If we wanted both our profiling and PVD's at the same time, we would
-	// just call the PVD functions (available in PxPvd's base class) from our own profiler callback.
-	PxSetProfilerCallback(&gProfilerCallback);
 
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
 		
@@ -542,7 +550,7 @@ void concurrentVehicleUpdates(const PxReal timestep)
 		//Perform all physx reads/writes serially in a separate step to avoid serializing code that can take 
 		//advantage of multithreading.
 		{
-			PX_PROFILE_ZONE(gUpdatePhaseNames[UpdatePhases::eVEHICLE_PHYSX_BEGIN_COMPONENTS], 0);
+			SNIPPET_PROFILE_ZONE(UpdatePhases::eVEHICLE_PHYSX_BEGIN_COMPONENTS);
 			for (PxU32 i = 0; i < NUM_VEHICLES; i++)
 			{
 				gPhysXBeginComponents[i]->update(timestep, gVehicleSimulationContext);
@@ -551,7 +559,7 @@ void concurrentVehicleUpdates(const PxReal timestep)
 
 		//Multi-threaded update of direct drive vehicles.
 		{
-			PX_PROFILE_ZONE(gUpdatePhaseNames[UpdatePhases::eVEHICLE_UPDATE_COMPONENTS], 0);
+			SNIPPET_PROFILE_ZONE(UpdatePhases::eVEHICLE_UPDATE_COMPONENTS);
 
 			//Update the vehicles concurrently then wait until all vehicles 
 			//have completed their update.
@@ -577,7 +585,7 @@ void concurrentVehicleUpdates(const PxReal timestep)
 		//Perform all physx reads/writes serially in a separate step to avoid serializing code that can take 
 		//advantage of multithreading.
 		{
-			PX_PROFILE_ZONE(gUpdatePhaseNames[UpdatePhases::eVEHICLE_PHYSX_END_COMPONENTS], 0);
+			SNIPPET_PROFILE_ZONE(UpdatePhases::eVEHICLE_PHYSX_END_COMPONENTS);
 			for (PxU32 i = 0; i < NUM_VEHICLES; i++)
 			{
 				gPhysXEndComponents[i]->update(timestep, gVehicleSimulationContext);
@@ -597,7 +605,7 @@ void stepPhysics()
 	concurrentVehicleUpdates(timestep);
 
 	//Forward integrate the phsyx scene by a single timestep.
-	PX_PROFILE_ZONE(gUpdatePhaseNames[UpdatePhases::ePHYSX_SCENE_SIMULATE], 0);
+	SNIPPET_PROFILE_ZONE(UpdatePhases::ePHYSX_SCENE_SIMULATE);
 	gScene->simulate(timestep);
 	gScene->fetchResults(true);
 
@@ -638,6 +646,7 @@ int snippetMain(int argc, const char*const* argv)
 			stepPhysics();
 		}
 		printf("Completed %d simulate steps with %d substeps per simulate step \n", gNbSimulateSteps, NB_SUBSTEPS);
+		gProfileZones.print();
 		cleanupPhysics();
 	}
 

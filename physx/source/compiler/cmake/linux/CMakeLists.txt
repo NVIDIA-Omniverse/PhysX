@@ -88,9 +88,24 @@ IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
 	# -Wno-invalid-offsetof -Wno-unused-result -Wno-unused-variable -Wno-uninitialized -Wno-unused-but-set-variable
 	# -Wno-unused-function -Wno-conversion-null -Wno-deprecated-declarations
 	SET(GCC_WARNINGS "-Wall -Wno-error -fcommon -faligned-new -z muldefs -fpermissive")
-	SET(AARCH64_FLAGS "-ffp-contract=off")
+	# gw: these optimizations are disabled for now. fp-contract causes floating point inaccuracy and deviation in behavior,
+	# tree-vrp and delete-null-pointer-checks cause known bugs on some versions of gcc
+	IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		SET(AARCH64_FLAGS "-ffp-contract=off -fno-delete-null-pointer-checks")
+	ELSE()
+		SET(AARCH64_FLAGS "-ffp-contract=off")
+	ENDIF()
 ELSE()
-	SET(GCC_WARNINGS "-Wall -Werror -Wno-invalid-offsetof -Wno-uninitialized -Wno-nonnull-compare -Wno-mismatched-new-delete -Wno-pragmas -Wno-unused-function")
+	SET(GCC_WARNINGS "-Wall -Werror\
+		-Wno-array-bounds\
+		-Wno-class-memaccess\
+		-Wno-invalid-offsetof\
+		-Wno-mismatched-new-delete\
+		-Wno-nonnull-compare\
+		-Wno-pragmas\
+		-Wno-uninitialized\
+		-Wno-unused-function\
+	")
 	SET(AARCH64_FLAGS "")
 ENDIF()
 

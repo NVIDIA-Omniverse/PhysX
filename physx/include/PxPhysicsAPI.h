@@ -169,7 +169,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxLockedData.h"
 #include "PxMaterial.h"
 #include "PxParticleBuffer.h"
-#include "PxParticlePhase.h"
 #include "PxParticleSystem.h"
 #include "PxPBDParticleSystem.h"
 #include "PxPBDMaterial.h"

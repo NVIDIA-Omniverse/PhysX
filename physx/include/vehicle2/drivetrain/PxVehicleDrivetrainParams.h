@@ -651,6 +651,8 @@ struct PxVehicleMultiWheelDriveDifferentialParams
 		}
 		PX_CHECK_AND_RETURN_VAL(aveWheelSpeedSum >= 0.99f && aveWheelSpeedSum <= 1.01f, "Sum of PxVehicleMultiWheelDriveDifferentialParams.aveWheelSpeedRatios[i] must be 1.0.", false);
 		PX_CHECK_AND_RETURN_VAL(torqueRatioSum >= 0.99f && torqueRatioSum <= 1.01f, "Sum of PxVehicleMultiWheelDriveDifferentialParams.torqueRatios[i] must be 1.0.", false);
+		PX_UNUSED(aveWheelSpeedSum);
+		PX_UNUSED(torqueRatioSum);
 		return true;
 	}
 };

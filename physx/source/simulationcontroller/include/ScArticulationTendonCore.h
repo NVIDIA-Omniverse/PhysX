@@ -42,6 +42,13 @@ namespace Sc
 	class ArticulationTendonCore
 	{
 	public:
+
+// PX_SERIALIZATION
+															ArticulationTendonCore(const PxEMPTY) {}
+						void								preExportDataReset() { }
+		static			void								getBinaryMetaData(PxOutputStream& stream);
+//~PX_SERIALIZATION
+
 		ArticulationTendonCore() : mStiffness(0.f), mDamping(0.f), mOffset(0.f), mLimitStiffness(0.f)
 		{
 
@@ -55,6 +62,13 @@ namespace Sc
 	class ArticulationSpatialTendonCore : public ArticulationTendonCore
 	{
 	public:
+
+// PX_SERIALIZATION
+															ArticulationSpatialTendonCore(const PxEMPTY) : ArticulationTendonCore(PxEmpty), mSim(NULL) {}
+						void								preExportDataReset() { }
+		static			void								getBinaryMetaData(PxOutputStream& stream);
+//~PX_SERIALIZATION
+
 		ArticulationSpatialTendonCore() : ArticulationTendonCore() { mSim = NULL; }
 		~ArticulationSpatialTendonCore() {}
 
@@ -81,13 +95,17 @@ namespace Sc
 
 	
 		ArticulationSpatialTendonSim*			mSim;
-
-		static void getBinaryMetaData(PxOutputStream& stream);
 	};
 
 	class ArticulationFixedTendonCore : public ArticulationTendonCore
 	{
 	public:
+		// PX_SERIALIZATION
+		ArticulationFixedTendonCore(const PxEMPTY) : ArticulationTendonCore(PxEmpty), mSim(NULL) {}
+		void preExportDataReset() {}
+		static void getBinaryMetaData(PxOutputStream& stream);
+		//~PX_SERIALIZATION
+
 		ArticulationFixedTendonCore() : ArticulationTendonCore(), mLowLimit(PX_MAX_F32), mHighLimit(-PX_MAX_F32), mRestLength(0.f)
 		{ mSim = NULL; }
 		~ArticulationFixedTendonCore() {}
@@ -123,8 +141,6 @@ namespace Sc
 		PxReal								mRestLength;
 
 		ArticulationFixedTendonSim*			mSim;
-
-		static void getBinaryMetaData(PxOutputStream& stream);
 	};
 
 

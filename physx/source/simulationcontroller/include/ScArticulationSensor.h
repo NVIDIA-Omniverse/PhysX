@@ -40,9 +40,17 @@ namespace Sc
 class ArticulationCore;
 class ArticulationSensorSim;
 
-class ArticulationSensorCore
+class ArticulationSensorCore 
 {
 public:
+
+// PX_SERIALIZATION
+															ArticulationSensorCore(const PxEMPTY) :mSim(NULL) {}
+		static			void								getBinaryMetaData(PxOutputStream& stream);
+//~PX_SERIALIZATION
+
+
+															ArticulationSensorCore(){}
 
 	PX_FORCE_INLINE	void							setSim(ArticulationSensorSim* sim)
 	{
@@ -52,7 +60,6 @@ public:
 
 	PX_FORCE_INLINE	ArticulationSensorSim*			getSim()			const { return mSim; }
 
-	void  getBinaryMetaData(PxOutputStream& stream);
 	ArticulationSensorSim*				mSim;
 	PxTransform							mRelativePose;
 	PxU16								mFlags;

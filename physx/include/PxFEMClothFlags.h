@@ -24,40 +24,52 @@
 //
 // Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
-#ifndef PX_PHYSICS_VERSION_H
-#define PX_PHYSICS_VERSION_H
+#ifndef PX_PHYSICS_FEM_CLOTH_FLAGS_H
+#define PX_PHYSICS_FEM_CLOTH_FLAGS_H
 
-/*
-VersionNumbers:  The combination of these
-numbers uniquely identifies the API, and should
-be incremented when the SDK API changes.  This may
-include changes to file formats.
+#include "foundation/PxFlags.h"
+#include "foundation/PxSimpleTypes.h"
 
-This header is included in the main SDK header files
-so that the entire SDK and everything that builds on it
-is completely rebuilt when this file changes.  Thus,
-this file is not to include a frequently changing
-build number.  See BuildNumber.h for that.
 
-Each of these three values should stay below 255 because
-sometimes they are stored in a byte.
-*/
-/** \addtogroup foundation
-  @{
-*/
-
-#define PX_PHYSICS_VERSION_MAJOR 5
-#define PX_PHYSICS_VERSION_MINOR 1
-#define PX_PHYSICS_VERSION_BUGFIX 1
-
-/**
-The constant PX_PHYSICS_VERSION is used when creating certain PhysX module objects.
-This is to ensure that the application is using the same header version as the library was built with.
-*/
-#define PX_PHYSICS_VERSION ((PX_PHYSICS_VERSION_MAJOR<<24) + (PX_PHYSICS_VERSION_MINOR<<16) + (PX_PHYSICS_VERSION_BUGFIX<<8) + 0)
-
+#if !PX_DOXYGEN
+namespace physx
+{
 #endif
 
- /** @} */
+/**
+\brief Identifies input and output buffers for PxFEMCloth.
+@see PxFEMClothData::readData(), PxFEMClothData::writeData(), PxBuffer.
+*/
+struct PxFEMClothData
+{
+	enum Enum
+	{
+		eNONE = 0,
+		ePOSITION_INVMASS = 1 << 0,
+		eVELOCITY = 1 << 1,
+		eREST_POSITION = 1 << 2,
+		eALL = ePOSITION_INVMASS | eVELOCITY | eREST_POSITION
+	};
+};
+
+typedef PxFlags<PxFEMClothData::Enum, PxU32> PxFEMClothDataFlags;
+
+struct PxFEMClothFlag
+{
+	enum Enum
+	{
+		eDISABLE_SELF_COLLISION = 1 << 0,
+		eUSE_ISOTROPIC_CLOTH = 1 << 1,          // 0: use anistropic model
+		eUSE_REST_POSITION_FOR_BENDING = 1 << 2 // 0: use zero bending angle
+	};
+};
+
+typedef PxFlags<PxFEMClothFlag::Enum, PxU32> PxFEMClothFlags;
+
+#if !PX_DOXYGEN
+} // namespace physx
+#endif
+
+#endif
