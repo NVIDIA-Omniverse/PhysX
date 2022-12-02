@@ -20,7 +20,7 @@
 	</dependency>
 
 	<dependency name="PhysXGpu">
-		<package name="PhysXGpu" version="104.0-5.1.118.32022295-public"  platforms="vc15win64  vc16win64 linux linux-aarch64"/>
+		<package name="PhysXGpu" version="104.1-5.1.1151.32112585-public"  platforms="vc15win64  vc16win64 linux linux-aarch64"/>
 	</dependency>
 
 	<dependency name="opengllinux" tags="requiredForDistro">

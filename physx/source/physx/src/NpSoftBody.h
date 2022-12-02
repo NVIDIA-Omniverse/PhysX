@@ -92,9 +92,6 @@ namespace physx
 
 		virtual void					release();
 
-		virtual		bool				isKindOf(const char* name) const { return !::strcmp("PxSoftBody", name) || PxBase::isKindOf(name); }
-		virtual		const char*			getConcreteTypeName() const { return "PxSoftBody";  }
-
 		PX_FORCE_INLINE	const Sc::SoftBodyCore&	getCore()	const	{ return mCore; }
 		PX_FORCE_INLINE	Sc::SoftBodyCore&		getCore()			{ return mCore; }
 		static PX_FORCE_INLINE size_t			getCoreOffset()		{ return PX_OFFSET_OF_RT(NpSoftBody, mCore); }
@@ -126,14 +123,13 @@ namespace physx
 										PxConeLimitedConstraint* constraint);
 		virtual		void				removeSoftBodyAttachment(PxSoftBody* softbody0, PxU32 handle);
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 		virtual		void				addClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx);
 		virtual		void				removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx);
 
 		virtual		PxU32				addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
 										PxConeLimitedConstraint* constraint);
 		virtual		void				removeClothAttachment(PxFEMCloth* cloth, PxU32 handle);
-#endif
+
 		// Debug name
 		void							setName(const char*);
 		const char*						getName() const;

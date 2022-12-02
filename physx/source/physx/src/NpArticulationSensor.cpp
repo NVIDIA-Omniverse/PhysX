@@ -37,6 +37,23 @@ using namespace physx;
 namespace physx
 {
 
+// PX_SERIALIZATION
+
+void NpArticulationSensor::resolveReferences(PxDeserializationContext& context)
+{	
+	context.translatePxBase(mLink);
+}
+
+NpArticulationSensor* NpArticulationSensor::createObject(PxU8*& address, PxDeserializationContext& context)
+{
+	NpArticulationSensor* obj = PX_PLACEMENT_NEW(address, NpArticulationSensor(PxBaseFlags(0)));
+	address += sizeof(NpArticulationSensor);	
+	obj->importExtraData(context);
+	obj->resolveReferences(context);
+	return obj;
+}
+//~PX_SERIALIZATION
+
 NpArticulationSensor::NpArticulationSensor(PxArticulationLink* link, const PxTransform& relativePose) : 
 	PxArticulationSensor(PxConcreteType::eARTICULATION_SENSOR, PxBaseFlag::eOWNS_MEMORY),
 	NpBase(NpType::eARTICULATION_SENSOR)
@@ -66,7 +83,8 @@ void NpArticulationSensor::release()
 	sensors.replaceWithLast(mHandle);
 	this->~NpArticulationSensor();
 
-	PX_FREE_THIS;
+	if(getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
+		PX_FREE_THIS;
 }
 
 PxSpatialForce NpArticulationSensor::getForces() const

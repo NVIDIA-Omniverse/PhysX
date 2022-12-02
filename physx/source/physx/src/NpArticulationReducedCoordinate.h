@@ -39,6 +39,7 @@
 
 #include "NpArticulationLink.h"
 #include "NpArticulationJointReducedCoordinate.h"
+#include "NpArticulationTendon.h"
 #include "ScArticulationCore.h"
 
 namespace physx
@@ -66,10 +67,8 @@ namespace physx
 														NpArticulationReducedCoordinate(PxBaseFlags baseFlags)
 														: PxArticulationReducedCoordinate(baseFlags),
 															NpBase(PxEmpty), mCore(PxEmpty),
-															mArticulationLinks(PxEmpty), mLoopJoints(PxEmpty)
+															mArticulationLinks(PxEmpty), mLoopJoints(PxEmpty), mSpatialTendons(PxEmpty), mFixedTendons(PxEmpty), mSensors(PxEmpty)
 														{
-															mSpatialTendons.reserve(50);
-															mFixedTendons.reserve(50);
 														}
 		
 					void								preExportDataReset();

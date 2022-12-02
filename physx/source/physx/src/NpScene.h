@@ -108,9 +108,6 @@ class NpMPMMaterial;
 class NpCustomMaterial;
 #endif
 
-class PxArticulationImpl;
-
-
 class NpContactCallbackTask : public physx::PxLightCpuTask
 {
 	NpScene*	mScene;
@@ -176,13 +173,11 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	virtual			PxU32							getNbParticleSystems(PxParticleSolverType::Enum type) const;
 	virtual			PxU32							getParticleSystems(PxParticleSolverType::Enum type, PxParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION	
 	virtual			PxU32							getNbFEMCloths() const;
 	virtual			PxU32							getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
 
 	virtual			PxU32							getNbHairSystems() const;
 	virtual			PxU32							getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
-#endif
 
 	// Aggregates
     virtual			bool							addAggregate(PxAggregate&);

@@ -35,7 +35,7 @@
 
 #include "PxActor.h"
 #include "PxFiltering.h"
-#include "PxParticlePhase.h"
+#include "PxParticleSystemFlag.h"
 
 #include "cudamanager/PxCudaTypes.h"
 
@@ -155,21 +155,21 @@ public:
 
 	See #getSolverIterationCounts()
 	*/
-	virtual		void				setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) = 0;
+	virtual     void                setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) = 0;
 
 	/**
 	\brief Retrieves the solver iteration counts.
 
 	See #setSolverIterationCounts()
 	*/
-	virtual		void				getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const = 0;
+	virtual     void                getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const = 0;
 
 	/**
 	\brief Retrieves the collision filter settings.
 
 	\return The filter data
 	*/
-	virtual		PxFilterData		getSimulationFilterData() const = 0;
+	virtual     PxFilterData        getSimulationFilterData() const = 0;
 
 	/**
 	\brief Set collision filter settings
@@ -178,7 +178,7 @@ public:
 
 	\param[in] data The filter data
 	*/
-	virtual		void				setSimulationFilterData(const PxFilterData& data) = 0;
+	virtual     void                setSimulationFilterData(const PxFilterData& data) = 0;
 
 	/**
 	\brief Set particle flag
@@ -188,7 +188,7 @@ public:
 	\param[in] flag The flag to set
 	\param[in] val The new value of the flag
 	*/
-	virtual		void				setParticleFlag(PxParticleFlag::Enum flag, bool val) = 0;
+	virtual     void                setParticleFlag(PxParticleFlag::Enum flag, bool val) = 0;
 
 	/**
 	\brief Set particle flags
@@ -197,14 +197,14 @@ public:
 
 	\param[in] flags The flags to set
 	*/
-	virtual		void				setParticleFlags(PxParticleFlags flags) = 0;
+	virtual     void                setParticleFlags(PxParticleFlags flags) = 0;
 
 	/**
 	\brief Retrieves the particle flags.
 
 	\return The particle flags
 	*/
-	virtual		PxParticleFlags		getParticleFlags() const = 0;
+	virtual     PxParticleFlags     getParticleFlags() const = 0;
 
 	/**
 	\brief Set the maximal depenetration velocity particles can reach
@@ -213,14 +213,14 @@ public:
 
 	\param[in] maxDepenetrationVelocity The maximal depenetration velocity
 	*/
-	virtual		void				setMaxDepenetrationVelocity(PxReal maxDepenetrationVelocity) = 0;
+	virtual     void                setMaxDepenetrationVelocity(PxReal maxDepenetrationVelocity) = 0;
 	
 	/**
 	\brief Retrieves maximal depenetration velocity a particle can have.
 
 	\return The maximal depenetration velocity
 	*/
-	virtual		PxReal				getMaxDepenetrationVelocity() = 0;
+	virtual     PxReal              getMaxDepenetrationVelocity() = 0;
 
 	/**
 	\brief Set the maximal velocity particles can reach
@@ -229,14 +229,14 @@ public:
 
 	\param[in] maxVelocity The maximal velocity
 	*/
-	virtual		void				setMaxVelocity(PxReal maxVelocity) = 0;
+	virtual     void                setMaxVelocity(PxReal maxVelocity) = 0;
 	
 	/**
 	\brief Retrieves maximal velocity a particle can have.
 
 	\return The maximal velocity
 	*/
-	virtual		PxReal				getMaxVelocity() = 0;
+	virtual     PxReal              getMaxVelocity() = 0;
 
 
 	/**
@@ -244,7 +244,7 @@ public:
 
 	\return The cuda context manager
 	*/
-	virtual		PxCudaContextManager*	getCudaContextManager() const = 0;
+	virtual     PxCudaContextManager*   getCudaContextManager() const = 0;
 
 	/**
 	\brief Set the rest offset for the collision between particles and rigids or soft bodies.
@@ -253,7 +253,7 @@ public:
 
 	\param[in] restOffset <b>Range:</b> (0, contactOffset)
 	*/
-	virtual		void				setRestOffset(PxReal restOffset) = 0;
+	virtual     void                setRestOffset(PxReal restOffset) = 0;
 
 	/**
 	\brief Return the rest offset
@@ -261,7 +261,7 @@ public:
 
 	See #setRestOffset()
 	*/
-	virtual		PxReal				getRestOffset() const = 0;
+	virtual     PxReal              getRestOffset() const = 0;
 
 	/**
 	\brief Set the contact offset for the collision between particles and rigids or soft bodies
@@ -271,7 +271,7 @@ public:
 
 	\param[in] contactOffset <b>Range:</b> (restOffset, PX_MAX_F32)
 	*/
-	virtual		void				setContactOffset(PxReal contactOffset) = 0;
+	virtual     void                setContactOffset(PxReal contactOffset) = 0;
 
 	/**
 	\brief Return the contact offset
@@ -279,7 +279,7 @@ public:
 
 	See #setContactOffset()
 	*/
-	virtual		PxReal				getContactOffset() const = 0;
+	virtual     PxReal              getContactOffset() const = 0;
 
 	/**
 	\brief Set the contact offset for the interactions between particles
@@ -289,7 +289,7 @@ public:
 
 	\param[in] particleContactOffset <b>Range:</b> (Max(solidRestOffset, fluidRestOffset), PX_MAX_F32)
 	*/
-	virtual		void				setParticleContactOffset(PxReal particleContactOffset) = 0;
+	virtual     void                setParticleContactOffset(PxReal particleContactOffset) = 0;
 
 	/**
 	\brief Return the particle contact offset
@@ -297,7 +297,7 @@ public:
 
 	See #setParticleContactOffset()
 	*/
-	virtual		PxReal				getParticleContactOffset() const = 0;
+	virtual     PxReal              getParticleContactOffset() const = 0;
 
 	/**
 	\brief Set the solid rest offset
@@ -306,7 +306,7 @@ public:
 
 	\param[in] solidRestOffset  <b>Range:</b> (0, particleContactOffset)
 	*/
-	virtual		void				setSolidRestOffset(PxReal solidRestOffset) = 0;
+	virtual     void                setSolidRestOffset(PxReal solidRestOffset) = 0;
 
 	/**
 	\brief Return the solid rest offset
@@ -314,7 +314,7 @@ public:
 
 	See #setSolidRestOffset()
 	*/
-	virtual		PxReal				getSolidRestOffset() const = 0;
+	virtual     PxReal              getSolidRestOffset() const = 0;
 
 
 	/**
@@ -328,7 +328,7 @@ public:
 
 	\param[in] actor The rigid actor used for the attachment
 	*/
-	virtual		void				addRigidAttachment(PxRigidActor* actor) = 0;
+	virtual     void                addRigidAttachment(PxRigidActor* actor) = 0;
 
 	/**
 	\brief Removes a rigid attachment between a particle and a rigid body.
@@ -340,7 +340,7 @@ public:
 
 	\param[in] actor The rigid body actor used for the attachment
 	*/
-	virtual		void				removeRigidAttachment(PxRigidActor* actor) = 0;
+	virtual     void                removeRigidAttachment(PxRigidActor* actor) = 0;
 
 
 	/**
@@ -348,7 +348,7 @@ public:
 
 	\param[in] enable Boolean indicates whether continuous collision detection is enabled.
 	*/
-	virtual		void				enableCCD(bool enable) = 0;
+	virtual     void                enableCCD(bool enable) = 0;
 
 
 	/**
@@ -360,14 +360,14 @@ public:
 
 	See #PxParticlePhaseFlag
 	*/
-	virtual		PxU32				createPhase(PxParticleMaterial* material, PxParticlePhaseFlags flags) = 0;
+	virtual     PxU32               createPhase(PxParticleMaterial* material, PxParticlePhaseFlags flags) = 0;
 	
 	
 	/**
 	\brief Returns number of particle materials
 	\return The number of particle materials
 	*/
-	virtual		PxU32				getNbParticleMaterials() const = 0;
+	virtual     PxU32               getNbParticleMaterials() const = 0;
 
 
 	/**
@@ -380,7 +380,7 @@ public:
 
 	See #PxParticleSystemCallback, #getParticleSystemCallback()
 	*/
-	virtual		void				setParticleSystemCallback(PxParticleSystemCallback* callback) = 0;
+	virtual     void                setParticleSystemCallback(PxParticleSystemCallback* callback) = 0;
 
 	/**
 	\brief Retrieves the simulationEventCallback pointer set with setSimulationEventCallback().
@@ -388,7 +388,7 @@ public:
 
 	See #PxParticleSystemCallback, #setParticleSystemCallback()
 	*/
-	virtual		PxParticleSystemCallback*	getParticleSystemCallback() const = 0;
+	virtual     PxParticleSystemCallback*   getParticleSystemCallback() const = 0;
 
 	/**
 	\brief Sets periodic boundary wrap value
@@ -396,7 +396,7 @@ public:
 
 	See #getPeriodicBoundary()
 	*/
-	virtual		void				setPeriodicBoundary(const PxVec3& boundary) = 0;
+	virtual     void                setPeriodicBoundary(const PxVec3& boundary) = 0;
 
 	/**
 	\brief Gets periodic boundary wrap value
@@ -404,7 +404,7 @@ public:
 
 	See #setPeriodicBoundary()
 	*/
-	virtual		PxVec3				getPeriodicBoundary() const = 0;
+	virtual     PxVec3              getPeriodicBoundary() const = 0;
 
 	/**
 	\brief Add an existing particle buffer to the particle system.
@@ -412,7 +412,7 @@ public:
 
     See #PxParticleBuffer.
 	*/
-	virtual		void				addParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
+	virtual     void                addParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
 
 	/**
 	\brief Remove particle buffer from the particle system.
@@ -420,20 +420,21 @@ public:
 
 	See #PxParticleBuffer.
 	*/
-	virtual		void				removeParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
+	virtual     void                removeParticleBuffer(PxParticleBuffer* particleBuffer) = 0;
 
 	/**
 	\brief Returns the GPU particle system index.
 	\return The GPU index, if the particle system is in a scene and PxSceneFlag::eSUPPRESS_READBACK is set, or 0xFFFFFFFF otherwise.
 	*/
-	virtual		PxU32				getGpuParticleSystemIndex() = 0;
+	virtual     PxU32               getGpuParticleSystemIndex() = 0;
 
 protected:
 
-	virtual							~PxParticleSystem() {}
+	virtual                         ~PxParticleSystem() {}
 
-	PX_INLINE						PxParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
-	PX_INLINE						PxParticleSystem(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
+	PX_INLINE                       PxParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
+	PX_INLINE                       PxParticleSystem(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
+	virtual     bool                isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxParticleSystem", name) || PxActor::isKindOf(name); }
 };
 
 

@@ -459,10 +459,10 @@ void NpShape::setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16
 	PX_UNUSED(materialCount);
 #endif
 }
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+
 void NpShape::setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount)
 {
-#if PX_SUPPORT_GPU_PHYSX
+#if PX_SUPPORT_GPU_PHYSX && PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 
 	PX_CHECK_AND_RETURN((mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eCLOTH_SHAPE), "NpShape::setMaterials: can only apply cloth materials to a cloth shape!");
 
@@ -472,7 +472,6 @@ void NpShape::setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 mater
 	PX_UNUSED(materialCount);
 #endif
 }
-#endif
 
 PxU16 NpShape::getNbMaterials() const
 {
@@ -497,6 +496,11 @@ PxU32 NpShape::getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSi
 {
 	NP_READ_CHECK(getNpScene());
 	return scGetMaterials<PxFEMClothMaterial, NpFEMClothMaterial>(userBuffer, bufferSize, startIndex);
+}
+#else
+PxU32 NpShape::getClothMaterials(PxFEMClothMaterial**, PxU32, PxU32) const
+{
+	return 0;
 }
 #endif
 

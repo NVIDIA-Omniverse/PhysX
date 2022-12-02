@@ -1,3 +1,43 @@
+# v5.1.1
+
+## General
+
+### Changed:
+
+* Be aware that due to reorganization of some virtual functions in the public interface the binary data layout has changed from v5.1.0. Linking code that includes the headers of v5.1.1 against binaries that have been built with an older version will likely cause problems.
+
+### Added:
+
+* Support for spatial and fixed tendon serialization.
+
+### Fixed:
+
+* Binary serialization of articulations had a bug, which got fixed.
+* Includes [PR #8: Download bootstrap packages using TLS](https://github.com/NVIDIA-Omniverse/PhysX/pull/8/)
+
+## Rigid Body
+
+### Fixed
+
+* A crash when colliding an SDF mesh against a sphere
+
+## Particle Systems
+
+### Fixed
+
+* Particle systems now support is<> type conversion.
+
+### Removed
+
+* The PxParticlePhase class has been removed. It was unused.
+
+## Vehicles2
+
+### Changed:
+
+* SnippetVehicle2Multithreading is now using custom profiling code to provide timings in release builds too.
+
+
 # v5.1.0
 
 ## Supported Platforms

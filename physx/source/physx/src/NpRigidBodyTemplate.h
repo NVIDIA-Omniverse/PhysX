@@ -713,6 +713,10 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 	}
 
 	scSetFlags(filteredNewFlags);
+#if PX_SUPPORT_OMNI_PVD
+	PxActor* actor = static_cast<PxActor*>(this);
+	OMNI_PVD_SET(actor, rigidBodyFlags, *actor, filteredNewFlags)
+#endif
 
 	// PT: the SQ update should be done after the scSetFlags() call
 	if(mustUpdateSQ)
