@@ -105,6 +105,10 @@ class CMakePreset:
                 cmParam = '-D' + \
                     cmakeParam.attrib['name'] + '=\"' + \
                     cmakeParam.attrib['value'] + '\"'
+                if cmakeParam.attrib['value'].startswith('arm'):
+                    cmParam = cmParam + ' -DPX_OUTPUT_ARCH=arm'
+                elif cmakeParam.attrib['value'].startswith('x86'):
+                    cmParam = cmParam + ' -DPX_OUTPUT_ARCH=x86'
             else:
                 cmParam = '-D' + \
                     cmakeParam.attrib['name'] + '=' + \
