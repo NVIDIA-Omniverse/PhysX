@@ -1,0 +1,34 @@
+<project toolsVersion="5.0">
+  <dependency name="python27" linkPath="../_build/target-deps/python27">
+    <package name="python" version="2.7.14-windows-x64-1" platforms="windows-x86_64"/>
+  </dependency>
+  <dependency name="python36" linkPath="../_build/target-deps/python36">
+    <package name="python" version="3.6.7-windows-x86_64" platforms="windows-x86_64"/>
+    <package name="python" version="3.6.5-linux-x64" platforms="linux-x86_64"/>
+    <package name="python" version="3.6.8-34.a6e9b99d-linux-aarch64" platforms="linux-aarch64"/>
+  </dependency>
+  <dependency name="python37" linkPath="../_build/target-deps/python37">
+    <package name="python" version="3.7.9-windows-x86_64" platforms="windows-x86_64" />
+    <package name="python" version="3.7.9-173.e9ee4ea0-${platform}" platforms="linux-x86_64 linux-aarch64" />
+  </dependency>
+
+  <dependency name="doxygen" linkPath="_dependencies/doxygen">
+    <package name="doxygen" version="1.8.5-windows-x86_64" platforms="windows-x86_64" />
+  </dependency>
+
+  <dependency name="physxsdk" linkPath="../_build/target-deps/physxsdk">
+    <package name="physxsdk" version="4.1.trunk.26400730-${platform}" platforms="windows-x86_64 linux-x86_64" />
+  </dependency>
+  <dependency name="pxshared" linkPath="../_build/target-deps/pxshared">
+    <package name="pxshared" version="1.1.trunk.25954437-${platform}" platforms="windows-x86_64 linux-x86_64" />
+  </dependency>
+
+  <dependency name="BoostMultiprecision" linkPath="../_build/target-deps/BoostMultiprecision">
+    <package name="BoostMultiprecision" version="1.64.0.1" platforms="windows-x86_64 linux-x86_64"/>
+  </dependency>
+
+  <dependency name="googletest" linkPath="../_build/target-deps/googletest">
+    <package name="googletest-win" version="1.4.0.2" platforms="windows-x86_64"/>
+    <package name="googletest-linux-x86_64" version="1.8.0.1" platforms="linux-x86_64"/>
+  </dependency>
+</project>

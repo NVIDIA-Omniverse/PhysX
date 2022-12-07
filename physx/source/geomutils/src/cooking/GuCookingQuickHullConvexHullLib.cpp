@@ -1235,7 +1235,7 @@ namespace local
 		calculateHorizon(eyeVtx->point, NULL, eyeFace, mHorizon, mRemovedFaces);
 
 		// check if we dont hit the polygons hard limit
-		if (mNumHullFaces + mHorizon.size() > 255)
+		if (mNumHullFaces + mHorizon.size() > mConvexDesc.polygonLimit)
 		{
 			// make the faces visible again and quit 
 			for (PxU32 i = 0; i < mRemovedFaces.size(); i++)
@@ -1900,7 +1900,7 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::createConvexHull()
 	// if hull was cropped we already have a compatible mesh, if not check 
 	// the max verts per face
 	if((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) && !mCropedConvexHull &&
-		res == PxConvexMeshCookingResult::eSUCCESS)
+		(res == PxConvexMeshCookingResult::eSUCCESS || res == PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED))
 	{
 		PX_ASSERT(mQuickHull);
 		// if we hit the vertex per face limit, expand the hull by cropping OBB

@@ -1,0 +1,35 @@
+<project toolsVersion="6.11">
+  <dependency name="premake" linkPath="../_build/host-deps/premake">
+    <package name="premake" version="5.0.9-nv-main-68e9a88a-${platform}" />
+  </dependency>
+  <dependency name="msvc" linkPath="../_build/host-deps/msvc">
+    <package name="msvc" version="2017-15.9.17-1" platforms="windows-x86_64" />
+  </dependency>
+  <dependency name="winsdk" linkPath="../_build/host-deps/winsdk">
+    <package name="winsdk" version="10.17763" platforms="windows-x86_64"/>
+  </dependency>
+  <dependency name="llvm" linkPath="../_build/host-deps/llvm">
+    <package name="llvm" version="6.0.0-linux-x86_64" platforms="linux-x86_64 linux-aarch64"/>
+  </dependency>
+  <dependency name="gcc_x64" linkPath="../_build/host-deps/gcc-x86_64">
+    <package name="gcc" version="9.2.0-binutils-2.30-x86_64-pc-linux-gnu-2" platforms="linux-x86_64"/>
+  </dependency>
+  <dependency name="gcc_aarch64" linkPath="../_build/host-deps/gcc-aarch64">
+    <package name="gcc" version="9.2.0-aarch64-pc-linux-gnu" platforms="linux-aarch64"/>
+  </dependency>
+  <dependency name="mirror" linkPath="../_build/host-deps/mirror">
+    <package name="mirror" version="0.1.110-a2df2ebd-windows-x86_64" platforms="windows-x86_64" />
+    <package name="mirror" version="0.1.100-81448125-linux-x86_64" platforms="linux-x86_64" />
+    <package name="mirror" version="0.1.100-dev-linux-aarch64" platforms="linux-aarch64" />
+  </dependency>
+  <dependency name="linbuild" linkPath="../_build/host-deps/linbuild">
+    <package name="linbuild" version="1.10.112-044606b-aarch64" platforms="linux-aarch64" />
+    <package name="linbuild" version="1.10.112-044606b-x86_64" platforms="linux-x86_64" />
+  </dependency>
+  <!-- <dependency name="omnitrace_tools" linkPath="../_build/host-deps/omni-trace-tools">
+    <package name="omnitrace-tools" version="0.5.62a10f54-$platform-release-dev"/>
+  </dependency> -->
+  <dependency name="CapnProto" linkPath="../_build/host-deps/CapnProto">
+    <package name="CapnProto" version="0.6.1.4" platforms="windows-x86_64 linux-x86_64" />
+  </dependency>
+</project>

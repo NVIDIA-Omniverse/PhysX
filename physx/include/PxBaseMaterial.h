@@ -49,7 +49,7 @@ namespace physx
 	{
 	public:
 		PX_INLINE			PxBaseMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags), userData(NULL) {}
-		PX_INLINE			PxBaseMaterial(PxBaseFlags baseFlags) : PxRefCounted(baseFlags), userData(NULL) {}
+		PX_INLINE			PxBaseMaterial(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 		virtual				~PxBaseMaterial() {}
 		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxBaseMaterial", name) || PxRefCounted::isKindOf(name); }
 

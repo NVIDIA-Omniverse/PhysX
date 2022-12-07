@@ -1,0 +1,802 @@
+Format: timing name (whole line)
+timing mean s.d. min  max
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 0 fracture
+16910.1 241.499 14934 17116
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 0 island
+11444 171.08 10118 11618
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 0 material
+34375.5 460.189 30619 34765
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 0 partition
+4395.77 61.8447 3936 4451
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 0 visibility
+8984.61 147.89 7902 9129
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 1 fracture
+59898.5 660.634 52767 60364
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 1 island
+14410.1 216.218 12504 14590
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 1 material
+71218.4 747.331 62784 71712
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 1 partition
+4554.28 74.8941 4004 4604
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 1 visibility
+10309.1 305.049 8815 10491
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 2 fracture
+99389.2 970.625 88889 100109
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 2 island
+32319.9 464.365 28399 32622
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 2 material
+113897 886.638 103575 114638
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 2 partition
+3526.99 55.5075 3103 3569
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 2 visibility
+6650.96 118.303 5804 6745
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 3 fracture
+135320 906.958 122810 136295
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 3 island
+11127.1 161.249 9985 11309
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 3 material
+142708 853.858 135536 143678
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 3 partition
+3797.81 51.9899 3389 3840
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 3 visibility
+8225.17 211.391 6948 8399
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 4 fracture
+170513 1087.59 160878 171886
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 4 island
+4519.56 80.7806 4066 4614
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 4 material
+180274 1219.85 168838 181683
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 4 partition
+2951.87 40.4287 2610 2985
+DamageLeafSupportActorsTestVisibility asset 0 family 0 damage 4 visibility
+5012.35 98.3389 4493 5095
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 0 fracture
+12890.5 190.196 11338 13079
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 0 island
+9429.4 122.38 8442 9550
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 0 material
+32147.9 450.659 28390 32528
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 0 partition
+3872.72 50.5296 3467 3909
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 0 visibility
+7432.59 102.088 6655 7516
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 1 fracture
+41205.7 518.923 36214 41511
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 1 island
+9243.42 140.199 7991 9363
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 1 material
+55882.5 547.997 49230 56245
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 1 partition
+4174.21 63.3825 3642 4217
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 1 visibility
+8539.47 133.789 7610 8644
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 2 fracture
+74251.4 756.733 65959 74777
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 2 island
+5774.25 94.0843 5063 5870
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 2 material
+91877.2 921.213 82156 92482
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 2 partition
+3034.4 46.0085 2652 3067
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 2 visibility
+4582.56 76.8765 4043 4641
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 3 fracture
+98987.7 871.364 88033 99669
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 3 island
+14430.7 198.323 12750 14602
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 3 material
+108390 769.429 102522 109042
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 3 partition
+3890.78 51.3295 3384 3936
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 3 visibility
+8089.62 116.362 7121 8197
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 4 fracture
+128278 1019.7 115152 129286
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 4 island
+40336.7 442.391 35449 40662
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 4 material
+140319 930.755 134401 141355
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 4 partition
+4413.31 61.7625 3986 4479
+DamageLeafSupportActorsTestVisibility asset 0 family 1 damage 4 visibility
+24573 385.985 22512 25121
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 0 fracture
+12324.2 160.844 11109 12490
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 0 island
+9839.73 119.11 8917 9964
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 0 material
+32245.9 371.785 29126 32597
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 0 partition
+3884.15 49.891 3397 3929
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 0 visibility
+7572.06 113.32 6760 7677
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 1 fracture
+44171.6 411.652 41535 44524
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 1 island
+25378.9 319.502 22781 25649
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 1 material
+56660.4 445.803 53070 57025
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 1 partition
+4412.55 57.714 3888 4460
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 1 visibility
+9622.27 172.799 8617 9743
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 2 fracture
+81817.7 772.183 75841 82423
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 2 island
+8901.87 127.866 7756 9033
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 2 material
+98995.4 682.5 90645 99565
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 2 partition
+3077.28 36.3955 2851 3109
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 2 visibility
+4495.39 67.4093 4113 4547
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 3 fracture
+96827.1 920.354 89890 97582
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 3 island
+8688.06 129.408 7764 8809
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 3 material
+110362 787.327 103705 111141
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 3 partition
+3441.03 49.0332 3032 3480
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 3 visibility
+6492.14 112.906 5686 6582
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 4 fracture
+122964 930.32 114301 123816
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 4 island
+6389.04 111.425 5621 6516
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 4 material
+134404 963.415 126777 135401
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 4 partition
+3265.81 48.0795 2900 3304
+DamageLeafSupportActorsTestVisibility asset 0 family 2 damage 4 visibility
+5833.89 102.299 5097 5913
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 0 fracture
+12254.4 170.453 10752 12428
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 0 island
+59604.5 691.409 52428 60029
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 0 material
+30999.8 343.087 27505 31311
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 0 partition
+4918.2 67.7288 4416 4979
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 0 visibility
+40460.6 784.965 34690 41353
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 1 fracture
+41992.1 477.915 37039 42256
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 1 island
+8683.94 126.759 7699 8787
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 1 material
+61340.4 618.001 53987 61854
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 1 partition
+3737.51 56.0234 3295 3783
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 1 visibility
+6743.65 112.562 5963 6835
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 2 fracture
+63639.3 673.254 57341 64047
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 2 island
+4179.41 69.4339 3696 4249
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 2 material
+83586.6 858.978 75286 84136
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 2 partition
+3425.07 50.0176 3010 3461
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 2 visibility
+5714.32 102.267 4995 5788
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 3 fracture
+86190.4 717.6 79858 86735
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 3 island
+50408.7 656.243 44499 50828
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 3 material
+103155 769.945 94686 103920
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 3 partition
+4266.07 61.0192 3733 4324
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 3 visibility
+32407.5 409.99 28589 32697
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 4 fracture
+112766 824.794 104370 113459
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 4 island
+9959.97 139.053 8794 10085
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 4 material
+123048 958.683 113519 123784
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 4 partition
+3767.88 54.1622 3322 3818
+DamageLeafSupportActorsTestVisibility asset 0 family 3 damage 4 visibility
+8035.61 115.291 7125 8136
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 0 fracture
+37414.5 381.379 34920 37706
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 0 island
+30190.9 347.871 28251 30479
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 0 material
+70290.9 515.047 65420 70705
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 0 partition
+9156.97 112.783 8094 9232
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 0 visibility
+16869.3 206.817 14926 17039
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 1 fracture
+131581 919.338 122168 132540
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 1 island
+14765.5 213.638 12862 14953
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 1 material
+171742 1227.7 157856 172882
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 1 partition
+6291.85 88.1083 5519 6356
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 1 visibility
+10112.8 140.775 8929 10205
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 2 fracture
+179268 1150.69 168416 180648
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 2 island
+33357 425.469 29619 33642
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 2 material
+206720 1285.38 195948 208257
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 2 partition
+7824.98 103.59 6923 7889
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 2 visibility
+13932.4 182.741 12332 14049
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 3 fracture
+285600 1471.14 273293 287494
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 3 island
+16446.3 222.248 14369 16644
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 3 material
+302598 1349.11 290566 304429
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 3 partition
+7655.74 101.467 6772 7726
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 3 visibility
+14285.3 189.103 12657 14430
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 4 fracture
+367837 1501.25 361745 370264
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 4 island
+15876.8 202.789 14025 16079
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 4 material
+394010 1735.18 381758 396404
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 4 partition
+5451.3 71.6629 4847 5523
+DamageLeafSupportActorsTestVisibility asset 1 family 0 damage 4 visibility
+10715.1 137.603 9473 10813
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 0 fracture
+22977 339.554 20098 23210
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 0 island
+17983.9 282.71 15769 18206
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 0 material
+65659.6 951.44 57994 66171
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 0 partition
+7744.96 113.352 6838 7829
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 0 visibility
+13476.1 193.989 11966 13602
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 1 fracture
+87229.7 725.145 81733 87762
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 1 island
+9877.83 131.024 8788 10011
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 1 material
+127991 825.425 120412 128613
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 1 partition
+7138.4 91.6809 6362 7214
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 1 visibility
+11779.3 142.382 10442 11877
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 2 fracture
+173530 950.378 166790 174820
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 2 island
+23795.9 300.605 20594 24038
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 2 material
+195450 888.127 188655 196731
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 2 partition
+8556.86 105.55 7575 8624
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 2 visibility
+15360.6 186.53 13628 15484
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 3 fracture
+278098 1410.83 268610 279932
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 3 island
+17341.4 236.088 15401 17534
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 3 material
+299300 1301.91 290822 301064
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 3 partition
+6934.54 85.9055 6158 6994
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 3 visibility
+11497.4 154.806 10092 11620
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 4 fracture
+340962 1936.55 326858 343416
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 4 island
+3103.68 59.7856 2735 3173
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 4 material
+372145 1454.78 365411 374415
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 4 partition
+4250.48 63.4682 3755 4295
+DamageLeafSupportActorsTestVisibility asset 1 family 1 damage 4 visibility
+5692.35 79.3842 5129 5762
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 0 fracture
+28507.4 353.589 25132 28761
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 0 island
+25226 287.516 23588 25480
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 0 material
+67596.2 654.913 59336 68080
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 0 partition
+8277.33 96.2624 7715 8337
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 0 visibility
+14332.7 169.502 13400 14452
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 1 fracture
+127872 887.957 117927 128766
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 1 island
+29096 406.217 25917 29371
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 1 material
+153541 1129.27 143208 154607
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 1 partition
+8819.68 127.387 7864 8893
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 1 visibility
+15590 224.005 13880 15732
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 2 fracture
+250350 1363.67 237775 252045
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 2 island
+21369.7 218.201 20102 21594
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 2 material
+266356 1351.91 255418 268057
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 2 partition
+8259.91 90.051 7713 8333
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 2 visibility
+16022 161.696 14980 16163
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 3 fracture
+358156 1927.62 343725 360516
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 3 island
+48438.1 520.019 42615 48809
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 3 material
+369648 1695.91 356547 372078
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 3 partition
+7684.39 92.9306 6765 7745
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 3 visibility
+13472.6 169.603 11907 13595
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 4 fracture
+461655 2253.87 451261 465027
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 4 island
+19319.8 268.427 17367 19575
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 4 material
+475045 2111.59 460134 478208
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 4 partition
+5611.08 72.2879 4923 5676
+DamageLeafSupportActorsTestVisibility asset 1 family 2 damage 4 visibility
+13288.7 177.828 11790 13431
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 0 fracture
+26166.6 308.023 23170 26416
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 0 island
+16190.1 206.261 14472 16368
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 0 material
+66412.9 645.843 58187 66869
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 0 partition
+8041.86 104.111 7115 8135
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 0 visibility
+14259.1 165.658 12669 14379
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 1 fracture
+100786 760.462 94513 101379
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 1 island
+19647.6 266.825 17417 19877
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 1 material
+137066 861.585 128758 137901
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 1 partition
+7399.3 94.5246 6736 7472
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 1 visibility
+12457.9 152.248 11630 12558
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 2 fracture
+177399 951.806 169069 178768
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 2 island
+18119.4 216.835 16076 18321
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 2 material
+205812 1074.79 196924 207253
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 2 partition
+7600.02 88.3602 6734 7659
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 2 visibility
+13247.6 138.129 12343 13366
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 3 fracture
+271864 1557.76 256752 273705
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 3 island
+45884.1 556.451 40453 46264
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 3 material
+287564 1454.35 276507 289290
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 3 partition
+8159.04 113.46 7206 8232
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 3 visibility
+15279.2 221.462 13540 15435
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 4 fracture
+375400 1858.39 366209 378220
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 4 island
+80044.2 767.099 74675 80651
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 4 material
+393188 2239.96 373377 395966
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 4 partition
+7517.96 97.2496 6592 7601
+DamageLeafSupportActorsTestVisibility asset 1 family 3 damage 4 visibility
+31606.6 403.548 28173 31909
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 0 fracture
+27072.2 349.279 23619 27295
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 0 island
+48767.3 559.528 43260 49126
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 0 material
+31091.3 385.591 27213 31404
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 0 partition
+7411.1 86.3251 6626 7475
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 0 visibility
+26850.2 287.476 24857 27127
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 1 fracture
+142097 663.187 137291 142982
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 1 island
+14838.7 175.259 13192 15003
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 1 material
+141184 740.66 137807 142556
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 1 partition
+5249.12 69.7816 4656 5310
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 1 visibility
+10091.3 159.389 9132 10282
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 2 fracture
+218250 1403.52 206563 219830
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 2 island
+15224 199.999 13464 15391
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 2 material
+219106 1246.3 212200 220724
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 2 partition
+4256.1 62.9656 3932 4324
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 2 visibility
+9882.49 168.529 8999 10073
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 3 fracture
+268996 1560 255583 270709
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 3 island
+3019.74 46.7296 2848 3084
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 3 material
+272291 1554.45 257929 273972
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 3 partition
+3254.69 38.3067 3043 3301
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 3 visibility
+2925.19 46.6362 2709 2995
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 4 fracture
+284376 1363.47 273361 286077
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 4 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 4 material
+286587 1636.96 269279 288532
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 4 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 0 damage 4 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 0 fracture
+27516.8 357.927 24240 27763
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 0 island
+13539.3 179.44 12033 13696
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 0 material
+29919.9 425.162 26277 30282
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 0 partition
+6941.45 84.2217 6157 6999
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 0 visibility
+13063.6 157.016 11531 13199
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 1 fracture
+139736 1116.14 127160 140738
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 1 island
+13065.1 177.464 11623 13211
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 1 material
+144267 1220.87 129948 145315
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 1 partition
+4127.46 63.0837 3611 4171
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 1 visibility
+7185.11 110.72 6358 7293
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 2 fracture
+199145 1131.35 190052 200554
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 2 island
+25755.3 387.22 22517 26040
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 2 material
+197208 1175.11 183423 198559
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 2 partition
+4881.98 72.144 4245 4933
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 2 visibility
+13820.7 234.969 11811 14028
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 3 fracture
+260991 1216.41 251640 262619
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 3 island
+1476.63 26.5474 1338 1511
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 3 material
+265535 1316.23 255850 267237
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 3 partition
+1466.65 29.0344 1307 1505
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 3 visibility
+1293.69 37.6599 1164 1344
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 4 fracture
+267237 1369.31 255689 268833
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 4 island
+1044.39 26.6444 925 1081
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 4 material
+270318 1212.03 265144 272021
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 4 partition
+1819.27 27.1366 1609 1845
+DamageLeafSupportActorsTestVisibility asset 2 family 1 damage 4 visibility
+1736.05 30.1998 1508 1774
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 0 fracture
+29142.2 467.401 25828 29447
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 0 island
+17988.4 331.325 15846 18199
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 0 material
+32873 575.276 28374 33256
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 0 partition
+6466.94 113.698 5689 6531
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 0 visibility
+12758.2 231.304 11170 12924
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 1 fracture
+128359 732.928 120483 129180
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 1 island
+24585.7 421.798 21586 24865
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 1 material
+130246 935.468 120224 131108
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 1 partition
+5285 89.247 4612 5337
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 1 visibility
+13865.5 241.309 12136 14038
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 2 fracture
+199391 1079.04 188670 200777
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 2 island
+5848.43 91.8189 5121 5945
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 2 material
+204888 1390.92 191320 206353
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 2 partition
+2477.21 35.3054 2236 2517
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 2 visibility
+3008.48 72.7003 2656 3117
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 3 fracture
+215762 1137.23 206976 217166
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 3 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 3 material
+223426 1175 215740 225054
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 3 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 3 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 4 fracture
+217003 1344.97 204794 218516
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 4 island
+15187.7 210.486 13295 15365
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 4 material
+222419 1242.25 214879 224082
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 4 partition
+2092.94 33.1186 1853 2133
+DamageLeafSupportActorsTestVisibility asset 2 family 2 damage 4 visibility
+7409.91 150.139 6514 7591
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 0 fracture
+15475.3 207.293 13826 15650
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 0 island
+13437.3 177.388 12043 13599
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 0 material
+29338.5 406.992 25698 29657
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 0 partition
+4769.96 63.3456 4273 4828
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 0 visibility
+8924.42 127.358 7804 9040
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 1 fracture
+74697.4 767.889 65841 75184
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 1 island
+8900.54 142.977 7817 9037
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 1 material
+79811 682.174 70139 80305
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 1 partition
+5423.47 78.2258 4815 5478
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 1 visibility
+8528.26 126.408 7535 8633
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 2 fracture
+148190 1085.57 138007 149348
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 2 island
+4142.71 71.84 3687 4222
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 2 material
+157516 1147.74 141346 158629
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 2 partition
+3235.68 50.7359 2858 3275
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 2 visibility
+4619.34 77.7865 4027 4697
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 3 fracture
+171436 1207.22 158004 172776
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 3 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 3 material
+182148 990.178 176003 183569
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 3 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 3 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 4 fracture
+173159 1117.85 162457 174560
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 4 island
+2389.78 59.7068 2167 2475
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 4 material
+181555 1062.82 171280 182957
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 4 partition
+2277.37 29.7485 2073 2311
+DamageLeafSupportActorsTestVisibility asset 2 family 3 damage 4 visibility
+2479.27 35.18 2289 2524
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 0 fracture
+4050.8 67.2373 3568 4130
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 0 island
+5102.55 69.1958 4597 5177
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 0 material
+4570.41 92.4377 4055 4698
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 0 partition
+2070.74 27.3926 1803 2099
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 0 visibility
+5937.78 93.1297 5073 6047
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 1 fracture
+19617.4 202.474 17391 19723
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 1 island
+1089.76 17.3359 984 1111
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 1 material
+20428.5 242.055 18029 20553
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 1 partition
+1404.94 17.676 1235 1425
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 1 visibility
+1226.62 28.244 1106 1267
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 2 fracture
+30447.7 378.124 26902 30642
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 2 island
+3290.74 54.1882 2908 3349
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 2 material
+28931.8 390.553 25461 29119
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 2 partition
+1885.57 29.8953 1662 1913
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 2 visibility
+3562.28 73.1634 3124 3649
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 3 fracture
+45831.6 603.348 40341 46076
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 3 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 3 material
+45581.5 518.285 40106 45809
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 3 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 3 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 4 fracture
+45853.1 483.674 41165 46078
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 4 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 4 material
+45345.8 525.409 40146 45568
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 4 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 0 damage 4 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 0 fracture
+2780.68 60.1067 2446 2854
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 0 island
+2116.26 42.0512 1865 2166
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 0 material
+3477.76 66.2896 2984 3551
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 0 partition
+1680.97 28.6078 1481 1710
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 0 visibility
+2159.55 44.2438 1875 2212
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 1 fracture
+13995.4 198.374 12247 14096
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 1 island
+1477.06 26.2799 1276 1504
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 1 material
+15053.1 202.454 13242 15170
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 1 partition
+1417.49 22.8699 1242 1438
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 1 visibility
+1365.24 29.7412 1144 1402
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 2 fracture
+21208.1 293.333 18705 21344
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 2 island
+3659.28 62.668 3180 3723
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 2 material
+20632 277.813 18264 20782
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 2 partition
+1866.22 31.8111 1649 1898
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 2 visibility
+4156.94 88.1788 3610 4259
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 3 fracture
+36489.8 326.332 32752 36638
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 3 island
+1254.21 24.1989 1092 1281
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 3 material
+36194.7 340.07 32379 36360
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 3 partition
+1303.41 21.3777 1137 1323
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 3 visibility
+1158.33 26.8701 1016 1195
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 4 fracture
+42793.3 442.549 37695 42997
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 4 island
+1183.42 22.0321 1044 1211
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 4 material
+41775.4 409.937 36779 41989
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 4 partition
+1432.49 20.9471 1275 1451
+DamageLeafSupportActorsTestVisibility asset 3 family 1 damage 4 visibility
+1438.71 39.8096 1216 1492
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 0 fracture
+3849.74 76.243 3353 3934
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 0 island
+5610.16 95.1842 4930 5700
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 0 material
+3643.97 67.8417 3178 3720
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 0 partition
+1985.31 31.5994 1725 2015
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 0 visibility
+5122.24 95.3109 4496 5225
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 1 fracture
+21431.3 307.344 18961 21577
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 1 island
+4290.7 75.1491 3769 4367
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 1 material
+21002.5 298.94 18470 21159
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 1 partition
+1812.04 31.7092 1604 1845
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 1 visibility
+4325.89 89.2809 3822 4431
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 2 fracture
+34496.2 505.251 30395 34714
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 2 island
+2963.82 51.7133 2576 3015
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 2 material
+33262 442.211 29251 33453
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 2 partition
+1610.82 26.4896 1429 1633
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 2 visibility
+2955.91 65.8308 2522 3036
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 3 fracture
+45014.9 485.236 39596 45228
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 3 island
+652.56 14.1999 548 673
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 3 material
+44755.1 628.277 39387 45008
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 3 partition
+1181.44 20.116 1031 1198
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 3 visibility
+732.216 15.9759 626 752
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 4 fracture
+45337.7 558.994 40040 45579
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 4 island
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 4 material
+45057.7 496.25 39804 45297
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 4 partition
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 2 damage 4 visibility
+0 0 0 0
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 0 fracture
+2826.1 55.5272 2410 2889
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 0 island
+2067.32 36.258 1842 2108
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 0 material
+3510.67 63.0714 3052 3583
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 0 partition
+1680.7 25.0249 1491 1706
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 0 visibility
+2356.59 53.252 2050 2426
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 1 fracture
+16843.1 226.885 14864 16969
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 1 island
+4548.82 68.7422 3968 4621
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 1 material
+16016.1 217.826 14120 16145
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 1 partition
+1859.68 28.9346 1649 1889
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 1 visibility
+4453.36 90.2775 3897 4564
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 2 fracture
+32137.6 353.794 28336 32268
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 2 island
+2103.98 30.4817 1829 2139
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 2 material
+32718.1 399.282 28874 32905
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 2 partition
+2398.46 33.3138 2160 2429
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 2 visibility
+1617.61 26.2981 1478 1650
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 3 fracture
+34883.6 455.115 30703 35043
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 3 island
+787.29 14.2164 700 805
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 3 material
+35281 414.033 31078 35453
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 3 partition
+1199.97 18.2866 1068 1217
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 3 visibility
+898.164 23.4578 794 928
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 4 fracture
+40454.2 519.965 35683 40679
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 4 island
+1524.71 29.7062 1334 1558
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 4 material
+38638.8 466.261 33983 38841
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 4 partition
+1676.82 26.6598 1462 1698
+DamageLeafSupportActorsTestVisibility asset 3 family 3 damage 4 visibility
+1773.31 41.6681 1521 1826

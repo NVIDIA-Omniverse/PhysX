@@ -204,9 +204,18 @@ bool HeightField::load(PxInputStream& stream)
 	// load mData
 	mData.rows = readDword(endian, stream);
 	mData.columns = readDword(endian, stream);
-	mData.rowLimit = readFloat(endian, stream);
-	mData.colLimit = readFloat(endian, stream);
-	mData.nbColumns = readFloat(endian, stream);
+	if(version>=2)
+	{
+		mData.rowLimit = readDword(endian, stream);
+		mData.colLimit = readDword(endian, stream);
+		mData.nbColumns = readDword(endian, stream);
+	}
+	else
+	{
+		mData.rowLimit = PxU32(readFloat(endian, stream));
+		mData.colLimit = PxU32(readFloat(endian, stream));
+		mData.nbColumns = PxU32(readFloat(endian, stream));
+	}
 	const float thickness = readFloat(endian, stream);
 	PX_UNUSED(thickness);
 	mData.convexEdgeThreshold = readFloat(endian, stream);
@@ -269,10 +278,9 @@ bool HeightField::loadFromDesc(const PxHeightFieldDesc& desc)
 	mData.flags					= desc.flags;
 	mSampleStride				= desc.samples.stride;
 
-	// PT: precompute some data - mainly for Xbox
-	mData.rowLimit				= float(mData.rows - 2);
-	mData.colLimit				= float(mData.columns - 2);
-	mData.nbColumns				= float(desc.nbColumns);
+	mData.rowLimit				= mData.rows - 2;
+	mData.colLimit				= mData.columns - 2;
+	mData.nbColumns				= desc.nbColumns;
 
 	// allocate and copy height samples
 	// compute extents too
@@ -336,9 +344,9 @@ bool HeightField::save(PxOutputStream& stream, bool endian)
 	// write mData members
 	writeDword(hfData.rows, endian, stream);
 	writeDword(hfData.columns, endian, stream);
-	writeFloat(hfData.rowLimit, endian, stream);
-	writeFloat(hfData.colLimit, endian, stream);
-	writeFloat(hfData.nbColumns, endian, stream);
+	writeDword(hfData.rowLimit, endian, stream);
+	writeDword(hfData.colLimit, endian, stream);
+	writeDword(hfData.nbColumns, endian, stream);
 	writeFloat(0.0f, endian, stream);	// thickness
 	writeFloat(hfData.convexEdgeThreshold, endian, stream);
 	writeWord(hfData.flags, endian, stream);
@@ -715,10 +723,10 @@ PxU32 HeightField::computeCellCoordinates(PxReal x, PxReal z, PxReal& fracX, PxR
 		PX_ASSERT(PxFloor(ii+(1-1e-7f*ii)) == ii);
 	}
 #endif
-	PxF32 epsx = 1.0f - PxAbs(x+1.0f) * 1e-6f; // epsilon needs to scale with values of x,z...
-	PxF32 epsz = 1.0f - PxAbs(z+1.0f) * 1e-6f;
-	PxF32 x1 = i::selectMin(x, mData.rowLimit+epsx);
-	PxF32 z1 = i::selectMin(z, mData.colLimit+epsz);
+	const PxF32 epsx = 1.0f - PxAbs(x+1.0f) * 1e-6f; // epsilon needs to scale with values of x,z...
+	const PxF32 epsz = 1.0f - PxAbs(z+1.0f) * 1e-6f;
+	PxF32 x1 = i::selectMin(x, float(mData.rowLimit)+epsx);
+	PxF32 z1 = i::selectMin(z, float(mData.colLimit)+epsz);
 	x = PxFloor(x1);
 	fracX = x1 - x;
 	z = PxFloor(z1);
@@ -726,8 +734,8 @@ PxU32 HeightField::computeCellCoordinates(PxReal x, PxReal z, PxReal& fracX, PxR
 	PX_ASSERT(x >= 0.0f && x < PxF32(mData.rows));
 	PX_ASSERT(z >= 0.0f && z < PxF32(mData.columns));
 
-	const PxU32 vertexIndex = PxU32(PxU32(x) * (mData.nbColumns) + PxU32(z));
-	PX_ASSERT(vertexIndex < (mData.rows)*(mData.columns));
+	const PxU32 vertexIndex = PxU32(x) * mData.nbColumns + PxU32(z);
+	PX_ASSERT(vertexIndex < mData.rows*mData.columns);
 
 	return vertexIndex;
 }
