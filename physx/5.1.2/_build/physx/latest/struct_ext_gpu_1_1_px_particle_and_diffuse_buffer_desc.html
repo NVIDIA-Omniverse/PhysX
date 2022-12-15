@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExtGpu::PxParticleAndDiffuseBufferDesc &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>ExtGpu::PxParticleAndDiffuseBufferDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extgpu-pxparticleanddiffusebufferdesc">
+<span id="exhale-struct-struct-ext-gpu-1-1-px-particle-and-diffuse-buffer-desc"></span><h1>ExtGpu::PxParticleAndDiffuseBufferDesc<a class="headerlink" href="#extgpu-pxparticleanddiffusebufferdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxParticleExt.h.html#file-include-extensions-pxparticleext-h"><span class="std std-ref">include/extensions/PxParticleExt.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">ExtGpu::PxParticleBufferDesc</span></code> (<a class="reference internal" href="struct_ext_gpu_1_1_px_particle_buffer_desc.html#exhale-struct-struct-ext-gpu-1-1-px-particle-buffer-desc"><span class="std std-ref">ExtGpu::PxParticleBufferDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDescE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDescE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDescE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleAndDiffuseBufferDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">ExtGpu</span></span><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_buffer_desc.html#_CPPv4N6ExtGpu20PxParticleBufferDescE" title="ExtGpu::PxParticleBufferDesc"><span class="n"><span class="pre">PxParticleBufferDesc</span></span></a><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDescE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure to define user-defined particle state when constructing a new particle system that includes diffuse particles. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc30PxParticleAndDiffuseBufferDescEv">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc30PxParticleAndDiffuseBufferDescEv"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc30PxParticleAndDiffuseBufferDescEv"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::PxParticleAndDiffuseBufferDesc"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc_1a5e08ff66668da8692da24515ad6cb632"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleAndDiffuseBufferDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc30PxParticleAndDiffuseBufferDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc13diffuseParamsE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc13diffuseParamsE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc13diffuseParamsE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::diffuseParams__PxDiffuseParticleParams"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc_1ae0cc62de44eff1eca4d32dcae0ad7bfb"></span><a class="reference internal" href="class_px_diffuse_particle_params.html#_CPPv423PxDiffuseParticleParams" title="PxDiffuseParticleParams"><span class="n"><span class="pre">PxDiffuseParticleParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">diffuseParams</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc13diffuseParamsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc19maxDiffuseParticlesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc19maxDiffuseParticlesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc19maxDiffuseParticlesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::maxDiffuseParticles__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc_1aba99117873165827bcb8beafd3ca9ed2"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxDiffuseParticles</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc19maxDiffuseParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc25maxActiveDiffuseParticlesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc25maxActiveDiffuseParticlesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc25maxActiveDiffuseParticlesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::maxActiveDiffuseParticles__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc_1ae984c9a6027f109d8506e4d407c7791d"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxActiveDiffuseParticles</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc25maxActiveDiffuseParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc9positionsE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc9positionsE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc9positionsE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::positions__PxVec4P"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1afb870c00549924439c30a83bf80d4b81"></span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">positions</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc9positionsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10velocitiesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc10velocitiesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc10velocitiesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::velocities__PxVec4P"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1af347f7bf2c3f7db1537c5a606e7f81de"></span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">velocities</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10velocitiesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc6phasesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc6phasesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc6phasesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::phases__PxU32P"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1a984e02401d211f0666185846d5531081"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">phases</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc6phasesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc7volumesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc7volumesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc7volumesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::volumes__PxParticleVolumeP"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1a7d5ca70a2c12e419b766809849bc1192"></span><a class="reference internal" href="struct_px_particle_volume.html#_CPPv416PxParticleVolume" title="PxParticleVolume"><span class="n"><span class="pre">PxParticleVolume</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">volumes</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc7volumesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc18numActiveParticlesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc18numActiveParticlesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc18numActiveParticlesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::numActiveParticles__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1a688a9f9a2af94fd5c4d761b0e5f9a5a4"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numActiveParticles</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc18numActiveParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc12maxParticlesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc12maxParticlesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc12maxParticlesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::maxParticles__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1a41c6cb4b688d8edbdc07098896440f60"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxParticles</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc12maxParticlesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10numVolumesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc10numVolumesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc10numVolumesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::numVolumes__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1ad09b0b596570847bb5ccc7d04ecb7513"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numVolumes</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10numVolumesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10maxVolumesE">
+<span id="_CPPv3N6ExtGpu30PxParticleAndDiffuseBufferDesc10maxVolumesE"></span><span id="_CPPv2N6ExtGpu30PxParticleAndDiffuseBufferDesc10maxVolumesE"></span><span id="ExtGpu::PxParticleAndDiffuseBufferDesc::maxVolumes__PxU32"></span><span class="target" id="struct_ext_gpu_1_1_px_particle_buffer_desc_1a4349d55cb362b2c9b89f57d6b553fe51"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxVolumes</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu30PxParticleAndDiffuseBufferDesc10maxVolumesE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

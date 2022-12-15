@@ -1,0 +1,287 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtStressSolverSettings &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtStressSolverSettings</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extstresssolversettings">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-ext-stress-solver-settings"></span><h1>Nv::Blast::ExtStressSolverSettings<a class="headerlink" href="#nv-blast-extstresssolversettings" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_stress_NvBlastExtStressSolver.h.html#file-extensions-stress-nvblastextstresssolver-h"><span class="std std-ref">extensions/stress/NvBlastExtStressSolver.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettingsE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettingsE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettingsE"></span><span id="Nv::Blast::ExtStressSolverSettings"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtStressSolverSettings</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Stress Solver Settings. </p>
+<p>Stress on every bond is calculated with these components: compression/tension (parallel to bond normal) shear (perpendicular to bond normal) Damage is done based on the limits defined in this structure to simulate micro bonds in the material breaking Units for all limits are in pascals</p>
+<p>Support graph reduction: graphReductionLevel is the number of node merge passes. The resulting graph will be roughly 2^graphReductionLevel times smaller than the original. NOTE: the reduction is currently fairly random and can lead to interlocked actors when solver bonds break. If we are going to keep the feature, the algorithm for combining bonds should be revisited to take locality into account. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings23ExtStressSolverSettingsEv">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings23ExtStressSolverSettingsEv"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings23ExtStressSolverSettingsEv"></span><span id="Nv::Blast::ExtStressSolverSettings::ExtStressSolverSettings"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a7f3daff473d9766298caea51ee396226"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">ExtStressSolverSettings</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings23ExtStressSolverSettingsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings27maxSolverIterationsPerFrameE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings27maxSolverIterationsPerFrameE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings27maxSolverIterationsPerFrameE"></span><span id="Nv::Blast::ExtStressSolverSettings::maxSolverIterationsPerFrame__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a4ad9feadb11a6d3de87aa0483985d347"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">maxSolverIterationsPerFrame</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings27maxSolverIterationsPerFrameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>the maximum number of iterations to perform per frame </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings19graphReductionLevelE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings19graphReductionLevelE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings19graphReductionLevelE"></span><span id="Nv::Blast::ExtStressSolverSettings::graphReductionLevel__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a49fa3a64fe091bca26729d8e903a8ba9"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">graphReductionLevel</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings19graphReductionLevelE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>graph reduction level </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings23compressionElasticLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings23compressionElasticLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings23compressionElasticLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::compressionElasticLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1affb500d67dded36f4ed35fa4a26a16a6"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">compressionElasticLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings23compressionElasticLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>below this compression pressure no damage is done to bonds. Also used as the default for shear and tension if they aren’t provided. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings21compressionFatalLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings21compressionFatalLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings21compressionFatalLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::compressionFatalLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a3871beb8e68b3140b78bbeca7dc6b24c"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">compressionFatalLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings21compressionFatalLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>above this compression pressure the bond is immediately broken. Also used as the default for shear and tension if they aren’t provided. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings19tensionElasticLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings19tensionElasticLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings19tensionElasticLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::tensionElasticLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a0b8133e687ef90d814dc2491605ac37b"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">tensionElasticLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings19tensionElasticLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>below this tension pressure no damage is done to bonds. Use a negative value to fall back on compression limit. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings17tensionFatalLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings17tensionFatalLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings17tensionFatalLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::tensionFatalLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a0eea881db3ed1298230e9910ec9c5d91"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">tensionFatalLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings17tensionFatalLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>above this tension pressure the bond is immediately broken. Use a negative value to fall back on compression limit. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings17shearElasticLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings17shearElasticLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings17shearElasticLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::shearElasticLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1a05d36fab05a5364ae4f6b10bdbd681e4"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">shearElasticLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings17shearElasticLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>below this shear pressure no damage is done to bonds. Use a negative value to fall back on compression limit. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast23ExtStressSolverSettings15shearFatalLimitE">
+<span id="_CPPv3N2Nv5Blast23ExtStressSolverSettings15shearFatalLimitE"></span><span id="_CPPv2N2Nv5Blast23ExtStressSolverSettings15shearFatalLimitE"></span><span id="Nv::Blast::ExtStressSolverSettings::shearFatalLimit__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_settings_1aaeb84076c0e5ff193fee6c9fb4116dc1"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">shearFatalLimit</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast23ExtStressSolverSettings15shearFatalLimitE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>above this shear pressure the bond is immediately broken. Use a negative value to fall back on compression limit. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

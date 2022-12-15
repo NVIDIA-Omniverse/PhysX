@@ -1,0 +1,654 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtStressSolver &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtStressSolver</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extstresssolver">
+<span id="exhale-class-class-nv-1-1-blast-1-1-ext-stress-solver"></span><h1>Nv::Blast::ExtStressSolver<a class="headerlink" href="#nv-blast-extstresssolver" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_stress_NvBlastExtStressSolver.h.html#file-extensions-stress-nvblastextstresssolver-h"><span class="std std-ref">extensions/stress/NvBlastExtStressSolver.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolverE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolverE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolverE"></span><span id="Nv::Blast::ExtStressSolver"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtStressSolver</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolverE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Stress Solver. </p>
+<p>Uses <a class="reference internal" href="struct_nv_blast_family.html#struct_nv_blast_family"><span class="std std-ref">NvBlastFamily</span></a>, allocates and prepares its graph once when it’s created. Then it’s being quickly updated on every actor split. It uses <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> support graph, you can apply forces on nodes and stress on bonds will be calculated as the result. When stress on bond exceeds it’s health bond is considered broken (overstressed). Basic usage:<ol class="loweralpha simple">
+<li><p>Create it with create function once for family</p></li>
+<li><p>Fill node info for every node in support graph or use <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a419c77935487b2e689e377c986bf6eb5"><span class="std std-ref">setAllNodesInfoFromLL()</span></a> function.</p></li>
+<li><p>Use notifyActorCreated / notifyActorDestroyed whenever actors are created and destroyed in family.</p></li>
+<li><p>Every frame: Apply forces (there are different functions for it see &#64;addForce)</p></li>
+<li><p>Every frame: Call <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()</span></a> for actual solver to process.</p></li>
+<li><p>If <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f74a5d7affbf89a5c05a1e2320cd60d"><span class="std std-ref">getOverstressedBondCount()</span></a> &gt; 0 use <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad75b9476c3b6189d4d84d3b55016bdf7"><span class="std std-ref">generateFractureCommands()</span></a> functions to get FractureCommands with bonds fractured </p></li>
+</ol>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderModeE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15DebugRenderModeE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15DebugRenderModeE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4d"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">DebugRenderMode</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderModeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Debug Render Mode. </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode14STRESS_PCT_MAXE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15DebugRenderMode14STRESS_PCT_MAXE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15DebugRenderMode14STRESS_PCT_MAXE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4da984d02f6da6dc8dda2efa9731f5847a8"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">STRESS_PCT_MAX</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode14STRESS_PCT_MAXE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>render the maximum of the compression, tension, and shear stress percentages </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode22STRESS_PCT_COMPRESSIONE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15DebugRenderMode22STRESS_PCT_COMPRESSIONE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15DebugRenderMode22STRESS_PCT_COMPRESSIONE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4daeeb306109087d2d5c11db5a28534e8f1"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">STRESS_PCT_COMPRESSION</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode22STRESS_PCT_COMPRESSIONE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>render the compression stress percentage </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode18STRESS_PCT_TENSIONE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15DebugRenderMode18STRESS_PCT_TENSIONE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15DebugRenderMode18STRESS_PCT_TENSIONE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4da482f52881d1724b0f4b5cd588bce6abb"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">STRESS_PCT_TENSION</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode18STRESS_PCT_TENSIONE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>render the tension stress percentage </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode16STRESS_PCT_SHEARE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15DebugRenderMode16STRESS_PCT_SHEARE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15DebugRenderMode16STRESS_PCT_SHEARE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4da7425bf5840caa03ffe44deb79823b788"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">STRESS_PCT_SHEAR</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderMode16STRESS_PCT_SHEARE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>render the shear stress percentage </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver7releaseEv">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver7releaseEv"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver7releaseEv"></span><span id="Nv::Blast::ExtStressSolver::release"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a9f740702a06e3bd915218ec8aa8415d8"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this stress solver. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver11setNodeInfoE8uint32_tff7NvcVec3">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver11setNodeInfoE8uint32_tff7NvcVec3"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver11setNodeInfoE8uint32_tff7NvcVec3"></span><span id="Nv::Blast::ExtStressSolver::setNodeInfo__uint32_t.float.float.NvcVec3"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1aed55ac3733796a9261bc9bf302dcfec6"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setNodeInfo</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">graphNodeIndex</span></em>, <span class="pre">float</span> <em><span class="pre">mass</span></em>, <span class="pre">float</span> <em><span class="pre">volume</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localPosition</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver11setNodeInfoE8uint32_tff7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set node info. </p>
+<p>All the required info per node for stress solver is set with this function. Call it for every node in graph or use <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a419c77935487b2e689e377c986bf6eb5"><span class="std std-ref">setAllNodesInfoFromLL()</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graphNodeIndex</strong> – <strong>[in]</strong> Index of the node in support graph. see <a class="reference internal" href="struct_nv_blast_support_graph.html#struct_nv_blast_support_graph"><span class="std std-ref">NvBlastSupportGraph</span></a>. </p></li>
+<li><p><strong>mass</strong> – <strong>[in]</strong> Node mass. For static node it is must be zero. </p></li>
+<li><p><strong>volume</strong> – <strong>[in]</strong> Node volume. For static node it is irrelevant. </p></li>
+<li><p><strong>localPosition</strong> – <strong>[in]</strong> Node local position. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver21setAllNodesInfoFromLLEf">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver21setAllNodesInfoFromLLEf"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver21setAllNodesInfoFromLLEf"></span><span id="Nv::Blast::ExtStressSolver::setAllNodesInfoFromLL__float"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a419c77935487b2e689e377c986bf6eb5"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setAllNodesInfoFromLL</span></code><span class="sig-paren">(</span><span class="pre">float</span> <em><span class="pre">density</span></em> <span class="pre">=</span> <span class="pre">1.0f</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver21setAllNodesInfoFromLLEf" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set all nodes info using low level <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> data. </p>
+<p>Uses <a class="reference internal" href="struct_nv_blast_chunk.html#struct_nv_blast_chunk"><span class="std std-ref">NvBlastChunk</span></a>’s centroid and volume. Uses ‘external’ node to mark nodes as static.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>density</strong> – <strong>[in]</strong> Density. Used to convert volume to mass. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver11setSettingsERK23ExtStressSolverSettings">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver11setSettingsERK23ExtStressSolverSettings"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver11setSettingsERK23ExtStressSolverSettings"></span><span id="Nv::Blast::ExtStressSolver::setSettings__ExtStressSolverSettingsCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1acfef7926067c389179248e7dbd1e3686"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setSettings</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a> <span class="pre">&amp;</span><em><span class="pre">settings</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver11setSettingsERK23ExtStressSolverSettings" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set stress solver settings. </p>
+<p>Changing graph reduction level will lead to graph being rebuilt (which is fast, but still not recommended). All other settings are applied instantly and can be changed every frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>settings</strong> – <strong>[in]</strong> The settings to be set on <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver11getSettingsEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver11getSettingsEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver11getSettingsEv"></span><span id="Nv::Blast::ExtStressSolver::getSettingsC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a3afebb3d2ebfb89ae1390c3d943ac8a3"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getSettings</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver11getSettingsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver settings. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the pointer to stress solver settings currently set. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver18notifyActorCreatedERK12NvBlastActor">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver18notifyActorCreatedERK12NvBlastActor"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver18notifyActorCreatedERK12NvBlastActor"></span><span id="Nv::Blast::ExtStressSolver::notifyActorCreated__NvBlastActorCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1aad55fa12a3694fb005a377192cb20ea1"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">notifyActorCreated</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver18notifyActorCreatedERK12NvBlastActor" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Notify stress solver on newly created actor. </p>
+<p>Call this function for all initial actors present in family and later upon every actor split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The actor created.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if actor will take part in stress solver process. false if actor doesn’t contain any bonds. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver20notifyActorDestroyedERK12NvBlastActor">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver20notifyActorDestroyedERK12NvBlastActor"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver20notifyActorDestroyedERK12NvBlastActor"></span><span id="Nv::Blast::ExtStressSolver::notifyActorDestroyed__NvBlastActorCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a44bf60cdcbcb06364b1c23215b8b7bb4"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">notifyActorDestroyed</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver20notifyActorDestroyedERK12NvBlastActor" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Notify stress solver on destroyed actor. </p>
+<p>Call this function when actor is destroyed (split futher) or deactivated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The actor destroyed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver8addForceERK12NvBlastActor7NvcVec37NvcVec3N12ExtForceMode4EnumE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver8addForceERK12NvBlastActor7NvcVec37NvcVec3N12ExtForceMode4EnumE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver8addForceERK12NvBlastActor7NvcVec37NvcVec3N12ExtForceMode4EnumE"></span><span id="Nv::Blast::ExtStressSolver::addForce__NvBlastActorCR.NvcVec3.NvcVec3.ExtForceMode::Enum"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a81004cc1b098b2c2953b59622296e0b4"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">addForce</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localPosition</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localForce</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceModeE" title="Nv::Blast::ExtForceMode"><span class="pre">ExtForceMode</span></a><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceMode4EnumE" title="Nv::Blast::ExtForceMode::Enum"><span class="pre">Enum</span></a> <em><span class="pre">mode</span></em> <span class="pre">=</span> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceModeE" title="Nv::Blast::ExtForceMode"><span class="pre">ExtForceMode</span></a><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceMode4Enum5FORCEE" title="Nv::Blast::ExtForceMode::FORCE"><span class="pre">FORCE</span></a><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver8addForceERK12NvBlastActor7NvcVec37NvcVec3N12ExtForceMode4EnumE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply external impulse on particular actor of family. </p>
+<p>This function will find nearest actor’s graph node to apply impulse on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor to apply impulse on. </p></li>
+<li><p><strong>localPosition</strong> – <strong>[in]</strong> Local position in actor’s coordinates to apply impulse on. </p></li>
+<li><p><strong>localForce</strong> – <strong>[in]</strong> Force to apply in local actor’s coordinates. </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see #ExtForceMode)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff node was found and force applied. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver8addForceE8uint32_t7NvcVec3N12ExtForceMode4EnumE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver8addForceE8uint32_t7NvcVec3N12ExtForceMode4EnumE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver8addForceE8uint32_t7NvcVec3N12ExtForceMode4EnumE"></span><span id="Nv::Blast::ExtStressSolver::addForce__uint32_t.NvcVec3.ExtForceMode::Enum"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a40334df8150b1e7e5325680990275132"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">addForce</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">graphNodeIndex</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localForce</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceModeE" title="Nv::Blast::ExtForceMode"><span class="pre">ExtForceMode</span></a><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceMode4EnumE" title="Nv::Blast::ExtForceMode::Enum"><span class="pre">Enum</span></a> <em><span class="pre">mode</span></em> <span class="pre">=</span> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceModeE" title="Nv::Blast::ExtForceMode"><span class="pre">ExtForceMode</span></a><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#_CPPv4N2Nv5Blast12ExtForceMode4Enum5FORCEE" title="Nv::Blast::ExtForceMode::FORCE"><span class="pre">FORCE</span></a><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver8addForceE8uint32_t7NvcVec3N12ExtForceMode4EnumE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply external impulse on particular node. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graphNodeIndex</strong> – <strong>[in]</strong> The graph node index to apply impulse on. See <a class="reference internal" href="struct_nv_blast_support_graph.html#struct_nv_blast_support_graph"><span class="std std-ref">NvBlastSupportGraph</span></a>. </p></li>
+<li><p><strong>localForce</strong> – <strong>[in]</strong> Force to apply in local actor’s coordinates. </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see #ExtForceMode) </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver10addGravityERK12NvBlastActor7NvcVec3">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver10addGravityERK12NvBlastActor7NvcVec3"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver10addGravityERK12NvBlastActor7NvcVec3"></span><span id="Nv::Blast::ExtStressSolver::addGravity__NvBlastActorCR.NvcVec3"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad8ccd22bbebffc76aeab10f7e667576b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">addGravity</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localGravity</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver10addGravityERK12NvBlastActor7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply external gravity on particular actor of family. </p>
+<p>This function applies gravity on every node withing actor, so it makes sense only for static actors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor to apply gravitational acceleration on. </p></li>
+<li><p><strong>localGravity</strong> – <strong>[in]</strong> Gravity to apply in local actor’s coordinates. <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#struct_nv_1_1_blast_1_1_ext_force_mode_1ae217d8688f97667f7efbf8d4f5988c3da5c209e1ae10b6936e609d5100728a472"><span class="std std-ref">ExtForceMode::ACCELERATION</span></a> is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff acceleration was applied on at least one node. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver26addCentrifugalAccelerationERK12NvBlastActor7NvcVec37NvcVec3">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver26addCentrifugalAccelerationERK12NvBlastActor7NvcVec37NvcVec3"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver26addCentrifugalAccelerationERK12NvBlastActor7NvcVec37NvcVec3"></span><span id="Nv::Blast::ExtStressSolver::addCentrifugalAcceleration__NvBlastActorCR.NvcVec3.NvcVec3"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a7358f9683f84b436afea908adeb97614"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">addCentrifugalAcceleration</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localCenterMass</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <em><span class="pre">localAngularVelocity</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver26addCentrifugalAccelerationERK12NvBlastActor7NvcVec37NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply centrifugal acceleration produced by actor’s angular movement. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor to apply impulse on. </p></li>
+<li><p><strong>localCenterMass</strong> – <strong>[in]</strong> Actor’s local center of mass. </p></li>
+<li><p><strong>localAngularVelocity</strong> – <strong>[in]</strong> Local angular velocity of an actor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff force was applied on at least one node. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver6updateEv">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver6updateEv"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver6updateEv"></span><span id="Nv::Blast::ExtStressSolver::update"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">update</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver6updateEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Update stress solver. </p>
+<p>Actual performance of stress calculation happens there. Call it after all relevant forces were applied, usually every frame. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver24getOverstressedBondCountEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver24getOverstressedBondCountEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver24getOverstressedBondCountEv"></span><span id="Nv::Blast::ExtStressSolver::getOverstressedBondCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a9f74a5d7affbf89a5c05a1e2320cd60d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getOverstressedBondCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver24getOverstressedBondCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get overstressed/broken bonds count. </p>
+<p>This count is updated after every <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()</span></a> call. Number of overstressed bond directly hints if any bond fracture is recommended by stress solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the overstressed bonds count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver24generateFractureCommandsERK12NvBlastActorR22NvBlastFractureBuffers">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver24generateFractureCommandsERK12NvBlastActorR22NvBlastFractureBuffers"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver24generateFractureCommandsERK12NvBlastActorR22NvBlastFractureBuffers"></span><span id="Nv::Blast::ExtStressSolver::generateFractureCommands__NvBlastActorCR.NvBlastFractureBuffersR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ad75b9476c3b6189d4d84d3b55016bdf7"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">generateFractureCommands</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em>, <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">&amp;</span><em><span class="pre">commands</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver24generateFractureCommandsERK12NvBlastActorR22NvBlastFractureBuffers" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Generate fracture commands for particular actor. </p>
+<p>Calling this function if <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f74a5d7affbf89a5c05a1e2320cd60d"><span class="std std-ref">getOverstressedBondCount()</span></a> == 0 or actor has no bond doesn’t make sense, bondFractureCount will be ‘0’. Filled fracture commands buffer can be passed directly to NvBlastActorApplyFracture.</p>
+<p>IMPORTANT: <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#struct_nv_blast_fracture_buffers_1a5768e2ed80216a98fbcaee56a6194837"><span class="std std-ref">NvBlastFractureBuffers::bondFractures</span></a> will point to internal stress solver memory which will be valid till next call of any of <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad75b9476c3b6189d4d84d3b55016bdf7"><span class="std std-ref">generateFractureCommands()</span></a> functions or stress solver <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f740702a06e3bd915218ec8aa8415d8"><span class="std std-ref">release()</span></a> call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor to fill fracture commands for. </p></li>
+<li><p><strong>commands</strong> – <strong>[in]</strong> Pointer to command buffer to fill. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver32generateFractureCommandsPerActorEPPK12NvBlastActorP22NvBlastFractureBuffers8uint32_t">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver32generateFractureCommandsPerActorEPPK12NvBlastActorP22NvBlastFractureBuffers8uint32_t"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver32generateFractureCommandsPerActorEPPK12NvBlastActorP22NvBlastFractureBuffers8uint32_t"></span><span id="Nv::Blast::ExtStressSolver::generateFractureCommandsPerActor__NvBlastActorCPP.NvBlastFractureBuffersP.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a8c995a408197e43f53a71769a31f39d3"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">generateFractureCommandsPerActor</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">actorBuffer</span></em>, <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">*</span><em><span class="pre">commandsBuffer</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">bufferSize</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver32generateFractureCommandsPerActorEPPK12NvBlastActorP22NvBlastFractureBuffers8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Generate fracture commands for every actor in family. </p>
+<p>Actors and commands buffer must be passed in order to be filled. It’s recommended for bufferSize to be the count of actor with more then one bond in family.</p>
+<p>Calling this function if <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f74a5d7affbf89a5c05a1e2320cd60d"><span class="std std-ref">getOverstressedBondCount()</span></a> == 0 or actor has no bond doesn’t make sense, ‘0’ will be returned.</p>
+<p>IMPORTANT: <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#struct_nv_blast_fracture_buffers_1a5768e2ed80216a98fbcaee56a6194837"><span class="std std-ref">NvBlastFractureBuffers::bondFractures</span></a> will point to internal stress solver memory which will be valid till next call of any of <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad75b9476c3b6189d4d84d3b55016bdf7"><span class="std std-ref">generateFractureCommands()</span></a> functions or stress solver <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f740702a06e3bd915218ec8aa8415d8"><span class="std std-ref">release()</span></a> call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="struct_nv_blast_actor.html#struct_nv_blast_actor"><span class="std std-ref">NvBlastActor</span></a> pointers to fill. </p></li>
+<li><p><strong>commandsBuffer</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#struct_nv_blast_fracture_buffers"><span class="std std-ref">NvBlastFractureBuffers</span></a> to fill. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> The number of elements available to write into buffer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of actors and command buffers written to the buffer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver5resetEv">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver5resetEv"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver5resetEv"></span><span id="Nv::Blast::ExtStressSolver::reset"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a1d0593b22f6cd335a479c18eaf102e40"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver5resetEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Reset stress solver. </p>
+<p>Stress solver uses warm start internally, calling this function will flush all previous data calculated and also zeros frame count. This function is to be used for debug purposes. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver20getStressErrorLinearEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver20getStressErrorLinearEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver20getStressErrorLinearEv"></span><span id="Nv::Blast::ExtStressSolver::getStressErrorLinearC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a7b461e1f03f5a85e3b86b0b4aa09be5c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">float</span> <code class="sig-name descname"><span class="pre">getStressErrorLinear</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver20getStressErrorLinearEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver linear error. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the total linear error of stress calculation. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver21getStressErrorAngularEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver21getStressErrorAngularEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver21getStressErrorAngularEv"></span><span id="Nv::Blast::ExtStressSolver::getStressErrorAngularC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1afa347a8efaa570a0d3def3cf64c3572a"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">float</span> <code class="sig-name descname"><span class="pre">getStressErrorAngular</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver21getStressErrorAngularEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver angular error. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the total angular error of stress calculation. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver9convergedEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver9convergedEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver9convergedEv"></span><span id="Nv::Blast::ExtStressSolver::convergedC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1adf3a8de14ece654b9b82357b4bc562d8"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">converged</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver9convergedEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Whether or not the solver converged to a solution within the desired error. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true iff the solver converged. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver13getFrameCountEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver13getFrameCountEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver13getFrameCountEv"></span><span id="Nv::Blast::ExtStressSolver::getFrameCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1ab6cfefa6068c4002dc7d7663ae2332cb"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getFrameCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver13getFrameCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver total frames count (<a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()</span></a> calls) since it was created (or reset). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the frames count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15ExtStressSolver12getBondCountEv">
+<span id="_CPPv3NK2Nv5Blast15ExtStressSolver12getBondCountEv"></span><span id="_CPPv2NK2Nv5Blast15ExtStressSolver12getBondCountEv"></span><span id="Nv::Blast::ExtStressSolver::getBondCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1aaba9643df955f917bcdf2324499c63fb"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getBondCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15ExtStressSolver12getBondCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver bonds count, after graph reduction was applied. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the bonds count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15getExcessForcesE8uint32_tRK7NvcVec3R7NvcVec3R7NvcVec3">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15getExcessForcesE8uint32_tRK7NvcVec3R7NvcVec3R7NvcVec3"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15getExcessForcesE8uint32_tRK7NvcVec3R7NvcVec3R7NvcVec3"></span><span id="Nv::Blast::ExtStressSolver::getExcessForces__uint32_t.NvcVec3CR.NvcVec3R.NvcVec3R"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1aec24d75c993d494358651f594ea619e9"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">getExcessForces</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">actorIndex</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">com</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">force</span></em>, <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">torque</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15getExcessForcesE8uint32_tRK7NvcVec3R7NvcVec3R7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get stress solver excess force related to broken bonds for the given actor. </p>
+<p>This is intended to be called after damage is applied to bonds and actors are split, but before the next call to ‘<a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()</span></a>’. Force is intended to be applied to the center of mass, torque due to linear forces that happen away from the COM are converted to torque as part of this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if data was gathered, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver15fillDebugRenderEPK8uint32_t8uint32_t15DebugRenderModef">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver15fillDebugRenderEPK8uint32_t8uint32_t15DebugRenderModef"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver15fillDebugRenderEPK8uint32_t8uint32_t15DebugRenderModef"></span><span id="Nv::Blast::ExtStressSolver::fillDebugRender__uint32_tCP.uint32_t.DebugRenderMode.float"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a4b35d74e1dcce20d903bff6d6cf8a63f"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast15ExtStressSolver11DebugBufferE" title="Nv::Blast::ExtStressSolver::DebugBuffer"><span class="pre">DebugBuffer</span></a> <code class="sig-name descname"><span class="pre">fillDebugRender</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">nodes</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">nodeCount</span></em>, <a class="reference internal" href="#_CPPv4N2Nv5Blast15ExtStressSolver15DebugRenderModeE" title="Nv::Blast::ExtStressSolver::DebugRenderMode"><span class="pre">DebugRenderMode</span></a> <em><span class="pre">mode</span></em>, <span class="pre">float</span> <em><span class="pre">scale</span></em> <span class="pre">=</span> <span class="pre">1.0f</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver15fillDebugRenderEPK8uint32_t8uint32_t15DebugRenderModef" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Fill debug render for passed array of support graph nodes. </p>
+<p>NOTE: Returned <a class="reference internal" href="#struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_buffer"><span class="std std-ref">DebugBuffer</span></a> points into internal memory which is valid till next <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a4b35d74e1dcce20d903bff6d6cf8a63f"><span class="std std-ref">fillDebugRender()</span></a> call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes</strong> – <strong>[in]</strong> Node indices of support graph to debug render for. </p></li>
+<li><p><strong>nodeCount</strong> – <strong>[in]</strong> Node indices count. </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> Debug render mode. </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> Scale to be applied on impulses.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>debug buffer with array of lines </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver6createERK13NvBlastFamilyRK23ExtStressSolverSettings">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver6createERK13NvBlastFamilyRK23ExtStressSolverSettings"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver6createERK13NvBlastFamilyRK23ExtStressSolverSettings"></span><span id="Nv::Blast::ExtStressSolver::create__NvBlastFamilyCR.ExtStressSolverSettingsCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver_1a79e69338a554ba2824abfc2fe8bc17ce"></span><em class="property"><span class="pre">static</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast15ExtStressSolverE" title="Nv::Blast::ExtStressSolver"><span class="pre">ExtStressSolver</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_family.html#_CPPv413NvBlastFamily" title="NvBlastFamily"><span class="pre">NvBlastFamily</span></a> <span class="pre">&amp;</span><em><span class="pre">family</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a> <span class="pre">&amp;</span><em><span class="pre">settings</span></em> <span class="pre">=</span> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a><span class="pre">(</span><span class="pre">)</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver6createERK13NvBlastFamilyRK23ExtStressSolverSettings" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>family</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> instance to calculate stress on. </p></li>
+<li><p><strong>settings</strong> – <strong>[in]</strong> The settings to be set on <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a> if successful, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver11DebugBufferE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver11DebugBufferE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver11DebugBufferE"></span><span id="Nv::Blast::ExtStressSolver::DebugBuffer"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_buffer"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">DebugBuffer</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver11DebugBufferE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Debug Buffer. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver11DebugBuffer5linesE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver11DebugBuffer5linesE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver11DebugBuffer5linesE"></span><span id="Nv::Blast::ExtStressSolver::DebugBuffer::lines__DebugLineCP"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_buffer_1a514b0803d070c82627b3fcd699c7c145"></span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLineE" title="Nv::Blast::ExtStressSolver::DebugLine"><span class="pre">DebugLine</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">lines</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver11DebugBuffer5linesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver11DebugBuffer9lineCountE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver11DebugBuffer9lineCountE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver11DebugBuffer9lineCountE"></span><span id="Nv::Blast::ExtStressSolver::DebugBuffer::lineCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_buffer_1aa9469d3f11418efa6e3ee7a8f1976d0a"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">lineCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver11DebugBuffer9lineCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLineE">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLineE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLineE"></span><span id="Nv::Blast::ExtStressSolver::DebugLine"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">DebugLine</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLineE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Used to store a single line and colour for debug rendering. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine9DebugLineERK7NvcVec3RK7NvcVec3RK8uint32_t">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLine9DebugLineERK7NvcVec3RK7NvcVec3RK8uint32_t"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLine9DebugLineERK7NvcVec3RK7NvcVec3RK8uint32_t"></span><span id="Nv::Blast::ExtStressSolver::DebugLine::DebugLine__NvcVec3CR.NvcVec3CR.uint32_tCR"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line_1a06839dbe68f1312a2094ef815906a12c"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">DebugLine</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">p0</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">p1</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">&amp;</span><em><span class="pre">c</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine9DebugLineERK7NvcVec3RK7NvcVec3RK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine4pos0E">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLine4pos0E"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLine4pos0E"></span><span id="Nv::Blast::ExtStressSolver::DebugLine::pos0__NvcVec3"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line_1a11b806a8795d4532ad19eecbfa328c8b"></span><a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <code class="sig-name descname"><span class="pre">pos0</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine4pos0E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine6color0E">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLine6color0E"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLine6color0E"></span><span id="Nv::Blast::ExtStressSolver::DebugLine::color0__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line_1af8595a92f863b2bcf0d2ba5e2bd923a1"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">color0</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine6color0E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine4pos1E">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLine4pos1E"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLine4pos1E"></span><span id="Nv::Blast::ExtStressSolver::DebugLine::pos1__NvcVec3"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line_1a05ad33477f24ecdb44ef3e07e93eccaf"></span><a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <code class="sig-name descname"><span class="pre">pos1</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine4pos1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine6color1E">
+<span id="_CPPv3N2Nv5Blast15ExtStressSolver9DebugLine6color1E"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolver9DebugLine6color1E"></span><span id="Nv::Blast::ExtStressSolver::DebugLine::color1__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line_1a5c5e3c739f9ee6875264a6255b725278"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">color1</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolver9DebugLine6color1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTriangleMeshDesc &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTriangleMeshDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtrianglemeshdesc">
+<span id="exhale-class-class-px-triangle-mesh-desc"></span><h1>PxTriangleMeshDesc<a class="headerlink" href="#pxtrianglemeshdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cooking_PxTriangleMeshDesc.h.html#file-include-cooking-pxtrianglemeshdesc-h"><span class="std std-ref">include/cooking/PxTriangleMeshDesc.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSimpleTriangleMesh</span></code> (<a class="reference internal" href="class_px_simple_triangle_mesh.html#exhale-class-class-px-simple-triangle-mesh"><span class="std std-ref">PxSimpleTriangleMesh</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv418PxTriangleMeshDesc">
+<span id="_CPPv318PxTriangleMeshDesc"></span><span id="_CPPv218PxTriangleMeshDesc"></span><span id="PxTriangleMeshDesc"></span><span class="target" id="class_px_triangle_mesh_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_simple_triangle_mesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><a class="headerlink" href="#_CPPv418PxTriangleMeshDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for <a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a>. </p>
+<p>Note that this class is derived from <a class="reference internal" href="class_px_simple_triangle_mesh.html#class_px_simple_triangle_mesh"><span class="std std-ref">PxSimpleTriangleMesh</span></a> which contains the members that describe the basic mesh. The mesh data is <em>copied</em> when an <a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> object is created from this descriptor. After the call the user may discard the triangle data.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> <a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc18PxTriangleMeshDescEv">
+<span id="_CPPv3N18PxTriangleMeshDesc18PxTriangleMeshDescEv"></span><span id="_CPPv2N18PxTriangleMeshDesc18PxTriangleMeshDescEv"></span><span id="PxTriangleMeshDesc::PxTriangleMeshDesc"></span><span class="target" id="group__cooking_1ga988ed2ee1de8e2daf9143462281ba9de"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc18PxTriangleMeshDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor sets to default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc12setToDefaultEv">
+<span id="_CPPv3N18PxTriangleMeshDesc12setToDefaultEv"></span><span id="_CPPv2N18PxTriangleMeshDesc12setToDefaultEv"></span><span id="PxTriangleMeshDesc::setToDefault"></span><span class="target" id="group__cooking_1gad895a79f88f5f3c7cf2cf63fb97b0bf0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxTriangleMeshDesc7isValidEv">
+<span id="_CPPv3NK18PxTriangleMeshDesc7isValidEv"></span><span id="_CPPv2NK18PxTriangleMeshDesc7isValidEv"></span><span id="PxTriangleMeshDesc::isValidC"></span><span class="target" id="group__cooking_1gaa05373f07aa1eed5dd4d83ab5dc6695a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxTriangleMeshDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc15materialIndicesE">
+<span id="_CPPv3N18PxTriangleMeshDesc15materialIndicesE"></span><span id="_CPPv2N18PxTriangleMeshDesc15materialIndicesE"></span><span id="PxTriangleMeshDesc::materialIndices__PxTypedStridedData:PxMaterialTableIndex:"></span><span class="target" id="class_px_triangle_mesh_desc_1a138ca14d6cad6d86484c8ecd9f96d46f"></span><a class="reference internal" href="struct_px_typed_strided_data.html#_CPPv4I0E18PxTypedStridedData" title="PxTypedStridedData"><span class="n"><span class="pre">PxTypedStridedData</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="typedef_group__common_1gac816bc62a68a52f01bf21f963295e822.html#_CPPv420PxMaterialTableIndex" title="PxMaterialTableIndex"><span class="n"><span class="pre">PxMaterialTableIndex</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndices</span></span></span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc15materialIndicesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Optional pointer to first material index, or NULL. </p>
+<p>There are PxSimpleTriangleMesh::numTriangles indices in total. Caller may add materialIndexStride bytes to the pointer to access the next triangle.</p>
+<p>When a triangle mesh collides with another object, a material is required at the collision point. If materialIndices is NULL, then the material of the <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> instance is used. Otherwise, if the point of contact is on a triangle with index i, then the material index is determined as: PxMaterialTableIndex index = *(PxMaterialTableIndex *)(((PxU8*)materialIndices) + materialIndexStride * i);</p>
+<p>If the contact point falls on a vertex or an edge, a triangle adjacent to the vertex or edge is selected, and its index used to look up a material. The selection is arbitrary but consistent over time.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>materialIndexStride </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc7sdfDescE">
+<span id="_CPPv3N18PxTriangleMeshDesc7sdfDescE"></span><span id="_CPPv2N18PxTriangleMeshDesc7sdfDescE"></span><span id="PxTriangleMeshDesc::sdfDesc__PxSDFDescP"></span><span class="target" id="class_px_triangle_mesh_desc_1a90356fc44bb2549e95a21bfc013d309c"></span><a class="reference internal" href="class_px_s_d_f_desc.html#_CPPv49PxSDFDesc" title="PxSDFDesc"><span class="n"><span class="pre">PxSDFDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">sdfDesc</span></span></span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc7sdfDescE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>SDF descriptor. </p>
+<p>When this descriptor is set, signed distance field is calculated for this convex mesh.</p>
+<p><strong>Default:</strong> NULL </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc6pointsE">
+<span id="_CPPv3N18PxTriangleMeshDesc6pointsE"></span><span id="_CPPv2N18PxTriangleMeshDesc6pointsE"></span><span id="PxTriangleMeshDesc::points__PxBoundedData"></span><span class="target" id="class_px_simple_triangle_mesh_1afdeb26b7e3d491fbe041f4bc119e22af"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">points</span></span></span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc6pointsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to first vertex point. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc9trianglesE">
+<span id="_CPPv3N18PxTriangleMeshDesc9trianglesE"></span><span id="_CPPv2N18PxTriangleMeshDesc9trianglesE"></span><span id="PxTriangleMeshDesc::triangles__PxBoundedData"></span><span class="target" id="class_px_simple_triangle_mesh_1a1b39b2bb65a9f246eaa1848e881cf988"></span><a class="reference internal" href="struct_px_bounded_data.html#_CPPv413PxBoundedData" title="PxBoundedData"><span class="n"><span class="pre">PxBoundedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">triangles</span></span></span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc9trianglesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to first triangle. </p>
+<p>Caller may add triangleStrideBytes bytes to the pointer to access the next triangle.</p>
+<p>These are triplets of 0 based indices: vert0 vert1 vert2 vert0 vert1 vert2 vert0 vert1 vert2 …</p>
+<p>where vertex is either a 32 or 16 bit unsigned integer. There are numTriangles*3 indices.</p>
+<p>This is declared as a void pointer because it is actually either an PxU16 or a PxU32 pointer. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTriangleMeshDesc5flagsE">
+<span id="_CPPv3N18PxTriangleMeshDesc5flagsE"></span><span id="_CPPv2N18PxTriangleMeshDesc5flagsE"></span><span id="PxTriangleMeshDesc::flags__PxMeshFlags"></span><span class="target" id="class_px_simple_triangle_mesh_1a765848d06b09a3452f9923115d5ccdd0"></span><a class="reference internal" href="typedef_group__geomutils_1gaec23462a84179db8a8ea77e5115d5fb1.html#_CPPv411PxMeshFlags" title="PxMeshFlags"><span class="n"><span class="pre">PxMeshFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N18PxTriangleMeshDesc5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags bits, combined from values of the enum <a class="reference internal" href="struct_px_mesh_flag.html#struct_px_mesh_flag"><span class="std std-ref">PxMeshFlag</span></a>. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBroadPhase &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBroadPhase</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbroadphase">
+<span id="exhale-class-class-px-broad-phase"></span><h1>PxBroadPhase<a class="headerlink" href="#pxbroadphase" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxBroadPhase.h.html#file-include-pxbroadphase-h"><span class="std std-ref">include/PxBroadPhase.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxBroadPhase">
+<span id="_CPPv312PxBroadPhase"></span><span id="_CPPv212PxBroadPhase"></span><span id="PxBroadPhase"></span><span class="target" id="class_px_broad_phase"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhase</span></span></span><a class="headerlink" href="#_CPPv412PxBroadPhase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Low-level broadphase API. </p>
+<p>This low-level API only supports batched updates and leaves most of the data management to its clients.</p>
+<p>This is useful if you want to use the broadphase with your own memory buffers. Note however that the GPU broadphase works best with buffers allocated in CUDA memory. The <a class="reference internal" href="#class_px_broad_phase_1a3d8ad155e5c447a62ef25b9f40c16bc4"><span class="std std-ref">getAllocator()</span></a> function returns an allocator that is compatible with the selected broadphase. It is recommended to allocate and deallocate the broadphase data (bounds, groups, distances) using this allocator.</p>
+<p>Important note: it must be safe to load 4 bytes past the end of the provided bounds array.</p>
+<p>The high-level broadphase API (<a class="reference internal" href="class_px_a_a_b_b_manager.html#class_px_a_a_b_b_manager"><span class="std std-ref">PxAABBManager</span></a>) is an easier-to-use interface that automatically deals with these requirements.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__physics_1ga83abea8c6c41790d092e9c58ef23640d.html#group__physics_1ga83abea8c6c41790d092e9c58ef23640d"><span class="std std-ref">PxCreateBroadPhase</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase7releaseEv">
+<span id="_CPPv3N12PxBroadPhase7releaseEv"></span><span id="_CPPv2N12PxBroadPhase7releaseEv"></span><span id="PxBroadPhase::release"></span><span class="target" id="class_px_broad_phase_1ad2301411514db843fcb3692af5657d13"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBroadPhase7getTypeEv">
+<span id="_CPPv3NK12PxBroadPhase7getTypeEv"></span><span id="_CPPv2NK12PxBroadPhase7getTypeEv"></span><span id="PxBroadPhase::getTypeC"></span><span class="target" id="class_px_broad_phase_1af6f6d9787f8a7f0708f675d9bd14f554"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_broad_phase_type.html#_CPPv416PxBroadPhaseType" title="PxBroadPhaseType"><span class="n"><span class="pre">PxBroadPhaseType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4EnumE" title="PxBroadPhaseType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxBroadPhase7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the broadphase type. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_type.html#struct_px_broad_phase_type_1ac7422f895533bff02d0043d35a2b7dda"><span class="std std-ref">PxBroadPhaseType::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Broadphase type. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBroadPhase7getCapsER16PxBroadPhaseCaps">
+<span id="_CPPv3NK12PxBroadPhase7getCapsER16PxBroadPhaseCaps"></span><span id="_CPPv2NK12PxBroadPhase7getCapsER16PxBroadPhaseCaps"></span><span id="PxBroadPhase::getCaps__PxBroadPhaseCapsRC"></span><span class="target" id="class_px_broad_phase_1a60c3841098eaaa7becc55f485d0d2f46"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCaps</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_broad_phase_caps.html#_CPPv416PxBroadPhaseCaps" title="PxBroadPhaseCaps"><span class="n"><span class="pre">PxBroadPhaseCaps</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">caps</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxBroadPhase7getCapsER16PxBroadPhaseCaps" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets broad-phase caps. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_caps.html#struct_px_broad_phase_caps"><span class="std std-ref">PxBroadPhaseCaps</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>caps</strong> – [out] Broad-phase caps </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase10getRegionsEv">
+<span id="_CPPv3N12PxBroadPhase10getRegionsEv"></span><span id="_CPPv2N12PxBroadPhase10getRegionsEv"></span><span id="PxBroadPhase::getRegions"></span><span class="target" id="class_px_broad_phase_1ab9b5b696fb3e7ad72db1769b91902387"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_broad_phase_regions.html#_CPPv419PxBroadPhaseRegions" title="PxBroadPhaseRegions"><span class="n"><span class="pre">PxBroadPhaseRegions</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getRegions</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase10getRegionsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the regions API if applicable. </p>
+<p>For broadphases that do not use explicit user-defined regions, this call returns NULL.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase_regions.html#class_px_broad_phase_regions"><span class="std std-ref">PxBroadPhaseRegions</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Region API, or NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase12getAllocatorEv">
+<span id="_CPPv3N12PxBroadPhase12getAllocatorEv"></span><span id="_CPPv2N12PxBroadPhase12getAllocatorEv"></span><span id="PxBroadPhase::getAllocator"></span><span class="target" id="class_px_broad_phase_1a3d8ad155e5c447a62ef25b9f40c16bc4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_allocator_callback.html#_CPPv419PxAllocatorCallback" title="PxAllocatorCallback"><span class="n"><span class="pre">PxAllocatorCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAllocator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase12getAllocatorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the broadphase allocator. </p>
+<p>User-provided buffers should ideally be allocated with this allocator, for best performance. This is especially true for the GPU broadphases, whose buffers need to be allocated in CUDA host memory.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_allocator_callback.html#class_px_allocator_callback"><span class="std std-ref">PxAllocatorCallback</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The broadphase allocator. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBroadPhase12getContextIDEv">
+<span id="_CPPv3NK12PxBroadPhase12getContextIDEv"></span><span id="_CPPv2NK12PxBroadPhase12getContextIDEv"></span><span id="PxBroadPhase::getContextIDC"></span><span class="target" id="class_px_broad_phase_1a35cd0cb9184b860959bcb6ca1235cd59"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContextID</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxBroadPhase12getContextIDEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the profiler’s context ID. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase_desc.html#class_px_broad_phase_desc"><span class="std std-ref">PxBroadPhaseDesc</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The context ID. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase15setScratchBlockEPv5PxU32">
+<span id="_CPPv3N12PxBroadPhase15setScratchBlockEPv5PxU32"></span><span id="_CPPv2N12PxBroadPhase15setScratchBlockEPv5PxU32"></span><span id="PxBroadPhase::setScratchBlock__voidP.PxU32"></span><span class="target" id="class_px_broad_phase_1a0fac842248e7245133ac9c82694d7132"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setScratchBlock</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">scratchBlock</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase15setScratchBlockEPv5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a scratch buffer. </p>
+<p>Some broadphases might take advantage of a scratch buffer to limit runtime allocations.</p>
+<p>All broadphases still work without providing a scratch buffer, this is an optional function that can potentially reduce runtime allocations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scratchBlock</strong> – [in] The scratch buffer </p></li>
+<li><p><strong>size</strong> – [in] Size of the scratch buffer in bytes </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase6updateERK22PxBroadPhaseUpdateDataP10PxBaseTask">
+<span id="_CPPv3N12PxBroadPhase6updateERK22PxBroadPhaseUpdateDataP10PxBaseTask"></span><span id="_CPPv2N12PxBroadPhase6updateERK22PxBroadPhaseUpdateDataP10PxBaseTask"></span><span id="PxBroadPhase::update__PxBroadPhaseUpdateDataCR.PxBaseTaskP"></span><span class="target" id="class_px_broad_phase_1a742f01a5a3583bd2e9d1133403d74f68"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_broad_phase_update_data.html#_CPPv422PxBroadPhaseUpdateData" title="PxBroadPhaseUpdateData"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">updateData</span></span>, <a class="reference internal" href="class_px_base_task.html#_CPPv410PxBaseTask" title="PxBaseTask"><span class="n"><span class="pre">PxBaseTask</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">continuation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase6updateERK22PxBroadPhaseUpdateDataP10PxBaseTask" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates the broadphase and computes the lists of created/deleted pairs. </p>
+<p>The provided update data describes changes to objects since the last broadphase update.</p>
+<p>To benefit from potentially multithreaded implementations, it is necessary to provide a continuation task to the function. It is legal to pass NULL there, but the underlying (CPU) implementations will then run single-threaded.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase_update_data.html#class_px_broad_phase_update_data"><span class="std std-ref">PxBroadPhaseUpdateData</span></a> <a class="reference internal" href="class_px_base_task.html#class_px_base_task"><span class="std std-ref">PxBaseTask</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>updateData</strong> – [in] The update data </p></li>
+<li><p><strong>continuation</strong> – [in] Continuation task to enable multi-threaded implementations, or NULL. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase12fetchResultsER19PxBroadPhaseResults">
+<span id="_CPPv3N12PxBroadPhase12fetchResultsER19PxBroadPhaseResults"></span><span id="_CPPv2N12PxBroadPhase12fetchResultsER19PxBroadPhaseResults"></span><span id="PxBroadPhase::fetchResults__PxBroadPhaseResultsR"></span><span class="target" id="class_px_broad_phase_1aaa8c87cdff36b69e97fab00ad9a7db03"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fetchResults</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_broad_phase_results.html#_CPPv419PxBroadPhaseResults" title="PxBroadPhaseResults"><span class="n"><span class="pre">PxBroadPhaseResults</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">results</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxBroadPhase12fetchResultsER19PxBroadPhaseResults" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the broadphase results after an update. </p>
+<p>This should be called once after each update call to retrieve the results of the broadphase. The results are incremental, i.e. the system only returns new and lost pairs, not all current pairs.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_results.html#struct_px_broad_phase_results"><span class="std std-ref">PxBroadPhaseResults</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>results</strong> – [out] The broadphase results </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase6updateER19PxBroadPhaseResultsRK22PxBroadPhaseUpdateData">
+<span id="_CPPv3N12PxBroadPhase6updateER19PxBroadPhaseResultsRK22PxBroadPhaseUpdateData"></span><span id="_CPPv2N12PxBroadPhase6updateER19PxBroadPhaseResultsRK22PxBroadPhaseUpdateData"></span><span id="PxBroadPhase::update__PxBroadPhaseResultsR.PxBroadPhaseUpdateDataCR"></span><span class="target" id="class_px_broad_phase_1a6ec66b0ed0f7c8054d4573f8540fdb50"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_broad_phase_results.html#_CPPv419PxBroadPhaseResults" title="PxBroadPhaseResults"><span class="n"><span class="pre">PxBroadPhaseResults</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">results</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_broad_phase_update_data.html#_CPPv422PxBroadPhaseUpdateData" title="PxBroadPhaseUpdateData"><span class="n"><span class="pre">PxBroadPhaseUpdateData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">updateData</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBroadPhase6updateER19PxBroadPhaseResultsRK22PxBroadPhaseUpdateData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Helper for single-threaded updates. </p>
+<p>This short helper function performs a single-theaded update and reports the results in a single call.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase_update_data.html#class_px_broad_phase_update_data"><span class="std std-ref">PxBroadPhaseUpdateData</span></a> <a class="reference internal" href="struct_px_broad_phase_results.html#struct_px_broad_phase_results"><span class="std std-ref">PxBroadPhaseResults</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results</strong> – [out] The broadphase results </p></li>
+<li><p><strong>updateData</strong> – [in] The update data </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhase12PxBroadPhaseEv">
+<span id="_CPPv3N12PxBroadPhase12PxBroadPhaseEv"></span><span id="_CPPv2N12PxBroadPhase12PxBroadPhaseEv"></span><span id="PxBroadPhase::PxBroadPhase"></span><span class="target" id="class_px_broad_phase_1a7ff2bac3dd079df033a0c78fd674bf77"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBroadPhase12PxBroadPhaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBroadPhaseD0Ev">
+<span id="_CPPv3N12PxBroadPhaseD0Ev"></span><span id="_CPPv2N12PxBroadPhaseD0Ev"></span><span id="PxBroadPhase::~PxBroadPhase"></span><span class="target" id="class_px_broad_phase_1a85564ea83de529bc9c9a6d47ceaea2ee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBroadPhase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBroadPhaseD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

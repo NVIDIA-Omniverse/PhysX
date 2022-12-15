@@ -1,0 +1,595 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Blast SDK Documentation &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="_static/version.js"></script>
+        <script src="_static/social-media.js"></script>
+        <script src="_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="docs/api/introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#">
+          
+
+          
+            
+            <img src="_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Blast SDK Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="blast-sdk-documentation">
+<h1>Blast SDK Documentation<a class="headerlink" href="#blast-sdk-documentation" title="Permalink to this headline">¶</a></h1>
+<a class="reference internal image-reference" href="_images/blast.png"><img alt="Blast Intro" src="_images/blast.png" style="width: 100%;" /></a>
+<p>Blast is a NVIDIA Omniverse destruction library.  It consists of three layers: the low-level (NvBlast), a high-level “toolkit”
+wrapper (NvBlastTk), and extensions (prefixed with NvBlastExt).  This layered API is designed to allow short ramp-up time for
+first usage (through the Ext and Tk APIs) while also allowing for customization and optimization by experienced users through the
+low-level API.</p>
+<p>Some notable features of NvBlast:</p>
+<ul class="simple">
+<li><p>C-style API consisting of stateless functions, with no global framework or context.</p></li>
+<li><p>Functions do not spawn tasks, allocate, or deallocate memory.</p></li>
+<li><p>A support structure may be defined that includes chunks from different hierarchical depths.</p></li>
+<li><p>Multiple chunk hierarchies may exist in a single asset.</p></li>
+<li><p>Damage behavior is completely defined by user-supplied “shader” functions.</p></li>
+<li><p>Has a portable memory layout for assets and actor families, which allows for memcopy cloning and direct binary serialization (on platforms with the same endianness).</p></li>
+</ul>
+<p>Features of NvBlastTk:</p>
+<ul class="simple">
+<li><p>C++ API which includes a global framework.</p></li>
+<li><p>Manages objects, allocating and deallocating using a user-supplied callback.</p></li>
+<li><p>Generates “worker” objects to process damage, which the user may call from multiple threads.</p></li>
+<li><p>Uses an event system to inform the user of actor splitting and chunk fracturing.</p></li>
+<li><p>Introduces a joint representation which uses the event system to allow the user to update physical joints between actors.</p></li>
+</ul>
+<p>Notably absent from NvBlast and NvBlastTk:</p>
+<ul class="simple">
+<li><p>There is no physics or collision representation.</p></li>
+<li><p>There is no graphics representation.</p></li>
+</ul>
+<p>Blast, at the low-level and toolkit layer, is physics and graphics agnostic.  It is entirely up to the user to create such representations
+when Blast objects are created.  Updates to those objects (such as actor splitting) are passed to the user as the output of a split
+function in the low-level API, or through a split event in the toolkit API.  This allows Blast to be used with any physics SDK and any
+rendering library.</p>
+<p>In order to help the user get started quickly, however, there is a PhysX-specific Blast extension which uses BlastTk and manages PhysX actors
+and joints.  The source code for this extension, like all Blast extensions, is intended to be a reference implementation.</p>
+<p>Current Blast extensions:</p>
+<ul class="simple">
+<li><p>ExtAssetUtils - NvBlastAsset utility functions. Add external bonds, merge assets, and transform geometric data.</p></li>
+<li><p>ExtAuthoring - a set of geometric tools which can split a mesh hierarchically and create a Blast asset, along with collision geometry and chunk graphics meshes in a separate files.</p></li>
+<li><p>ExtExporter - standard mesh and collision writer tools in fbx, obj, and json formats.</p></li>
+<li><p>ExtPhysX - a physics manager using PhysX which keeps PxActors and PxJoints updated in a user-supplied PxScene.  It handles impact damage (through the contact callback), includes a stress solver wrapper, and provides a listener that enables multiple clients to keep their state synchronized.</p></li>
+<li><p>ExtSerialization, ExtTkSerialization, ExtPxSerialization - serialization extensions for low-level, Tk and Px layers. Uses Cap’n Proto to provide robust serialization across different platforms.</p></li>
+<li><p>ExtShaders - sample damage shaders to pass to both the low-level and Tk actor damage functions.</p></li>
+<li><p>ExtStress - a toolkit for performing stress calculations on low-level Blast actors, using a minimal API to assign masses and apply forces. Does not use any external physics library.</p></li>
+</ul>
+<div class="section" id="gallery">
+<h2>Gallery<a class="headerlink" href="#gallery" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="tower-explosion">
+<h3>Tower Explosion<a class="headerlink" href="#tower-explosion" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/tower_explode.png"><img alt="Blast Intro" src="_images/tower_explode.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="bunny-impact-damage">
+<h3>Bunny Impact Damage<a class="headerlink" href="#bunny-impact-damage" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/bunny_impact.png"><img alt="Blast Sample: tower explode" src="_images/bunny_impact.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="layered-cube-explosion">
+<h3>Layered Cube Explosion<a class="headerlink" href="#layered-cube-explosion" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/cube_explode.png"><img alt="Blast Sample: bunny impact" src="_images/cube_explode.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="table-impact-damage">
+<h3>Table Impact Damage<a class="headerlink" href="#table-impact-damage" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/table_impact_wireframe.png"><img alt="Blast Sample: cube explode" src="_images/table_impact_wireframe.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="tower-slice">
+<h3>Tower Slice<a class="headerlink" href="#tower-slice" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/tower_slice.png"><img alt="Blast Sample: table impact" src="_images/tower_slice.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="wall-impact-damage">
+<h3>Wall Impact Damage<a class="headerlink" href="#wall-impact-damage" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/wall_impact.png"><img alt="Blast Sample: tower slice" src="_images/wall_impact.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="stress-solver">
+<h3>Stress Solver<a class="headerlink" href="#stress-solver" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/stress.png"><img alt="Blast Sample: wall impact" src="_images/stress.png" style="width: 100%;" /></a>
+</div>
+<div class="section" id="joints">
+<h3>Joints<a class="headerlink" href="#joints" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/joints.png"><img alt="Blast Sample: joints" src="_images/joints.png" style="width: 100%;" /></a>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/introduction.html#asset-structure">Asset Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/introduction.html#support-model">Support Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/introduction.html#damage-model">Damage Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#linking-and-header-files">Linking and Header Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#creating-an-asset-from-a-descriptor-authoring">Creating an Asset from a Descriptor (Authoring)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#cloning-an-asset">Cloning an Asset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#releasing-an-asset">Releasing an Asset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#creating-actors-and-families">Creating Actors and Families</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#copying-actors-serialization-and-deserialization">Copying Actors (Serialization and Deserialization)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#cloning-a-family">Cloning a Family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#id1">Cloning a Family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#single-actor-serialization">Single Actor Serialization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#deactivating-an-actor">Deactivating an Actor</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_ll_users_guide.html#releasing-a-family">Releasing a family</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_ll_users_guide.html#damage-and-fracturing">Damage and Fracturing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_globals_users_guide.html#allocator">Allocator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_globals_users_guide.html#error-callback">Error Callback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_globals_users_guide.html#profiler-api">Profiler API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#introduction-to-nvblasttk">Introduction to NvBlastTk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#nvblasttk-class-hierarchy">NvBlastTk Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#linking-and-header-files">Linking and Header Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#creating-the-tkframework">Creating the TkFramework</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#creating-a-tkasset">Creating a TkAsset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#instancing-a-tkasset-creation-of-a-tkactor-and-a-tkfamily">Instancing a TkAsset: Creation of a TkActor and a TkFamily</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#groups">Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#applying-damage-to-actors-and-families">Applying Damage to Actors and Families</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_hl_users_guide.html#multiple-damage-descriptors-using-nvblastprogramparams">Multiple Damage Descriptors using NvBlastProgramParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_hl_users_guide.html#single-damage-descriptor-with-default-tkfamily-material">Single Damage Descriptor with Default TkFamily Material</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_hl_users_guide.html#single-damage-descriptor-with-specified-material">Single Damage Descriptor with Specified Material</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#joints">Joints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_hl_users_guide.html#releasing-joints">Releasing Joints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/api_hl_users_guide.html#events">Events</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/api_hl_users_guide.html#object-and-type-identification">Object and Type Identification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/extensions/index.html">Extensions (NvBlastExt)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_shaders.html">Damage Shaders (NvBlastExtShaders)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_stress.html">Stress Solver (NvBlastExtStress)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_stress.html#features">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_stress.html#settings-tuning">Settings Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_stress.html#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_assetutils.html">Asset Utilities (NvBlastExtAssetUtils)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_assetutils.html#add-world-bonds">Add World Bonds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_assetutils.html#merge-assets">Merge Assets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_assetutils.html#transform-in-place">Transform In-Place</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_authoring.html">Asset Authoring (NvBlastExtAuthoring)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_authoring.html#fracturetool">FractureTool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_authoring.html#mesh-restrictions">Mesh Restrictions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_authoring.html#convexmeshbuilder">ConvexMeshBuilder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_authoring.html#bondgenerator">BondGenerator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_authoring.html#meshcleaner">MeshCleaner</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_serialization.html">Serialization (NvBlastExtSerialization)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#serialization-writing">Serialization (writing)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#using-a-buffer-provider">Using a Buffer Provider</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#deserialization-reading">Deserialization (reading)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#detecting-the-object-type-in-a-buffer">Detecting the Object Type in a Buffer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#peeking-at-and-skipping-buffer-data">Peeking at and Skipping Buffer Data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="docs/api/extensions/ext_serialization.html#cleaning-up">Cleaning Up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/extensions/ext_tkserialization.html">BlastTk Serialization (NvBlastExtTkSerialization)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs/api/copyrights.html">Copyrights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/copyrights.html#boost">Boost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/api/copyrights.html#v-hacd">V-HACD</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docs/CHANGELOG.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#aug-2022">[4.0.2] - 31-Aug-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#bugfixes">Bugfixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id1">[4.0.1] - 10-Aug-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id2">Bugfixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#may-2022">[4.0.0] - 31-May-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#new-features">New Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#feb-2022">[3.1.3] - 28-Feb-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#changes">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id3">[3.1.2] - 24-Feb-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id4">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#bug-fixes">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id5">[3.1.1] - 2022-01-12</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id6">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id7">[3.1.0] - 2022-01-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id8">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id9">[3.0.0] - 2021-10-13</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id10">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id11">[2.1.7] - 2021-07-18</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id12">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id13">[2.1.6] - 2021-06-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id14">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id15">[2.1.5] - 2021-05-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id16">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id17">[2.1.4] - 2021-04-08</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id18">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id19">[2.1.3] - 2021-04-05</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id20">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id21">[2.1.2] - 2021-03-15</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id22">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id23">[2.1.1] - 2021-03-02</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id24">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id25">[2.0.1] - 2021-03-01</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id26">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id27">[2.0.0] - 2021-02-19</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id28">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id29">[1.4.7] - 2020-10-20</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id30">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id31">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id32">[1.4.6] - 2020-10-08</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id33">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id34">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id35">[1.4.5] - 2020-09-30</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id36">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id37">[1.4.4] - 2020-09-29</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id38">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id39">[1.4.3] - 2020-09-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id40">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id41">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id42">[1.4.2] - 2020-08-28</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id43">Bug Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id44">[1.4.1] - 2020-06-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id45">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id46">[1.2.0] - 2020-01-23</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id47">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id48">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#known-issues">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id49">[1.1.5] - 2019-09-16</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id50">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id51">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id52">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id53">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id54">[1.1.4] - 2018-10-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id55">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id56">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id57">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id58">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id59">[1.1.3] - 2018-05-30</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id60">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id61">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id62">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id63">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id64">[1.1.2] - 2018-01-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id65">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id66">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id67">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id68">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id69">[1.1.1] - 2017-10-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id70">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id71">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id72">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id73">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id74">[1.1.0] - 2017-08-28</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id75">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id76">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id77">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id78">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id79">[1.0.0] - 2017-02-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id80">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id81">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id82">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id83">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#beta-2017-01-24">[1.0.0-beta] - 2017-01-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id84">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id85">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#removed-features">Removed Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id86">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#alpha-2016-10-21">[1.0.0-alpha] - 2016-10-21</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#features">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id87">Known Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#namespaces">Namespaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#classes-and-structs">Classes and Structs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#enums">Enums</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#variables">Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#defines">Defines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_build/docs/blast-sdk/latest/blast-sdk_api.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="index">
+<h1>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

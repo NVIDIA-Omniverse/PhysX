@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxQueryFilterCallback &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxQueryFilterCallback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxqueryfiltercallback">
+<span id="exhale-class-class-px-query-filter-callback"></span><h1>PxQueryFilterCallback<a class="headerlink" href="#pxqueryfiltercallback" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxQueryFiltering.h.html#file-include-pxqueryfiltering-h"><span class="std std-ref">include/PxQueryFiltering.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxQueryFilterCallback">
+<span id="_CPPv321PxQueryFilterCallback"></span><span id="_CPPv221PxQueryFilterCallback"></span><span id="PxQueryFilterCallback"></span><span class="target" id="class_px_query_filter_callback"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></span><a class="headerlink" href="#_CPPv421PxQueryFilterCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scene query filtering callbacks. </p>
+<p>Custom filtering logic for scene query intersection candidates. If an intersection candidate object passes the data based filter (see <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a>), filtering callbacks are executed if requested (see <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data_1a02180ad928beb2e5d3d5caf4cc84f387"><span class="std std-ref">PxQueryFilterData.flags</span></a>)</p>
+<p><ul class="simple">
+<li><p>If <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa8afbf3ede02abfeef2a9e8d38f0b9a78"><span class="std std-ref">PxQueryFlag::ePREFILTER</span></a> is set, the preFilter function runs before exact intersection tests. If this function returns <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3aac7ebce08c20ff88ea4328035daa2498"><span class="std std-ref">PxQueryHitType::eTOUCH</span></a> or <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3a60dc59a348d85c101747ed45d9b20750"><span class="std std-ref">PxQueryHitType::eBLOCK</span></a>, exact testing is performed to determine the intersection location.</p></li>
+</ul>
+
+The preFilter function may overwrite the copy of queryFlags it receives as an argument to specify any of <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a96f3049caa29758b18308a37e97370f1"><span class="std std-ref">PxHitFlag::eMODIFIABLE_FLAGS</span></a> on a per-shape basis. Changes apply only to the shape being filtered, and changes to other flags are ignored.</p>
+<p><ul class="simple">
+<li><p>If <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa8afbf3ede02abfeef2a9e8d38f0b9a78"><span class="std std-ref">PxQueryFlag::ePREFILTER</span></a> is not set, precise intersection testing is performed using the original query’s filterData.flags.</p></li>
+</ul>
+<ul class="simple">
+<li><p>If <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98ce80be9551f124bd882bdb83dafb7e"><span class="std std-ref">PxQueryFlag::ePOSTFILTER</span></a> is set, the postFilter function is called for each intersection to determine the touch/block status. This overrides any touch/block status previously returned from the preFilter function for this shape.</p></li>
+</ul>
+
+Filtering calls are not guaranteed to be sorted along the ray or sweep direction.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"><span class="std std-ref">PxScene.raycast</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a9384aae12d3ef33f4db300cfe0c91c6a"><span class="std std-ref">PxScene.sweep</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene.overlap</span></a> <a class="reference internal" href="typedef_group__scenequery_1gaacf083b040f6c841644782282171bd61.html#group__scenequery_1gaacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a> PxHitFlags </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxQueryFilterCallback9preFilterERK12PxFilterDataPK7PxShapePK12PxRigidActorR10PxHitFlags">
+<span id="_CPPv3N21PxQueryFilterCallback9preFilterERK12PxFilterDataPK7PxShapePK12PxRigidActorR10PxHitFlags"></span><span id="_CPPv2N21PxQueryFilterCallback9preFilterERK12PxFilterDataPK7PxShapePK12PxRigidActorR10PxHitFlags"></span><span id="PxQueryFilterCallback::preFilter__PxFilterDataCR.PxShapeCP.PxRigidActorCP.PxHitFlagsR"></span><span class="target" id="class_px_query_filter_callback_1a227beae6749182b04ae18728c1aecd26"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv414PxQueryHitType" title="PxQueryHitType"><span class="n"><span class="pre">PxQueryHitType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv4N14PxQueryHitType4EnumE" title="PxQueryHitType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">preFilter</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxQueryFilterCallback9preFilterERK12PxFilterDataPK7PxShapePK12PxRigidActorR10PxHitFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This filter callback is executed before the exact intersection test if <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa8afbf3ede02abfeef2a9e8d38f0b9a78"><span class="std std-ref">PxQueryFlag::ePREFILTER</span></a> flag was set. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filterData</strong> – <strong>[in]</strong> custom filter data specified as the query’s filterData.data parameter. </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> A shape that has not yet passed the exact intersection test. </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> The shape’s actor. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[inout]</strong> scene query flags from the query’s function call (only flags from <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a96f3049caa29758b18308a37e97370f1"><span class="std std-ref">PxHitFlag::eMODIFIABLE_FLAGS</span></a> bitmask can be modified) </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the updated type for this hit (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHit">
+<span id="_CPPv3N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHit"></span><span id="_CPPv2N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHit"></span><span id="PxQueryFilterCallback::postFilter__PxFilterDataCR.PxQueryHitCR"></span><span class="target" id="class_px_query_filter_callback_1abd6809d1dbe8d0f8bc55136a37f42b29"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv414PxQueryHitType" title="PxQueryHitType"><span class="n"><span class="pre">PxQueryHitType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv4N14PxQueryHitType4EnumE" title="PxQueryHitType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">postFilter</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_hit.html#_CPPv410PxQueryHit" title="PxQueryHit"><span class="n"><span class="pre">PxQueryHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHit" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This filter callback is executed if the exact intersection test returned true and <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98ce80be9551f124bd882bdb83dafb7e"><span class="std std-ref">PxQueryFlag::ePOSTFILTER</span></a> flag was set. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filterData</strong> – <strong>[in]</strong> custom filter data of the query </p></li>
+<li><p><strong>hit</strong> – <strong>[in]</strong> Scene query hit information. faceIndex member is not valid for overlap queries. For sweep and raycast queries the hit information can be cast to <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> and <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> respectively. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the updated hit type for this hit (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHitPK7PxShapePK12PxRigidActor">
+<span id="_CPPv3N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHitPK7PxShapePK12PxRigidActor"></span><span id="_CPPv2N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHitPK7PxShapePK12PxRigidActor"></span><span id="PxQueryFilterCallback::postFilter__PxFilterDataCR.PxQueryHitCR.PxShapeCP.PxRigidActorCP"></span><span class="target" id="class_px_query_filter_callback_1a7c60cedbfc3cfc48437cbb944b4040b8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv414PxQueryHitType" title="PxQueryHitType"><span class="n"><span class="pre">PxQueryHitType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_query_hit_type.html#_CPPv4N14PxQueryHitType4EnumE" title="PxQueryHitType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">postFilter</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_hit.html#_CPPv410PxQueryHit" title="PxQueryHit"><span class="n"><span class="pre">PxQueryHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHitPK7PxShapePK12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This filter callback is executed if the exact intersection test returned true and <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98ce80be9551f124bd882bdb83dafb7e"><span class="std std-ref">PxQueryFlag::ePOSTFILTER</span></a> flag was set. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filterData</strong> – <strong>[in]</strong> custom filter data of the query </p></li>
+<li><p><strong>hit</strong> – <strong>[in]</strong> Scene query hit information. faceIndex member is not valid for overlap queries. For sweep and raycast queries the hit information can be cast to <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> and <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> respectively. </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> Hit shape </p></li>
+<li><p><strong>actor</strong> – <strong>[in]</strong> Hit actor </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the updated hit type for this hit (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxQueryFilterCallbackD0Ev">
+<span id="_CPPv3N21PxQueryFilterCallbackD0Ev"></span><span id="_CPPv2N21PxQueryFilterCallbackD0Ev"></span><span id="PxQueryFilterCallback::~PxQueryFilterCallback"></span><span class="target" id="class_px_query_filter_callback_1a13867beb1e0845761661bc9311706f56"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxQueryFilterCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxQueryFilterCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>virtual destructor </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

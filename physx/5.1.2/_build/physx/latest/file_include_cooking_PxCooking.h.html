@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/cooking/PxCooking.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/cooking/PxCooking.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-cooking-pxcooking-h">
+<span id="file-include-cooking-pxcooking-h"></span><h1>include/cooking/PxCooking.h<a class="headerlink" href="#include-cooking-pxcooking-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_cooking.html#dir-include-cooking"><span class="std std-ref">include/cooking/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_cooking_PxCooking.h.html#program-listing-file-include-cooking-pxcooking-h"><span class="std std-ref">include/cooking/PxCooking.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_cooking_PxCookingInternal.h.html#file-include-cooking-pxcookinginternal-h"><span class="std std-ref">include/cooking/PxCookingInternal.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxRepXSimpleType.h.html#file-include-extensions-pxrepxsimpletype-h"><span class="std std-ref">include/extensions/PxRepXSimpleType.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxSerialization.h.html#file-include-extensions-pxserialization-h"><span class="std std-ref">include/extensions/PxSerialization.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_convex_mesh_cooking_result.html#exhale-struct-struct-px-convex-mesh-cooking-result"><span class="std std-ref">PxConvexMeshCookingResult</span></a>: Result from convex cooking.</p></li>
+<li><p><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html#exhale-struct-struct-px-convex-mesh-cooking-type"><span class="std std-ref">PxConvexMeshCookingType</span></a>: Enumeration for convex mesh cooking algorithms.</p></li>
+<li><p><a class="reference internal" href="struct_px_cooking_params.html#exhale-struct-struct-px-cooking-params"><span class="std std-ref">PxCookingParams</span></a>: Structure describing parameters affecting mesh cooking.</p></li>
+<li><p><a class="reference internal" href="struct_px_mesh_preprocessing_flag.html#exhale-struct-struct-px-mesh-preprocessing-flag"><span class="std std-ref">PxMeshPreprocessingFlag</span></a>: Enum for the set of mesh pre-processing parameters.</p></li>
+<li><p><a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html#exhale-struct-struct-px-triangle-mesh-cooking-result"><span class="std std-ref">PxTriangleMeshCookingResult</span></a>: Result from triangle mesh cooking.</p></li>
+<li><p><a class="reference internal" href="class_px_cooking.html#exhale-class-class-px-cooking"><span class="std std-ref">PxCooking</span></a>: Provides methods to cook (where cooking means to prepare the data and convert it to the right format potentially including the construction of acceleration structures and other support data) all kind of simulation data.</p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__cooking_1gaf57d64728600ca109a6bfc4d4bc106fd.html#exhale-function-group-cooking-1gaf57d64728600ca109a6bfc4d4bc106fd"><span class="std std-ref">PxAssembleSoftBodyMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga648546f82e6f1ad6351a23d7d34a048b.html#exhale-function-group-cooking-1ga648546f82e6f1ad6351a23d7d34a048b"><span class="std std-ref">PxAssembleSoftBodyMesh_Sim</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gae1a4b32886d35c279fe060bb9c25d641.html#exhale-function-group-cooking-1gae1a4b32886d35c279fe060bb9c25d641"><span class="std std-ref">PxComputeCollisionData</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gaabe6bce33bc5b158e6f84abfb3f1eb87.html#exhale-function-group-cooking-1gaabe6bce33bc5b158e6f84abfb3f1eb87"><span class="std std-ref">PxComputeHullPolygons</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga1fdd4a04d02a0424df1929bf0293a599.html#exhale-function-group-cooking-1ga1fdd4a04d02a0424df1929bf0293a599"><span class="std std-ref">PxComputeModelsMapping</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga0bb884eb36a3c97e234a689e09782497.html#exhale-function-group-cooking-1ga0bb884eb36a3c97e234a689e09782497"><span class="std std-ref">PxComputeSimulationData</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gaa39458e1f2c4a2e5b03af3340d4d71a1.html#exhale-function-group-cooking-1gaa39458e1f2c4a2e5b03af3340d4d71a1"><span class="std std-ref">PxCookBVH</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga9d1064eefe495b92e53aee75edf714f4.html#exhale-function-group-cooking-1ga9d1064eefe495b92e53aee75edf714f4"><span class="std std-ref">PxCookConvexMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga6173e239352bf3335e32d36802dafabc.html#exhale-function-group-cooking-1ga6173e239352bf3335e32d36802dafabc"><span class="std std-ref">PxCookHeightField</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gaf30771681aa2f8719408bc0c4bdd14a6.html#exhale-function-group-cooking-1gaf30771681aa2f8719408bc0c4bdd14a6"><span class="std std-ref">PxCookSoftBodyMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga9cf02195e24e080d0bd561a7c9f69b15.html#exhale-function-group-cooking-1ga9cf02195e24e080d0bd561a7c9f69b15"><span class="std std-ref">PxCookTetrahedronMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gadb0bf96f474b4409f6eff94cb364aa68.html#exhale-function-group-cooking-1gadb0bf96f474b4409f6eff94cb364aa68"><span class="std std-ref">PxCookTriangleMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga55a0d4af0aec8ba7de0f10e0e12c0f21.html#exhale-function-group-cooking-1ga55a0d4af0aec8ba7de0f10e0e12c0f21"><span class="std std-ref">PxCreateBVH</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gadd0114aa89f0002ead9d155a1ffb46cd.html#exhale-function-group-cooking-1gadd0114aa89f0002ead9d155a1ffb46cd"><span class="std std-ref">PxCreateBVH</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga8dda2c532915b323e2cd4ea11788a6e6.html#exhale-function-group-cooking-1ga8dda2c532915b323e2cd4ea11788a6e6"><span class="std std-ref">PxCreateConvexMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gac79ef967f7b7d314bcf88e2f15cae65a.html#exhale-function-group-cooking-1gac79ef967f7b7d314bcf88e2f15cae65a"><span class="std std-ref">PxCreateConvexMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gafe82372f75b7dd15ab4835eae18df7d4.html#exhale-function-group-cooking-1gafe82372f75b7dd15ab4835eae18df7d4"><span class="std std-ref">PxCreateCooking</span></a>: Create an instance of the cooking interface.</p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga12cf8a8e0f1cf41f6a80d3c1cdc824b4.html#exhale-function-group-cooking-1ga12cf8a8e0f1cf41f6a80d3c1cdc824b4"><span class="std std-ref">PxCreateHeightField</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gabc3d0f25075ed38b7ab33a0417bfd1a2.html#exhale-function-group-cooking-1gabc3d0f25075ed38b7ab33a0417bfd1a2"><span class="std std-ref">PxCreateHeightField</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gad2dba5cda18d6c779bfca773d265f82c.html#exhale-function-group-cooking-1gad2dba5cda18d6c779bfca773d265f82c"><span class="std std-ref">PxCreateSoftBodyMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gafeb563f6c092e48d77035d984539c755.html#exhale-function-group-cooking-1gafeb563f6c092e48d77035d984539c755"><span class="std std-ref">PxCreateSoftBodyMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gac89651c5563cd22fa955f6b2c6d77101.html#exhale-function-group-cooking-1gac89651c5563cd22fa955f6b2c6d77101"><span class="std std-ref">PxCreateTetrahedronMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga7367ee4bd5267887c6f8a2e3045fa38a.html#exhale-function-group-cooking-1ga7367ee4bd5267887c6f8a2e3045fa38a"><span class="std std-ref">PxCreateTetrahedronMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gaf7b4ccd4cf7dea7b0b9fc49ee7564c52.html#exhale-function-group-cooking-1gaf7b4ccd4cf7dea7b0b9fc49ee7564c52"><span class="std std-ref">PxCreateTriangleMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga379246242e0af47a3679cad1b8e6bcf8.html#exhale-function-group-cooking-1ga379246242e0af47a3679cad1b8e6bcf8"><span class="std std-ref">PxCreateTriangleMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gac7124284bbda24d14837314c59416a04.html#exhale-function-group-cooking-1gac7124284bbda24d14837314c59416a04"><span class="std std-ref">PxGetStandaloneInsertionCallback</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1ga3e539c67ae1993abd310f7ac2e4b284b.html#exhale-function-group-cooking-1ga3e539c67ae1993abd310f7ac2e4b284b"><span class="std std-ref">PxValidateConvexMesh</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__cooking_1gac4d006397ab50386ae2913e7d2f4464d.html#exhale-function-group-cooking-1gac4d006397ab50386ae2913e7d2f4464d"><span class="std std-ref">PxValidateTriangleMesh</span></a></p></li>
+</ul>
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef_group__cooking_1ga0a0051ee56690c138fac87d780cca9b4.html#exhale-typedef-group-cooking-1ga0a0051ee56690c138fac87d780cca9b4"><span class="std std-ref">PxMeshPreprocessingFlags</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

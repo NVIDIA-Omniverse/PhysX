@@ -1,0 +1,265 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>extensions/authoring/NvBlastExtAuthoring.h &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>extensions/authoring/NvBlastExtAuthoring.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extensions-authoring-nvblastextauthoring-h">
+<span id="file-extensions-authoring-nvblastextauthoring-h"></span><h1>extensions/authoring/NvBlastExtAuthoring.h<a class="headerlink" href="#extensions-authoring-nvblastextauthoring-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_extensions_authoring.html#dir-extensions-authoring"><span class="std std-ref">extensions/authoring/</span></a></p>
+<p>Defines the API for the NvBlastExtAuthoring blast sdk extension.</p>
+<p>Source: <a class="reference internal" href="program_listing_file_extensions_authoring_NvBlastExtAuthoring.h.html#program-listing-file-extensions-authoring-nvblastextauthoring-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoring.h</span></a></p>
+<div class="section" id="namespaces">
+<h2>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_Nv.html#namespace-nv"><span class="std std-ref">Nv</span></a>: FractureTool has requirements to input meshes to fracture them successfully: 1) Mesh should be closed (watertight) 2) There should not be self-intersections and open-edges.</p></li>
+<li><p><a class="reference internal" href="namespace_Nv__Blast.html#namespace-nv-blast"><span class="std std-ref">Nv::Blast</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa267355276c6c7f75e11b1d1b401e9aa.html#exhale-function-nv-blast-ext-authoring-8h-1aa267355276c6c7f75e11b1d1b401e9aa"><span class="std std-ref">NvBlastExtAuthoringBuildCollisionMeshes</span></a>: Build collision meshes.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af5f4d1eb694a93557d1f39f8564ef435.html#exhale-function-nv-blast-ext-authoring-8h-1af5f4d1eb694a93557d1f39f8564ef435"><span class="std std-ref">NvBlastExtAuthoringBuildCutoutSet</span></a>: Builds a cutout set (which must have been initially created by createCutoutSet()).</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a15fa5f130ca888ab5d84073112e0ce58.html#exhale-function-nv-blast-ext-authoring-8h-1a15fa5f130ca888ab5d84073112e0ce58"><span class="std std-ref">NvBlastExtAuthoringBuildMeshConvexDecomposition</span></a>: Build convex mesh decomposition.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0a7dc1a643abf2e3b37e6db8724298bf.html#exhale-function-nv-blast-ext-authoring-8h-1a0a7dc1a643abf2e3b37e6db8724298bf"><span class="std std-ref">NvBlastExtAuthoringCreateBBoxBasedAccelerator</span></a>: Create BBoxBasedAccelerator - SpatialAccelerator which uses a bbox/grid algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a8bf20d770ff841495410c94728ee6f7b.html#exhale-function-nv-blast-ext-authoring-8h-1a8bf20d770ff841495410c94728ee6f7b"><span class="std std-ref">NvBlastExtAuthoringCreateBondGenerator</span></a>: Create BlastBondGenerator.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ad59a0b7bceb9cf2d7f09cc104e584fe6.html#exhale-function-nv-blast-ext-authoring-8h-1ad59a0b7bceb9cf2d7f09cc104e584fe6"><span class="std std-ref">NvBlastExtAuthoringCreateBooleanTool</span></a>: Create BooleanTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a96fac66d91c7052499f8ad246114d187.html#exhale-function-nv-blast-ext-authoring-8h-1a96fac66d91c7052499f8ad246114d187"><span class="std std-ref">NvBlastExtAuthoringCreateCutoutSet</span></a>: Instantiates a blank CutoutSet.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a41aee44d57db3e410d5d9dd5b07632d5.html#exhale-function-nv-blast-ext-authoring-8h-1a41aee44d57db3e410d5d9dd5b07632d5"><span class="std std-ref">NvBlastExtAuthoringCreateFractureTool</span></a>: Create FractureTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a7c782ba7a27d4ae519a95260bf45d542.html#exhale-function-nv-blast-ext-authoring-8h-1a7c782ba7a27d4ae519a95260bf45d542"><span class="std std-ref">NvBlastExtAuthoringCreateGridAccelerator</span></a>: Create GridAccelerator - SpatialAccelerator which use Grid for faster mesh sampling.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af169fb5abb2f0475f7ef221129fcc278.html#exhale-function-nv-blast-ext-authoring-8h-1af169fb5abb2f0475f7ef221129fcc278"><span class="std std-ref">NvBlastExtAuthoringCreateMesh</span></a>: Constructs mesh object from array of triangles.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa763b10260b7d2a495fb106601977422.html#exhale-function-nv-blast-ext-authoring-8h-1aa763b10260b7d2a495fb106601977422"><span class="std std-ref">NvBlastExtAuthoringCreateMeshCleaner</span></a>: Creates MeshCleaner object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0d65b4208e0e406c8c61330610845c18.html#exhale-function-nv-blast-ext-authoring-8h-1a0d65b4208e0e406c8c61330610845c18"><span class="std std-ref">NvBlastExtAuthoringCreateMeshFromFacets</span></a>: Constructs mesh object from array of vertices, edges and facets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a5faad1bdb348d4979b2bf17b33f9b12f.html#exhale-function-nv-blast-ext-authoring-8h-1a5faad1bdb348d4979b2bf17b33f9b12f"><span class="std std-ref">NvBlastExtAuthoringCreateMeshOnlyTriangles</span></a>: Constructs mesh object from triangles represented as arrays of vertices, indices and per facet material.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a53c22dbb75e939a04e48aa0e9dfe2158.html#exhale-function-nv-blast-ext-authoring-8h-1a53c22dbb75e939a04e48aa0e9dfe2158"><span class="std std-ref">NvBlastExtAuthoringCreatePatternGenerator</span></a>: Returns pattern generator used for generating fracture patterns.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa25abe5fade09b88b159acb13161ec1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa25abe5fade09b88b159acb13161ec1c"><span class="std std-ref">NvBlastExtAuthoringCreateSpatialGrid</span></a>: Create spatial grid for mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a97122e1d0d06d7d5c6a8820c998431c8.html#exhale-function-nv-blast-ext-authoring-8h-1a97122e1d0d06d7d5c6a8820c998431c8"><span class="std std-ref">NvBlastExtAuthoringCreateSweepingAccelerator</span></a>: Create SweepingAccelerator - SpatialAccelerator which uses a sweep algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1acd91ba6bf9cb55758bd477fe114e318b.html#exhale-function-nv-blast-ext-authoring-8h-1acd91ba6bf9cb55758bd477fe114e318b"><span class="std std-ref">NvBlastExtAuthoringCreateVoronoiSitesGenerator</span></a>: Voronoi sites should not be generated outside of the fractured mesh, so VoronoiSitesGenerator should be supplied with fracture mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1afee92cc71878d2b254360ef3ee223337.html#exhale-function-nv-blast-ext-authoring-8h-1afee92cc71878d2b254360ef3ee223337"><span class="std std-ref">NvBlastExtAuthoringFindAssetConnectingBonds</span></a>: Finds bonds connecting chunks in a list of assets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa055a16eea150c155525c41f32c82b1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa055a16eea150c155525c41f32c82b1c"><span class="std std-ref">NvBlastExtAuthoringProcessFracture</span></a>: Performs pending fractures and generates fractured asset, render and collision geometry.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aaaa94617ab23d62f688504cd0e960b10.html#exhale-function-nv-blast-ext-authoring-8h-1aaaa94617ab23d62f688504cd0e960b10"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResult</span></a>: Releases AuthoringResult data.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af06631688da85de482df0bdc3400959b.html#exhale-function-nv-blast-ext-authoring-8h-1af06631688da85de482df0bdc3400959b"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResultCollision</span></a>: Releases collision data for AuthoringResult.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ab5f1213bba94999b576885bc208d30c9.html#exhale-function-nv-blast-ext-authoring-8h-1ab5f1213bba94999b576885bc208d30c9"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHull</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a3684fc5c5d206c429dfc78fe7d1c86b3.html#exhale-function-nv-blast-ext-authoring-8h-1a3684fc5c5d206c429dfc78fe7d1c86b3"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHullInPlace</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a364e68eac57e8a26eaf895452c266596.html#exhale-function-nv-blast-ext-authoring-8h-1a364e68eac57e8a26eaf895452c266596"><span class="std std-ref">NvBlastExtAuthoringTrimCollisionGeometry</span></a>: Convex geometry trimming.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a231c56bb096167d21bbbc49cc46c0592.html#exhale-function-nv-blast-ext-authoring-8h-1a231c56bb096167d21bbbc49cc46c0592"><span class="std std-ref">NvBlastExtAuthoringUpdateGraphicsMesh</span></a>: Updates graphics mesh only.</p></li>
+</ul>
+</div>
+<div class="section" id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define__nv_blast_ext_authoring_8h_1a8cce5fb79e2923fd9f846edec21c226c.html#exhale-define-nv-blast-ext-authoring-8h-1a8cce5fb79e2923fd9f846edec21c226c"><span class="std std-ref">kBBoxBasedAcceleratorDefaultResolution</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

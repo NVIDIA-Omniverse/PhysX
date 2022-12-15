@@ -1,0 +1,367 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::Mesh &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::Mesh</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-mesh">
+<span id="exhale-class-class-nv-1-1-blast-1-1-mesh"></span><h1>Nv::Blast::Mesh<a class="headerlink" href="#nv-blast-mesh" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringMesh.h.html#file-extensions-authoringcommon-nvblastextauthoringmesh-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringMesh.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast4MeshE">
+<span id="_CPPv3N2Nv5Blast4MeshE"></span><span id="_CPPv2N2Nv5Blast4MeshE"></span><span id="Nv::Blast::Mesh"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">Mesh</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast4MeshE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Class for internal mesh representation. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4MeshD0Ev">
+<span id="_CPPv3N2Nv5Blast4MeshD0Ev"></span><span id="_CPPv2N2Nv5Blast4MeshD0Ev"></span><span id="Nv::Blast::Mesh::~Mesh"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a9b5fbdd369ae324448c536ceabe82ad7"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~Mesh</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4MeshD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh7releaseEv">
+<span id="_CPPv3N2Nv5Blast4Mesh7releaseEv"></span><span id="_CPPv2N2Nv5Blast4Mesh7releaseEv"></span><span id="Nv::Blast::Mesh::release"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1adf6faa07b98b634b86a198ad4a6fcc14"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release <a class="reference internal" href="#class_nv_1_1_blast_1_1_mesh"><span class="std std-ref">Mesh</span></a> memory. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh7isValidEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh7isValidEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh7isValidEv"></span><span id="Nv::Blast::Mesh::isValidC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1acc7ba66081cfd2bd55c5eae7d6053c71"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isValid</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh7isValidEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return true if mesh is valid. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh19getVerticesWritableEv">
+<span id="_CPPv3N2Nv5Blast4Mesh19getVerticesWritableEv"></span><span id="_CPPv2N2Nv5Blast4Mesh19getVerticesWritableEv"></span><span id="Nv::Blast::Mesh::getVerticesWritable"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a55945b655bb1cb9fed0d481497942c71"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#_CPPv4N2Nv5Blast6VertexE" title="Nv::Blast::Vertex"><span class="pre">Vertex</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getVerticesWritable</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh19getVerticesWritableEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return writable pointer on vertices array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh11getVerticesEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh11getVerticesEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh11getVerticesEv"></span><span id="Nv::Blast::Mesh::getVerticesC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a927148143ec2335c9ed6dd9c65215196"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#_CPPv4N2Nv5Blast6VertexE" title="Nv::Blast::Vertex"><span class="pre">Vertex</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getVertices</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh11getVerticesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return pointer on vertices array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh16getEdgesWritableEv">
+<span id="_CPPv3N2Nv5Blast4Mesh16getEdgesWritableEv"></span><span id="_CPPv2N2Nv5Blast4Mesh16getEdgesWritableEv"></span><span id="Nv::Blast::Mesh::getEdgesWritable"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1ac3e5b150bd16d7f22b22fb571de9004f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_edge.html#_CPPv4N2Nv5Blast4EdgeE" title="Nv::Blast::Edge"><span class="pre">Edge</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getEdgesWritable</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh16getEdgesWritableEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return writable pointer on edges array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh8getEdgesEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh8getEdgesEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh8getEdgesEv"></span><span id="Nv::Blast::Mesh::getEdgesC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a085ffcc67f9cd938f93d3aa43a0d0bf0"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_edge.html#_CPPv4N2Nv5Blast4EdgeE" title="Nv::Blast::Edge"><span class="pre">Edge</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getEdges</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh8getEdgesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return pointer on edges array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh23getFacetsBufferWritableEv">
+<span id="_CPPv3N2Nv5Blast4Mesh23getFacetsBufferWritableEv"></span><span id="_CPPv2N2Nv5Blast4Mesh23getFacetsBufferWritableEv"></span><span id="Nv::Blast::Mesh::getFacetsBufferWritable"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a480c3919561789e75df950aea69fec4a"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html#_CPPv4N2Nv5Blast5FacetE" title="Nv::Blast::Facet"><span class="pre">Facet</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFacetsBufferWritable</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh23getFacetsBufferWritableEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return writable pointer on facets array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh15getFacetsBufferEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh15getFacetsBufferEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh15getFacetsBufferEv"></span><span id="Nv::Blast::Mesh::getFacetsBufferC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1adcee600d1e263eedc13561b99c7ea762"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html#_CPPv4N2Nv5Blast5FacetE" title="Nv::Blast::Facet"><span class="pre">Facet</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFacetsBuffer</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh15getFacetsBufferEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return pointer on facets array. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh16getFacetWritableE7int32_t">
+<span id="_CPPv3N2Nv5Blast4Mesh16getFacetWritableE7int32_t"></span><span id="_CPPv2N2Nv5Blast4Mesh16getFacetWritableE7int32_t"></span><span id="Nv::Blast::Mesh::getFacetWritable__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a2f6a3389000c02e892d4514fd1322765"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html#_CPPv4N2Nv5Blast5FacetE" title="Nv::Blast::Facet"><span class="pre">Facet</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFacetWritable</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">facet</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh16getFacetWritableE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return writable pointer on specified facet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh8getFacetE7int32_t">
+<span id="_CPPv3NK2Nv5Blast4Mesh8getFacetE7int32_t"></span><span id="_CPPv2NK2Nv5Blast4Mesh8getFacetE7int32_t"></span><span id="Nv::Blast::Mesh::getFacet__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a1737163f2dc8fe4456f5df27ab5740b8"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html#_CPPv4N2Nv5Blast5FacetE" title="Nv::Blast::Facet"><span class="pre">Facet</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFacet</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">facet</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh8getFacetE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return pointer on specified facet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh13getEdgesCountEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh13getEdgesCountEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh13getEdgesCountEv"></span><span id="Nv::Blast::Mesh::getEdgesCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1afc8859fe20911e2ab593b9075223a36a"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getEdgesCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh13getEdgesCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return edges count. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh16getVerticesCountEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh16getVerticesCountEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh16getVerticesCountEv"></span><span id="Nv::Blast::Mesh::getVerticesCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1ab86107cfd02392fd2a49b79fe0367887"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVerticesCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh16getVerticesCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return vertices count. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh13getFacetCountEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh13getFacetCountEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh13getFacetCountEv"></span><span id="Nv::Blast::Mesh::getFacetCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a5bb922c1dcb50c67e2105f84454019af"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getFacetCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh13getFacetCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return facet count. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh14getBoundingBoxEv">
+<span id="_CPPv3NK2Nv5Blast4Mesh14getBoundingBoxEv"></span><span id="_CPPv2NK2Nv5Blast4Mesh14getBoundingBoxEv"></span><span id="Nv::Blast::Mesh::getBoundingBoxC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a2dcb0655c4e75c15dd465e756ec6f174"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_bounds3.html#_CPPv410NvcBounds3" title="NvcBounds3"><span class="pre">NvcBounds3</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getBoundingBox</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh14getBoundingBoxEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return reference on mesh bounding box. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh22getBoundingBoxWritableEv">
+<span id="_CPPv3N2Nv5Blast4Mesh22getBoundingBoxWritableEv"></span><span id="_CPPv2N2Nv5Blast4Mesh22getBoundingBoxWritableEv"></span><span id="Nv::Blast::Mesh::getBoundingBoxWritable"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1ad7c27dcdd5d5f28da04605410721d016"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nvc_bounds3.html#_CPPv410NvcBounds3" title="NvcBounds3"><span class="pre">NvcBounds3</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getBoundingBoxWritable</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh22getBoundingBoxWritableEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return writable reference on mesh bounding box. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh13setMaterialIdEPK7int32_t">
+<span id="_CPPv3N2Nv5Blast4Mesh13setMaterialIdEPK7int32_t"></span><span id="_CPPv2N2Nv5Blast4Mesh13setMaterialIdEPK7int32_t"></span><span id="Nv::Blast::Mesh::setMaterialId__int32_tCP"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1af082c3fd4ea1badcb0263bad0682c20b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setMaterialId</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">int32_t</span> <span class="pre">*</span><em><span class="pre">materialIds</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh13setMaterialIdEPK7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set per-facet material id. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh17replaceMaterialIdE7int32_t7int32_t">
+<span id="_CPPv3N2Nv5Blast4Mesh17replaceMaterialIdE7int32_t7int32_t"></span><span id="_CPPv2N2Nv5Blast4Mesh17replaceMaterialIdE7int32_t7int32_t"></span><span id="Nv::Blast::Mesh::replaceMaterialId__int32_t.int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1acfffa10ab877367067c0651320e39852"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">replaceMaterialId</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">oldMaterialId</span></em>, <span class="pre">int32_t</span> <em><span class="pre">newMaterialId</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh17replaceMaterialIdE7int32_t7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Replaces an material id on faces with a new one. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh17setSmoothingGroupEPK7int32_t">
+<span id="_CPPv3N2Nv5Blast4Mesh17setSmoothingGroupEPK7int32_t"></span><span id="_CPPv2N2Nv5Blast4Mesh17setSmoothingGroupEPK7int32_t"></span><span id="Nv::Blast::Mesh::setSmoothingGroup__int32_tCP"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1aed83e124b04216f54989ea9f8ade52d7"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setSmoothingGroup</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">int32_t</span> <span class="pre">*</span><em><span class="pre">smoothingGroups</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh17setSmoothingGroupEPK7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set per-facet smoothing group. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh22recalculateBoundingBoxEv">
+<span id="_CPPv3N2Nv5Blast4Mesh22recalculateBoundingBoxEv"></span><span id="_CPPv2N2Nv5Blast4Mesh22recalculateBoundingBoxEv"></span><span id="Nv::Blast::Mesh::recalculateBoundingBox"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a24544d5b6a315cee19d67da9ed0fd8dd"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">recalculateBoundingBox</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh22recalculateBoundingBoxEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Recalculate bounding box. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh24getMeshVolumeAndCentroidER7NvcVec3">
+<span id="_CPPv3NK2Nv5Blast4Mesh24getMeshVolumeAndCentroidER7NvcVec3"></span><span id="_CPPv2NK2Nv5Blast4Mesh24getMeshVolumeAndCentroidER7NvcVec3"></span><span id="Nv::Blast::Mesh::getMeshVolumeAndCentroid__NvcVec3RC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a5a4bb6679bfe7f984b8e3a495e42a0a3"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">float</span> <code class="sig-name descname"><span class="pre">getMeshVolumeAndCentroid</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">centroid</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh24getMeshVolumeAndCentroidER7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Compute mesh volume and centroid. </p>
+<p>Assumes mesh has outward normals and no holes. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast4Mesh18calcPerFacetBoundsEv">
+<span id="_CPPv3N2Nv5Blast4Mesh18calcPerFacetBoundsEv"></span><span id="_CPPv2N2Nv5Blast4Mesh18calcPerFacetBoundsEv"></span><span id="Nv::Blast::Mesh::calcPerFacetBounds"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a3cb47793b60f763b5bac58c17a3c5bb8"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">calcPerFacetBounds</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast4Mesh18calcPerFacetBoundsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Calculate per-facet bounding boxes. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast4Mesh13getFacetBoundE8uint32_t">
+<span id="_CPPv3NK2Nv5Blast4Mesh13getFacetBoundE8uint32_t"></span><span id="_CPPv2NK2Nv5Blast4Mesh13getFacetBoundE8uint32_t"></span><span id="Nv::Blast::Mesh::getFacetBound__uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_mesh_1a93b7642d29e27da93b76d420a804aef2"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_bounds3.html#_CPPv410NvcBounds3" title="NvcBounds3"><span class="pre">NvcBounds3</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFacetBound</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">index</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast4Mesh13getFacetBoundE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get pointer on facet bounding box, if not calculated return nullptr. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

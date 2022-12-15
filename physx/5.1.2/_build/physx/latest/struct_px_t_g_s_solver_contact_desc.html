@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTGSSolverContactDesc &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTGSSolverContactDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtgssolvercontactdesc">
+<span id="exhale-struct-struct-px-t-g-s-solver-contact-desc"></span><h1>PxTGSSolverContactDesc<a class="headerlink" href="#pxtgssolvercontactdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#file-include-solver-pxsolverdefs-h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxTGSSolverConstraintPrepDescBase</span></code> (<a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc_base.html#exhale-struct-struct-px-t-g-s-solver-constraint-prep-desc-base"><span class="std std-ref">PxTGSSolverConstraintPrepDescBase</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv422PxTGSSolverContactDesc">
+<span id="_CPPv322PxTGSSolverContactDesc"></span><span id="_CPPv222PxTGSSolverContactDesc"></span><span id="PxTGSSolverContactDesc"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTGSSolverContactDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc_base.html#_CPPv433PxTGSSolverConstraintPrepDescBase" title="PxTGSSolverConstraintPrepDescBase"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDescBase</span></span></a><a class="headerlink" href="#_CPPv422PxTGSSolverContactDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc16shapeInteractionE">
+<span id="_CPPv3N22PxTGSSolverContactDesc16shapeInteractionE"></span><span id="_CPPv2N22PxTGSSolverContactDesc16shapeInteractionE"></span><span id="PxTGSSolverContactDesc::shapeInteraction__voidP"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a938837ce74fea03c227608ee6a50d894"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">shapeInteraction</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc16shapeInteractionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pointer to shape interaction. Used for force threshold reports in solver. Set to NULL if using immediate mode. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8contactsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8contactsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8contactsE"></span><span id="PxTGSSolverContactDesc::contacts__PxContactPointP"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a79c61027f409bb5f588cd3c19ef68d03"></span><a class="reference internal" href="struct_px_contact_point.html#_CPPv414PxContactPoint" title="PxContactPoint"><span class="n"><span class="pre">PxContactPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contacts</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8contactsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The start of the contacts for this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc11numContactsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc11numContactsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc11numContactsE"></span><span id="PxTGSSolverContactDesc::numContacts__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a71566924a2d0ebc51d688318309e0e7e"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numContacts</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc11numContactsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The total number of contacts this pair references. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13hasMaxImpulseE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13hasMaxImpulseE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13hasMaxImpulseE"></span><span id="PxTGSSolverContactDesc::hasMaxImpulse__b"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a31b779c60e6f523d3367b109a55b8498"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasMaxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13hasMaxImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines whether this pairs has maxImpulses clamping enabled. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc21disableStrongFrictionE">
+<span id="_CPPv3N22PxTGSSolverContactDesc21disableStrongFrictionE"></span><span id="_CPPv2N22PxTGSSolverContactDesc21disableStrongFrictionE"></span><span id="PxTGSSolverContactDesc::disableStrongFriction__b"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1ae94706f6d8851b7cfb9cfc054afe7fd2"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">disableStrongFriction</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc21disableStrongFrictionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines whether this pair disables strong friction (sticky friction correlation) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc18hasForceThresholdsE">
+<span id="_CPPv3N22PxTGSSolverContactDesc18hasForceThresholdsE"></span><span id="_CPPv2N22PxTGSSolverContactDesc18hasForceThresholdsE"></span><span id="PxTGSSolverContactDesc::hasForceThresholds__b"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a42cdafb4a9c8ef0daaa1dd584b2f2bd4"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasForceThresholds</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc18hasForceThresholdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines whether this pair requires force thresholds. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc12restDistanceE">
+<span id="_CPPv3N22PxTGSSolverContactDesc12restDistanceE"></span><span id="_CPPv2N22PxTGSSolverContactDesc12restDistanceE"></span><span id="PxTGSSolverContactDesc::restDistance__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a264877eb201cfe904fbe832b94ebfccc"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restDistance</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc12restDistanceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A distance at which the solver should aim to hold the bodies separated. Default is 0. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc16maxCCDSeparationE">
+<span id="_CPPv3N22PxTGSSolverContactDesc16maxCCDSeparationE"></span><span id="_CPPv2N22PxTGSSolverContactDesc16maxCCDSeparationE"></span><span id="PxTGSSolverContactDesc::maxCCDSeparation__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a32c32515e655df204dc97163c0d8f503"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxCCDSeparation</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc16maxCCDSeparationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A distance used to configure speculative CCD behavior. Default is PX_MAX_F32. Set internally in PhysX for bodies with eENABLE_SPECULATIVE_CCD on. Do not set directly! </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc11frictionPtrE">
+<span id="_CPPv3N22PxTGSSolverContactDesc11frictionPtrE"></span><span id="_CPPv2N22PxTGSSolverContactDesc11frictionPtrE"></span><span id="PxTGSSolverContactDesc::frictionPtr__PxU8P"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a4b1fadcb0c18263f2f7e31a1a8e9fcc1"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">frictionPtr</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc11frictionPtrE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>InOut: Friction patch correlation data. Set each frame by solver. Can be retained for improved behavior or discarded each frame. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13frictionCountE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13frictionCountE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13frictionCountE"></span><span id="PxTGSSolverContactDesc::frictionCount__PxU8"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a11c978927580e83557522429a291b1e0"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frictionCount</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13frictionCountE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The total number of friction patches in this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13contactForcesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13contactForcesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13contactForcesE"></span><span id="PxTGSSolverContactDesc::contactForces__PxRealP"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a2528245373f86eb6475151cff7f517c5"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">contactForces</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13contactForcesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Out: A buffer for the solver to write applied contact forces to. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc23startFrictionPatchIndexE">
+<span id="_CPPv3N22PxTGSSolverContactDesc23startFrictionPatchIndexE"></span><span id="_CPPv2N22PxTGSSolverContactDesc23startFrictionPatchIndexE"></span><span id="PxTGSSolverContactDesc::startFrictionPatchIndex__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1ad20755f12b4cc3e302af7353a923ae4f"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startFrictionPatchIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc23startFrictionPatchIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Start index of friction patch in the correlation buffer. Set by friction correlation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc18numFrictionPatchesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc18numFrictionPatchesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc18numFrictionPatchesE"></span><span id="PxTGSSolverContactDesc::numFrictionPatches__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a52c82757413cf7a74fd33543be21f9bc"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numFrictionPatches</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc18numFrictionPatchesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Total number of friction patches in this pair. Set by friction correlation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc22startContactPatchIndexE">
+<span id="_CPPv3N22PxTGSSolverContactDesc22startContactPatchIndexE"></span><span id="_CPPv2N22PxTGSSolverContactDesc22startContactPatchIndexE"></span><span id="PxTGSSolverContactDesc::startContactPatchIndex__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1aed207eb98917eeda2b19bdb2fe65f14e"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startContactPatchIndex</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc22startContactPatchIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The start index of this pair’s contact patches in the correlation buffer. For internal use only. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc17numContactPatchesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc17numContactPatchesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc17numContactPatchesE"></span><span id="PxTGSSolverContactDesc::numContactPatches__PxU16"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1ad451864f355f80ff88b943b9f3ec6079"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">numContactPatches</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc17numContactPatchesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Total number of contact patches. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc19axisConstraintCountE">
+<span id="_CPPv3N22PxTGSSolverContactDesc19axisConstraintCountE"></span><span id="_CPPv2N22PxTGSSolverContactDesc19axisConstraintCountE"></span><span id="PxTGSSolverContactDesc::axisConstraintCount__PxU16"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1ac846e96c932f98fe0ade48f813c464c6"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">axisConstraintCount</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc19axisConstraintCountE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Axis constraint count. Defines how many constraint rows this pair has produced. Useful for statistical purposes. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10maxImpulseE">
+<span id="_CPPv3N22PxTGSSolverContactDesc10maxImpulseE"></span><span id="_CPPv2N22PxTGSSolverContactDesc10maxImpulseE"></span><span id="PxTGSSolverContactDesc::maxImpulse__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a0ff123ce07992aa9ba795366f347aed1"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10maxImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum impulse the solver is allowed to introduce for this pair of bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc20torsionalPatchRadiusE">
+<span id="_CPPv3N22PxTGSSolverContactDesc20torsionalPatchRadiusE"></span><span id="_CPPv2N22PxTGSSolverContactDesc20torsionalPatchRadiusE"></span><span id="PxTGSSolverContactDesc::torsionalPatchRadius__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a9925f638d123b5636e4b3ab9d58966ff"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">torsionalPatchRadius</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc20torsionalPatchRadiusE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This defines the radius of the contact patch used to apply torsional friction. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE">
+<span id="_CPPv3N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE"></span><span id="_CPPv2N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE"></span><span id="PxTGSSolverContactDesc::minTorsionalPatchRadius__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a009c28b94dbb4e2bf77ee50f187924be"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minTorsionalPatchRadius</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc23minTorsionalPatchRadiusE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This defines the minimum radius of the contact patch used to apply torsional friction. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10offsetSlopE">
+<span id="_CPPv3N22PxTGSSolverContactDesc10offsetSlopE"></span><span id="_CPPv2N22PxTGSSolverContactDesc10offsetSlopE"></span><span id="PxTGSSolverContactDesc::offsetSlop__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_contact_desc_1a28cf786b988432f341c733df59a8361b"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">offsetSlop</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10offsetSlopE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Slop value used to snap contact line of action back in-line with the COM. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc13invMassScalesE">
+<span id="_CPPv3N22PxTGSSolverContactDesc13invMassScalesE"></span><span id="_CPPv2N22PxTGSSolverContactDesc13invMassScalesE"></span><span id="PxTGSSolverContactDesc::invMassScales__PxConstraintInvMassScale"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1aae266269124532f1dee273c75209d9fb"></span><a class="reference internal" href="struct_px_constraint_inv_mass_scale.html#_CPPv424PxConstraintInvMassScale" title="PxConstraintInvMassScale"><span class="n"><span class="pre">PxConstraintInvMassScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invMassScales</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc13invMassScalesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The local mass scaling for this pair. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc4descE">
+<span id="_CPPv3N22PxTGSSolverContactDesc4descE"></span><span id="_CPPv2N22PxTGSSolverContactDesc4descE"></span><span id="PxTGSSolverContactDesc::desc__PxSolverConstraintDescP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a6a53ca0ea9f69a6581f2b44ed1ea8aa4"></span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">desc</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc4descE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Output: The <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> filled in by contact prep. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc5body0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc5body0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc5body0E"></span><span id="PxTGSSolverContactDesc::body0__PxTGSSolverBodyVelCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a1b333a2fea69f88f1c11c9f812052e0f"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc5body0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc5body1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc5body1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc5body1E"></span><span id="PxTGSSolverContactDesc::body1__PxTGSSolverBodyVelCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1ac428634b273386f0edf5e17ea3fd0049"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc5body1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second body. Stores velocity information. Unused unless contact involves articulations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8body0TxIE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8body0TxIE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8body0TxIE"></span><span id="PxTGSSolverContactDesc::body0TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a51d8370090983c269966739e14979e4a"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body0TxI</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8body0TxIE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#struct_px_t_g_s_solver_body_tx_inertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc8body1TxIE">
+<span id="_CPPv3N22PxTGSSolverContactDesc8body1TxIE"></span><span id="_CPPv2N22PxTGSSolverContactDesc8body1TxIE"></span><span id="PxTGSSolverContactDesc::body1TxI__PxTGSSolverBodyTxInertiaCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1abf87509917d688f2296b3e4ca1883bc2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">body1TxI</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc8body1TxIE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#struct_px_t_g_s_solver_body_tx_inertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a>. Stores the delta body to world transform and sqrtInvInertia for second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc9bodyData0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc9bodyData0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc9bodyData0E"></span><span id="PxTGSSolverContactDesc::bodyData0__PxTGSSolverBodyDataCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a1bf247709055aaa9e9c702d76de6c866"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The first <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#struct_px_t_g_s_solver_body_data"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc9bodyData1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc9bodyData1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc9bodyData1E"></span><span id="PxTGSSolverContactDesc::bodyData1__PxTGSSolverBodyDataCP"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a93cdc318c9c74323988c5204870b6733"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">bodyData1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc9bodyData1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The second <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#struct_px_t_g_s_solver_body_data"><span class="std std-ref">PxTGSSolverBodyData</span></a>. Stores mass and miscellaneous information for the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyFrame0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyFrame0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyFrame0E"></span><span id="PxTGSSolverContactDesc::bodyFrame0__PxTransform"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1aeba37ba193902e0141dc9cd4d6cacaf2"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The world-space transform of the first body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyFrame1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyFrame1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyFrame1E"></span><span id="PxTGSSolverContactDesc::bodyFrame1__PxTransform"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a6a22f7cd3293b9877ec97560b1862e8c"></span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyFrame1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyFrame1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: The world-space transform of the second body. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyState0E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyState0E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyState0E"></span><span id="PxTGSSolverContactDesc::bodyState0__PxSolverContactDesc::BodyState"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a661a0d94ab747d3f6e71deb44179f74a"></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState0</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: Defines what kind of actor the first body is. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTGSSolverContactDesc10bodyState1E">
+<span id="_CPPv3N22PxTGSSolverContactDesc10bodyState1E"></span><span id="_CPPv2N22PxTGSSolverContactDesc10bodyState1E"></span><span id="PxTGSSolverContactDesc::bodyState1__PxSolverContactDesc::BodyState"></span><span class="target" id="struct_px_t_g_s_solver_constraint_prep_desc_base_1a00e4ad46100575375c9fcddd86a166b3"></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv4N19PxSolverContactDesc9BodyStateE" title="PxSolverContactDesc::BodyState"><span class="n"><span class="pre">BodyState</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bodyState1</span></span></span><a class="headerlink" href="#_CPPv4N22PxTGSSolverContactDesc10bodyState1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>In: Defines what kind of actor the second body is. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

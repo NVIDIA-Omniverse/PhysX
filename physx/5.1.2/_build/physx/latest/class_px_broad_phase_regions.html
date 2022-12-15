@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBroadPhaseRegions &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBroadPhaseRegions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbroadphaseregions">
+<span id="exhale-class-class-px-broad-phase-regions"></span><h1>PxBroadPhaseRegions<a class="headerlink" href="#pxbroadphaseregions" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxBroadPhase.h.html#file-include-pxbroadphase-h"><span class="std std-ref">include/PxBroadPhase.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxBroadPhaseRegions">
+<span id="_CPPv319PxBroadPhaseRegions"></span><span id="_CPPv219PxBroadPhaseRegions"></span><span id="PxBroadPhaseRegions"></span><span class="target" id="class_px_broad_phase_regions"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhaseRegions</span></span></span><a class="headerlink" href="#_CPPv419PxBroadPhaseRegions" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Broadphase regions. </p>
+<p>An API to manage broadphase regions. Only needed for the MBP broadphase (<a class="reference internal" href="struct_px_broad_phase_type.html#struct_px_broad_phase_type_1ac7422f895533bff02d0043d35a2b7ddaabe0a5c309436a84e58c227c548fa17da"><span class="std std-ref">PxBroadPhaseType::eMBP</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase.html#class_px_broad_phase_1ab9b5b696fb3e7ad72db1769b91902387"><span class="std std-ref">PxBroadPhase::getRegions()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBroadPhaseRegions12getNbRegionsEv">
+<span id="_CPPv3NK19PxBroadPhaseRegions12getNbRegionsEv"></span><span id="_CPPv2NK19PxBroadPhaseRegions12getNbRegionsEv"></span><span id="PxBroadPhaseRegions::getNbRegionsC"></span><span class="target" id="class_px_broad_phase_regions_1ad7b7b32b31122d4bf0c3161ae2b2dc1b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbRegions</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBroadPhaseRegions12getNbRegionsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns number of regions currently registered in the broad-phase. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of regions </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBroadPhaseRegions10getRegionsEP22PxBroadPhaseRegionInfo5PxU325PxU32">
+<span id="_CPPv3NK19PxBroadPhaseRegions10getRegionsEP22PxBroadPhaseRegionInfo5PxU325PxU32"></span><span id="_CPPv2NK19PxBroadPhaseRegions10getRegionsEP22PxBroadPhaseRegionInfo5PxU325PxU32"></span><span id="PxBroadPhaseRegions::getRegions__PxBroadPhaseRegionInfoP.PxU32.PxU32C"></span><span class="target" id="class_px_broad_phase_regions_1ae545d1ef079b27cae70192b0e4b19b29"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRegions</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_broad_phase_region_info.html#_CPPv422PxBroadPhaseRegionInfo" title="PxBroadPhaseRegionInfo"><span class="n"><span class="pre">PxBroadPhaseRegionInfo</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBroadPhaseRegions10getRegionsEP22PxBroadPhaseRegionInfo5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets broad-phase regions. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_region_info.html#struct_px_broad_phase_region_info"><span class="std std-ref">PxBroadPhaseRegionInfo</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – [out] Returned broad-phase regions </p></li>
+<li><p><strong>bufferSize</strong> – [in] Size of provided userBuffer. </p></li>
+<li><p><strong>startIndex</strong> – [in] Index of first desired region, in [0 ; <a class="reference internal" href="#class_px_broad_phase_regions_1ad7b7b32b31122d4bf0c3161ae2b2dc1b"><span class="std std-ref">getNbRegions()</span></a>[ </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of written out regions. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBroadPhaseRegions9addRegionERK18PxBroadPhaseRegionbPK9PxBounds3PKf">
+<span id="_CPPv3N19PxBroadPhaseRegions9addRegionERK18PxBroadPhaseRegionbPK9PxBounds3PKf"></span><span id="_CPPv2N19PxBroadPhaseRegions9addRegionERK18PxBroadPhaseRegionbPK9PxBounds3PKf"></span><span id="PxBroadPhaseRegions::addRegion__PxBroadPhaseRegionCR.b.PxBounds3CP.floatCP"></span><span class="target" id="class_px_broad_phase_regions_1ae8b0e2c62fbb36b72938cfa0186899c6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addRegion</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_broad_phase_region.html#_CPPv418PxBroadPhaseRegion" title="PxBroadPhaseRegion"><span class="n"><span class="pre">PxBroadPhaseRegion</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">region</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">populateRegion</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bounds</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">distances</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBroadPhaseRegions9addRegionERK18PxBroadPhaseRegionbPK9PxBounds3PKf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a new broad-phase region. </p>
+<p>The total number of regions is limited to <a class="reference internal" href="struct_px_broad_phase_caps.html#struct_px_broad_phase_caps_1a56149e86e4ee36df69b7d9bdca52d319"><span class="std std-ref">PxBroadPhaseCaps::mMaxNbRegions</span></a>. If that number is exceeded, the call is ignored.</p>
+<p>The newly added region will be automatically populated with already existing objects that touch it, if the ‘populateRegion’ parameter is set to true. Otherwise the newly added region will be empty, and it will only be populated with objects when those objects are added to the simulation, or updated if they already exist.</p>
+<p>Using ‘populateRegion=true’ has a cost, so it is best to avoid it if possible. In particular it is more efficient to create the empty regions first (with populateRegion=false) and then add the objects afterwards (rather than the opposite).</p>
+<p>Objects automatically move from one region to another during their lifetime. The system keeps tracks of what regions a given object is in. It is legal for an object to be in an arbitrary number of regions. However if an object leaves all regions, or is created outside of all regions, several things happen:<ul class="simple">
+<li><p>collisions get disabled for this object</p></li>
+<li><p>the object appears in the getOutOfBoundsObjects() array</p></li>
+</ul>
+</p>
+<p>If an out-of-bounds object, whose collisions are disabled, re-enters a valid broadphase region, then collisions are re-enabled for that object.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_broad_phase_region.html#struct_px_broad_phase_region"><span class="std std-ref">PxBroadPhaseRegion</span></a> getOutOfBoundsObjects() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>region</strong> – [in] User-provided region data </p></li>
+<li><p><strong>populateRegion</strong> – [in] True to automatically populate the newly added region with existing objects touching it </p></li>
+<li><p><strong>bounds</strong> – [in] User-managed array of bounds </p></li>
+<li><p><strong>distances</strong> – [in] User-managed array of distances</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Handle for newly created region, or 0xffffffff in case of failure. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBroadPhaseRegions12removeRegionE5PxU32">
+<span id="_CPPv3N19PxBroadPhaseRegions12removeRegionE5PxU32"></span><span id="_CPPv2N19PxBroadPhaseRegions12removeRegionE5PxU32"></span><span id="PxBroadPhaseRegions::removeRegion__PxU32"></span><span class="target" id="class_px_broad_phase_regions_1a236002b16183026d6ec114d6bb6ac735"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeRegion</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">handle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBroadPhaseRegions12removeRegionE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes a broad-phase region. </p>
+<p>If the region still contains objects, and if those objects do not overlap any region any more, they are not automatically removed from the simulation. Instead, the <a class="reference internal" href="class_px_broad_phase_callback.html#class_px_broad_phase_callback_1ab7aa03ff4a741400562bd5787a7aaca0"><span class="std std-ref">PxBroadPhaseCallback::onObjectOutOfBounds</span></a> notification is used for each object. Users are responsible for removing the objects from the simulation if this is the desired behavior.</p>
+<p>If the handle is invalid, or if a valid handle is removed twice, an error message is sent to the error stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handle</strong> – [in] Region’s handle, as returned by addRegion </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBroadPhaseRegions23getNbOutOfBoundsObjectsEv">
+<span id="_CPPv3NK19PxBroadPhaseRegions23getNbOutOfBoundsObjectsEv"></span><span id="_CPPv2NK19PxBroadPhaseRegions23getNbOutOfBoundsObjectsEv"></span><span id="PxBroadPhaseRegions::getNbOutOfBoundsObjectsC"></span><span class="target" id="class_px_broad_phase_regions_1aef7e002fd51dea062db7232f23526c13"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbOutOfBoundsObjects</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBroadPhaseRegions23getNbOutOfBoundsObjectsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBroadPhaseRegions21getOutOfBoundsObjectsEv">
+<span id="_CPPv3NK19PxBroadPhaseRegions21getOutOfBoundsObjectsEv"></span><span id="_CPPv2NK19PxBroadPhaseRegions21getOutOfBoundsObjectsEv"></span><span id="PxBroadPhaseRegions::getOutOfBoundsObjectsC"></span><span class="target" id="class_px_broad_phase_regions_1a997cf45833364eeedcc359fd3b9ac559"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getOutOfBoundsObjects</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBroadPhaseRegions21getOutOfBoundsObjectsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBroadPhaseRegions19PxBroadPhaseRegionsEv">
+<span id="_CPPv3N19PxBroadPhaseRegions19PxBroadPhaseRegionsEv"></span><span id="_CPPv2N19PxBroadPhaseRegions19PxBroadPhaseRegionsEv"></span><span id="PxBroadPhaseRegions::PxBroadPhaseRegions"></span><span class="target" id="class_px_broad_phase_regions_1a3db2356092eab16a050b548d70ab7aa0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBroadPhaseRegions</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBroadPhaseRegions19PxBroadPhaseRegionsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBroadPhaseRegionsD0Ev">
+<span id="_CPPv3N19PxBroadPhaseRegionsD0Ev"></span><span id="_CPPv2N19PxBroadPhaseRegionsD0Ev"></span><span id="PxBroadPhaseRegions::~PxBroadPhaseRegions"></span><span class="target" id="class_px_broad_phase_regions_1ab3e9edc5f1805f7e5d3dff7ae8f7f0ef"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBroadPhaseRegions</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBroadPhaseRegionsD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

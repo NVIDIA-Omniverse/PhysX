@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Extensions (NvBlastExt) &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Damage Shaders (NvBlastExtShaders)" href="ext_shaders.html" />
+    <link rel="prev" title="High Level (Toolkit) API (NvBlastTk)" href="../api_hl_users_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Extensions (NvBlastExt)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ext_shaders.html">Damage Shaders (NvBlastExtShaders)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html">Stress Solver (NvBlastExtStress)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html">Asset Utilities (NvBlastExtAssetUtils)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html">Asset Authoring (NvBlastExtAuthoring)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html">Serialization (NvBlastExtSerialization)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_tkserialization.html">BlastTk Serialization (NvBlastExtTkSerialization)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Extensions (NvBlastExt)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extensions-nvblastext">
+<span id="pageextapi"></span><h1>Extensions (NvBlastExt)<a class="headerlink" href="#extensions-nvblastext" title="Permalink to this headline">¶</a></h1>
+<p>These are the current Blast extensions:</p>
+<p><a class="reference internal" href="ext_shaders.html#pageextshaders"><span class="std std-ref">Damage Shaders (NvBlastExtShaders)</span></a> - Standard damage shaders (radial, shear, line segment) which can be used in NvBlast and NvBlastTk damage functions.</p>
+<p><a class="reference internal" href="ext_stress.html#pageextstress"><span class="std std-ref">Stress Solver (NvBlastExtStress)</span></a> - A toolkit for performing stress calculations on low-level Blast actors, using a minimal API to assign masses and apply forces.  Does not use any external physics library.</p>
+<p><a class="reference internal" href="ext_assetutils.html#pageextassetutils"><span class="std std-ref">Asset Utilities (NvBlastExtAssetUtils)</span></a> - NvBlastAsset utility functions.  Add world bonds, merge assets, and transform geometric data.</p>
+<p><a class="reference internal" href="ext_authoring.html#pageextauthoring"><span class="std std-ref">Asset Authoring (NvBlastExtAuthoring)</span></a> - Powerful tools for cleaning and fracturing meshes using voronoi, clustered voronoi, and slicing methods.</p>
+<p><a class="reference internal" href="ext_serialization.html#pageextserialization"><span class="std std-ref">Serialization (NvBlastExtSerialization)</span></a> - Blast object serialization manager.  With the ExtTkSerialization and ExtPxSerialization extensions, can serialize assets for low-level, Tk, and ExtPhysX libraries using a variety of encodings.  This extension comes with low-level serializers built-in.</p>
+<p><a class="reference internal" href="ext_tkserialization.html#pageexttkserialization"><span class="std std-ref">BlastTk Serialization (NvBlastExtTkSerialization)</span></a> - This module contains serializers for NvBlastTk objects.  Use in conjunction  with ExtSerialization.</p>
+<p>To use them, include the appropriate headers in include/extensions (each extension will describe which headers are necessary),
+and link to the desired NvBlastExt*{config}{arch} library in the lib folder.  Here, config is the usual DEBUG/CHECKED/PROFILE (or nothing for release),
+and {arch} distinguishes achitecture, if needed (such as _x86 or _x64).</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ext_shaders.html">Damage Shaders (NvBlastExtShaders)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext_stress.html">Stress Solver (NvBlastExtStress)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html#settings-tuning">Settings Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ext_assetutils.html">Asset Utilities (NvBlastExtAssetUtils)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html#add-world-bonds">Add World Bonds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html#merge-assets">Merge Assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html#transform-in-place">Transform In-Place</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ext_authoring.html">Asset Authoring (NvBlastExtAuthoring)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html#fracturetool">FractureTool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html#mesh-restrictions">Mesh Restrictions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html#convexmeshbuilder">ConvexMeshBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html#bondgenerator">BondGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html#meshcleaner">MeshCleaner</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ext_serialization.html">Serialization (NvBlastExtSerialization)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html#serialization-writing">Serialization (writing)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html#deserialization-reading">Deserialization (reading)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html#detecting-the-object-type-in-a-buffer">Detecting the Object Type in a Buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html#cleaning-up">Cleaning Up</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ext_tkserialization.html">BlastTk Serialization (NvBlastExtTkSerialization)</a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

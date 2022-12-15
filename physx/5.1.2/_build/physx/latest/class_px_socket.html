@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSocket &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSocket</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsocket">
+<span id="exhale-class-class-px-socket"></span><h1>PxSocket<a class="headerlink" href="#pxsocket" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxSocket.h.html#file-include-foundation-pxsocket-h"><span class="std std-ref">include/foundation/PxSocket.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxUserAllocated</span></code> (<a class="reference internal" href="class_px_user_allocated.html#exhale-class-class-px-user-allocated"><span class="std std-ref">PxUserAllocated</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv48PxSocket">
+<span id="_CPPv38PxSocket"></span><span id="_CPPv28PxSocket"></span><span id="PxSocket"></span><span class="target" id="class_px_socket"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSocket</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_user_allocated.html#_CPPv415PxUserAllocated" title="PxUserAllocated"><span class="n"><span class="pre">PxUserAllocated</span></span></a><a class="headerlink" href="#_CPPv48PxSocket" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Socket abstraction API. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket8PxSocketEbb">
+<span id="_CPPv3N8PxSocket8PxSocketEbb"></span><span id="_CPPv2N8PxSocket8PxSocketEbb"></span><span id="PxSocket::PxSocket__b.b"></span><span class="target" id="class_px_socket_1a109b426a073737f7ca7db447052d4258"></span><span class="sig-name descname"><span class="n"><span class="pre">PxSocket</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">inEnableBuffering</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">blocking</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket8PxSocketEbb" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocketD0Ev">
+<span id="_CPPv3N8PxSocketD0Ev"></span><span id="_CPPv2N8PxSocketD0Ev"></span><span id="PxSocket::~PxSocket"></span><span class="target" id="class_px_socket_1a24f3aa7b1542232f06c832a55edb8618"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSocket</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocketD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket7connectEPKc8uint16_t8uint32_t">
+<span id="_CPPv3N8PxSocket7connectEPKc8uint16_t8uint32_t"></span><span id="_CPPv2N8PxSocket7connectEPKc8uint16_t8uint32_t"></span><span id="PxSocket::connect__cCP.uint16_t.uint32_t"></span><span class="target" id="class_px_socket_1a8b8688481d076c8aa51caa524578f56b"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">connect</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">host</span></span>, <span class="n"><span class="pre">uint16_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">port</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeout</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1000</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket7connectEPKc8uint16_t8uint32_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Opens a network socket for input and/or output</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – Name of the host to connect to. This can be an IP, URL, etc</p></li>
+<li><p><strong>port</strong> – The port to connect to on the remote host</p></li>
+<li><p><strong>timeout</strong> – Timeout in ms until the connection must be established.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the connection was successful, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket6listenE8uint16_t">
+<span id="_CPPv3N8PxSocket6listenE8uint16_t"></span><span id="_CPPv2N8PxSocket6listenE8uint16_t"></span><span id="PxSocket::listen__uint16_t"></span><span class="target" id="class_px_socket_1a8850616a70b8206989bf9f76ad7dc959"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">listen</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint16_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">port</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket6listenE8uint16_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Opens a network socket for input and/or output as a server. Put the connection in listening mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>port</strong> – The port on which the socket listens </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket6acceptEb">
+<span id="_CPPv3N8PxSocket6acceptEb"></span><span id="_CPPv2N8PxSocket6acceptEb"></span><span id="PxSocket::accept__b"></span><span class="target" id="class_px_socket_1a5d50e5598df204a973b68145527e1b4e"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">accept</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket6acceptEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Accept a connection on a socket that is in listening mode</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method only supports a single connection client. Additional clients that connect to the listening port will overwrite the existing socket handle.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>block</strong> – whether or not the call should block</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether a connection was established </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket10disconnectEv">
+<span id="_CPPv3N8PxSocket10disconnectEv"></span><span id="_CPPv2N8PxSocket10disconnectEv"></span><span id="PxSocket::disconnect"></span><span class="target" id="class_px_socket_1aedcfa93ac8a685e2cc8a9fabd03b59db"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">disconnect</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket10disconnectEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Disconnects an open socket </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK8PxSocket11isConnectedEv">
+<span id="_CPPv3NK8PxSocket11isConnectedEv"></span><span id="_CPPv2NK8PxSocket11isConnectedEv"></span><span id="PxSocket::isConnectedC"></span><span class="target" id="class_px_socket_1a14f48328f63a4672f4d58e013e913988"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isConnected</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK8PxSocket11isConnectedEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether the socket is currently open (connected) or not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the socket is connected, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK8PxSocket7getHostEv">
+<span id="_CPPv3NK8PxSocket7getHostEv"></span><span id="_CPPv2NK8PxSocket7getHostEv"></span><span id="PxSocket::getHostC"></span><span class="target" id="class_px_socket_1a953a509fa9e5698388f76dcf84584eb9"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getHost</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK8PxSocket7getHostEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the name of the connected host. This is the same as the string that was supplied to the connect call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The name of the connected host </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK8PxSocket7getPortEv">
+<span id="_CPPv3NK8PxSocket7getPortEv"></span><span id="_CPPv2NK8PxSocket7getPortEv"></span><span id="PxSocket::getPortC"></span><span class="target" id="class_px_socket_1a3212395f59bfbd067733a7605cf14e5d"></span><span class="n"><span class="pre">uint16_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPort</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK8PxSocket7getPortEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the port of the connected host. This is the same as the port that was supplied to the connect call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The port of the connected host </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket5flushEv">
+<span id="_CPPv3N8PxSocket5flushEv"></span><span id="_CPPv2N8PxSocket5flushEv"></span><span id="PxSocket::flush"></span><span class="target" id="class_px_socket_1a4ab21c166c30ea8079e32a2581272a84"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flush</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket5flushEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes the output stream. Until the stream is flushed, there is no guarantee that the written data has actually reached the destination storage. Flush forces all buffered data to be sent to the output.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>flush always blocks. If the socket is in non-blocking mode, this will result the thread spinning.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the flush was successful, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket5writeEPK7uint8_t8uint32_t">
+<span id="_CPPv3N8PxSocket5writeEPK7uint8_t8uint32_t"></span><span id="_CPPv2N8PxSocket5writeEPK7uint8_t8uint32_t"></span><span id="PxSocket::write__uint8_tCP.uint32_t"></span><span class="target" id="class_px_socket_1a0913eb8362891ffe6aa4f68f9b9e8670"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">length</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket5writeEPK7uint8_t8uint32_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Writes data to the output stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Pointer to a block of data to write to the stream</p></li>
+<li><p><strong>length</strong> – Amount of data to write, in bytes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of bytes actually written. This could be lower than length if the socket is non-blocking. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket4readEP7uint8_t8uint32_t">
+<span id="_CPPv3N8PxSocket4readEP7uint8_t8uint32_t"></span><span id="_CPPv2N8PxSocket4readEP7uint8_t8uint32_t"></span><span id="PxSocket::read__uint8_tP.uint32_t"></span><span class="target" id="class_px_socket_1a1986a1fb04292e25874fa1c5e56ccb5c"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">length</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket4readEP7uint8_t8uint32_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reads data from the output stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Pointer to a buffer where the read data will be stored.</p></li>
+<li><p><strong>length</strong> – Amount of data to read, in bytes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of bytes actually read. This could be lower than length if the stream end is encountered or the socket is non-blocking. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket11setBlockingEb">
+<span id="_CPPv3N8PxSocket11setBlockingEb"></span><span id="_CPPv2N8PxSocket11setBlockingEb"></span><span id="PxSocket::setBlocking__b"></span><span class="target" id="class_px_socket_1ad0f020591ade39431dc8761e189aa258"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBlocking</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">blocking</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocket11setBlockingEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets blocking mode of the socket. Socket must be connected, otherwise calling this method won’t take any effect. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK8PxSocket10isBlockingEv">
+<span id="_CPPv3NK8PxSocket10isBlockingEv"></span><span id="_CPPv2NK8PxSocket10isBlockingEv"></span><span id="PxSocket::isBlockingC"></span><span class="target" id="class_px_socket_1adddba2b830ed621133a6915c3b6048fd"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isBlocking</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK8PxSocket10isBlockingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether read/write/flush calls to the socket are blocking.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the socket is blocking. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocketnwE6size_tPv">
+<span id="_CPPv3N8PxSocketnwE6size_tPv"></span><span id="_CPPv2N8PxSocketnwE6size_tPv"></span><span id="PxSocket::new-operator__s.voidP"></span><span class="target" id="class_px_user_allocated_1a043559a17027a1d32204be66e9b1d3f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocketnwE6size_tPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketnwEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketnwE6size_t5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketnwE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1af3309032413ea5ee85c18785a6ad56a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketnwEPv6size_t5AllocPKci" title="PxSocket::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketnwEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketnwEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketnwE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketnwE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1ade2b81f765dc68139ce8ae091b54796f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketnwEPv6size_t6size_t5AllocPKci" title="PxSocket::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketnwEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocketdlEPvPv">
+<span id="_CPPv3N8PxSocketdlEPvPv"></span><span id="_CPPv2N8PxSocketdlEPvPv"></span><span id="PxSocket::delete-operator__voidP.voidP"></span><span class="target" id="class_px_user_allocated_1a04c7cb45584c4f0ce7a8347ca740896b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span>, <span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocketdlEPvPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketdlEvPv5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketdlEPv5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketdlEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a3cf613200747f3cefb86a365c74aa162"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketdlEvPv5AllocPKci" title="PxSocket::operator delete::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketdlEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocketdlEPv">
+<span id="_CPPv3N8PxSocketdlEPv"></span><span id="_CPPv2N8PxSocketdlEPv"></span><span id="PxSocket::delete-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2c4e502fe3d2248c358dd77dd3057238"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocketdlEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketnaEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketnaE6size_t5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketnaE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a20c94aa14dae1e05c23b2c9d2a6a0362"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketnaEPv6size_t5AllocPKci" title="PxSocket::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketnaEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketnaEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketnaE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketnaE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a71597b7a868015bda81c507955cc580d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketnaEPv6size_t6size_t5AllocPKci" title="PxSocket::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketnaEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN8PxSocketdaEvPv5AllocPKci">
+<span id="_CPPv3I0EN8PxSocketdaEPv5AllocPKci"></span><span id="_CPPv2I0EN8PxSocketdaEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a27bba9023c672c7294bf98666139f482"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN8PxSocketdaEvPv5AllocPKci" title="PxSocket::operator delete[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN8PxSocketdaEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocketdaEPv">
+<span id="_CPPv3N8PxSocketdaEPv"></span><span id="_CPPv2N8PxSocketdaEPv"></span><span id="PxSocket::delete-array-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2b6969f7ac154e808f41a906a25a4a05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8PxSocketdaEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8PxSocket19DEFAULT_BUFFER_SIZEE">
+<span id="_CPPv3N8PxSocket19DEFAULT_BUFFER_SIZEE"></span><span id="_CPPv2N8PxSocket19DEFAULT_BUFFER_SIZEE"></span><span id="PxSocket::DEFAULT_BUFFER_SIZE__uint32_tC"></span><span class="target" id="class_px_socket_1a0ff86c2377c33a80099d01842ac50a1f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">DEFAULT_BUFFER_SIZE</span></span></span><a class="headerlink" href="#_CPPv4N8PxSocket19DEFAULT_BUFFER_SIZEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

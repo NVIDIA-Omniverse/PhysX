@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::IMeshFileReader &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::IMeshFileReader</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-imeshfilereader">
+<span id="exhale-class-class-nv-1-1-blast-1-1-i-mesh-file-reader"></span><h1>Nv::Blast::IMeshFileReader<a class="headerlink" href="#nv-blast-imeshfilereader" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_exporter_NvBlastExtExporter.h.html#file-extensions-exporter-nvblastextexporter-h"><span class="std std-ref">extensions/exporter/NvBlastExtExporter.h</span></a></p>
+<div class="section" id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::IFbxFileReader</span></code> (<a class="reference internal" href="class_nv_1_1_blast_1_1_i_fbx_file_reader.html#exhale-class-class-nv-1-1-blast-1-1-i-fbx-file-reader"><span class="std std-ref">Nv::Blast::IFbxFileReader</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReaderE">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReaderE"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReaderE"></span><span id="Nv::Blast::IMeshFileReader"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">IMeshFileReader</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReaderE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>An interface for Blast mesh file reader. </p>
+<p>Subclassed by <a class="reference internal" href="class_nv_1_1_blast_1_1_i_fbx_file_reader.html#class_nv_1_1_blast_1_1_i_fbx_file_reader"><span class="std std-ref">Nv::Blast::IFbxFileReader</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader7releaseEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader7releaseEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader7releaseEv"></span><span id="Nv::Blast::IMeshFileReader::release"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1af42b5decf7c2527a2879526218ff1457"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Delete this object. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader12loadFromFileEPKc">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader12loadFromFileEPKc"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader12loadFromFileEPKc"></span><span id="Nv::Blast::IMeshFileReader::loadFromFile__cCP"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a7de7c52ffac1608fc1a8ded9cf5d9877"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">loadFromFile</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">char</span> <span class="pre">*</span><em><span class="pre">filename</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader12loadFromFileEPKc" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15IMeshFileReader16getVerticesCountEv">
+<span id="_CPPv3NK2Nv5Blast15IMeshFileReader16getVerticesCountEv"></span><span id="_CPPv2NK2Nv5Blast15IMeshFileReader16getVerticesCountEv"></span><span id="Nv::Blast::IMeshFileReader::getVerticesCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1aa3490dad05f3e1c701c5e4c6a8bf8fcc"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVerticesCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15IMeshFileReader16getVerticesCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of loaded vertices. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast15IMeshFileReader15getIndicesCountEv">
+<span id="_CPPv3NK2Nv5Blast15IMeshFileReader15getIndicesCountEv"></span><span id="_CPPv2NK2Nv5Blast15IMeshFileReader15getIndicesCountEv"></span><span id="Nv::Blast::IMeshFileReader::getIndicesCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a90fefa5f9bb97a6fa1620d21dde91f1b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getIndicesCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast15IMeshFileReader15getIndicesCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of loaded indices. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader16getPositionArrayEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader16getPositionArrayEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader16getPositionArrayEv"></span><span id="Nv::Blast::IMeshFileReader::getPositionArray"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1adc2cd50409ba9fd286570f41d0bf5cc1"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getPositionArray</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader16getPositionArrayEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded vertex positions. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader15getNormalsArrayEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader15getNormalsArrayEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader15getNormalsArrayEv"></span><span id="Nv::Blast::IMeshFileReader::getNormalsArray"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a9e2310a080883391b0c91f997b31ee67"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getNormalsArray</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader15getNormalsArrayEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded vertex normals. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader10getUvArrayEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader10getUvArrayEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader10getUvArrayEv"></span><span id="Nv::Blast::IMeshFileReader::getUvArray"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a52fd70f13257ec57bf00a5109335fa24"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nvc_vec2.html#_CPPv47NvcVec2" title="NvcVec2"><span class="pre">NvcVec2</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getUvArray</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader10getUvArrayEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded vertex uv-coordinates. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader14getMaterialIdsEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader14getMaterialIdsEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader14getMaterialIdsEv"></span><span id="Nv::Blast::IMeshFileReader::getMaterialIds"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1ade11b237f952e345a0fe51ea723bbf78"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getMaterialIds</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader14getMaterialIdsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded per triangle material ids. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader18getSmoothingGroupsEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader18getSmoothingGroupsEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader18getSmoothingGroupsEv"></span><span id="Nv::Blast::IMeshFileReader::getSmoothingGroups"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1abc8eec8be3fec8415a7ca40e5b1d7976"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getSmoothingGroups</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader18getSmoothingGroupsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded per triangle smoothing groups. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader15getMaterialNameE7int32_t">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader15getMaterialNameE7int32_t"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader15getMaterialNameE7int32_t"></span><span id="Nv::Blast::IMeshFileReader::getMaterialName__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1aa369ee4923ae0cfff1c65155f2926a32"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <span class="pre">char</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getMaterialName</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">id</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader15getMaterialNameE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get material name. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader16getMaterialCountEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader16getMaterialCountEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader16getMaterialCountEv"></span><span id="Nv::Blast::IMeshFileReader::getMaterialCount"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a37cba744c380c56f62a9bc0e181e410a"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">getMaterialCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader16getMaterialCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get material count. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader13getIndexArrayEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader13getIndexArrayEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader13getIndexArrayEv"></span><span id="Nv::Blast::IMeshFileReader::getIndexArray"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a060e4fcdcc016bdbc60231983851d701"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getIndexArray</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader13getIndexArrayEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get loaded triangle indices. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader17isCollisionLoadedEv">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader17isCollisionLoadedEv"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader17isCollisionLoadedEv"></span><span id="Nv::Blast::IMeshFileReader::isCollisionLoaded"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a2784c55010ab4f9befe8db7e635dfb23"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isCollisionLoaded</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader17isCollisionLoadedEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Check whether file contained an collision geometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast15IMeshFileReader12getCollisionERP8uint32_tRPP13CollisionHull">
+<span id="_CPPv3N2Nv5Blast15IMeshFileReader12getCollisionERP8uint32_tRPP13CollisionHull"></span><span id="_CPPv2N2Nv5Blast15IMeshFileReader12getCollisionERP8uint32_tRPP13CollisionHull"></span><span id="Nv::Blast::IMeshFileReader::getCollision__uint32_tPR.CollisionHullPPR"></span><span class="target" id="class_nv_1_1_blast_1_1_i_mesh_file_reader_1a128ff819638921a9c76e1829e85998d8"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getCollision</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">hullsOffset</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#_CPPv4N2Nv5Blast13CollisionHullE" title="Nv::Blast::CollisionHull"><span class="pre">CollisionHull</span></a> <span class="pre">*</span><span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">hulls</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast15IMeshFileReader12getCollisionERP8uint32_tRPP13CollisionHull" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve collision geometry if it exist. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>User should call NVBLAST_FREE for hulls and hullsOffset when it not needed anymore</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hullsOffset</strong> – <strong>[out]</strong> Array of hull offsets for hulls array. The size is meshCount + 1. </p></li>
+<li><p><strong>hulls</strong> – <strong>[out]</strong> Array of hull. The first i-th mesh hull: hulls[hullsOffset[i]]. The size is written to hullsOffset[meshCount] </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of meshes (meshCount) </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

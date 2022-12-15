@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>globals/NvBlastGlobals.h &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>globals/NvBlastGlobals.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="globals-nvblastglobals-h">
+<span id="file-globals-nvblastglobals-h"></span><h1>globals/NvBlastGlobals.h<a class="headerlink" href="#globals-nvblastglobals-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_globals.html#dir-globals"><span class="std std-ref">globals/</span></a></p>
+<p>API for the NvBlastGlobals library.</p>
+<p>Source: <a class="reference internal" href="program_listing_file_globals_NvBlastGlobals.h.html#program-listing-file-globals-nvblastglobals-h"><span class="std std-ref">globals/NvBlastGlobals.h</span></a></p>
+<div class="section" id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#file-extensions-authoringcommon-nvblastextauthoringpatterngenerator-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h</span></a>: Defines the PatternGenerator API used by the authoring tools, allowing the user to create fracture patterns.</p></li>
+<li><p><a class="reference internal" href="file_extensions_physx_NvBlastExtPxSync.h.html#file-extensions-physx-nvblastextpxsync-h"><span class="std std-ref">extensions/physx/NvBlastExtPxSync.h</span></a>: Defines the API for synchronization of damage and fracture events between two clients via an intermediate buffer.</p></li>
+<li><p><a class="reference internal" href="file_extensions_physx_NvBlastPxCallbacks.h.html#file-extensions-physx-nvblastpxcallbacks-h"><span class="std std-ref">extensions/physx/NvBlastPxCallbacks.h</span></a>: Defines allocator and error callbacks for ExtPx.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtLlSerialization.h.html#file-extensions-serialization-nvblastextllserialization-h"><span class="std std-ref">extensions/serialization/NvBlastExtLlSerialization.h</span></a>: Defines low-level serialization support for the NvBlastExtSerialization blast extension.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtPxSerialization.h.html#file-extensions-serialization-nvblastextpxserialization-h"><span class="std std-ref">extensions/serialization/NvBlastExtPxSerialization.h</span></a>: Defines blast physx (Px) serialization support for the NvBlastExtSerialization blast extension.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtSerialization.h.html#file-extensions-serialization-nvblastextserialization-h"><span class="std std-ref">extensions/serialization/NvBlastExtSerialization.h</span></a>: Defines basic types for the NvBlastExtSerialization blast extension, which handles versioned serialization of blast objects in different formats.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtTkSerialization.h.html#file-extensions-serialization-nvblastexttkserialization-h"><span class="std std-ref">extensions/serialization/NvBlastExtTkSerialization.h</span></a>: Defines blast toolkit (Tk) serialization support for the NvBlastExtSerialization blast extension.</p></li>
+<li><p><a class="reference internal" href="file_globals_NvBlastAllocator.h.html#file-globals-nvblastallocator-h"><span class="std std-ref">globals/NvBlastAllocator.h</span></a>: Allocator utility API in the NvBlastGlobals library.</p></li>
+</ul>
+</div>
+<div class="section" id="namespaces">
+<h2>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_Nv.html#namespace-nv"><span class="std std-ref">Nv</span></a>: FractureTool has requirements to input meshes to fracture them successfully: 1) Mesh should be closed (watertight) 2) There should not be self-intersections and open-edges.</p></li>
+<li><p><a class="reference internal" href="namespace_Nv__Blast.html#namespace-nv-blast"><span class="std std-ref">Nv::Blast</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_error_code.html#exhale-struct-struct-nv-1-1-blast-1-1-error-code"><span class="std std-ref">Nv::Blast::ErrorCode</span></a>: Error codes.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_allocator_callback.html#exhale-class-class-nv-1-1-blast-1-1-allocator-callback"><span class="std std-ref">Nv::Blast::AllocatorCallback</span></a>: Abstract base class for an application defined memory allocator that can be used by toolkit (Tk) or any extension (Ext).</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_error_callback.html#exhale-class-class-nv-1-1-blast-1-1-error-callback"><span class="std std-ref">Nv::Blast::ErrorCallback</span></a>: User defined interface class.</p></li>
+</ul>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a046f351eedab67de8286b249c348160a.html#exhale-function-nv-blast-globals-8h-1a046f351eedab67de8286b249c348160a"><span class="std std-ref">Nv::Blast::logLL</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a6960a904cca030a87f4a569d0cd6a4fa.html#exhale-function-nv-blast-globals-8h-1a6960a904cca030a87f4a569d0cd6a4fa"><span class="std std-ref">NvBlastGlobalGetAllocatorCallback</span></a>: Retrieve a pointer to the global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1adfce9f2ac7e3acfdd5c82cdbc9db0f36.html#exhale-function-nv-blast-globals-8h-1adfce9f2ac7e3acfdd5c82cdbc9db0f36"><span class="std std-ref">NvBlastGlobalGetErrorCallback</span></a>: Retrieve a pointer to the global ErrorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a593586b9c9276aecb5a8f552f526f73b.html#exhale-function-nv-blast-globals-8h-1a593586b9c9276aecb5a8f552f526f73b"><span class="std std-ref">NvBlastGlobalSetAllocatorCallback</span></a>: Set global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a67996f009abbedc2d6c769f4af11f95f.html#exhale-function-nv-blast-globals-8h-1a67996f009abbedc2d6c769f4af11f95f"><span class="std std-ref">NvBlastGlobalSetErrorCallback</span></a>: Set global ErrorCallback.</p></li>
+</ul>
+</div>
+<div class="section" id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a5d66f893822bf7f14f90e2b5480c6741.html#exhale-define-nv-blast-globals-8h-1a5d66f893822bf7f14f90e2b5480c6741"><span class="std std-ref">NVBLAST_ALLOC</span></a>: Alloc/Free macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a8b44c099b2f3dd78e4887065cbd3844d.html#exhale-define-nv-blast-globals-8h-1a8b44c099b2f3dd78e4887065cbd3844d"><span class="std std-ref">NVBLAST_ALLOC_NAMED</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a12c3113fdc58a74fd2cf9e4839a14d74.html#exhale-define-nv-blast-globals-8h-1a12c3113fdc58a74fd2cf9e4839a14d74"><span class="std std-ref">NVBLAST_CHECK</span></a>: Check macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1afee8367abfa398f31a979b6a6918492f.html#exhale-define-nv-blast-globals-8h-1afee8367abfa398f31a979b6a6918492f"><span class="std std-ref">NVBLAST_CHECK_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a7ac166d3622489e15ed28c5e61b22e0b.html#exhale-define-nv-blast-globals-8h-1a7ac166d3622489e15ed28c5e61b22e0b"><span class="std std-ref">NVBLAST_CHECK_ERROR</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a9118c6afe116051855dcd7fcd38baa9a.html#exhale-define-nv-blast-globals-8h-1a9118c6afe116051855dcd7fcd38baa9a"><span class="std std-ref">NVBLAST_CHECK_INFO</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1addfc51da498a3e77d748dff30084df79.html#exhale-define-nv-blast-globals-8h-1addfc51da498a3e77d748dff30084df79"><span class="std std-ref">NVBLAST_CHECK_WARNING</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a169634cc0a7d8a8567b8b390c926b2e7.html#exhale-define-nv-blast-globals-8h-1a169634cc0a7d8a8567b8b390c926b2e7"><span class="std std-ref">NVBLAST_DELETE</span></a>: Respective delete to NVBLAST_NEW The obj pointer may be NULL (to match the behavior of standard C++ delete) Example: <a class="reference internal" href="define__nv_blast_globals_8h_1a169634cc0a7d8a8567b8b390c926b2e7.html#exhale-define-nv-blast-globals-8h-1a169634cc0a7d8a8567b8b390c926b2e7"><span class="std std-ref">NVBLAST_DELETE</span></a>;.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a05d6e56bfb4bc7ffdaccd9e32ef1551e.html#exhale-define-nv-blast-globals-8h-1a05d6e56bfb4bc7ffdaccd9e32ef1551e"><span class="std std-ref">NVBLAST_FOURCC</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1af968d9c2dc2aaeb87f55bbd85488f741.html#exhale-define-nv-blast-globals-8h-1af968d9c2dc2aaeb87f55bbd85488f741"><span class="std std-ref">NVBLAST_FREE</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1aaa478c2c6c4b296431d526caa7ee6369.html#exhale-define-nv-blast-globals-8h-1aaa478c2c6c4b296431d526caa7ee6369"><span class="std std-ref">NVBLAST_LOG</span></a>: Logging macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a840ebe37ee602bb328d88d629f8f3017.html#exhale-define-nv-blast-globals-8h-1a840ebe37ee602bb328d88d629f8f3017"><span class="std std-ref">NVBLAST_LOG_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a67129e1adea0a0ed0c08da1b16497da0.html#exhale-define-nv-blast-globals-8h-1a67129e1adea0a0ed0c08da1b16497da0"><span class="std std-ref">NVBLAST_LOG_ERROR</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a9315f52cc9bb2de8f03b544716a06dce.html#exhale-define-nv-blast-globals-8h-1a9315f52cc9bb2de8f03b544716a06dce"><span class="std std-ref">NVBLAST_LOG_INFO</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a571a982fe46cf7f797e63393a027d359.html#exhale-define-nv-blast-globals-8h-1a571a982fe46cf7f797e63393a027d359"><span class="std std-ref">NVBLAST_LOG_WARNING</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1acae7d0ae139069c3dc07f095d16bff83.html#exhale-define-nv-blast-globals-8h-1acae7d0ae139069c3dc07f095d16bff83"><span class="std std-ref">NVBLAST_NEW</span></a>: Placement new.</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

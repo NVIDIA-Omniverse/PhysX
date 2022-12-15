@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtSerialization &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtSerialization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extserialization">
+<span id="exhale-class-class-nv-1-1-blast-1-1-ext-serialization"></span><h1>Nv::Blast::ExtSerialization<a class="headerlink" href="#nv-blast-extserialization" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_serialization_NvBlastExtSerialization.h.html#file-extensions-serialization-nvblastextserialization-h"><span class="std std-ref">extensions/serialization/NvBlastExtSerialization.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast16ExtSerializationE">
+<span id="_CPPv3N2Nv5Blast16ExtSerializationE"></span><span id="_CPPv2N2Nv5Blast16ExtSerializationE"></span><span id="Nv::Blast::ExtSerialization"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtSerialization</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerializationE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Serialization manager interface. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization24setSerializationEncodingE8uint32_t">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization24setSerializationEncodingE8uint32_t"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization24setSerializationEncodingE8uint32_t"></span><span id="Nv::Blast::ExtSerialization::setSerializationEncoding__uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a9d922a89c41ba9b1997d7e60d6d7b35b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">setSerializationEncoding</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">encodingID</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization24setSerializationEncodingE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set the serialization encoding to use. </p>
+<p>(See <a class="reference internal" href="#struct_nv_1_1_blast_1_1_ext_serialization_1_1_encoding_i_d"><span class="std std-ref">EncodingID</span></a>.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true iff successful. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast16ExtSerialization24getSerializationEncodingEv">
+<span id="_CPPv3NK2Nv5Blast16ExtSerialization24getSerializationEncodingEv"></span><span id="_CPPv2NK2Nv5Blast16ExtSerialization24getSerializationEncodingEv"></span><span id="Nv::Blast::ExtSerialization::getSerializationEncodingC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a5e4409ef51f083ccaf2993e0b77dc951"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getSerializationEncoding</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast16ExtSerialization24getSerializationEncodingEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve the current serialization encoding being used. </p>
+<p>Note, by default this is set to the encoding of the first serializer registered by a module. Currently this is done automatically by the NvBlastExtLlExtension module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current serialization encoding (zero if none is set). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization17setBufferProviderEP14BufferProvider">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization17setBufferProviderEP14BufferProvider"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization17setBufferProviderEP14BufferProvider"></span><span id="Nv::Blast::ExtSerialization::setBufferProvider__BufferProviderP"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a5790c794d5c395736c223d8ab6f036ca"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setBufferProvider</span></code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N2Nv5Blast16ExtSerialization14BufferProviderE" title="Nv::Blast::ExtSerialization::BufferProvider"><span class="pre">BufferProvider</span></a> <span class="pre">*</span><em><span class="pre">bufferProvider</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization17setBufferProviderEP14BufferProvider" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set the buffer provider callback to use. </p>
+<p>(See <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_serialization_1_1_buffer_provider"><span class="std std-ref">BufferProvider</span></a>.) If not set, a default provider using NVBLAST_ALLOC (see NvBlastGlobals.h) is used, which may be freed using NvBLAST_FREE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>bufferProvider</strong> – <strong>[in]</strong> Buffer provider callback to use. If NULL, uses the default provider using the allocator given in NvBlastGlobals. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10peekHeaderEP8uint32_tP8uint32_tP8uint64_tPKv8uint64_t">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10peekHeaderEP8uint32_tP8uint32_tP8uint64_tPKv8uint64_t"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10peekHeaderEP8uint32_tP8uint32_tP8uint64_tPKv8uint64_t"></span><span id="Nv::Blast::ExtSerialization::peekHeader__uint32_tP.uint32_tP.uint64_tP.voidCP.uint64_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a031a3f5df089e26d4e97f76f35c1bc9f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">peekHeader</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">objectTypeID</span></em>, <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">encodingID</span></em>, <span class="pre">uint64_t</span> <span class="pre">*</span><em><span class="pre">dataSize</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">buffer</span></em>, <span class="pre">uint64_t</span> <em><span class="pre">bufferSize</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10peekHeaderEP8uint32_tP8uint32_tP8uint64_tPKv8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Reads information from a buffer, returning the contained object type ID, encoding ID, and data size. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objectTypeID</strong> – <strong>[out]</strong> If not NULL, the object type ID is written to *objectTypeID. </p></li>
+<li><p><strong>encodingID</strong> – <strong>[out]</strong> If not NULL, the encoding ID is written to *encodingID. </p></li>
+<li><p><strong>dataSize</strong> – <strong>[out]</strong> If not NULL, the data size is written to *dataSize. (Does not include the size of the header.) </p></li>
+<li><p><strong>buffer</strong> – <strong>[in]</strong> Pointer to the buffer to read. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of the buffer to read.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff the header is successfully read. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10skipObjectER8uint64_tPKv">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10skipObjectER8uint64_tPKv"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10skipObjectER8uint64_tPKv"></span><span id="Nv::Blast::ExtSerialization::skipObject__uint64_tR.voidCP"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a52f3f5008a0047ee072fb5e1155c28e5"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">skipObject</span></code><span class="sig-paren">(</span><span class="pre">uint64_t</span> <span class="pre">&amp;</span><em><span class="pre">bufferSize</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">buffer</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10skipObjectER8uint64_tPKv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Determines the current object in the buffer and returns the position in the buffer immediately after the object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bufferSize</strong> – <strong>[inout]</strong> Size of the buffer to read on input, on output the remaining buffer size given the return buffer value. </p></li>
+<li><p><strong>buffer</strong> – <strong>[in]</strong> Pointer to the buffer to read.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the new position in the buffer after the skipped object if successful, NULL otherwise. The bufferSize field is only updated if a valid pointer is returned. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization21deserializeFromBufferEPKv8uint64_tP8uint32_t">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization21deserializeFromBufferEPKv8uint64_tP8uint32_t"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization21deserializeFromBufferEPKv8uint64_tP8uint32_t"></span><span id="Nv::Blast::ExtSerialization::deserializeFromBuffer__voidCP.uint64_t.uint32_tP"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a6fb7f346cbe938ccb155be5a8b8c9efe"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">deserializeFromBuffer</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">buffer</span></em>, <span class="pre">uint64_t</span> <em><span class="pre">bufferSize</span></em>, <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">objectTypeIDPtr</span></em> <span class="pre">=</span> <span class="pre">nullptr</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization21deserializeFromBufferEPKv8uint64_tP8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Deserialize from a buffer into a newly allocated object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[in]</strong> Pointer to the buffer to read. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of the buffer to read. </p></li>
+<li><p><strong>objectTypeIDPtr</strong> – <strong>[out]</strong> Optional, if not NULL then *objectTypeIDPtr will be filled with the deserialized object’s type ID if deserialization is successful, or 0 if unsuccessful.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>object pointer; returns null if failed to deserialize. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization19serializeIntoBufferERPvPKv8uint32_t">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization19serializeIntoBufferERPvPKv8uint32_t"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization19serializeIntoBufferERPvPKv8uint32_t"></span><span id="Nv::Blast::ExtSerialization::serializeIntoBuffer__voidPR.voidCP.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1adfb92a5ecbd708138d0b9f67a323be79"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint64_t</span> <code class="sig-name descname"><span class="pre">serializeIntoBuffer</span></code><span class="sig-paren">(</span><span class="pre">void</span> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">buffer</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">object</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">objectTypeID</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization19serializeIntoBufferERPvPKv8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Serialize into a buffer. </p>
+<p>Allocates the buffer internally using the callack set in setBufferProvider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[out]</strong> Pointer to the buffer created. </p></li>
+<li><p><strong>object</strong> – <strong>[in]</strong> Object pointer. </p></li>
+<li><p><strong>objectTypeID</strong> – <strong>[in]</strong> Object type ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of bytes serialized into the buffer (zero if unsuccessful). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization7releaseEv">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization7releaseEv"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization7releaseEv"></span><span id="Nv::Blast::ExtSerialization::release"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1a08937f68c380fe0bcb0cba17ea4b539e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release the serialization manager and all contained objects. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerializationD0Ev">
+<span id="_CPPv3N2Nv5Blast16ExtSerializationD0Ev"></span><span id="_CPPv2N2Nv5Blast16ExtSerializationD0Ev"></span><span id="Nv::Blast::ExtSerialization::~ExtSerialization"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1ad8a918eb53660a15238793c99a686cb1"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~ExtSerialization</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerializationD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Destructor is virtual and not public - use the <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_serialization_1a08937f68c380fe0bcb0cba17ea4b539e"><span class="std std-ref">release()</span></a> method instead of explicitly deleting the serialization manager. </p>
+</dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization14BufferProviderE">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization14BufferProviderE"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization14BufferProviderE"></span><span id="Nv::Blast::ExtSerialization::BufferProvider"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1_1_buffer_provider"></span><em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">BufferProvider</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization14BufferProviderE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Buffer provider API, used to request a buffer for serialization. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization14BufferProvider13requestBufferE6size_t">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization14BufferProvider13requestBufferE6size_t"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization14BufferProvider13requestBufferE6size_t"></span><span id="Nv::Blast::ExtSerialization::BufferProvider::requestBuffer__s"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_serialization_1_1_buffer_provider_1a04dd346c002b043527e8ef4bd73853f6"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">requestBuffer</span></code><span class="sig-paren">(</span><span class="pre">size_t</span> <em><span class="pre">size</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization14BufferProvider13requestBufferE6size_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10EncodingIDE">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10EncodingIDE"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10EncodingIDE"></span><span id="Nv::Blast::ExtSerialization::EncodingID"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_serialization_1_1_encoding_i_d"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">EncodingID</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10EncodingIDE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Standard Encoding IDs. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4EnumE">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10EncodingID4EnumE"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10EncodingID4EnumE"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_serialization_1_1_encoding_i_d_1ab03c7560bbcf698c0806673b273c31d7"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">Enum</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4EnumE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4Enum15CapnProtoBinaryE">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10EncodingID4Enum15CapnProtoBinaryE"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10EncodingID4Enum15CapnProtoBinaryE"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_serialization_1_1_encoding_i_d_1ab03c7560bbcf698c0806673b273c31d7a47c1a4c8d16a208ed5ed4fffd78a5bec"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">CapnProtoBinary</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4Enum15CapnProtoBinaryE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4Enum9RawBinaryE">
+<span id="_CPPv3N2Nv5Blast16ExtSerialization10EncodingID4Enum9RawBinaryE"></span><span id="_CPPv2N2Nv5Blast16ExtSerialization10EncodingID4Enum9RawBinaryE"></span><span class="target" id="struct_nv_1_1_blast_1_1_ext_serialization_1_1_encoding_i_d_1ab03c7560bbcf698c0806673b273c31d7a2bdda431eab0248c8fa91395a94b20fd"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">RawBinary</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExtSerialization10EncodingID4Enum9RawBinaryE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

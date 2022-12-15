@@ -1,0 +1,263 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Damage Shaders (NvBlastExtShaders) &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Stress Solver (NvBlastExtStress)" href="ext_stress.html" />
+    <link rel="prev" title="Extensions (NvBlastExt)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Extensions (NvBlastExt)</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Damage Shaders (NvBlastExtShaders)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html">Stress Solver (NvBlastExtStress)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html">Asset Utilities (NvBlastExtAssetUtils)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html">Asset Authoring (NvBlastExtAuthoring)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_serialization.html">Serialization (NvBlastExtSerialization)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_tkserialization.html">BlastTk Serialization (NvBlastExtTkSerialization)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
+        
+      <li>Damage Shaders (NvBlastExtShaders)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="damage-shaders-nvblastextshaders">
+<span id="pageextshaders"></span><h1>Damage Shaders (NvBlastExtShaders)<a class="headerlink" href="#damage-shaders-nvblastextshaders" title="Permalink to this headline">¶</a></h1>
+<p>The Blast damage shader extension provides basic implementations of programs generating fracture commands, the first step in breaking a Blast Actor, see <a class="reference internal" href="../api_ll_users_guide.html#splitting"><span class="std std-ref">Damage and Fracturing</span></a>.
+These programs come as two shader functions (callbacks): one for Actors with a support graph, and one for Actors with just one chunk, respectively.
+The NvBlastDamageProgram containing both shaders can be used for low-level directly (NvBlastActorGenerateFracture) or for TkActor’s damage and fracture functions.</p>
+<p>For example, one may construct a damage program using the “shear” damage shaders declared in NvBlastExtDamageShaders.h:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastDamageProgram damageProgram = { NvBlastExtShearGraphShader, NvBlastExtShearSubgraphShader };
+</pre></div>
+</div>
+<p>The appropriate shader (“graph” or “subgraph”) will be called for an Actor being processed, along with the Actor’s necessary geometry and program parameters.
+The parameters (NvBlastProgramParams) are set to contain</p>
+<ol class="arabic simple">
+<li><p>Material, something that describes an Actor properties (e.g. mass, stiffness, fragility) which are not expected to be changed often.</p></li>
+<li><p>Damage description, something that describes a particular damage event (e.g. position, radius and force of explosion).</p></li>
+</ol>
+<p>For example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastExtMaterial material = { health, minDamageThreshold, maxDamageThreshold };
+NvBlastExtRadialDamageDesc damageDesc = { compressive, posX, posY, posZ, minR, maxR };
+</pre></div>
+</div>
+<p>When used with TkActor::damage() functions, TkActor will cache the necessary data for deferred processing through TkGroup. This includes accumulating damage requests for
+the same material and program parameter combination.  A default material can be set for a TkFamily that all its Actors uses.</p>
+<p>A Tk layer example follows.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>tkGroup-&gt;addActor(*tkActor);
+tkActor-&gt;damage(damageProgram, damageDesc0, sizeof(NvBlastExtRadialDamageDesc), &amp;material);
+tkActor-&gt;damage(damageProgram, damageDesc1, sizeof(NvBlastExtRadialDamageDesc), &amp;material);
+tkGroup-&gt;process();
+</pre></div>
+</div>
+<p>In contrast, the user is responsible for providing all the damage descriptions persisting through the low-level NvBlastActorGenerateFracture call when not using the Tk layer:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastProgramParams programParams = { damageDescs, 2, &amp;material };
+NvBlastActorGenerateFracture(commandBuffers, actor, damageProgram, &amp;programParams, nullptr, nullptr);
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

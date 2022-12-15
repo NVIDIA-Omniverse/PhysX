@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>NvBlastExtMaterial &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>NvBlastExtMaterial</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nvblastextmaterial">
+<span id="exhale-struct-struct-nv-blast-ext-material"></span><h1>NvBlastExtMaterial<a class="headerlink" href="#nvblastextmaterial" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#file-extensions-shaders-nvblastextdamageshaders-h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv418NvBlastExtMaterial">
+<span id="_CPPv318NvBlastExtMaterial"></span><span id="_CPPv218NvBlastExtMaterial"></span><span id="NvBlastExtMaterial"></span><span class="target" id="struct_nv_blast_ext_material"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastExtMaterial</span></code><a class="headerlink" href="#_CPPv418NvBlastExtMaterial" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Example of simple material. </p>
+<p>It is passed into damage shader, thus it is not used currently in any of them. The user can use it to filter and normalize before applying.</p>
+<p>Material function implementers may choose their own set. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N18NvBlastExtMaterial18NvBlastExtMaterialEv">
+<span id="_CPPv3N18NvBlastExtMaterial18NvBlastExtMaterialEv"></span><span id="_CPPv2N18NvBlastExtMaterial18NvBlastExtMaterialEv"></span><span id="NvBlastExtMaterial::NvBlastExtMaterial"></span><span class="target" id="struct_nv_blast_ext_material_1a89d74e66909810438be664da3f42e2d5"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">NvBlastExtMaterial</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18NvBlastExtMaterial18NvBlastExtMaterialEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK18NvBlastExtMaterial19getNormalizedDamageEf">
+<span id="_CPPv3NK18NvBlastExtMaterial19getNormalizedDamageEf"></span><span id="_CPPv2NK18NvBlastExtMaterial19getNormalizedDamageEf"></span><span id="NvBlastExtMaterial::getNormalizedDamage__floatC"></span><span class="target" id="struct_nv_blast_ext_material_1a2c68418aade662c005e3890a1d073d0d"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">float</span> <code class="sig-name descname"><span class="pre">getNormalizedDamage</span></code><span class="sig-paren">(</span><span class="pre">float</span> <em><span class="pre">damageInHealth</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4NK18NvBlastExtMaterial19getNormalizedDamageEf" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Helper to normalize damage. </p>
+<p>Pass damage defined in health, damage in range [0, 1] is returned, where 0 basically indicates that the threshold wasn’t reached and there is no point in applying it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>damageInHealth</strong> – <strong>[in]</strong> Damage defined in terms of health amount to be reduced.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>normalized damage </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N18NvBlastExtMaterial6healthE">
+<span id="_CPPv3N18NvBlastExtMaterial6healthE"></span><span id="_CPPv2N18NvBlastExtMaterial6healthE"></span><span id="NvBlastExtMaterial::health__float"></span><span class="target" id="struct_nv_blast_ext_material_1a1d1922ed27c3012efa2e9c3418636cb2"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">health</span></code><a class="headerlink" href="#_CPPv4N18NvBlastExtMaterial6healthE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>health </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18NvBlastExtMaterial18minDamageThresholdE">
+<span id="_CPPv3N18NvBlastExtMaterial18minDamageThresholdE"></span><span id="_CPPv2N18NvBlastExtMaterial18minDamageThresholdE"></span><span id="NvBlastExtMaterial::minDamageThreshold__float"></span><span class="target" id="struct_nv_blast_ext_material_1aeeb4e2d2b81e234e12b9e627eb6cb1b4"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">minDamageThreshold</span></code><a class="headerlink" href="#_CPPv4N18NvBlastExtMaterial18minDamageThresholdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>min damage fraction threshold to be applied. Range [0, 1]. For example 0.1 filters all damage below 10% of health. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18NvBlastExtMaterial18maxDamageThresholdE">
+<span id="_CPPv3N18NvBlastExtMaterial18maxDamageThresholdE"></span><span id="_CPPv2N18NvBlastExtMaterial18maxDamageThresholdE"></span><span id="NvBlastExtMaterial::maxDamageThreshold__float"></span><span class="target" id="struct_nv_blast_ext_material_1ade63b21c45e8705b20e65c202891762b"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">maxDamageThreshold</span></code><a class="headerlink" href="#_CPPv4N18NvBlastExtMaterial18maxDamageThresholdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>max damage fraction threshold to be applied. Range [0, 1]. For example 0.8 won’t allow more then 80% of health damage to be applied. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

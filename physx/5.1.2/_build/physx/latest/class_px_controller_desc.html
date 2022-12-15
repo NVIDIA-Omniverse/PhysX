@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxControllerDesc &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxControllerDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontrollerdesc">
+<span id="exhale-class-class-px-controller-desc"></span><h1>PxControllerDesc<a class="headerlink" href="#pxcontrollerdesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxController.h.html#file-include-characterkinematic-pxcontroller-h"><span class="std std-ref">include/characterkinematic/PxController.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="derived-types">
+<h3>Derived Types<a class="headerlink" href="#derived-types" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxBoxControllerDesc</span></code> (<a class="reference internal" href="class_px_box_controller_desc.html#exhale-class-class-px-box-controller-desc"><span class="std std-ref">PxBoxControllerDesc</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxCapsuleControllerDesc</span></code> (<a class="reference internal" href="class_px_capsule_controller_desc.html#exhale-class-class-px-capsule-controller-desc"><span class="std std-ref">PxCapsuleControllerDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxControllerDesc">
+<span id="_CPPv316PxControllerDesc"></span><span id="_CPPv216PxControllerDesc"></span><span id="PxControllerDesc"></span><span class="target" id="class_px_controller_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerDesc</span></span></span><a class="headerlink" href="#_CPPv416PxControllerDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for a character controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller.html#class_px_box_controller"><span class="std std-ref">PxBoxController</span></a> <a class="reference internal" href="class_px_capsule_controller.html#class_px_capsule_controller"><span class="std std-ref">PxCapsuleController</span></a> </p>
+</div>
+</p>
+<p>Subclassed by <a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc"><span class="std std-ref">PxBoxControllerDesc</span></a>, <a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc"><span class="std std-ref">PxCapsuleControllerDesc</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxControllerDesc7isValidEv">
+<span id="_CPPv3NK16PxControllerDesc7isValidEv"></span><span id="_CPPv2NK16PxControllerDesc7isValidEv"></span><span id="PxControllerDesc::isValidC"></span><span class="target" id="group__character_1gaea13536a7f34fae0f6dd65c5a1c50e0b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxControllerDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the current settings are valid </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the descriptor is valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxControllerDesc7getTypeEv">
+<span id="_CPPv3NK16PxControllerDesc7getTypeEv"></span><span id="_CPPv2NK16PxControllerDesc7getTypeEv"></span><span id="PxControllerDesc::getTypeC"></span><span class="target" id="class_px_controller_desc_1a6183f4b5c12ec7149048d38676b3671c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxControllerDesc7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the character controller type. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxControllerType <a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc"><span class="std std-ref">PxCapsuleControllerDesc</span></a> <a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc"><span class="std std-ref">PxBoxControllerDesc</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controllers type.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc8positionE">
+<span id="_CPPv3N16PxControllerDesc8positionE"></span><span id="_CPPv2N16PxControllerDesc8positionE"></span><span id="PxControllerDesc::position__PxExtendedVec3"></span><span class="target" id="class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"></span><a class="reference internal" href="struct_px_extended_vec3.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">position</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc8positionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The position of the character. </p>
+<p><strong>Default:</strong> Zero </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The character’s initial position must be such that it does not overlap the static geometry.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc11upDirectionE">
+<span id="_CPPv3N16PxControllerDesc11upDirectionE"></span><span id="_CPPv2N16PxControllerDesc11upDirectionE"></span><span id="PxControllerDesc::upDirection__PxVec3"></span><span class="target" id="class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">upDirection</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc11upDirectionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the ‘up’ direction. </p>
+<p>In order to provide stepping functionality the SDK must be informed about the up direction.</p>
+<p><strong>Default:</strong> (0, 1, 0) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc10slopeLimitE">
+<span id="_CPPv3N16PxControllerDesc10slopeLimitE"></span><span id="_CPPv2N16PxControllerDesc10slopeLimitE"></span><span id="PxControllerDesc::slopeLimit__PxF32"></span><span class="target" id="class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">slopeLimit</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc10slopeLimitE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The maximum slope which the character can walk up. </p>
+<p>In general it is desirable to limit where the character can walk, in particular it is unrealistic for the character to be able to climb arbitary slopes.</p>
+<p>The limit is expressed as the cosine of desired limit angle. A value of 0 disables this feature.</p>
+<p><strong>Default:</strong> 0.707</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">upDirection</span></a> <a class="reference internal" href="#class_px_controller_desc_1ac67b8bbd1150f4e9fb30e56e4a81a7e1"><span class="std std-ref">invisibleWallHeight</span></a> <a class="reference internal" href="#class_px_controller_desc_1a36e184a8b3c7a4ffbd1f2ab934d37ae1"><span class="std std-ref">maxJumpHeight</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>It is currently enabled for static actors only (not for dynamic/kinematic actors), and not supported for spheres or capsules.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc19invisibleWallHeightE">
+<span id="_CPPv3N16PxControllerDesc19invisibleWallHeightE"></span><span id="_CPPv2N16PxControllerDesc19invisibleWallHeightE"></span><span id="PxControllerDesc::invisibleWallHeight__PxF32"></span><span class="target" id="class_px_controller_desc_1ac67b8bbd1150f4e9fb30e56e4a81a7e1"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invisibleWallHeight</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc19invisibleWallHeightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Height of invisible walls created around non-walkable triangles. </p>
+<p>The library can automatically create invisible walls around non-walkable triangles defined by the ‘slopeLimit’ parameter. This defines the height of those walls. If it is 0.0, then no extra triangles are created.</p>
+<p><strong>Default:</strong> 0.0</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">upDirection</span></a> <a class="reference internal" href="#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">slopeLimit</span></a> <a class="reference internal" href="#class_px_controller_desc_1a36e184a8b3c7a4ffbd1f2ab934d37ae1"><span class="std std-ref">maxJumpHeight</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc13maxJumpHeightE">
+<span id="_CPPv3N16PxControllerDesc13maxJumpHeightE"></span><span id="_CPPv2N16PxControllerDesc13maxJumpHeightE"></span><span id="PxControllerDesc::maxJumpHeight__PxF32"></span><span class="target" id="class_px_controller_desc_1a36e184a8b3c7a4ffbd1f2ab934d37ae1"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxJumpHeight</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc13maxJumpHeightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Maximum height a jumping character can reach. </p>
+<p>This is only used if invisible walls are created (‘invisibleWallHeight’ is non zero).</p>
+<p>When a character jumps, the non-walkable triangles he might fly over are not found by the collision queries (since the character’s bounding volume does not touch them). Thus those non-walkable triangles do not create invisible walls, and it is possible for a jumping character to land on a non-walkable triangle, while he wouldn’t have reached that place by just walking.</p>
+<p>The ‘maxJumpHeight’ variable is used to extend the size of the collision volume downward. This way, all the non-walkable triangles are properly found by the collision queries and it becomes impossible to ‘jump over’ invisible walls.</p>
+<p>If the character in your game can not jump, it is safe to use 0.0 here. Otherwise it is best to keep this value as small as possible, since a larger collision volume means more triangles to process.</p>
+<p><strong>Default:</strong> 0.0</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">upDirection</span></a> <a class="reference internal" href="#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">slopeLimit</span></a> <a class="reference internal" href="#class_px_controller_desc_1ac67b8bbd1150f4e9fb30e56e4a81a7e1"><span class="std std-ref">invisibleWallHeight</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc13contactOffsetE">
+<span id="_CPPv3N16PxControllerDesc13contactOffsetE"></span><span id="_CPPv2N16PxControllerDesc13contactOffsetE"></span><span id="PxControllerDesc::contactOffset__PxF32"></span><span class="target" id="class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contactOffset</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc13contactOffsetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The contact offset used by the controller. </p>
+<p>Specifies a skin around the object within which contacts will be generated. Use it to avoid numerical precision issues.</p>
+<p>This is dependant on the scale of the users world, but should be a small, positive non zero value.</p>
+<p><strong>Default:</strong> 0.1 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc10stepOffsetE">
+<span id="_CPPv3N16PxControllerDesc10stepOffsetE"></span><span id="_CPPv2N16PxControllerDesc10stepOffsetE"></span><span id="PxControllerDesc::stepOffset__PxF32"></span><span class="target" id="class_px_controller_desc_1a51fe254a4807b832b2d34e884d856438"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stepOffset</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc10stepOffsetE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the maximum height of an obstacle which the character can climb. </p>
+<p>A small value will mean that the character gets stuck and cannot walk up stairs etc, a value which is too large will mean that the character can climb over unrealistically high obstacles.</p>
+<p><strong>Default:</strong> 0.5</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">upDirection</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc7densityE">
+<span id="_CPPv3N16PxControllerDesc7densityE"></span><span id="_CPPv2N16PxControllerDesc7densityE"></span><span id="PxControllerDesc::density__PxF32"></span><span class="target" id="class_px_controller_desc_1a6da1c7c40072c2419015dc40e754ab66"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">density</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc7densityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Density of underlying kinematic actor. </p>
+<p>The CCT creates a PhysX’s kinematic actor under the hood. This controls its density.</p>
+<p><strong>Default:</strong> 10.0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc10scaleCoeffE">
+<span id="_CPPv3N16PxControllerDesc10scaleCoeffE"></span><span id="_CPPv2N16PxControllerDesc10scaleCoeffE"></span><span id="PxControllerDesc::scaleCoeff__PxF32"></span><span class="target" id="class_px_controller_desc_1ac8f9db4e34061ab9193886159e1d76f7"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scaleCoeff</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc10scaleCoeffE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scale coefficient for underlying kinematic actor. </p>
+<p>The CCT creates a PhysX’s kinematic actor under the hood. This controls its scale factor. This should be a number a bit smaller than 1.0.</p>
+<p><strong>Default:</strong> 0.8 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc12volumeGrowthE">
+<span id="_CPPv3N16PxControllerDesc12volumeGrowthE"></span><span id="_CPPv2N16PxControllerDesc12volumeGrowthE"></span><span id="PxControllerDesc::volumeGrowth__PxF32"></span><span class="target" id="class_px_controller_desc_1a93930e888fcd4c2f7bafeac83621612e"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">volumeGrowth</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc12volumeGrowthE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Cached volume growth. </p>
+<p>Amount of space around the controller we cache to improve performance. This is a scale factor that should be higher than 1.0f but not too big, ideally lower than 2.0f.</p>
+<p><strong>Default:</strong> 1.5 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc14reportCallbackE">
+<span id="_CPPv3N16PxControllerDesc14reportCallbackE"></span><span id="_CPPv2N16PxControllerDesc14reportCallbackE"></span><span id="PxControllerDesc::reportCallback__PxUserControllerHitReportP"></span><span class="target" id="class_px_controller_desc_1a56056268aeb2b3c460060d593b1df118"></span><a class="reference internal" href="class_px_user_controller_hit_report.html#_CPPv425PxUserControllerHitReport" title="PxUserControllerHitReport"><span class="n"><span class="pre">PxUserControllerHitReport</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">reportCallback</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc14reportCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies a user report callback. </p>
+<p>This report callback is called when the character collides with shapes and other characters.</p>
+<p>Setting this to NULL disables the callback.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_user_controller_hit_report.html#class_px_user_controller_hit_report"><span class="std std-ref">PxUserControllerHitReport</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc16behaviorCallbackE">
+<span id="_CPPv3N16PxControllerDesc16behaviorCallbackE"></span><span id="_CPPv2N16PxControllerDesc16behaviorCallbackE"></span><span id="PxControllerDesc::behaviorCallback__PxControllerBehaviorCallbackP"></span><span class="target" id="class_px_controller_desc_1a1638be92a0c32864ccd7f78a8035260a"></span><a class="reference internal" href="class_px_controller_behavior_callback.html#_CPPv428PxControllerBehaviorCallback" title="PxControllerBehaviorCallback"><span class="n"><span class="pre">PxControllerBehaviorCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">behaviorCallback</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc16behaviorCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies a user behavior callback. </p>
+<p>This behavior callback is called to customize the controller’s behavior w.r.t. touched shapes.</p>
+<p>Setting this to NULL disables the callback.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_behavior_callback.html#class_px_controller_behavior_callback"><span class="std std-ref">PxControllerBehaviorCallback</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc15nonWalkableModeE">
+<span id="_CPPv3N16PxControllerDesc15nonWalkableModeE"></span><span id="_CPPv2N16PxControllerDesc15nonWalkableModeE"></span><span id="PxControllerDesc::nonWalkableMode__PxControllerNonWalkableMode::Enum"></span><span class="target" id="class_px_controller_desc_1ad8286ec8cdb374997b9902a1ef21192c"></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nonWalkableMode</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc15nonWalkableModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The non-walkable mode controls if a character controller slides or not on a non-walkable part. </p>
+<p>This is only used when slopeLimit is non zero.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode_1a4dd560c274d7c9076469ae267ffa87f2ada7953fa71ceda3b66aeeb078e8f6f35"><span class="std std-ref">PxControllerNonWalkableMode::ePREVENT_CLIMBING</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc8materialE">
+<span id="_CPPv3N16PxControllerDesc8materialE"></span><span id="_CPPv2N16PxControllerDesc8materialE"></span><span id="PxControllerDesc::material__PxMaterialP"></span><span class="target" id="class_px_controller_desc_1a7a249fbbf5920b61715eb518178496f1"></span><a class="reference internal" href="class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><span class="n"><span class="pre">PxMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">material</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc8materialE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The material for the actor associated with the controller. </p>
+<p>The controller internally creates a rigid body actor. This parameter specifies the material of the actor.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc24registerDeletionListenerE">
+<span id="_CPPv3N16PxControllerDesc24registerDeletionListenerE"></span><span id="_CPPv2N16PxControllerDesc24registerDeletionListenerE"></span><span id="PxControllerDesc::registerDeletionListener__b"></span><span class="target" id="class_px_controller_desc_1ace3cfde3ada3a9a4b12c7c117cf1d137"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerDeletionListener</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc24registerDeletionListenerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Use a deletion listener to get informed about released objects and clear internal caches if needed. </p>
+<p>If a character controller registers a deletion listener, it will get informed about released objects. That allows the controller to invalidate cached data that connects to a released object. If a deletion listener is not registered, <a class="reference internal" href="class_px_controller.html#class_px_controller_1a4d65669022c2f65926fde8112e72c500"><span class="std std-ref">PxController::invalidateCache</span></a> has to be called manually after objects have been released.</p>
+<p><strong>Default:</strong> true <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a4d65669022c2f65926fde8112e72c500"><span class="std std-ref">PxController::invalidateCache</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc8clientIDE">
+<span id="_CPPv3N16PxControllerDesc8clientIDE"></span><span id="_CPPv2N16PxControllerDesc8clientIDE"></span><span id="PxControllerDesc::clientID__PxClientID"></span><span class="target" id="class_px_controller_desc_1a1178d777435fbb8d26f9fcdc26674a84"></span><a class="reference internal" href="typedef__px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#_CPPv410PxClientID" title="PxClientID"><span class="n"><span class="pre">PxClientID</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clientID</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc8clientIDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Client ID for associated actor. </p>
+<p><strong>Default:</strong> PX_DEFAULT_CLIENT <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxClientID <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1a9bb8613863cf1d73e4d0c0227f25bc6e"><span class="std std-ref">PxActor::setOwnerClient</span></a></p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc8userDataE">
+<span id="_CPPv3N16PxControllerDesc8userDataE"></span><span id="_CPPv2N16PxControllerDesc8userDataE"></span><span id="PxControllerDesc::userData__voidP"></span><span class="target" id="class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>User specified data associated with the controller. </p>
+<p><strong>Default:</strong> NULL </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc16PxControllerDescEN21PxControllerShapeType4EnumE">
+<span id="_CPPv3N16PxControllerDesc16PxControllerDescEN21PxControllerShapeType4EnumE"></span><span id="_CPPv2N16PxControllerDesc16PxControllerDescEN21PxControllerShapeType4EnumE"></span><span id="PxControllerDesc::PxControllerDesc__PxControllerShapeType::Enum"></span><span class="target" id="group__character_1ga6a15688bbec9536c991497f3cecd9ccd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerDesc</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxControllerDesc16PxControllerDescEN21PxControllerShapeType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constructor sets to default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDescD0Ev">
+<span id="_CPPv3N16PxControllerDescD0Ev"></span><span id="_CPPv2N16PxControllerDescD0Ev"></span><span id="PxControllerDesc::~PxControllerDesc"></span><span class="target" id="group__character_1gabfdc0c8f2cbdf4c33c0e431ea2102d30"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxControllerDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxControllerDescD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc16PxControllerDescERK16PxControllerDesc">
+<span id="_CPPv3N16PxControllerDesc16PxControllerDescERK16PxControllerDesc"></span><span id="_CPPv2N16PxControllerDesc16PxControllerDescERK16PxControllerDesc"></span><span id="PxControllerDesc::PxControllerDesc__PxControllerDescCR"></span><span class="target" id="group__character_1ga2fd25daff239fa246ed19afdba2f32f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxControllerDesc</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N16PxControllerDesc16PxControllerDescERK16PxControllerDesc" title="PxControllerDesc::PxControllerDesc"><span class="n"><span class="pre">PxControllerDesc</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxControllerDesc16PxControllerDescERK16PxControllerDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>copy constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDescaSERK16PxControllerDesc">
+<span id="_CPPv3N16PxControllerDescaSERK16PxControllerDesc"></span><span id="_CPPv2N16PxControllerDescaSERK16PxControllerDesc"></span><span id="PxControllerDesc::assign-operator__PxControllerDescCR"></span><span class="target" id="group__character_1gaf295354f703266efc9839a3dfb551ac8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxControllerDesc" title="PxControllerDesc"><span class="n"><span class="pre">PxControllerDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxControllerDesc" title="PxControllerDesc"><span class="n"><span class="pre">PxControllerDesc</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxControllerDescaSERK16PxControllerDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc4copyERK16PxControllerDesc">
+<span id="_CPPv3N16PxControllerDesc4copyERK16PxControllerDesc"></span><span id="_CPPv2N16PxControllerDesc4copyERK16PxControllerDesc"></span><span id="PxControllerDesc::copy__PxControllerDescCR"></span><span class="target" id="group__character_1ga6c8509fac0f9287372686c612dcce858"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv416PxControllerDesc" title="PxControllerDesc"><span class="n"><span class="pre">PxControllerDesc</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxControllerDesc4copyERK16PxControllerDesc" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxControllerDesc5mTypeE">
+<span id="_CPPv3N16PxControllerDesc5mTypeE"></span><span id="_CPPv2N16PxControllerDesc5mTypeE"></span><span id="PxControllerDesc::mType__PxControllerShapeType::EnumC"></span><span class="target" id="class_px_controller_desc_1adc3a15c47a52f31c449724fe71686d1b"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mType</span></span></span><a class="headerlink" href="#_CPPv4N16PxControllerDesc5mTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The type of the controller. This gets set by the derived class’ ctor, the user should not have to change it. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

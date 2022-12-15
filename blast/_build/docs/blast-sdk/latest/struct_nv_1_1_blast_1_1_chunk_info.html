@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ChunkInfo &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ChunkInfo</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-chunkinfo">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-chunk-info"></span><h1>Nv::Blast::ChunkInfo<a class="headerlink" href="#nv-blast-chunkinfo" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringFractureTool.h.html#file-extensions-authoring-nvblastextauthoringfracturetool-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringFractureTool.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfoE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfoE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfoE"></span><span id="Nv::Blast::ChunkInfo"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ChunkInfo</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfoE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlagsE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo10ChunkFlagsE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo10ChunkFlagsE"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1ac1ebabf88ad2eb905b6482519530824c"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">ChunkFlags</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlags8NO_FLAGSE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo10ChunkFlags8NO_FLAGSE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo10ChunkFlags8NO_FLAGSE"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1ac1ebabf88ad2eb905b6482519530824ca10ffae1afc03f59373bf48244a58dd47"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">NO_FLAGS</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlags8NO_FLAGSE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlags19APPROXIMATE_BONDINGE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo10ChunkFlags19APPROXIMATE_BONDINGE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo10ChunkFlags19APPROXIMATE_BONDINGE"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1ac1ebabf88ad2eb905b6482519530824ca673ab883edb6ff4c69fe85deed5ba3ff"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">APPROXIMATE_BONDING</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo10ChunkFlags19APPROXIMATE_BONDINGE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo9ChunkInfoEv">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo9ChunkInfoEv"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo9ChunkInfoEv"></span><span id="Nv::Blast::ChunkInfo::ChunkInfo"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a67b30bf86e83b2cb17f85feace6179b2"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">ChunkInfo</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo9ChunkInfoEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9ChunkInfo12getTmToWorldEv">
+<span id="_CPPv3NK2Nv5Blast9ChunkInfo12getTmToWorldEv"></span><span id="_CPPv2NK2Nv5Blast9ChunkInfo12getTmToWorldEv"></span><span id="Nv::Blast::ChunkInfo::getTmToWorldC"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a88ea87af9d702dba3bb9992b03965d0f"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_transform_s_t.html#_CPPv4N2Nv5Blast11TransformSTE" title="Nv::Blast::TransformST"><span class="pre">TransformST</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getTmToWorld</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4NK2Nv5Blast9ChunkInfo12getTmToWorldEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9ChunkInfo7getMeshEv">
+<span id="_CPPv3NK2Nv5Blast9ChunkInfo7getMeshEv"></span><span id="_CPPv2NK2Nv5Blast9ChunkInfo7getMeshEv"></span><span id="Nv::Blast::ChunkInfo::getMeshC"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a24b727c8671be31b20f9a9b2fb3faf2e"></span><em class="property"><span class="pre">inline</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getMesh</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4NK2Nv5Blast9ChunkInfo7getMeshEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo13parentChunkIdE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo13parentChunkIdE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo13parentChunkIdE"></span><span id="Nv::Blast::ChunkInfo::parentChunkId__int32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a57ca4ad658d31680e6a031757704f4a2"></span><span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">parentChunkId</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo13parentChunkIdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo7chunkIdE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo7chunkIdE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo7chunkIdE"></span><span id="Nv::Blast::ChunkInfo::chunkId__int32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a55d13d994d704a8550474da493b60c67"></span><span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">chunkId</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo7chunkIdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo5flagsE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo5flagsE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo5flagsE"></span><span id="Nv::Blast::ChunkInfo::flags__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a2e9936bba91f2ec13692860dfa9a3c71"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">flags</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo5flagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo6isLeafE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo6isLeafE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo6isLeafE"></span><span id="Nv::Blast::ChunkInfo::isLeaf__b"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a46cb9523bb9c0af0a890ed864560bd02"></span><span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isLeaf</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo6isLeafE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo9isChangedE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo9isChangedE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo9isChangedE"></span><span id="Nv::Blast::ChunkInfo::isChanged__b"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a336cac7f249ed366d00bfe3fe4ef611f"></span><span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isChanged</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo9isChangedE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-types">Protected Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfoUt1_0E">
+<span id="_CPPv3N2Nv5Blast9ChunkInfoUt1_0E"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1aa8ab9cbb53e87c6cf1e631ac711ac1fa"></span><em class="property"><span class="pre">enum</span> </em><strong><span class="pre">[anonymous]</span></strong><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfoUt1_0E" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Parent ID is set to this value initially, as opposed to -1 (which is a valid parent ID denoting “no parent”) </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfoUt1_015UninitializedIDE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfoUt1_015UninitializedIDE"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1aa8ab9cbb53e87c6cf1e631ac711ac1faa8fafce5a6f07b020ecfb1a2b1db71ee3"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">UninitializedID</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfoUt1_015UninitializedIDE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo9tmToWorldE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo9tmToWorldE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo9tmToWorldE"></span><span id="Nv::Blast::ChunkInfo::tmToWorld__TransformST"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1aafd3897a5b2844cd731ac808cbc6983b"></span><a class="reference internal" href="struct_nv_1_1_blast_1_1_transform_s_t.html#_CPPv4N2Nv5Blast11TransformSTE" title="Nv::Blast::TransformST"><span class="pre">TransformST</span></a> <code class="sig-name descname"><span class="pre">tmToWorld</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo9tmToWorldE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The mesh is transformed to fit within a unit cube centered at the origin. </p>
+<p>This transform puts the mesh back into its original space. These fields are protected so that only an authoring class can access them. It is important that the tmToWorld be set based upon the mesh bounds and parent tmToWorld. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast9ChunkInfo8meshDataE">
+<span id="_CPPv3N2Nv5Blast9ChunkInfo8meshDataE"></span><span id="_CPPv2N2Nv5Blast9ChunkInfo8meshDataE"></span><span id="Nv::Blast::ChunkInfo::meshData__MeshP"></span><span class="target" id="struct_nv_1_1_blast_1_1_chunk_info_1a864945bf41b9ab726c8df191e9acae35"></span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">meshData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9ChunkInfo8meshDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

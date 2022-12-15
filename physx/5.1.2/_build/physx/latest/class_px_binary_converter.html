@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBinaryConverter &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBinaryConverter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbinaryconverter">
+<span id="exhale-class-class-px-binary-converter"></span><h1>PxBinaryConverter<a class="headerlink" href="#pxbinaryconverter" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxBinaryConverter.h.html#file-include-extensions-pxbinaryconverter-h"><span class="std std-ref">include/extensions/PxBinaryConverter.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv417PxBinaryConverter">
+<span id="_CPPv317PxBinaryConverter"></span><span id="_CPPv217PxBinaryConverter"></span><span id="PxBinaryConverter"></span><span class="target" id="class_px_binary_converter"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBinaryConverter</span></span></span><a class="headerlink" href="#_CPPv417PxBinaryConverter" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Binary converter for serialized streams. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Binary conversion and binary meta data are deprecated.</p>
+</dd></dl>
+
+</p>
+<p>The binary converter class is targeted at converting binary streams from authoring platforms, such as windows, osx or linux to any game runtime platform supported by PhysX. Particularly it is currently not supported to run the converter on a platforms that has an endian mismatch with the platform corresponding to the source binary file and source meta data.</p>
+<p>If you want to use multiple threads for batch conversions, please create one instance of this class for each thread.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a9014b476bfd9e3e9bc7ea755df232bfd"><span class="std std-ref">PxSerialization.createBinaryConverter</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverter7releaseEv">
+<span id="_CPPv3N17PxBinaryConverter7releaseEv"></span><span id="_CPPv2N17PxBinaryConverter7releaseEv"></span><span id="PxBinaryConverter::release"></span><span class="target" id="class_px_binary_converter_1ac45504933db13e78c7dd12e68fab304f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxBinaryConverter7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases binary converter. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverter13setReportModeEN21PxConverterReportMode4EnumE">
+<span id="_CPPv3N17PxBinaryConverter13setReportModeEN21PxConverterReportMode4EnumE"></span><span id="_CPPv2N17PxBinaryConverter13setReportModeEN21PxConverterReportMode4EnumE"></span><span id="PxBinaryConverter::setReportMode__PxConverterReportMode::Enum"></span><span class="target" id="class_px_binary_converter_1aba26eda3b46071eca65fa38cabee2a09"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setReportMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_converter_report_mode.html#_CPPv421PxConverterReportMode" title="PxConverterReportMode"><span class="n"><span class="pre">PxConverterReportMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_converter_report_mode.html#_CPPv4N21PxConverterReportMode4EnumE" title="PxConverterReportMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxBinaryConverter13setReportModeEN21PxConverterReportMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets desired report mode. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> – <strong>[in]</strong> Report mode </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverter11setMetaDataER13PxInputStreamR13PxInputStream">
+<span id="_CPPv3N17PxBinaryConverter11setMetaDataER13PxInputStreamR13PxInputStream"></span><span id="_CPPv2N17PxBinaryConverter11setMetaDataER13PxInputStreamR13PxInputStream"></span><span id="PxBinaryConverter::setMetaData__PxInputStreamR.PxInputStreamR"></span><span class="target" id="class_px_binary_converter_1a475c6a6dc11b63b3570f2fc5d21b5c0e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMetaData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_input_stream.html#_CPPv413PxInputStream" title="PxInputStream"><span class="n"><span class="pre">PxInputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcMetaData</span></span>, <a class="reference internal" href="class_px_input_stream.html#_CPPv413PxInputStream" title="PxInputStream"><span class="n"><span class="pre">PxInputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dstMetaData</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxBinaryConverter11setMetaDataER13PxInputStreamR13PxInputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Setups source and target meta-data streams. </p>
+<p>The source meta data provided needs to have the same endianness as the platform the converter is run on. The meta data needs to be set before calling the conversion method.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a86026f68eb651de87e4a7720bc708893"><span class="std std-ref">PxSerialization::dumpBinaryMetaData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>srcMetaData</strong> – <strong>[in]</strong> Source platform’s meta-data stream </p></li>
+<li><p><strong>dstMetaData</strong> – <strong>[in]</strong> Target platform’s meta-data stream</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxBinaryConverter15compareMetaDataEv">
+<span id="_CPPv3NK17PxBinaryConverter15compareMetaDataEv"></span><span id="_CPPv2NK17PxBinaryConverter15compareMetaDataEv"></span><span id="PxBinaryConverter::compareMetaDataC"></span><span class="target" id="class_px_binary_converter_1ac39cc433f7d1db69e1c17e401adec9cc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compareMetaData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxBinaryConverter15compareMetaDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Test utility function to compare two sets of meta data. </p>
+<p>The meta data needs to be set before calling the compareMetaData method. This method will issue <a class="reference internal" href="struct_px_error_code.html#struct_px_error_code_1a01157d5d2eca2cede61ecbbc32c7b2a3ab822d9fb3b06cb1032cc65da86bef532"><span class="std std-ref">PxErrorCode::eDEBUG_INFO</span></a> messages if mismatches are encountered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if meta data is equivalend </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverter7convertER13PxInputStream5PxU32R14PxOutputStream">
+<span id="_CPPv3N17PxBinaryConverter7convertER13PxInputStream5PxU32R14PxOutputStream"></span><span id="_CPPv2N17PxBinaryConverter7convertER13PxInputStream5PxU32R14PxOutputStream"></span><span id="PxBinaryConverter::convert__PxInputStreamR.PxU32.PxOutputStreamR"></span><span class="target" id="class_px_binary_converter_1a9890d7f61fceb47d154e203291cd08fd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_input_stream.html#_CPPv413PxInputStream" title="PxInputStream"><span class="n"><span class="pre">PxInputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcStream</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">srcSize</span></span>, <a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">targetStream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxBinaryConverter7convertER13PxInputStream5PxU32R14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Converts binary stream from source platform to target platform. </p>
+<p>The converter needs to be configured with source and destination meta data before calling the conversion method. The source meta data needs to correspond to the same platform as the source binary data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>srcStream</strong> – <strong>[in]</strong> Source stream </p></li>
+<li><p><strong>srcSize</strong> – <strong>[in]</strong> Number of bytes to convert </p></li>
+<li><p><strong>targetStream</strong> – <strong>[in]</strong> Target stream</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverter17PxBinaryConverterEv">
+<span id="_CPPv3N17PxBinaryConverter17PxBinaryConverterEv"></span><span id="_CPPv2N17PxBinaryConverter17PxBinaryConverterEv"></span><span id="PxBinaryConverter::PxBinaryConverter"></span><span class="target" id="class_px_binary_converter_1a76e9b36969e46ef131f22d2d95aa31cb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBinaryConverter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxBinaryConverter17PxBinaryConverterEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxBinaryConverterD0Ev">
+<span id="_CPPv3N17PxBinaryConverterD0Ev"></span><span id="_CPPv2N17PxBinaryConverterD0Ev"></span><span id="PxBinaryConverter::~PxBinaryConverter"></span><span class="target" id="class_px_binary_converter_1a30333f47d0897b3728442e915eaaba81"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBinaryConverter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxBinaryConverterD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

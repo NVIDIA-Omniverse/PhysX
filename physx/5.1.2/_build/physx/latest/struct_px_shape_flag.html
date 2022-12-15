@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxShapeFlag &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxShapeFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxshapeflag">
+<span id="exhale-struct-struct-px-shape-flag"></span><h1>PxShapeFlag<a class="headerlink" href="#pxshapeflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxShape.h.html#file-include-pxshape-h"><span class="std std-ref">include/PxShape.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv411PxShapeFlag">
+<span id="_CPPv311PxShapeFlag"></span><span id="_CPPv211PxShapeFlag"></span><span id="PxShapeFlag"></span><span class="target" id="struct_px_shape_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShapeFlag</span></span></span><a class="headerlink" href="#_CPPv411PxShapeFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags which affect the behavior of PxShapes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"><span class="std std-ref">PxShape.setFlag()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxShapeFlag4EnumE">
+<span id="_CPPv3N11PxShapeFlag4EnumE"></span><span id="_CPPv2N11PxShapeFlag4EnumE"></span><span class="target" id="struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1a"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N11PxShapeFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxShapeFlag4Enum17eSIMULATION_SHAPEE">
+<span id="_CPPv3N11PxShapeFlag4Enum17eSIMULATION_SHAPEE"></span><span id="_CPPv2N11PxShapeFlag4Enum17eSIMULATION_SHAPEE"></span><span class="target" id="struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIMULATION_SHAPE</span></span></span><a class="headerlink" href="#_CPPv4N11PxShapeFlag4Enum17eSIMULATION_SHAPEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The shape will partake in collision in the physical simulation. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a4dc1da28643ccf9f77c8432b5eb2fd32"><span class="std std-ref">PxSimulationEventCallback.onContact()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"><span class="std std-ref">PxShape.setFlag()</span></a>, <a class="reference internal" href="class_px_shape.html#class_px_shape_1afc179cb4b2146af98c76623d2fc0db6e"><span class="std std-ref">PxShape.setFlags()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is illegal to raise the eSIMULATION_SHAPE and eTRIGGER_SHAPE flags. In the event that one of these flags is already raised the sdk will reject any attempt to raise the other. To raise the eSIMULATION_SHAPE first ensure that eTRIGGER_SHAPE is already lowered.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag has no effect if simulation is disabled for the corresponding actor (see <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag_1a1bc4c717e79cd547bdbe09a179ee9f1da0838a5b8c88cebfa5d53904bb3b97411"><span class="std std-ref">PxActorFlag::eDISABLE_SIMULATION</span></a>).</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE">
+<span id="_CPPv3N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE"></span><span id="_CPPv2N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE"></span><span class="target" id="struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSCENE_QUERY_SHAPE</span></span></span><a class="headerlink" href="#_CPPv4N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The shape will partake in scene queries (ray casts, overlap tests, sweeps, …). </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxShapeFlag4Enum14eTRIGGER_SHAPEE">
+<span id="_CPPv3N11PxShapeFlag4Enum14eTRIGGER_SHAPEE"></span><span id="_CPPv2N11PxShapeFlag4Enum14eTRIGGER_SHAPEE"></span><span class="target" id="struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTRIGGER_SHAPE</span></span></span><a class="headerlink" href="#_CPPv4N11PxShapeFlag4Enum14eTRIGGER_SHAPEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The shape is a trigger which can send reports whenever other shapes enter/leave its volume. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback.onTrigger()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"><span class="std std-ref">PxShape.setFlag()</span></a>, <a class="reference internal" href="class_px_shape.html#class_px_shape_1afc179cb4b2146af98c76623d2fc0db6e"><span class="std std-ref">PxShape.setFlags()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Triangle meshes and heightfields can not be triggers. Shape creation will fail in these cases.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shapes marked as triggers do not collide with other objects. If an object should act both as a trigger shape and a collision shape then create a rigid body with two shapes, one being a trigger shape and the other a collision shape. It is illegal to raise the eTRIGGER_SHAPE and eSIMULATION_SHAPE flags on a single <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> instance. In the event that one of these flags is already raised the sdk will reject any attempt to raise the other. To raise the eTRIGGER_SHAPE flag first ensure that eSIMULATION_SHAPE flag is already lowered.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Trigger shapes will no longer send notification events for interactions with other trigger shapes.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shapes marked as triggers are allowed to participate in scene queries, provided the eSCENE_QUERY_SHAPE flag is set.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This flag has no effect if simulation is disabled for the corresponding actor (see <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag_1a1bc4c717e79cd547bdbe09a179ee9f1da0838a5b8c88cebfa5d53904bb3b97411"><span class="std std-ref">PxActorFlag::eDISABLE_SIMULATION</span></a>).</p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxShapeFlag4Enum14eVISUALIZATIONE">
+<span id="_CPPv3N11PxShapeFlag4Enum14eVISUALIZATIONE"></span><span id="_CPPv2N11PxShapeFlag4Enum14eVISUALIZATIONE"></span><span class="target" id="struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa1b3a6f33eb84ee2dc74eac63aa86f2a4"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eVISUALIZATION</span></span></span><a class="headerlink" href="#_CPPv4N11PxShapeFlag4Enum14eVISUALIZATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enable debug renderer for this shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a35f231796a325fcf587e681831c5fcb5"><span class="std std-ref">PxScene.getRenderBuffer()</span></a> <a class="reference internal" href="class_px_render_buffer.html#class_px_render_buffer"><span class="std std-ref">PxRenderBuffer</span></a> <a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter"><span class="std std-ref">PxVisualizationParameter</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

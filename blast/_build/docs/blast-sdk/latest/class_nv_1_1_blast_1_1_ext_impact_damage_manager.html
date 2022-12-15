@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtImpactDamageManager &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtImpactDamageManager</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extimpactdamagemanager">
+<span id="exhale-class-class-nv-1-1-blast-1-1-ext-impact-damage-manager"></span><h1>Nv::Blast::ExtImpactDamageManager<a class="headerlink" href="#nv-blast-extimpactdamagemanager" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_physx_NvBlastExtPxImpactDamageManager.h.html#file-extensions-physx-nvblastextpximpactdamagemanager-h"><span class="std std-ref">extensions/physx/NvBlastExtPxImpactDamageManager.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManagerE">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManagerE"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManagerE"></span><span id="Nv::Blast::ExtImpactDamageManager"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtImpactDamageManager</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManagerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Impact Damage Manager. </p>
+<p>Requires <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_manager.html#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a>. Call onContact from PxSimulationEventCallback onContact to accumulate damage. Call applyDamage to apply accumulated damage. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager7releaseEv">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager7releaseEv"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager7releaseEv"></span><span id="Nv::Blast::ExtImpactDamageManager::release"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1a8694aa7e4ce8a914283fae35f4aa2ff6"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this manager. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager11setSettingsERK17ExtImpactSettings">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager11setSettingsERK17ExtImpactSettings"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager11setSettingsERK17ExtImpactSettings"></span><span id="Nv::Blast::ExtImpactDamageManager::setSettings__ExtImpactSettingsCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1aafecf57547d4bdf22346c7ea175017ab"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setSettings</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_impact_settings.html#_CPPv4N2Nv5Blast17ExtImpactSettingsE" title="Nv::Blast::ExtImpactSettings"><span class="pre">ExtImpactSettings</span></a> <span class="pre">&amp;</span><em><span class="pre">settings</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager11setSettingsERK17ExtImpactSettings" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a> settings. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>settings</strong> – <strong>[in]</strong> The settings to be set on <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager9onContactERKN5physx19PxContactPairHeaderEPKN5physx13PxContactPairE8uint32_t">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager9onContactERKN5physx19PxContactPairHeaderEPKN5physx13PxContactPairE8uint32_t"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager9onContactERKN5physx19PxContactPairHeaderEPKN5physx13PxContactPairE8uint32_t"></span><span id="Nv::Blast::ExtImpactDamageManager::onContact__physx::PxContactPairHeaderCR.physx::PxContactPairCP.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1adc28836fd069bd5290ad5378567428c6"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">onContact</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxContactPairHeader</span> <span class="pre">&amp;</span><em><span class="pre">pairHeader</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxContactPair</span> <span class="pre">*</span><em><span class="pre">pairs</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">nbPairs</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager9onContactERKN5physx19PxContactPairHeaderEPKN5physx13PxContactPairE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>This method is equal to PxSimulationEventCallback::onContact. </p>
+<p>User should implement own PxSimulationEventCallback onContact and call this method in order <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a> to work correctly.</p>
+<p>Contacts will be processed and impact damage will be accumulated.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxContactPair. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSimulationEventCallback </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairHeader</strong> – <strong>[in]</strong> Information on the two actors whose shapes triggered a contact report. </p></li>
+<li><p><strong>pairs</strong> – <strong>[in]</strong> The contact pairs of two actors for which contact reports have been requested. </p></li>
+<li><p><strong>nbPairs</strong> – <strong>[in]</strong> The number of provided contact pairs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager11applyDamageEv">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager11applyDamageEv"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager11applyDamageEv"></span><span id="Nv::Blast::ExtImpactDamageManager::applyDamage"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1a613f6c52b8406b9cedb154498a29529b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">applyDamage</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager11applyDamageEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply accumulated impact damage. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager6createEP12ExtPxManager17ExtImpactSettings">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager6createEP12ExtPxManager17ExtImpactSettings"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager6createEP12ExtPxManager17ExtImpactSettings"></span><span id="Nv::Blast::ExtImpactDamageManager::create__ExtPxManagerP.ExtImpactSettings"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1a5687ec8821dd47069214a893d0c2a379"></span><em class="property"><span class="pre">static</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManagerE" title="Nv::Blast::ExtImpactDamageManager"><span class="pre">ExtImpactDamageManager</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_manager.html#_CPPv4N2Nv5Blast12ExtPxManagerE" title="Nv::Blast::ExtPxManager"><span class="pre">ExtPxManager</span></a> <span class="pre">*</span><em><span class="pre">pxManager</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_impact_settings.html#_CPPv4N2Nv5Blast17ExtImpactSettingsE" title="Nv::Blast::ExtImpactSettings"><span class="pre">ExtImpactSettings</span></a> <em><span class="pre">settings</span></em> <span class="pre">=</span> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_impact_settings.html#_CPPv4N2Nv5Blast17ExtImpactSettingsE" title="Nv::Blast::ExtImpactSettings"><span class="pre">ExtImpactSettings</span></a><span class="pre">(</span><span class="pre">)</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager6createEP12ExtPxManager17ExtImpactSettings" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pxManager</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_manager.html#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a> instance to be used by impact damage manager. </p></li>
+<li><p><strong>settings</strong> – <strong>[in]</strong> The settings to be set on <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager"><span class="std std-ref">ExtImpactDamageManager</span></a> if successful, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast22ExtImpactDamageManager12FilterShaderEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataERN5physx11PxPairFlagsEPKv8uint32_t">
+<span id="_CPPv3N2Nv5Blast22ExtImpactDamageManager12FilterShaderEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataERN5physx11PxPairFlagsEPKv8uint32_t"></span><span id="_CPPv2N2Nv5Blast22ExtImpactDamageManager12FilterShaderEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataERN5physx11PxPairFlagsEPKv8uint32_t"></span><span id="Nv::Blast::ExtImpactDamageManager::FilterShader__physx::PxFilterObjectAttributes.physx::PxFilterData.physx::PxFilterObjectAttributes.physx::PxFilterData.physx::PxPairFlagsR.voidCP.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_impact_damage_manager_1aab54370a9cbbe0030980ceab447c1c18"></span><em class="property"><span class="pre">static</span></em> <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxFilterFlags</span> <code class="sig-name descname"><span class="pre">FilterShader</span></code><span class="sig-paren">(</span><span class="pre">physx</span><span class="pre">::</span><span class="pre">PxFilterObjectAttributes</span> <em><span class="pre">attributes0</span></em>, <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxFilterData</span> <em><span class="pre">filterData0</span></em>, <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxFilterObjectAttributes</span> <em><span class="pre">attributes1</span></em>, <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxFilterData</span> <em><span class="pre">filterData1</span></em>, <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxPairFlags</span> <span class="pre">&amp;</span><em><span class="pre">pairFlags</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">constantBlock</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">constantBlockSize</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast22ExtImpactDamageManager12FilterShaderEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataEN5physx24PxFilterObjectAttributesEN5physx12PxFilterDataERN5physx11PxPairFlagsEPKv8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Custom implementation of PxSimulationFilterShader, enables necessary information to be passed in <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_impact_damage_manager_1adc28836fd069bd5290ad5378567428c6"><span class="std std-ref">onContact()</span></a>. </p>
+<p>Set it in your PxScene PxSceneDesc in order to impact damage to work correctly or implement your own.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSimulationFilterShader </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

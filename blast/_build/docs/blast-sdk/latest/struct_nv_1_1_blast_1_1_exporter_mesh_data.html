@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExporterMeshData &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExporterMeshData</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-exportermeshdata">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-exporter-mesh-data"></span><h1>Nv::Blast::ExporterMeshData<a class="headerlink" href="#nv-blast-exportermeshdata" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_exporter_NvBlastExtExporter.h.html#file-extensions-exporter-nvblastextexporter-h"><span class="std std-ref">extensions/exporter/NvBlastExtExporter.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshDataE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshDataE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshDataE"></span><span id="Nv::Blast::ExporterMeshData"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExporterMeshData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData5assetE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData5assetE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData5assetE"></span><span id="Nv::Blast::ExporterMeshData::asset__NvBlastAssetP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a7f7c8fb6f3d9f53bf3deef296a620fe5"></span><a class="reference internal" href="struct_nv_blast_asset.html#_CPPv412NvBlastAsset" title="NvBlastAsset"><span class="pre">NvBlastAsset</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">asset</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData5assetE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData14positionsCountE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData14positionsCountE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData14positionsCountE"></span><span id="Nv::Blast::ExporterMeshData::positionsCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a1f65943048a8a5091e3a518ad33ffa34"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">positionsCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData14positionsCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData12normalsCountE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData12normalsCountE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData12normalsCountE"></span><span id="Nv::Blast::ExporterMeshData::normalsCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a2fdc2eb1919de073682ef56696ed987b"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">normalsCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData12normalsCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData8uvsCountE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData8uvsCountE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData8uvsCountE"></span><span id="Nv::Blast::ExporterMeshData::uvsCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a0deee2a8bd5930e7289a361ec9c3465a"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">uvsCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData8uvsCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData9positionsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData9positionsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData9positionsE"></span><span id="Nv::Blast::ExporterMeshData::positions__NvcVec3P"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a4ee43e0e73096445b803c7e8ffca7563"></span><a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">positions</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData9positionsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData7normalsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData7normalsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData7normalsE"></span><span id="Nv::Blast::ExporterMeshData::normals__NvcVec3P"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1ac81eb57f0c73620214e5719051c635c8"></span><a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">normals</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData7normalsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData3uvsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData3uvsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData3uvsE"></span><span id="Nv::Blast::ExporterMeshData::uvs__NvcVec2P"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1ab96017bbb6617a6276b2f8b60238a44a"></span><a class="reference internal" href="struct_nvc_vec2.html#_CPPv47NvcVec2" title="NvcVec2"><span class="pre">NvcVec2</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">uvs</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData3uvsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData9meshCountE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData9meshCountE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData9meshCountE"></span><span id="Nv::Blast::ExporterMeshData::meshCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1abe4f127b644d544d86d7d91039e008cc"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">meshCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData9meshCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData12submeshCountE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData12submeshCountE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData12submeshCountE"></span><span id="Nv::Blast::ExporterMeshData::submeshCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a8186645cb97a75ddf9c5d01c26929aa5"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">submeshCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData12submeshCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData11submeshMatsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData11submeshMatsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData11submeshMatsE"></span><span id="Nv::Blast::ExporterMeshData::submeshMats__MaterialP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a233081f899ff4a0f41dd5964d816cd1d"></span><a class="reference internal" href="struct_nv_1_1_blast_1_1_material.html#_CPPv4N2Nv5Blast8MaterialE" title="Nv::Blast::Material"><span class="pre">Material</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">submeshMats</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData11submeshMatsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData14submeshOffsetsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData14submeshOffsetsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData14submeshOffsetsE"></span><span id="Nv::Blast::ExporterMeshData::submeshOffsets__uint32_tP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1ac5da07eb5e955933b2a66172086ca1e3"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">submeshOffsets</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData14submeshOffsetsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Indices offsets for posIndex, normIndex and texIndex First position index: posIndex[submeshOffsets[meshId * submeshCount + submeshId]] Total number of indices: submeshOffsets[meshCount * submeshCount]. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData8posIndexE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData8posIndexE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData8posIndexE"></span><span id="Nv::Blast::ExporterMeshData::posIndex__uint32_tP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1af4f59c67fa80d8d885279ad6baaf4621"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">posIndex</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData8posIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData9normIndexE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData9normIndexE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData9normIndexE"></span><span id="Nv::Blast::ExporterMeshData::normIndex__uint32_tP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a4e60dfee2036e0d6147e17978f8f8ec0"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">normIndex</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData9normIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData8texIndexE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData8texIndexE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData8texIndexE"></span><span id="Nv::Blast::ExporterMeshData::texIndex__uint32_tP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a7492221e24b7476226c98c09a3c9e975"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">texIndex</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData8texIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData12hullsOffsetsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData12hullsOffsetsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData12hullsOffsetsE"></span><span id="Nv::Blast::ExporterMeshData::hullsOffsets__uint32_tP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1a0ce1720fca4452f6fc3df794ca659ec3"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">hullsOffsets</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData12hullsOffsetsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Hull offsets. </p>
+<p>Contains meshCount + 1 element. First hull for i-th mesh: hulls[hullsOffsets[i]] hullsOffsets[meshCount+1] is total number of hulls </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast16ExporterMeshData5hullsE">
+<span id="_CPPv3N2Nv5Blast16ExporterMeshData5hullsE"></span><span id="_CPPv2N2Nv5Blast16ExporterMeshData5hullsE"></span><span id="Nv::Blast::ExporterMeshData::hulls__CollisionHullPP"></span><span class="target" id="struct_nv_1_1_blast_1_1_exporter_mesh_data_1abd261e53e4fdcb448336643a9c0ee373"></span><a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#_CPPv4N2Nv5Blast13CollisionHullE" title="Nv::Blast::CollisionHull"><span class="pre">CollisionHull</span></a> <span class="pre">*</span><span class="pre">*</span><code class="sig-name descname"><span class="pre">hulls</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast16ExporterMeshData5hullsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

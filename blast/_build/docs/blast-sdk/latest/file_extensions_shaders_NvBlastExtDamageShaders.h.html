@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>extensions/shaders/NvBlastExtDamageShaders.h &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>extensions/shaders/NvBlastExtDamageShaders.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extensions-shaders-nvblastextdamageshaders-h">
+<span id="file-extensions-shaders-nvblastextdamageshaders-h"></span><h1>extensions/shaders/NvBlastExtDamageShaders.h<a class="headerlink" href="#extensions-shaders-nvblastextdamageshaders-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_extensions_shaders.html#dir-extensions-shaders"><span class="std std-ref">extensions/shaders/</span></a></p>
+<p>NvBlastExtDamageShaders blast extension, provides damage shaders for applying damage to destructibles.</p>
+<p>Source: <a class="reference internal" href="program_listing_file_extensions_shaders_NvBlastExtDamageShaders.h.html#program-listing-file-extensions-shaders-nvblastextdamageshaders-h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_nv_blast_ext_capsule_radial_damage_desc.html#exhale-struct-struct-nv-blast-ext-capsule-radial-damage-desc"><span class="std std-ref">NvBlastExtCapsuleRadialDamageDesc</span></a>: Capsule Radial Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_impact_spread_damage_desc.html#exhale-struct-struct-nv-blast-ext-impact-spread-damage-desc"><span class="std std-ref">NvBlastExtImpactSpreadDamageDesc</span></a>: Impact Spread Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_material.html#exhale-struct-struct-nv-blast-ext-material"><span class="std std-ref">NvBlastExtMaterial</span></a>: Example of simple material.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_program_params.html#exhale-struct-struct-nv-blast-ext-program-params"><span class="std std-ref">NvBlastExtProgramParams</span></a>: Damage program params.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_radial_damage_desc.html#exhale-struct-struct-nv-blast-ext-radial-damage-desc"><span class="std std-ref">NvBlastExtRadialDamageDesc</span></a>: Radial Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_shear_damage_desc.html#exhale-struct-struct-nv-blast-ext-shear-damage-desc"><span class="std std-ref">NvBlastExtShearDamageDesc</span></a>: Shear Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_triangle_intersection_damage_desc.html#exhale-struct-struct-nv-blast-ext-triangle-intersection-damage-desc"><span class="std std-ref">NvBlastExtTriangleIntersectionDamageDesc</span></a>: Triangle Intersection Damage Desc.</p></li>
+<li><p><a class="reference internal" href="class_nv_blast_ext_damage_accelerator.html#exhale-class-class-nv-blast-ext-damage-accelerator"><span class="std std-ref">NvBlastExtDamageAccelerator</span></a>: A few example damage shader implementations.</p></li>
+</ul>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a2858337c4940ef330af46c87841ec8a1.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a2858337c4940ef330af46c87841ec8a1"><span class="std std-ref">NvBlastExtCapsuleFalloffGraphShader</span></a>: Capsule Radial Falloff damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a836ef5b0fd3eb3485af917599ab19e11.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a836ef5b0fd3eb3485af917599ab19e11"><span class="std std-ref">NvBlastExtCapsuleFalloffSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a01ce708222741d4d1a3bdee94cdff422.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a01ce708222741d4d1a3bdee94cdff422"><span class="std std-ref">NvBlastExtCutterGraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a49ec2bf9cb78069aea33b323a3c46276.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a49ec2bf9cb78069aea33b323a3c46276"><span class="std std-ref">NvBlastExtCutterSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aaba10f0cb7fda7438c600a9ea84c3a8f.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aaba10f0cb7fda7438c600a9ea84c3a8f"><span class="std std-ref">NvBlastExtDamageAcceleratorCreate</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a6349a0cf92522e18559d900ab65b14d1.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a6349a0cf92522e18559d900ab65b14d1"><span class="std std-ref">NvBlastExtFalloffGraphShader</span></a>: Radial Falloff and Radial Cutter damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a879c11ce1b73b7b497288c8a2710c438.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a879c11ce1b73b7b497288c8a2710c438"><span class="std std-ref">NvBlastExtFalloffSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8f3d1da3bd2e0c19bd18b8840a4f531e"><span class="std std-ref">NvBlastExtImpactSpreadGraphShader</span></a>: Impact Spread Damage Shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1ae6214e68108b781cdb160d787650dd2e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1ae6214e68108b781cdb160d787650dd2e"><span class="std std-ref">NvBlastExtImpactSpreadSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa49711a370498c4da36bd9dac4d1bbd9.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aa49711a370498c4da36bd9dac4d1bbd9"><span class="std std-ref">NvBlastExtShearGraphShader</span></a>: Shear Damage Shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a3103465d5c665418138ea5e93a62ac73.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a3103465d5c665418138ea5e93a62ac73"><span class="std std-ref">NvBlastExtShearSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa1a7f982c44ff2e230ba37caf03aaa0b.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aa1a7f982c44ff2e230ba37caf03aaa0b"><span class="std std-ref">NvBlastExtTriangleIntersectionGraphShader</span></a>: Triangle Intersection damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8cd81f47a4c823b3fa5ed0dee6a114bb.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8cd81f47a4c823b3fa5ed0dee6a114bb"><span class="std std-ref">NvBlastExtTriangleIntersectionSubgraphShader</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

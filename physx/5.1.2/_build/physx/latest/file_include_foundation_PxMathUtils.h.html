@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/foundation/PxMathUtils.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/foundation/PxMathUtils.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-foundation-pxmathutils-h">
+<span id="file-include-foundation-pxmathutils-h"></span><h1>include/foundation/PxMathUtils.h<a class="headerlink" href="#include-foundation-pxmathutils-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_foundation.html#dir-include-foundation"><span class="std std-ref">include/foundation/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_foundation_PxMathUtils.h.html#program-listing-file-include-foundation-pxmathutils-h"><span class="std std-ref">include/foundation/PxMathUtils.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_extensions_PxMassProperties.h.html#file-include-extensions-pxmassproperties-h"><span class="std std-ref">include/extensions/PxMassProperties.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_interpolation.html#exhale-struct-struct-interpolation"><span class="std std-ref">Interpolation</span></a></p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__common_1gad8a0c837ed62c845aa022442a4a81827.html#exhale-function-group-common-1gad8a0c837ed62c845aa022442a4a81827"><span class="std std-ref">computeBarycentric</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaa9b74a2052533610b4b229028eca066e.html#exhale-function-group-common-1gaa9b74a2052533610b4b229028eca066e"><span class="std std-ref">computeBarycentric</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaef6d1ccfdddddcd67ecc9849a8feb6f5.html#exhale-function-group-common-1gaef6d1ccfdddddcd67ecc9849a8feb6f5"><span class="std std-ref">PxComputeAngle</span></a>: Compute the angle between two non-unit vectors.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga672f54c6e0ba9efbb0d6bce8dbdfef54.html#exhale-function-group-common-1ga672f54c6e0ba9efbb0d6bce8dbdfef54"><span class="std std-ref">PxComputeBasisVectors</span></a>: Compute two normalized vectors (right and up) that are perpendicular to an input normalized vector (dir).</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gabb1443d7b8bc5c258850bb6004296cf8.html#exhale-function-group-common-1gabb1443d7b8bc5c258850bb6004296cf8"><span class="std std-ref">PxComputeBasisVectors</span></a>: Compute three normalized vectors (dir, right and up) that are parallel to (dir) and perpendicular to (right, up) the normalized direction vector (p1 - p0)/||p1 - p0||.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaaa7cbc36723f65081aeffb1d918df2e6.html#exhale-function-group-common-1gaaa7cbc36723f65081aeffb1d918df2e6"><span class="std std-ref">PxDiagonalize</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaf3109f3d63fbfd58cb4862fef5e5a8b6.html#exhale-function-group-common-1gaf3109f3d63fbfd58cb4862fef5e5a8b6"><span class="std std-ref">PxEllipseClamp</span></a>: Compute the closest point on an 2d ellipse to a given 2d point.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga9c0c5eab4c913a0ec42211e7eabc0a44.html#exhale-function-group-common-1ga9c0c5eab4c913a0ec42211e7eabc0a44"><span class="std std-ref">PxExp</span></a>: Compute the exponent of a PxVec3.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga390c05e2a27d7e13bf16f4eb49f048ff.html#exhale-function-group-common-1ga390c05e2a27d7e13bf16f4eb49f048ff"><span class="std std-ref">PxGetNextIndex3</span></a>: Compute (i+1)%3.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaa7b17595b5a0bc6cad649d4cd12ccd35.html#exhale-function-group-common-1gaa7b17595b5a0bc6cad649d4cd12ccd35"><span class="std std-ref">PxIntegrateTransform</span></a>: integrate transform.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaec55bba62b61ebcee04e6c841f95d391.html#exhale-function-group-common-1gaec55bba62b61ebcee04e6c841f95d391"><span class="std std-ref">PxLargestAxis</span></a>: return Returns 0 if v.x is largest element of v, 1 if v.y is largest element, 2 if v.z is largest element.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga18cc8f5bd44f999e922ef58d9323168e.html#exhale-function-group-common-1ga18cc8f5bd44f999e922ef58d9323168e"><span class="std std-ref">PxLog</span></a>: return Returns the log of a PxQuat</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gaea3e177de113d6bf9376d489bd5cfdcb.html#exhale-function-group-common-1gaea3e177de113d6bf9376d489bd5cfdcb"><span class="std std-ref">PxOptimizeBoundingBox</span></a>: computes a oriented bounding box around the scaled basis.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga9927851bee11574416444fd181154498.html#exhale-function-group-common-1ga9927851bee11574416444fd181154498"><span class="std std-ref">PxPlaneEquationFromTransform</span></a>: creates a plane equation from a transform, such as the actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#exhale-class-class-px-plane-geometry"><span class="std std-ref">PxPlaneGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga26aee2af9614a783a6a65608b1e63f59.html#exhale-function-group-common-1ga26aee2af9614a783a6a65608b1e63f59"><span class="std std-ref">PxSdfSample</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga3fcba35609cc2308a1ac5719cca9e3a3.html#exhale-function-group-common-1ga3fcba35609cc2308a1ac5719cca9e3a3"><span class="std std-ref">PxSeparateSwingTwist</span></a>: Compute from an input quaternion q a pair of quaternions (swing, twist) such that q = swing * twist with the caveats that swing.x = twist.y = twist.z = 0.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gafd97f8e63d535db8ee32040fc10a2214.html#exhale-function-group-common-1gafd97f8e63d535db8ee32040fc10a2214"><span class="std std-ref">PxShortestRotation</span></a>: finds the shortest rotation between two vectors.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga76f9cc1ea05f0d890c83741c5dbf34bd.html#exhale-function-group-common-1ga76f9cc1ea05f0d890c83741c5dbf34bd"><span class="std std-ref">PxSlerp</span></a>: Spherical linear interpolation of two quaternions.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1gafc774511e549bdda887efdb84c408bf4.html#exhale-function-group-common-1gafc774511e549bdda887efdb84c408bf4"><span class="std std-ref">PxTanHalf</span></a>: Compute tan(theta/2) given sin(theta) and cos(theta) as inputs.</p></li>
+<li><p><a class="reference internal" href="function_group__common_1ga7b4d7bdd33c9aef3c754f668228fa8e4.html#exhale-function-group-common-1ga7b4d7bdd33c9aef3c754f668228fa8e4"><span class="std std-ref">PxTransformFromPlaneEquation</span></a>: creates a transform from a plane equation, suitable for an actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#exhale-class-class-px-plane-geometry"><span class="std std-ref">PxPlaneGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__common_1gac3d19767c1de17d720edaf7bd4bdf612.html#exhale-function-group-common-1gac3d19767c1de17d720edaf7bd4bdf612"><span class="std std-ref">PxTransformFromSegment</span></a>: creates a transform from the endpoints of a segment, suitable for an actor transform for a <a class="reference internal" href="class_px_capsule_geometry.html#exhale-class-class-px-capsule-geometry"><span class="std std-ref">PxCapsuleGeometry</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

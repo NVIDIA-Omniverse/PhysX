@@ -1,0 +1,420 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::TkGroup &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::TkGroup</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-tkgroup">
+<span id="exhale-class-class-nv-1-1-blast-1-1-tk-group"></span><h1>Nv::Blast::TkGroup<a class="headerlink" href="#nv-blast-tkgroup" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkGroup.h.html#file-toolkit-nvblasttkgroup-h"><span class="std std-ref">toolkit/NvBlastTkGroup.h</span></a></p>
+<div class="section" id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::TkIdentifiable</span></code> (<a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#exhale-class-class-nv-1-1-blast-1-1-tk-identifiable"><span class="std std-ref">Nv::Blast::TkIdentifiable</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast7TkGroupE">
+<span id="_CPPv3N2Nv5Blast7TkGroupE"></span><span id="_CPPv2N2Nv5Blast7TkGroupE"></span><span id="Nv::Blast::TkGroup"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkGroup</span></code> <span class="pre">:</span> <em class="property"><span class="pre">public</span></em> <span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><span class="pre">::</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#_CPPv4N2Nv5Blast14TkIdentifiableE" title="Nv::Blast::TkIdentifiable"><span class="pre">TkIdentifiable</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroupE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>A group is a processing unit, to which the user may add TkActors. </p>
+<p>New actors generated from splitting a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> are automatically put into the same group. However, any actor may be removed from its group and placed into another group (or no group) by the user’s choice.</p>
+<p>When the group’s process function is called, all actors’ damage buffers will be processed and turned into fracture events and the actor is split if applicable.</p>
+<p>This work can be done in multiple threads with the help of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker"><span class="std std-ref">TkGroupWorker</span></a><p>:</p>
+<p>Instead of calling the process function, commence the procedure with startProcess which returns the number of jobs to process.</p>
+
+ Each concurrent thread uses an acquired <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker"><span class="std std-ref">TkGroupWorker</span></a><p>to process the jobs. Over the whole procedure, each job must be processed once and only once.</p>
+<p>Jobs can be processed in any order. TkGroupWorkers can be returned and acquired later by another task. After processing every job and returning all the workers to the group, endProcess concludes the procedure.</p>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup8addActorER7TkActor">
+<span id="_CPPv3N2Nv5Blast7TkGroup8addActorER7TkActor"></span><span id="_CPPv2N2Nv5Blast7TkGroup8addActorER7TkActor"></span><span id="Nv::Blast::TkGroup::addActor__TkActorR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1a0ef2653e6d605641a65e07634cb0436c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">addActor</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#_CPPv4N2Nv5Blast7TkActorE" title="Nv::Blast::TkActor"><span class="pre">TkActor</span></a> <span class="pre">&amp;</span><em><span class="pre">actor</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup8addActorER7TkActor" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Add the actor to this group, if the actor does not currently belong to a group. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The actor to add.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if successful, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup13getActorCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkGroup13getActorCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkGroup13getActorCountEv"></span><span id="Nv::Blast::TkGroup::getActorCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1a0cd433d98578658e1240c7c50fb3c334"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getActorCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup13getActorCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of actors currently in this group. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of TkActors that currently exist in this group. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup9getActorsEPP7TkActor8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast7TkGroup9getActorsEPP7TkActor8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast7TkGroup9getActorsEPP7TkActor8uint32_t8uint32_t"></span><span id="Nv::Blast::TkGroup::getActors__TkActorPP.uint32_t.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1ac4f6211e8d94b98da0fe9031f1ecec56"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getActors</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#_CPPv4N2Nv5Blast7TkActorE" title="Nv::Blast::TkActor"><span class="pre">TkActor</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">buffer</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">bufferSize</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">indexStart</span></em> <span class="pre">=</span> <span class="pre">0</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup9getActorsEPP7TkActor8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve an array of pointers (into the user-supplied buffer) to actors. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> The number of elements available to write into buffer. </p></li>
+<li><p><strong>indexStart</strong> – <strong>[in]</strong> The starting index of the actor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> pointers written to the buffer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup12startProcessEv">
+<span id="_CPPv3N2Nv5Blast7TkGroup12startProcessEv"></span><span id="_CPPv2N2Nv5Blast7TkGroup12startProcessEv"></span><span id="Nv::Blast::TkGroup::startProcess"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1ae98b1523b3f1323c42129fe88842f306"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">startProcess</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup12startProcessEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Lock this group for processing concurrently with <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker"><span class="std std-ref">TkGroupWorker</span></a>. </p>
+<p>The group is unlocked again with the <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1a4d21bd8b0225ae57b81bb8fe09df39ff"><span class="std std-ref">endProcess()</span></a> function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of jobs to process. <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker_1adf15d994a12f0c0b18dd0a878b1ddd2f"><span class="std std-ref">TkGroupWorker::process</span></a> must be called once for each jobID from 0 to this number-1. See <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1ab17eb1b860c0a8dfe2da435bb0964d83"><span class="std std-ref">TkGroup::process</span></a> for a single threaded example. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup10endProcessEv">
+<span id="_CPPv3N2Nv5Blast7TkGroup10endProcessEv"></span><span id="_CPPv2N2Nv5Blast7TkGroup10endProcessEv"></span><span id="Nv::Blast::TkGroup::endProcess"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1a4d21bd8b0225ae57b81bb8fe09df39ff"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">endProcess</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup10endProcessEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Unlock this group after all jobs were processed with <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker"><span class="std std-ref">TkGroupWorker</span></a>. </p>
+<p>All workers must have been returned with <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1a7fc6d691a59aa7b107adfaac6fe5fd65"><span class="std std-ref">returnWorker()</span></a>. This function gathers the results of the split operations on the actors in this group. Events will be dispatched to notify listeners of new and deleted actors.</p>
+<p>Note that groups concurrently dispatching events for the same <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a> require synchronization in the <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>’s Listener. However, concurrent use of endProcess is not recommended in this version. It should be called from the main thread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the group was processing </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup14setWorkerCountE8uint32_t">
+<span id="_CPPv3N2Nv5Blast7TkGroup14setWorkerCountE8uint32_t"></span><span id="_CPPv2N2Nv5Blast7TkGroup14setWorkerCountE8uint32_t"></span><span id="Nv::Blast::TkGroup::setWorkerCount__uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1a6a5d3d9dedc6025460c1102b288a1a85"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setWorkerCount</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">workerCount</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup14setWorkerCountE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set the expected number of concurrent worker threads that will process this group concurrently. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup14getWorkerCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkGroup14getWorkerCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkGroup14getWorkerCountEv"></span><span id="Nv::Blast::TkGroup::getWorkerCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1ad8f946a317af8760c9f70f9455b1dd6e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getWorkerCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup14getWorkerCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The total amount of workers allocated for this group. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup13acquireWorkerEv">
+<span id="_CPPv3N2Nv5Blast7TkGroup13acquireWorkerEv"></span><span id="_CPPv2N2Nv5Blast7TkGroup13acquireWorkerEv"></span><span id="Nv::Blast::TkGroup::acquireWorker"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1aafdf7e869582f414b447edc422b05fb0"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#_CPPv4N2Nv5Blast13TkGroupWorkerE" title="Nv::Blast::TkGroupWorker"><span class="pre">TkGroupWorker</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">acquireWorker</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup13acquireWorkerEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Acquire one worker to process the group concurrently on a thread. </p>
+<p>The worker must be returned with <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1a7fc6d691a59aa7b107adfaac6fe5fd65"><span class="std std-ref">returnWorker()</span></a> before <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1a4d21bd8b0225ae57b81bb8fe09df39ff"><span class="std std-ref">endProcess()</span></a> is called on its group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A worker for this group (at most getWorkerCount) or nullptr if none is available. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup12returnWorkerEP13TkGroupWorker">
+<span id="_CPPv3N2Nv5Blast7TkGroup12returnWorkerEP13TkGroupWorker"></span><span id="_CPPv2N2Nv5Blast7TkGroup12returnWorkerEP13TkGroupWorker"></span><span id="Nv::Blast::TkGroup::returnWorker__TkGroupWorkerP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1a7fc6d691a59aa7b107adfaac6fe5fd65"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">returnWorker</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#_CPPv4N2Nv5Blast13TkGroupWorkerE" title="Nv::Blast::TkGroupWorker"><span class="pre">TkGroupWorker</span></a><span class="pre">*</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup12returnWorkerEP13TkGroupWorker" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return a worker previously acquired with <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group_1aafdf7e869582f414b447edc422b05fb0"><span class="std std-ref">acquireWorker()</span></a> to this <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group"><span class="std std-ref">TkGroup</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>The</strong> – <strong>[in]</strong> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#class_nv_1_1_blast_1_1_tk_group_worker"><span class="std std-ref">TkGroupWorker</span></a> previously acquired from this <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_group"><span class="std std-ref">TkGroup</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup7processEv">
+<span id="_CPPv3N2Nv5Blast7TkGroup7processEv"></span><span id="_CPPv2N2Nv5Blast7TkGroup7processEv"></span><span id="Nv::Blast::TkGroup::process"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1ab17eb1b860c0a8dfe2da435bb0964d83"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">process</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup7processEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Helper function to process the group synchronously on a single thread. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup8getStatsER12TkGroupStats">
+<span id="_CPPv3NK2Nv5Blast7TkGroup8getStatsER12TkGroupStats"></span><span id="_CPPv2NK2Nv5Blast7TkGroup8getStatsER12TkGroupStats"></span><span id="Nv::Blast::TkGroup::getStats__TkGroupStatsRC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_group_1adedce0f4d320f3c7f67d1c9c8ebac152"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">getStats</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_stats.html#_CPPv4N2Nv5Blast12TkGroupStatsE" title="Nv::Blast::TkGroupStats"><span class="pre">TkGroupStats</span></a> <span class="pre">&amp;</span><em><span class="pre">stats</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup8getStatsER12TkGroupStats" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>For profile builds only, request stats of the last successful processing. </p>
+<p>Inactive in other builds. The times and counters reported account for all the TkWorker (accumulated) taking part in the processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stats</strong> – <strong>[in]</strong> The struct to be filled in. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup5getIDEv">
+<span id="_CPPv3NK2Nv5Blast7TkGroup5getIDEv"></span><span id="_CPPv2NK2Nv5Blast7TkGroup5getIDEv"></span><span id="Nv::Blast::TkGroup::getIDC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a610a75ccff6579e5e54a59f2840f6630"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="pre">NvBlastID</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getID</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup5getIDEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Return the ID associated with this object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the ID for this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup5setIDERK9NvBlastID">
+<span id="_CPPv3N2Nv5Blast7TkGroup5setIDERK9NvBlastID"></span><span id="_CPPv2N2Nv5Blast7TkGroup5setIDERK9NvBlastID"></span><span id="Nv::Blast::TkGroup::setID__NvBlastIDCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a630e37302f7c8747373431d747415642"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setID</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="pre">NvBlastID</span></a> <span class="pre">&amp;</span><em><span class="pre">id</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup5setIDERK9NvBlastID" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set the ID for this object. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkGroup7getTypeEv">
+<span id="_CPPv3NK2Nv5Blast7TkGroup7getTypeEv"></span><span id="_CPPv2NK2Nv5Blast7TkGroup7getTypeEv"></span><span id="Nv::Blast::TkGroup::getTypeC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1ad156c3e85ee665c251e26ac86d3cf03b"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getType</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkGroup7getTypeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Access to the static (class) type data for this object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the static type data for this object type. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkGroup7releaseEv">
+<span id="_CPPv3N2Nv5Blast7TkGroup7releaseEv"></span><span id="_CPPv2N2Nv5Blast7TkGroup7releaseEv"></span><span id="Nv::Blast::TkGroup::release"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1a848b4a7ade17edc49a071c472cbfad12"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this object and free associated memory. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast7TkGroup11userIntDataE">
+<span id="_CPPv3N2Nv5Blast7TkGroup11userIntDataE"></span><span id="_CPPv2N2Nv5Blast7TkGroup11userIntDataE"></span><span id="Nv::Blast::TkGroup::userIntData__uint64_t"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a65dbac714ebfdc9f0a4d7a905bbbcdf4"></span><span class="pre">uint64_t</span> <code class="sig-name descname"><span class="pre">userIntData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup11userIntDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Integer field available to the user which may be serialized. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast7TkGroup8userDataE">
+<span id="_CPPv3N2Nv5Blast7TkGroup8userDataE"></span><span id="_CPPv2N2Nv5Blast7TkGroup8userDataE"></span><span id="Nv::Blast::TkGroup::userData__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1ae1a1d9f53d372a748f615fc47b730a42"></span><span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">userData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkGroup8userDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Pointer field available to the user. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,694 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Namespaces &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Namespaces</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="namespaces">
+<h1>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_Nv.html#namespace-nv"><span class="std std-ref">Nv</span></a>: FractureTool has requirements to input meshes to fracture them successfully: 1) Mesh should be closed (watertight) 2) There should not be self-intersections and open-edges.</p></li>
+<li><p><a class="reference internal" href="namespace_Nv__Blast.html#namespace-nv-blast"><span class="std std-ref">Nv::Blast</span></a></p></li>
+<li><p><a class="reference internal" href="namespace_physx.html#namespace-physx"><span class="std std-ref">physx</span></a></p></li>
+<li><p><a class="reference internal" href="namespace_physx__general_PxIOStream2.html#namespace-physx-general-pxiostream2"><span class="std std-ref">physx::general_PxIOStream2</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="classes-and-structs">
+<h1>Classes and Structs<a class="headerlink" href="#classes-and-structs" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_authoring_result.html#exhale-struct-struct-nv-1-1-blast-1-1-authoring-result"><span class="std std-ref">Nv::Blast::AuthoringResult</span></a>: Authoring results.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_beam_pattern_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-beam-pattern-desc"><span class="std std-ref">Nv::Blast::BeamPatternDesc</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_bond_generation_config.html#exhale-struct-struct-nv-1-1-blast-1-1-bond-generation-config"><span class="std std-ref">Nv::Blast::BondGenerationConfig</span></a>: Bond interface generation configuration EXACT - common surface will be searched AVERAGE - Inerface is approximated by projections or intersecitons with midplane maxSeparation - for AVERAGE mode.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_boolean_result_edge.html#exhale-struct-struct-nv-1-1-blast-1-1-boolean-result-edge"><span class="std std-ref">Nv::Blast::BooleanResultEdge</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_boolean_tool_output_data.html#exhale-struct-struct-nv-1-1-blast-1-1-boolean-tool-output-data"><span class="std std-ref">Nv::Blast::BooleanToolOutputData</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_graph.html#exhale-struct-struct-nv-1-1-blast-1-1-chunk-graph"><span class="std std-ref">Nv::Blast::ChunkGraph</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_graph_link.html#exhale-struct-struct-nv-1-1-blast-1-1-chunk-graph-link"><span class="std std-ref">Nv::Blast::ChunkGraphLink</span></a>: Graph used to detect islands.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_info.html#exhale-struct-struct-nv-1-1-blast-1-1-chunk-info"><span class="std std-ref">Nv::Blast::ChunkInfo</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#exhale-struct-struct-nv-1-1-blast-1-1-collision-hull"><span class="std std-ref">Nv::Blast::CollisionHull</span></a>: Collsion hull geometry.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_convex_decomposition_params.html#exhale-struct-struct-nv-1-1-blast-1-1-convex-decomposition-params"><span class="std std-ref">Nv::Blast::ConvexDecompositionParams</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_cutout_configuration.html#exhale-struct-struct-nv-1-1-blast-1-1-cutout-configuration"><span class="std std-ref">Nv::Blast::CutoutConfiguration</span></a>: Cutout fracturing configuration.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_damage_pattern.html#exhale-struct-struct-nv-1-1-blast-1-1-damage-pattern"><span class="std std-ref">Nv::Blast::DamagePattern</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_debug_buffer.html#exhale-struct-struct-nv-1-1-blast-1-1-debug-buffer"><span class="std std-ref">Nv::Blast::DebugBuffer</span></a>: Debug Buffer.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_debug_line.html#exhale-struct-struct-nv-1-1-blast-1-1-debug-line"><span class="std std-ref">Nv::Blast::DebugLine</span></a>: Used to store a single line and colour for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_edge.html#exhale-struct-struct-nv-1-1-blast-1-1-edge"><span class="std std-ref">Nv::Blast::Edge</span></a>: <a class="reference internal" href="struct_nv_1_1_blast_1_1_edge.html#exhale-struct-struct-nv-1-1-blast-1-1-edge"><span class="std std-ref">Nv::Blast::Edge</span></a> representation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_error_code.html#exhale-struct-struct-nv-1-1-blast-1-1-error-code"><span class="std std-ref">Nv::Blast::ErrorCode</span></a>: Error codes.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_exporter_mesh_data.html#exhale-struct-struct-nv-1-1-blast-1-1-exporter-mesh-data"><span class="std std-ref">Nv::Blast::ExporterMeshData</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-force-mode"><span class="std std-ref">Nv::Blast::ExtForceMode</span></a>: Parameter to addForce() calls, determines the exact operation that is carried out.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_impact_settings.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-impact-settings"><span class="std std-ref">Nv::Blast::ExtImpactSettings</span></a>: Impact Damage Manager Settings.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_actor_desc_template.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-actor-desc-template"><span class="std std-ref">Nv::Blast::ExtPxActorDescTemplate</span></a>: PxActor Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_asset_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-asset-desc"><span class="std std-ref">Nv::Blast::ExtPxAssetDesc</span></a>: Descriptor for PxAsset creation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_chunk.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-chunk"><span class="std std-ref">Nv::Blast::ExtPxChunk</span></a>: Physics Chunk.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_family_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-family-desc"><span class="std std-ref">Nv::Blast::ExtPxFamilyDesc</span></a>: Family Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_object_type_i_d.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-object-type-i-d"><span class="std std-ref">Nv::Blast::ExtPxObjectTypeID</span></a>: Standard Object Type IDs.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_shape_desc_template.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-shape-desc-template"><span class="std std-ref">Nv::Blast::ExtPxShapeDescTemplate</span></a>: PxShape Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_spawn_settings.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-spawn-settings"><span class="std std-ref">Nv::Blast::ExtPxSpawnSettings</span></a>: Physics Spawn Settings.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_subchunk.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-subchunk"><span class="std std-ref">Nv::Blast::ExtPxSubchunk</span></a>: Physics Subchunk.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-stress-solver-settings"><span class="std std-ref">Nv::Blast::ExtStressSolverSettings</span></a>: Stress Solver Settings.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event"><span class="std std-ref">Nv::Blast::ExtSyncEvent</span></a>: Generic Sync Event.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event_family_sync.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event-family-sync"><span class="std std-ref">Nv::Blast::ExtSyncEventFamilySync</span></a>: Family Sync Event.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event_fracture.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event-fracture"><span class="std std-ref">Nv::Blast::ExtSyncEventFracture</span></a>: Fracture Sync Event.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event_instance.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event-instance"><span class="std std-ref">Nv::Blast::ExtSyncEventInstance</span></a>: Generic CRTP for Sync Events.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event_physics_sync.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event-physics-sync"><span class="std std-ref">Nv::Blast::ExtSyncEventPhysicsSync</span></a>: Physics Sync Event.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_sync_event_type.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-sync-event-type"><span class="std std-ref">Nv::Blast::ExtSyncEventType</span></a>: Sync Event types.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html#exhale-struct-struct-nv-1-1-blast-1-1-facet"><span class="std std-ref">Nv::Blast::Facet</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#exhale-class-class-nv-1-1-blast-1-1-mesh"><span class="std std-ref">Nv::Blast::Mesh</span></a> facet representation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_facet_facet_result.html#exhale-struct-struct-nv-1-1-blast-1-1-facet-facet-result"><span class="std std-ref">Nv::Blast::FacetFacetResult</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_fracture_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-fracture-desc"><span class="std std-ref">Nv::Blast::FractureDesc</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_hull_polygon.html#exhale-struct-struct-nv-1-1-blast-1-1-hull-polygon"><span class="std std-ref">Nv::Blast::HullPolygon</span></a>: Collision hull geometry format.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_ll_object_type_i_d.html#exhale-struct-struct-nv-1-1-blast-1-1-ll-object-type-i-d"><span class="std std-ref">Nv::Blast::LlObjectTypeID</span></a>: Standard Object Type IDs.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_material.html#exhale-struct-struct-nv-1-1-blast-1-1-material"><span class="std std-ref">Nv::Blast::Material</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_mesh_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-mesh-desc"><span class="std std-ref">Nv::Blast::MeshDesc</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html#exhale-struct-struct-nv-1-1-blast-1-1-noise-configuration"><span class="std std-ref">Nv::Blast::NoiseConfiguration</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_pattern_descriptor.html#exhale-struct-struct-nv-1-1-blast-1-1-pattern-descriptor"><span class="std std-ref">Nv::Blast::PatternDescriptor</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_per_triangle_additional_data.html#exhale-struct-struct-nv-1-1-blast-1-1-per-triangle-additional-data"><span class="std std-ref">Nv::Blast::PerTriangleAdditionalData</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_plane_chunk_indexer.html#exhale-struct-struct-nv-1-1-blast-1-1-plane-chunk-indexer"><span class="std std-ref">Nv::Blast::PlaneChunkIndexer</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_profiler_detail.html#exhale-struct-struct-nv-1-1-blast-1-1-profiler-detail"><span class="std std-ref">Nv::Blast::ProfilerDetail</span></a>: Profiler detail to be reported.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-regular-radial-pattern-desc"><span class="std std-ref">Nv::Blast::RegularRadialPatternDesc</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_slicing_configuration.html#exhale-struct-struct-nv-1-1-blast-1-1-slicing-configuration"><span class="std std-ref">Nv::Blast::SlicingConfiguration</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_data.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-actor-data"><span class="std std-ref">Nv::Blast::TkActorData</span></a>: By the time events are dispatched, a specific <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#exhale-class-class-nv-1-1-blast-1-1-tk-actor"><span class="std std-ref">Nv::Blast::TkActor</span></a> may have been split and became invalid.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-actor-desc"><span class="std std-ref">Nv::Blast::TkActorDesc</span></a>: Descriptor for actor creation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-asset-desc"><span class="std std-ref">Nv::Blast::TkAssetDesc</span></a>: Descriptor for asset creation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-asset-joint-desc"><span class="std std-ref">Nv::Blast::TkAssetJointDesc</span></a>: A descriptor stored by a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#exhale-class-class-nv-1-1-blast-1-1-tk-asset"><span class="std std-ref">Nv::Blast::TkAsset</span></a> for an internal joint.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_event.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-event"><span class="std std-ref">Nv::Blast::TkEvent</span></a>: Event data dispatched to <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_event_listener.html#exhale-class-class-nv-1-1-blast-1-1-tk-event-listener"><span class="std std-ref">Nv::Blast::TkEventListener</span></a> objects.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_fracture_commands.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-fracture-commands"><span class="std std-ref">Nv::Blast::TkFractureCommands</span></a>: Payload for the TkEvent::FractureCommand events.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_fracture_events.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-fracture-events"><span class="std std-ref">Nv::Blast::TkFractureEvents</span></a>: Payload for the TkEvent::FractureEvent events.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-group-desc"><span class="std std-ref">Nv::Blast::TkGroupDesc</span></a>: Descriptor for a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#exhale-class-class-nv-1-1-blast-1-1-tk-group"><span class="std std-ref">Nv::Blast::TkGroup</span></a>.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_stats.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-group-stats"><span class="std std-ref">Nv::Blast::TkGroupStats</span></a>: Used to collect internal counters using TkGroup::getStats (for profile builds only)</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_data.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-joint-data"><span class="std std-ref">Nv::Blast::TkJointData</span></a>: The data contained in a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#exhale-class-class-nv-1-1-blast-1-1-tk-joint"><span class="std std-ref">Nv::Blast::TkJoint</span></a>.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-joint-desc"><span class="std std-ref">Nv::Blast::TkJointDesc</span></a>: Descriptor for joint creation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-joint-update-event"><span class="std std-ref">Nv::Blast::TkJointUpdateEvent</span></a>: Payload for the TkEvent::JointUpdate events.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_object_type_i_d.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-object-type-i-d"><span class="std std-ref">Nv::Blast::TkObjectTypeID</span></a>: Standard Object Type IDs.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_split_event.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-split-event"><span class="std std-ref">Nv::Blast::TkSplitEvent</span></a>: Payload for TkEvent::Split events.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-type-index"><span class="std std-ref">Nv::Blast::TkTypeIndex</span></a>: Struct-enum to index object types handled by the framework.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_transform_s_t.html#exhale-struct-struct-nv-1-1-blast-1-1-transform-s-t"><span class="std std-ref">Nv::Blast::TransformST</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#exhale-struct-struct-nv-1-1-blast-1-1-triangle"><span class="std std-ref">Nv::Blast::Triangle</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#exhale-class-class-nv-1-1-blast-1-1-mesh"><span class="std std-ref">Nv::Blast::Mesh</span></a> triangle representation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle_indexed.html#exhale-struct-struct-nv-1-1-blast-1-1-triangle-indexed"><span class="std std-ref">Nv::Blast::TriangleIndexed</span></a>: Index based triangle.</p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_uniform_pattern_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-uniform-pattern-desc"><span class="std std-ref">Nv::Blast::UniformPatternDesc</span></a></p></li>
+<li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#exhale-struct-struct-nv-1-1-blast-1-1-vertex"><span class="std std-ref">Nv::Blast::Vertex</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#exhale-class-class-nv-1-1-blast-1-1-mesh"><span class="std std-ref">Nv::Blast::Mesh</span></a> vertex representation.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_actor.html#exhale-struct-struct-nv-blast-actor"><span class="std std-ref">NvBlastActor</span></a>: Actor (opaque)</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_actor_desc.html#exhale-struct-struct-nv-blast-actor-desc"><span class="std std-ref">NvBlastActorDesc</span></a>: Actor descriptor, used to create an instance of an <a class="reference internal" href="struct_nv_blast_asset.html#exhale-struct-struct-nv-blast-asset"><span class="std std-ref">NvBlastAsset</span></a> with NvBlastFamilyCreateFirstActor.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_actor_split_event.html#exhale-struct-struct-nv-blast-actor-split-event"><span class="std std-ref">NvBlastActorSplitEvent</span></a>: Description of a NvBlastActorSplit result.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_asset.html#exhale-struct-struct-nv-blast-asset"><span class="std std-ref">NvBlastAsset</span></a>: Asset (opaque)</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_asset_desc.html#exhale-struct-struct-nv-blast-asset-desc"><span class="std std-ref">NvBlastAssetDesc</span></a>: Asset descriptor, used to build an asset with NvBlastCreateAsset.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_asset_mem_size_data.html#exhale-struct-struct-nv-blast-asset-mem-size-data"><span class="std std-ref">NvBlastAssetMemSizeData</span></a>: Info used to construct an Asset or Family instance.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_bond.html#exhale-struct-struct-nv-blast-bond"><span class="std std-ref">NvBlastBond</span></a>: Represents the interface between two chunks.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_bond_desc.html#exhale-struct-struct-nv-blast-bond-desc"><span class="std std-ref">NvBlastBondDesc</span></a>: Chunk bond descriptor used to build an asset.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_bond_fracture_data.html#exhale-struct-struct-nv-blast-bond-fracture-data"><span class="std std-ref">NvBlastBondFractureData</span></a>: Fracture Data for Bonds.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_chunk.html#exhale-struct-struct-nv-blast-chunk"><span class="std std-ref">NvBlastChunk</span></a>: Represents a piece of a destructible asset which may be realized as an entity with a physical and graphical component.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_chunk_desc.html#exhale-struct-struct-nv-blast-chunk-desc"><span class="std std-ref">NvBlastChunkDesc</span></a>: Chunk descriptor used to build an asset.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_chunk_fracture_data.html#exhale-struct-struct-nv-blast-chunk-fracture-data"><span class="std std-ref">NvBlastChunkFractureData</span></a>: Fracture Data for Chunks.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_damage_program.html#exhale-struct-struct-nv-blast-damage-program"><span class="std std-ref">NvBlastDamageProgram</span></a>: Damage Program.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_data_block.html#exhale-struct-struct-nv-blast-data-block"><span class="std std-ref">NvBlastDataBlock</span></a>: Generic data block header for all data blocks.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_asset_utils_bond_desc.html#exhale-struct-struct-nv-blast-ext-asset-utils-bond-desc"><span class="std std-ref">NvBlastExtAssetUtilsBondDesc</span></a>: Bond descriptor used to merge assets.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_capsule_radial_damage_desc.html#exhale-struct-struct-nv-blast-ext-capsule-radial-damage-desc"><span class="std std-ref">NvBlastExtCapsuleRadialDamageDesc</span></a>: Capsule Radial Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_impact_spread_damage_desc.html#exhale-struct-struct-nv-blast-ext-impact-spread-damage-desc"><span class="std std-ref">NvBlastExtImpactSpreadDamageDesc</span></a>: Impact Spread Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_material.html#exhale-struct-struct-nv-blast-ext-material"><span class="std std-ref">NvBlastExtMaterial</span></a>: Example of simple material.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_program_params.html#exhale-struct-struct-nv-blast-ext-program-params"><span class="std std-ref">NvBlastExtProgramParams</span></a>: Damage program params.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_radial_damage_desc.html#exhale-struct-struct-nv-blast-ext-radial-damage-desc"><span class="std std-ref">NvBlastExtRadialDamageDesc</span></a>: Radial Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_shear_damage_desc.html#exhale-struct-struct-nv-blast-ext-shear-damage-desc"><span class="std std-ref">NvBlastExtShearDamageDesc</span></a>: Shear Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_ext_triangle_intersection_damage_desc.html#exhale-struct-struct-nv-blast-ext-triangle-intersection-damage-desc"><span class="std std-ref">NvBlastExtTriangleIntersectionDamageDesc</span></a>: Triangle Intersection Damage Desc.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_family.html#exhale-struct-struct-nv-blast-family"><span class="std std-ref">NvBlastFamily</span></a>: Family (opaque)</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#exhale-struct-struct-nv-blast-fracture-buffers"><span class="std std-ref">NvBlastFractureBuffers</span></a>: Memory to be used by fracture functions.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_graph_shader_actor.html#exhale-struct-struct-nv-blast-graph-shader-actor"><span class="std std-ref">NvBlastGraphShaderActor</span></a>: A single actor’s representation used by NvBlastGraphShaderFunction.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_i_d.html#exhale-struct-struct-nv-blast-i-d"><span class="std std-ref">NvBlastID</span></a>: ID used to identify assets.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_message.html#exhale-struct-struct-nv-blast-message"><span class="std std-ref">NvBlastMessage</span></a>: Types of log messages.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_subgraph_shader_actor.html#exhale-struct-struct-nv-blast-subgraph-shader-actor"><span class="std std-ref">NvBlastSubgraphShaderActor</span></a>: A single actor’s representation used by NvBlastSubgraphShaderFunction.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_support_graph.html#exhale-struct-struct-nv-blast-support-graph"><span class="std std-ref">NvBlastSupportGraph</span></a>: Describes the connectivity between support chunks via bonds.</p></li>
+<li><p><a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a>: Time spent (in ticks) in various parts of Blast.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_bounds3.html#exhale-struct-struct-nvc-bounds3"><span class="std std-ref">NvcBounds3</span></a>: C type for 3d bounding box.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_mat33.html#exhale-struct-struct-nvc-mat33"><span class="std std-ref">NvcMat33</span></a>: C type for 3x3 matrices.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_mat34.html#exhale-struct-struct-nvc-mat34"><span class="std std-ref">NvcMat34</span></a>: C type for 3x3 matrices.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_mat44.html#exhale-struct-struct-nvc-mat44"><span class="std std-ref">NvcMat44</span></a>: C type for 4x4 matrices.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_plane.html#exhale-struct-struct-nvc-plane"><span class="std std-ref">NvcPlane</span></a>: C type for a plane.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_quat.html#exhale-struct-struct-nvc-quat"><span class="std std-ref">NvcQuat</span></a>: C type for quaternions.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_transform.html#exhale-struct-struct-nvc-transform"><span class="std std-ref">NvcTransform</span></a>: C type for transforms.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec2.html#exhale-struct-struct-nvc-vec2"><span class="std std-ref">NvcVec2</span></a>: C type for 2-float vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec2i.html#exhale-struct-struct-nvc-vec2i"><span class="std std-ref">NvcVec2i</span></a>: C type for 2-integer vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec3.html#exhale-struct-struct-nvc-vec3"><span class="std std-ref">NvcVec3</span></a>: C type for 3-float vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec3i.html#exhale-struct-struct-nvc-vec3i"><span class="std std-ref">NvcVec3i</span></a>: C type for 3-integer vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec4.html#exhale-struct-struct-nvc-vec4"><span class="std std-ref">NvcVec4</span></a>: C type for 4-float vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nvc_vec4i.html#exhale-struct-struct-nvc-vec4i"><span class="std std-ref">NvcVec4i</span></a>: C type for 4-integer vectors.</p></li>
+<li><p><a class="reference internal" href="struct_nv_pack_validation.html#exhale-struct-struct-nv-pack-validation"><span class="std std-ref">NvPackValidation</span></a></p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_allocator.html#exhale-class-class-nv-1-1-blast-1-1-allocator"><span class="std std-ref">Nv::Blast::Allocator</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_allocator.html#exhale-class-class-nv-1-1-blast-1-1-allocator"><span class="std std-ref">Nv::Blast::Allocator</span></a> uses global <a class="reference internal" href="class_nv_1_1_blast_1_1_allocator_callback.html#exhale-class-class-nv-1-1-blast-1-1-allocator-callback"><span class="std std-ref">Nv::Blast::AllocatorCallback</span></a>.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_allocator_callback.html#exhale-class-class-nv-1-1-blast-1-1-allocator-callback"><span class="std std-ref">Nv::Blast::AllocatorCallback</span></a>: Abstract base class for an application defined memory allocator that can be used by toolkit (Tk) or any extension (Ext).</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_blast_bond_generator.html#exhale-class-class-nv-1-1-blast-1-1-blast-bond-generator"><span class="std std-ref">Nv::Blast::BlastBondGenerator</span></a>: Tool for gathering bond information from provided mesh geometry.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_boolean_tool.html#exhale-class-class-nv-1-1-blast-1-1-boolean-tool"><span class="std std-ref">Nv::Blast::BooleanTool</span></a>: Tool for performing boolean operations on polygonal meshes.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_convex_mesh_builder.html#exhale-class-class-nv-1-1-blast-1-1-convex-mesh-builder"><span class="std std-ref">Nv::Blast::ConvexMeshBuilder</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_convex_mesh_builder.html#exhale-class-class-nv-1-1-blast-1-1-convex-mesh-builder"><span class="std std-ref">Nv::Blast::ConvexMeshBuilder</span></a> provides routine to build collision hulls from array of vertices.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_cutout_set.html#exhale-class-class-nv-1-1-blast-1-1-cutout-set"><span class="std std-ref">Nv::Blast::CutoutSet</span></a>: Interface to a “cutout set,” used with chippable fracturing.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_error_callback.html#exhale-class-class-nv-1-1-blast-1-1-error-callback"><span class="std std-ref">Nv::Blast::ErrorCallback</span></a>: User defined interface class.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_group_task_manager.html#exhale-class-class-nv-1-1-blast-1-1-ext-group-task-manager"><span class="std std-ref">Nv::Blast::ExtGroupTaskManager</span></a>: Uses a physx::PxTaskManager to process a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#exhale-class-class-nv-1-1-blast-1-1-tk-group"><span class="std std-ref">Nv::Blast::TkGroup</span></a> concurrently.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_impact_damage_manager.html#exhale-class-class-nv-1-1-blast-1-1-ext-impact-damage-manager"><span class="std std-ref">Nv::Blast::ExtImpactDamageManager</span></a>: Impact Damage Manager.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_actor.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-actor"><span class="std std-ref">Nv::Blast::ExtPxActor</span></a>: Actor.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_asset.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-asset"><span class="std std-ref">Nv::Blast::ExtPxAsset</span></a>: Asset.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_collision_builder.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-collision-builder"><span class="std std-ref">Nv::Blast::ExtPxCollisionBuilder</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_convex_mesh_builder.html#exhale-class-class-nv-1-1-blast-1-1-convex-mesh-builder"><span class="std std-ref">Nv::Blast::ConvexMeshBuilder</span></a> provides routine to build collision hulls from array of vertices.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-family"><span class="std std-ref">Nv::Blast::ExtPxFamily</span></a>: PxFamily.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_listener.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-listener"><span class="std std-ref">Nv::Blast::ExtPxListener</span></a>: Physics Listener Interface.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_manager.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-manager"><span class="std std-ref">Nv::Blast::ExtPxManager</span></a>: Physics Manager.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_stress_solver.html#exhale-class-class-nv-1-1-blast-1-1-ext-px-stress-solver"><span class="std std-ref">Nv::Blast::ExtPxStressSolver</span></a>: Px Stress Solver.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_serialization.html#exhale-class-class-nv-1-1-blast-1-1-ext-serialization"><span class="std std-ref">Nv::Blast::ExtSerialization</span></a>: Serialization manager interface.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#exhale-class-class-nv-1-1-blast-1-1-ext-stress-solver"><span class="std std-ref">Nv::Blast::ExtStressSolver</span></a>: Stress Solver.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_sync.html#exhale-class-class-nv-1-1-blast-1-1-ext-sync"><span class="std std-ref">Nv::Blast::ExtSync</span></a>: Sync Manager.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_fracturer.html#exhale-class-class-nv-1-1-blast-1-1-fracturer"><span class="std std-ref">Nv::Blast::Fracturer</span></a>: RT fracture LL API.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_r_t.html#exhale-class-class-nv-1-1-blast-1-1-fracture-r-t"><span class="std std-ref">Nv::Blast::FractureRT</span></a></p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_tool.html#exhale-class-class-nv-1-1-blast-1-1-fracture-tool"><span class="std std-ref">Nv::Blast::FractureTool</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_tool.html#exhale-class-class-nv-1-1-blast-1-1-fracture-tool"><span class="std std-ref">Nv::Blast::FractureTool</span></a> class provides methods to fracture provided mesh and generate Blast asset data.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_i_fbx_file_reader.html#exhale-class-class-nv-1-1-blast-1-1-i-fbx-file-reader"><span class="std std-ref">Nv::Blast::IFbxFileReader</span></a>: An interface for fbx file reader.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_i_json_collision_exporter.html#exhale-class-class-nv-1-1-blast-1-1-i-json-collision-exporter"><span class="std std-ref">Nv::Blast::IJsonCollisionExporter</span></a>: Interface to object which serializes collision geometry to JSON format.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_i_mesh_file_reader.html#exhale-class-class-nv-1-1-blast-1-1-i-mesh-file-reader"><span class="std std-ref">Nv::Blast::IMeshFileReader</span></a>: An interface for Blast mesh file reader.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_i_mesh_file_writer.html#exhale-class-class-nv-1-1-blast-1-1-i-mesh-file-writer"><span class="std std-ref">Nv::Blast::IMeshFileWriter</span></a>: An interface for Blast mesh file writer.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#exhale-class-class-nv-1-1-blast-1-1-mesh"><span class="std std-ref">Nv::Blast::Mesh</span></a>: Class for internal mesh representation.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh_cleaner.html#exhale-class-class-nv-1-1-blast-1-1-mesh-cleaner"><span class="std std-ref">Nv::Blast::MeshCleaner</span></a></p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh_generator.html#exhale-class-class-nv-1-1-blast-1-1-mesh-generator"><span class="std std-ref">Nv::Blast::MeshGenerator</span></a></p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_pattern_generator.html#exhale-class-class-nv-1-1-blast-1-1-pattern-generator"><span class="std std-ref">Nv::Blast::PatternGenerator</span></a></p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_profiler_callback.html#exhale-class-class-nv-1-1-blast-1-1-profiler-callback"><span class="std std-ref">Nv::Blast::ProfilerCallback</span></a>: Custom Blast profiler interface.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#exhale-class-class-nv-1-1-blast-1-1-random-generator-base"><span class="std std-ref">Nv::Blast::RandomGeneratorBase</span></a>: Abstract base class for user-defined random value generator.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_spatial_accelerator.html#exhale-class-class-nv-1-1-blast-1-1-spatial-accelerator"><span class="std std-ref">Nv::Blast::SpatialAccelerator</span></a>: Acceleration structure interface.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_spatial_grid.html#exhale-class-class-nv-1-1-blast-1-1-spatial-grid"><span class="std std-ref">Nv::Blast::SpatialGrid</span></a>: Used for some implementations of spatial accelerators.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#exhale-class-class-nv-1-1-blast-1-1-tk-actor"><span class="std std-ref">Nv::Blast::TkActor</span></a>: The BlastTk entity which encapsulates an <a class="reference internal" href="struct_nv_blast_actor.html#exhale-struct-struct-nv-blast-actor"><span class="std std-ref">NvBlastActor</span></a>.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#exhale-class-class-nv-1-1-blast-1-1-tk-asset"><span class="std std-ref">Nv::Blast::TkAsset</span></a>: The static data associated with a destructible actor.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_event_listener.html#exhale-class-class-nv-1-1-blast-1-1-tk-event-listener"><span class="std std-ref">Nv::Blast::TkEventListener</span></a>: Interface for a listener of <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_event.html#exhale-struct-struct-nv-1-1-blast-1-1-tk-event"><span class="std std-ref">Nv::Blast::TkEvent</span></a> data.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#exhale-class-class-nv-1-1-blast-1-1-tk-family"><span class="std std-ref">Nv::Blast::TkFamily</span></a>: The <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#exhale-class-class-nv-1-1-blast-1-1-tk-family"><span class="std std-ref">Nv::Blast::TkFamily</span></a> is associated with the <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#exhale-class-class-nv-1-1-blast-1-1-tk-actor"><span class="std std-ref">Nv::Blast::TkActor</span></a> that is instanced from a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#exhale-class-class-nv-1-1-blast-1-1-tk-asset"><span class="std std-ref">Nv::Blast::TkAsset</span></a>, as well as all descendent TkActors generated by spliting TkActors within the family.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#exhale-class-class-nv-1-1-blast-1-1-tk-framework"><span class="std std-ref">Nv::Blast::TkFramework</span></a>: BlastTk Framework.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#exhale-class-class-nv-1-1-blast-1-1-tk-group"><span class="std std-ref">Nv::Blast::TkGroup</span></a>: A group is a processing unit, to which the user may add TkActors.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html#exhale-class-class-nv-1-1-blast-1-1-tk-group-worker"><span class="std std-ref">Nv::Blast::TkGroupWorker</span></a>: A worker as provided by TkGroup::acquireWorker().</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#exhale-class-class-nv-1-1-blast-1-1-tk-identifiable"><span class="std std-ref">Nv::Blast::TkIdentifiable</span></a>: <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#exhale-class-class-nv-1-1-blast-1-1-tk-identifiable"><span class="std std-ref">Nv::Blast::TkIdentifiable</span></a> objects have getID and setID methods for individual objects.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#exhale-class-class-nv-1-1-blast-1-1-tk-joint"><span class="std std-ref">Nv::Blast::TkJoint</span></a>: The <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#exhale-class-class-nv-1-1-blast-1-1-tk-joint"><span class="std std-ref">Nv::Blast::TkJoint</span></a> is may join two different TkActors, or be created internally within a single <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#exhale-class-class-nv-1-1-blast-1-1-tk-actor"><span class="std std-ref">Nv::Blast::TkActor</span></a>.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_object.html#exhale-class-class-nv-1-1-blast-1-1-tk-object"><span class="std std-ref">Nv::Blast::TkObject</span></a>: Base class for all objects in Tk.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#exhale-class-class-nv-1-1-blast-1-1-tk-type"><span class="std std-ref">Nv::Blast::TkType</span></a>: Interface for static (class) type data.</p></li>
+<li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_voronoi_sites_generator.html#exhale-class-class-nv-1-1-blast-1-1-voronoi-sites-generator"><span class="std std-ref">Nv::Blast::VoronoiSitesGenerator</span></a>: Class for voronoi sites generation inside supplied mesh.</p></li>
+<li><p><a class="reference internal" href="class_nv_blast_ext_damage_accelerator.html#exhale-class-class-nv-blast-ext-damage-accelerator"><span class="std std-ref">NvBlastExtDamageAccelerator</span></a>: A few example damage shader implementations.</p></li>
+</ul>
+</div>
+<div class="section" id="enums">
+<h1>Enums<a class="headerlink" href="#enums" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum__nv_blast_ext_r_t_8h_1a13e09335669128f9ea506224bfd3d9be.html#exhale-enum-nv-blast-ext-r-t-8h-1a13e09335669128f9ea506224bfd3d9be"><span class="std std-ref">Nv::Blast::PatternFacetType</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="functions">
+<h1>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__nv_blast_types_8h_1a92803a9b9c38d6a2aaf20746bcf4dac4.html#exhale-function-nv-blast-types-8h-1a92803a9b9c38d6a2aaf20746bcf4dac4"><span class="std std-ref">canTakeDamage</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a046f351eedab67de8286b249c348160a.html#exhale-function-nv-blast-globals-8h-1a046f351eedab67de8286b249c348160a"><span class="std std-ref">Nv::Blast::logLL</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_pattern_generator_8h_1a2af6111d7b1e477fa7b5aee4fec5bdfc.html#exhale-function-nv-blast-ext-authoring-pattern-generator-8h-1a2af6111d7b1e477fa7b5aee4fec5bdfc"><span class="std std-ref">Nv::Blast::savePatternToObj</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__foundation_1gab31d416a98aece2d3eb9b7e669412710.html#exhale-function-group-foundation-1gab31d416a98aece2d3eb9b7e669412710"><span class="std std-ref">NV_UNUSED</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a6a3d0ae6f5c5efb65699140897adb8c0.html#exhale-function-nv-blast-8h-1a6a3d0ae6f5c5efb65699140897adb8c0"><span class="std std-ref">NvBlastActorApplyFracture</span></a>: Applies the direct fracture and breaks graph bonds/edges as necessary.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae9f0eef6bd6fe0e356ab8ec009372e58.html#exhale-function-nv-blast-8h-1ae9f0eef6bd6fe0e356ab8ec009372e58"><span class="std std-ref">NvBlastActorCacheBondHeath</span></a>: Tell the system to cache the bond health for the given bond index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a5261035f206eb5fb1a1822323ff8d725.html#exhale-function-nv-blast-8h-1a5261035f206eb5fb1a1822323ff8d725"><span class="std std-ref">NvBlastActorCanFracture</span></a>: Determines if the actor can fracture further.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad7b368ffbf45a130d7b116530b81a77e.html#exhale-function-nv-blast-8h-1ad7b368ffbf45a130d7b116530b81a77e"><span class="std std-ref">NvBlastActorDeactivate</span></a>: Deactivate an actor within its family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a7bf6cbcc95e377f61dbd1ab87bf6facc.html#exhale-function-nv-blast-8h-1a7bf6cbcc95e377f61dbd1ab87bf6facc"><span class="std std-ref">NvBlastActorGenerateFracture</span></a>: Creates fracture commands for the actor using a damage program and program parameters (material and damage descriptions).</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a89921a073e03d720fd0c7c3823cd9b7c.html#exhale-function-nv-blast-8h-1a89921a073e03d720fd0c7c3823cd9b7c"><span class="std std-ref">NvBlastActorGetBondHealths</span></a>: Access the bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aade01abac334e958f85e717e23d57f96.html#exhale-function-nv-blast-8h-1aade01abac334e958f85e717e23d57f96"><span class="std std-ref">NvBlastActorGetCachedBondHeaths</span></a>: Access the cached bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a2d59048197fbddd4ba1ec575eef91b4d.html#exhale-function-nv-blast-8h-1a2d59048197fbddd4ba1ec575eef91b4d"><span class="std std-ref">NvBlastActorGetFamily</span></a>: Access to an actor’s family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a3a97a2b9a11e4eb47fa05b3e6f520fce.html#exhale-function-nv-blast-8h-1a3a97a2b9a11e4eb47fa05b3e6f520fce"><span class="std std-ref">NvBlastActorGetGraphNodeCount</span></a>: Get the number of graph nodes for this actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1abdf46f09850fb6952509a94f14d9406b.html#exhale-function-nv-blast-8h-1abdf46f09850fb6952509a94f14d9406b"><span class="std std-ref">NvBlastActorGetGraphNodeIndices</span></a>: Retrieve a list of graph node indices for the actor into the given array.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad9607ac7bd28e0a3a2b3bec7aa8d5805.html#exhale-function-nv-blast-8h-1ad9607ac7bd28e0a3a2b3bec7aa8d5805"><span class="std std-ref">NvBlastActorGetIndex</span></a>: Access to an actor’s internal index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a0142a22e103d7726b58d976925504f9c.html#exhale-function-nv-blast-8h-1a0142a22e103d7726b58d976925504f9c"><span class="std std-ref">NvBlastActorGetMaxActorCountForSplit</span></a>: Returns the upper-bound number of actors which can be created by calling NvBlastActorSplit with that actor, this value can’t exceed chunk count.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a8ecf1456b8fb626a4384fb82265a802d.html#exhale-function-nv-blast-8h-1a8ecf1456b8fb626a4384fb82265a802d"><span class="std std-ref">NvBlastActorGetRequiredScratchForSplit</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastActorSplit, based upon the actor that will be passed into that function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a8a9c103d9113d83a21a004bbbcad7beb.html#exhale-function-nv-blast-8h-1a8a9c103d9113d83a21a004bbbcad7beb"><span class="std std-ref">NvBlastActorGetSerializationSize</span></a>: The buffer size needed to serialize a single actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae3fbeb19c609c388c92ee173cc04b334.html#exhale-function-nv-blast-8h-1ae3fbeb19c609c388c92ee173cc04b334"><span class="std std-ref">NvBlastActorGetVisibleChunkCount</span></a>: Get the number of visible chunks for this actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aac805c5bcc48f209925d938acbc2f17e.html#exhale-function-nv-blast-8h-1aac805c5bcc48f209925d938acbc2f17e"><span class="std std-ref">NvBlastActorGetVisibleChunkIndices</span></a>: Retrieve a list of visible chunk indices for the actor into the given array.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae5246888b891af922974a98db255a7ce.html#exhale-function-nv-blast-8h-1ae5246888b891af922974a98db255a7ce"><span class="std std-ref">NvBlastActorHasExternalBonds</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a9199afeefb94662e609d85a79be31a31.html#exhale-function-nv-blast-8h-1a9199afeefb94662e609d85a79be31a31"><span class="std std-ref">NvBlastActorIsSplitRequired</span></a>: Determines if the actor is damaged (was fractured) and split call is required.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1acab7d192ec7ac6d3a095a6b0646375fe.html#exhale-function-nv-blast-8h-1acab7d192ec7ac6d3a095a6b0646375fe"><span class="std std-ref">NvBlastActorSerialize</span></a>: Serialize a single actor to a buffer.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1adc280b2a624d76981c87fb5f068d5106.html#exhale-function-nv-blast-8h-1adc280b2a624d76981c87fb5f068d5106"><span class="std std-ref">NvBlastActorSplit</span></a>: Releases the oldActor and creates its children newActors if necessary.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a3204e6077b424c4e10f605af0fa119d5.html#exhale-function-nv-blast-8h-1a3204e6077b424c4e10f605af0fa119d5"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMap</span></a>: Apply chunk reorder map.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a9eea9e02fc7f81cdc0399e7196bddf58.html#exhale-function-nv-blast-8h-1a9eea9e02fc7f81cdc0399e7196bddf58"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMapInPlace</span></a>: Apply chunk reorder map.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a868a59bb905879503d5e9a034cff247e.html#exhale-function-nv-blast-8h-1a868a59bb905879503d5e9a034cff247e"><span class="std std-ref">NvBlastAssetCreateFamily</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae9662f10cbfadc6dbef7add15f32374a.html#exhale-function-nv-blast-8h-1ae9662f10cbfadc6dbef7add15f32374a"><span class="std std-ref">NvBlastAssetCreateFamilyFromSizeData</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a2539b7a2f244a8f0c45d7020d1dfad63.html#exhale-function-nv-blast-8h-1a2539b7a2f244a8f0c45d7020d1dfad63"><span class="std std-ref">NvBlastAssetGetActorSerializationSizeUpperBound</span></a>: A buffer size sufficient to serialize an actor instanced from a given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ab44bf9e7f8a755094ee4f45aade1c0ab.html#exhale-function-nv-blast-8h-1ab44bf9e7f8a755094ee4f45aade1c0ab"><span class="std std-ref">NvBlastAssetGetBondCount</span></a>: Get the number of bonds in the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad612242052e71894fecfca76f5cf39d3.html#exhale-function-nv-blast-8h-1ad612242052e71894fecfca76f5cf39d3"><span class="std std-ref">NvBlastAssetGetBonds</span></a>: Access an array of bonds of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac82609eb93afc9a8ab7011f2eb8f9a23.html#exhale-function-nv-blast-8h-1ac82609eb93afc9a8ab7011f2eb8f9a23"><span class="std std-ref">NvBlastAssetGetChunkCount</span></a>: Get the number of chunks in the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aac1c384c82de07c613b7c0539f7707df.html#exhale-function-nv-blast-8h-1aac1c384c82de07c613b7c0539f7707df"><span class="std std-ref">NvBlastAssetGetChunks</span></a>: Access an array of chunks of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1abff733fd05dc5b7a730336699a427c25.html#exhale-function-nv-blast-8h-1abff733fd05dc5b7a730336699a427c25"><span class="std std-ref">NvBlastAssetGetChunkToGraphNodeMap</span></a>: Access a map from chunk index to graph node index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ab933a279e63545023464292bf7d562a1.html#exhale-function-nv-blast-8h-1ab933a279e63545023464292bf7d562a1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySize</span></a>: Calculates the memory requirements for a family based upon an asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a2735d36912e3a3261096a3309f1e7ed1.html#exhale-function-nv-blast-8h-1a2735d36912e3a3261096a3309f1e7ed1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySizeFromSizeData</span></a>: Calculates the memory requirements for a family based upon supplied sized data.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae8bee2fd37d6af164165a23adb0592a9.html#exhale-function-nv-blast-8h-1ae8bee2fd37d6af164165a23adb0592a9"><span class="std std-ref">NvBlastAssetGetFirstSubsupportChunkIndex</span></a>: Get the first subsupport chunk index in the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1afa3dbe442bf799bbee07eb98774340d4.html#exhale-function-nv-blast-8h-1afa3dbe442bf799bbee07eb98774340d4"><span class="std std-ref">NvBlastAssetGetFormatVersion</span></a>: Retrieve the data format version for the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a5c2c9cd099db429304e8aacffad62247.html#exhale-function-nv-blast-8h-1a5c2c9cd099db429304e8aacffad62247"><span class="std std-ref">NvBlastAssetGetID</span></a>: Retrieve the asset ID.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1acc0eed6bfaa3b56d472c41388c269625.html#exhale-function-nv-blast-8h-1acc0eed6bfaa3b56d472c41388c269625"><span class="std std-ref">NvBlastAssetGetLeafChunkCount</span></a>: Get the number of leaf chunks in the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad7ee1d97ad6e4f048eab694249fa2594.html#exhale-function-nv-blast-8h-1ad7ee1d97ad6e4f048eab694249fa2594"><span class="std std-ref">NvBlastAssetGetSize</span></a>: Retrieve the memory size (in bytes) of the given data asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a3b2193da26679967e526001578327d41.html#exhale-function-nv-blast-8h-1a3b2193da26679967e526001578327d41"><span class="std std-ref">NvBlastAssetGetSupportChunkCount</span></a>: Get the number of support chunks in the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac2307bd41ba85f2d69df0f229105fd09.html#exhale-function-nv-blast-8h-1ac2307bd41ba85f2d69df0f229105fd09"><span class="std std-ref">NvBlastAssetGetSupportGraph</span></a>: Access the support graph for the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a40e77f2e7fc3a33c95201ca6229a2977.html#exhale-function-nv-blast-8h-1a40e77f2e7fc3a33c95201ca6229a2977"><span class="std std-ref">NvBlastAssetMemSizeDataFromAsset</span></a>: Fill out the size data from the provided asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac0c345ce6676ad87cbd06e2f0debd8f7.html#exhale-function-nv-blast-8h-1ac0c345ce6676ad87cbd06e2f0debd8f7"><span class="std std-ref">NvBlastAssetSetID</span></a>: Set an asset’s ID.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac4748f2da0b6a1be9055141c68ac668f.html#exhale-function-nv-blast-8h-1ac4748f2da0b6a1be9055141c68ac668f"><span class="std std-ref">NvBlastBuildAssetDescChunkReorderMap</span></a>: Build chunk reorder map.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a8455859eec0e23e95aa5bbf7c4fd1e14.html#exhale-function-nv-blast-8h-1a8455859eec0e23e95aa5bbf7c4fd1e14"><span class="std std-ref">NvBlastCreateAsset</span></a>: Asset-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1afd09f53fb71a1fb33053eebf1610367b.html#exhale-function-nv-blast-8h-1afd09f53fb71a1fb33053eebf1610367b"><span class="std std-ref">NvBlastEnsureAssetExactSupportCoverage</span></a>: Function to ensure (check and update) support coverage of chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1ac37d2686e8dc06a250d84e5d58ae5f6e.html#exhale-function-nv-blast-ext-asset-utils-8h-1ac37d2686e8dc06a250d84e5d58ae5f6e"><span class="std std-ref">NvBlastExtAssetTransformInPlace</span></a>: Transforms asset in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a053cf16f7f6536a2ad467a130706a2c2.html#exhale-function-nv-blast-ext-asset-utils-8h-1a053cf16f7f6536a2ad467a130706a2c2"><span class="std std-ref">NvBlastExtAssetUtilsAddExternalBonds</span></a>: Reauthor the provided asset to create external bonds in the specified support chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a9c345f8d263d200a404d47aa913727c7.html#exhale-function-nv-blast-ext-asset-utils-8h-1a9c345f8d263d200a404d47aa913727c7"><span class="std std-ref">NvBlastExtAssetUtilsCreateDesc</span></a>: Creates an asset descriptor from an asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a51725c40995e0c86428bdc9fb5450f48.html#exhale-function-nv-blast-ext-asset-utils-8h-1a51725c40995e0c86428bdc9fb5450f48"><span class="std std-ref">NvBlastExtAssetUtilsMergeAssets</span></a>: Creates an asset descriptor which will build an asset that merges several assets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa267355276c6c7f75e11b1d1b401e9aa.html#exhale-function-nv-blast-ext-authoring-8h-1aa267355276c6c7f75e11b1d1b401e9aa"><span class="std std-ref">NvBlastExtAuthoringBuildCollisionMeshes</span></a>: Build collision meshes.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af5f4d1eb694a93557d1f39f8564ef435.html#exhale-function-nv-blast-ext-authoring-8h-1af5f4d1eb694a93557d1f39f8564ef435"><span class="std std-ref">NvBlastExtAuthoringBuildCutoutSet</span></a>: Builds a cutout set (which must have been initially created by createCutoutSet()).</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a15fa5f130ca888ab5d84073112e0ce58.html#exhale-function-nv-blast-ext-authoring-8h-1a15fa5f130ca888ab5d84073112e0ce58"><span class="std std-ref">NvBlastExtAuthoringBuildMeshConvexDecomposition</span></a>: Build convex mesh decomposition.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0a7dc1a643abf2e3b37e6db8724298bf.html#exhale-function-nv-blast-ext-authoring-8h-1a0a7dc1a643abf2e3b37e6db8724298bf"><span class="std std-ref">NvBlastExtAuthoringCreateBBoxBasedAccelerator</span></a>: Create BBoxBasedAccelerator - SpatialAccelerator which uses a bbox/grid algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a8bf20d770ff841495410c94728ee6f7b.html#exhale-function-nv-blast-ext-authoring-8h-1a8bf20d770ff841495410c94728ee6f7b"><span class="std std-ref">NvBlastExtAuthoringCreateBondGenerator</span></a>: Create BlastBondGenerator.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ad59a0b7bceb9cf2d7f09cc104e584fe6.html#exhale-function-nv-blast-ext-authoring-8h-1ad59a0b7bceb9cf2d7f09cc104e584fe6"><span class="std std-ref">NvBlastExtAuthoringCreateBooleanTool</span></a>: Create BooleanTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a96fac66d91c7052499f8ad246114d187.html#exhale-function-nv-blast-ext-authoring-8h-1a96fac66d91c7052499f8ad246114d187"><span class="std std-ref">NvBlastExtAuthoringCreateCutoutSet</span></a>: Instantiates a blank CutoutSet.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a41aee44d57db3e410d5d9dd5b07632d5.html#exhale-function-nv-blast-ext-authoring-8h-1a41aee44d57db3e410d5d9dd5b07632d5"><span class="std std-ref">NvBlastExtAuthoringCreateFractureTool</span></a>: Create FractureTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a7c782ba7a27d4ae519a95260bf45d542.html#exhale-function-nv-blast-ext-authoring-8h-1a7c782ba7a27d4ae519a95260bf45d542"><span class="std std-ref">NvBlastExtAuthoringCreateGridAccelerator</span></a>: Create GridAccelerator - SpatialAccelerator which use Grid for faster mesh sampling.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af169fb5abb2f0475f7ef221129fcc278.html#exhale-function-nv-blast-ext-authoring-8h-1af169fb5abb2f0475f7ef221129fcc278"><span class="std std-ref">NvBlastExtAuthoringCreateMesh</span></a>: Constructs mesh object from array of triangles.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa763b10260b7d2a495fb106601977422.html#exhale-function-nv-blast-ext-authoring-8h-1aa763b10260b7d2a495fb106601977422"><span class="std std-ref">NvBlastExtAuthoringCreateMeshCleaner</span></a>: Creates MeshCleaner object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0d65b4208e0e406c8c61330610845c18.html#exhale-function-nv-blast-ext-authoring-8h-1a0d65b4208e0e406c8c61330610845c18"><span class="std std-ref">NvBlastExtAuthoringCreateMeshFromFacets</span></a>: Constructs mesh object from array of vertices, edges and facets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a5faad1bdb348d4979b2bf17b33f9b12f.html#exhale-function-nv-blast-ext-authoring-8h-1a5faad1bdb348d4979b2bf17b33f9b12f"><span class="std std-ref">NvBlastExtAuthoringCreateMeshOnlyTriangles</span></a>: Constructs mesh object from triangles represented as arrays of vertices, indices and per facet material.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a53c22dbb75e939a04e48aa0e9dfe2158.html#exhale-function-nv-blast-ext-authoring-8h-1a53c22dbb75e939a04e48aa0e9dfe2158"><span class="std std-ref">NvBlastExtAuthoringCreatePatternGenerator</span></a>: Returns pattern generator used for generating fracture patterns.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa25abe5fade09b88b159acb13161ec1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa25abe5fade09b88b159acb13161ec1c"><span class="std std-ref">NvBlastExtAuthoringCreateSpatialGrid</span></a>: Create spatial grid for mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a97122e1d0d06d7d5c6a8820c998431c8.html#exhale-function-nv-blast-ext-authoring-8h-1a97122e1d0d06d7d5c6a8820c998431c8"><span class="std std-ref">NvBlastExtAuthoringCreateSweepingAccelerator</span></a>: Create SweepingAccelerator - SpatialAccelerator which uses a sweep algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1acd91ba6bf9cb55758bd477fe114e318b.html#exhale-function-nv-blast-ext-authoring-8h-1acd91ba6bf9cb55758bd477fe114e318b"><span class="std std-ref">NvBlastExtAuthoringCreateVoronoiSitesGenerator</span></a>: Voronoi sites should not be generated outside of the fractured mesh, so VoronoiSitesGenerator should be supplied with fracture mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1afee92cc71878d2b254360ef3ee223337.html#exhale-function-nv-blast-ext-authoring-8h-1afee92cc71878d2b254360ef3ee223337"><span class="std std-ref">NvBlastExtAuthoringFindAssetConnectingBonds</span></a>: Finds bonds connecting chunks in a list of assets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa055a16eea150c155525c41f32c82b1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa055a16eea150c155525c41f32c82b1c"><span class="std std-ref">NvBlastExtAuthoringProcessFracture</span></a>: Performs pending fractures and generates fractured asset, render and collision geometry.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aaaa94617ab23d62f688504cd0e960b10.html#exhale-function-nv-blast-ext-authoring-8h-1aaaa94617ab23d62f688504cd0e960b10"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResult</span></a>: Releases AuthoringResult data.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af06631688da85de482df0bdc3400959b.html#exhale-function-nv-blast-ext-authoring-8h-1af06631688da85de482df0bdc3400959b"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResultCollision</span></a>: Releases collision data for AuthoringResult.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ab5f1213bba94999b576885bc208d30c9.html#exhale-function-nv-blast-ext-authoring-8h-1ab5f1213bba94999b576885bc208d30c9"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHull</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a3684fc5c5d206c429dfc78fe7d1c86b3.html#exhale-function-nv-blast-ext-authoring-8h-1a3684fc5c5d206c429dfc78fe7d1c86b3"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHullInPlace</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a364e68eac57e8a26eaf895452c266596.html#exhale-function-nv-blast-ext-authoring-8h-1a364e68eac57e8a26eaf895452c266596"><span class="std std-ref">NvBlastExtAuthoringTrimCollisionGeometry</span></a>: Convex geometry trimming.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a231c56bb096167d21bbbc49cc46c0592.html#exhale-function-nv-blast-ext-authoring-8h-1a231c56bb096167d21bbbc49cc46c0592"><span class="std std-ref">NvBlastExtAuthoringUpdateGraphicsMesh</span></a>: Updates graphics mesh only.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a2858337c4940ef330af46c87841ec8a1.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a2858337c4940ef330af46c87841ec8a1"><span class="std std-ref">NvBlastExtCapsuleFalloffGraphShader</span></a>: Capsule Radial Falloff damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a836ef5b0fd3eb3485af917599ab19e11.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a836ef5b0fd3eb3485af917599ab19e11"><span class="std std-ref">NvBlastExtCapsuleFalloffSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a01ce708222741d4d1a3bdee94cdff422.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a01ce708222741d4d1a3bdee94cdff422"><span class="std std-ref">NvBlastExtCutterGraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a49ec2bf9cb78069aea33b323a3c46276.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a49ec2bf9cb78069aea33b323a3c46276"><span class="std std-ref">NvBlastExtCutterSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aaba10f0cb7fda7438c600a9ea84c3a8f.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aaba10f0cb7fda7438c600a9ea84c3a8f"><span class="std std-ref">NvBlastExtDamageAcceleratorCreate</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_exporter_8h_1a4f54418e6a96cd79a707cedf9e9e51d1.html#exhale-function-nv-blast-ext-exporter-8h-1a4f54418e6a96cd79a707cedf9e9e51d1"><span class="std std-ref">NvBlastExtExporterCreateFbxFileReader</span></a>: Creates an instance of IFbxFileReader for reading fbx file.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_exporter_8h_1ad05e784043601c6705cd2bdd95d4bc76.html#exhale-function-nv-blast-ext-exporter-8h-1ad05e784043601c6705cd2bdd95d4bc76"><span class="std std-ref">NvBlastExtExporterCreateFbxFileWriter</span></a>: Creates an instance of IMeshFileWriter for writing fbx file.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_exporter_json_collision_8h_1a78a91f4ba679ece96110ef4dad60d949.html#exhale-function-nv-blast-ext-exporter-json-collision-8h-1a78a91f4ba679ece96110ef4dad60d949"><span class="std std-ref">NvBlastExtExporterCreateJsonCollisionExporter</span></a>: Creates an instance of IMeshFileWriter for writing obj file.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_exporter_8h_1a4bf77a02044f3bef0399bfc47f650a8d.html#exhale-function-nv-blast-ext-exporter-8h-1a4bf77a02044f3bef0399bfc47f650a8d"><span class="std std-ref">NvBlastExtExporterCreateObjFileReader</span></a>: Creates an instance of IMeshFileReader for reading obj file.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_exporter_8h_1a890017dceafc8196df1900780e760e24.html#exhale-function-nv-blast-ext-exporter-8h-1a890017dceafc8196df1900780e760e24"><span class="std std-ref">NvBlastExtExporterCreateObjFileWriter</span></a>: Creates an instance of IMeshFileWriter for writing obj file.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a6349a0cf92522e18559d900ab65b14d1.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a6349a0cf92522e18559d900ab65b14d1"><span class="std std-ref">NvBlastExtFalloffGraphShader</span></a>: Radial Falloff and Radial Cutter damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a879c11ce1b73b7b497288c8a2710c438.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a879c11ce1b73b7b497288c8a2710c438"><span class="std std-ref">NvBlastExtFalloffSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8f3d1da3bd2e0c19bd18b8840a4f531e"><span class="std std-ref">NvBlastExtImpactSpreadGraphShader</span></a>: Impact Spread Damage Shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1ae6214e68108b781cdb160d787650dd2e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1ae6214e68108b781cdb160d787650dd2e"><span class="std std-ref">NvBlastExtImpactSpreadSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1a2485243df6083c79489c6289ea8491bf.html#exhale-function-nv-blast-ext-ll-serialization-8h-1a2485243df6083c79489c6289ea8491bf"><span class="std std-ref">NvBlastExtLlSerializerLoadSet</span></a>: Load all low-level serializers into the ExtSerialization manager.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_px_serialization_8h_1a8c896467357e07261de122d4006c9bef.html#exhale-function-nv-blast-ext-px-serialization-8h-1a8c896467357e07261de122d4006c9bef"><span class="std std-ref">NvBlastExtPxSerializerLoadSet</span></a>: Load all ExtPhysX extension serializers into the ExtSerialization manager.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a8d24c375f0f2c447a2e62926ac3d818e.html#exhale-function-nv-blast-ext-r-t-8h-1a8d24c375f0f2c447a2e62926ac3d818e"><span class="std std-ref">NvBlastExtRTBuildMesh</span></a>: Build mesh from output of RT fracture.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a6703b07ee846923fe4c02629e18f783c.html#exhale-function-nv-blast-ext-r-t-8h-1a6703b07ee846923fe4c02629e18f783c"><span class="std std-ref">NvBlastExtRTCookMergedMesh</span></a>: TODO.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1ad246180b68843d3a460a12e3c7976f50.html#exhale-function-nv-blast-ext-r-t-8h-1ad246180b68843d3a460a12e3c7976f50"><span class="std std-ref">NvBlastExtRTCreateChunkGraph</span></a>: TODO.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a0b98ae50eb40146567af30772be8f6c2.html#exhale-function-nv-blast-ext-r-t-8h-1a0b98ae50eb40146567af30772be8f6c2"><span class="std std-ref">NvBlastExtRTCreateFracturer</span></a>: Create RT boolean tool fracturer.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1ad219f8566d1ed54a3b61fbfb03946963.html#exhale-function-nv-blast-ext-r-t-8h-1ad219f8566d1ed54a3b61fbfb03946963"><span class="std std-ref">NvBlastExtRTCreateFractureRT</span></a>: Create real time (RT) fracture.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a16e51ac155ee15cbbd65170336f21093.html#exhale-function-nv-blast-ext-r-t-8h-1a16e51ac155ee15cbbd65170336f21093"><span class="std std-ref">NvBlastExtRTCreateMeshGenerator</span></a>: Create mesh generator.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a558f3b79e0e220a495ab10744a1930af.html#exhale-function-nv-blast-ext-r-t-8h-1a558f3b79e0e220a495ab10744a1930af"><span class="std std-ref">NvBlastExtRTDetectIslands</span></a>: TODO.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1af9fbda9fc805b0c120ad067172f89bdd.html#exhale-function-nv-blast-ext-r-t-8h-1af9fbda9fc805b0c120ad067172f89bdd"><span class="std std-ref">NvBlastExtRTDoFracture</span></a>: Perform fracture.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_r_t_8h_1a7ee9429d732ad12d38dfc2f2e04ac0a0.html#exhale-function-nv-blast-ext-r-t-8h-1a7ee9429d732ad12d38dfc2f2e04ac0a0"><span class="std std-ref">NvBlastExtRTGetChunksToUnite</span></a>: TODO.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_serialization_8h_1a9dad7f69d7a72d402c99238ed3c34bfc.html#exhale-function-nv-blast-ext-serialization-8h-1a9dad7f69d7a72d402c99238ed3c34bfc"><span class="std std-ref">NvBlastExtSerializationCreate</span></a>: Create a new serialization manager.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1a51eaff0f60a0dd3f1ee29618549ae635.html#exhale-function-nv-blast-ext-ll-serialization-8h-1a51eaff0f60a0dd3f1ee29618549ae635"><span class="std std-ref">NvBlastExtSerializationSerializeAssetIntoBuffer</span></a>: Utility wrapper function to serialize an <a class="reference internal" href="struct_nv_blast_asset.html#exhale-struct-struct-nv-blast-asset"><span class="std std-ref">NvBlastAsset</span></a>.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_px_serialization_8h_1a023b377cc39c27e2ae2fc3237a0aec1e.html#exhale-function-nv-blast-ext-px-serialization-8h-1a023b377cc39c27e2ae2fc3237a0aec1e"><span class="std std-ref">NvBlastExtSerializationSerializeExtPxAssetIntoBuffer</span></a>: Utility wrapper function to serialize an ExtPxAsset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1ad4d8b950f06b6301279e6102a6d568d6.html#exhale-function-nv-blast-ext-ll-serialization-8h-1ad4d8b950f06b6301279e6102a6d568d6"><span class="std std-ref">NvBlastExtSerializationSerializeFamilyIntoBuffer</span></a>: Utility wrapper function to serialize an <a class="reference internal" href="struct_nv_blast_family.html#exhale-struct-struct-nv-blast-family"><span class="std std-ref">NvBlastFamily</span></a>.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_tk_serialization_8h_1ac41dafd2d5ffd5a6131426755c477793.html#exhale-function-nv-blast-ext-tk-serialization-8h-1ac41dafd2d5ffd5a6131426755c477793"><span class="std std-ref">NvBlastExtSerializationSerializeTkAssetIntoBuffer</span></a>: Utility wrapper function to serialize a TkAsset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa49711a370498c4da36bd9dac4d1bbd9.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aa49711a370498c4da36bd9dac4d1bbd9"><span class="std std-ref">NvBlastExtShearGraphShader</span></a>: Shear Damage Shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a3103465d5c665418138ea5e93a62ac73.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a3103465d5c665418138ea5e93a62ac73"><span class="std std-ref">NvBlastExtShearSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_tk_serialization_8h_1a3b56ccefec36904aed01309194c012c0.html#exhale-function-nv-blast-ext-tk-serialization-8h-1a3b56ccefec36904aed01309194c012c0"><span class="std std-ref">NvBlastExtTkSerializerLoadSet</span></a>: Load all high-level serializers into the ExtSerialization manager.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa1a7f982c44ff2e230ba37caf03aaa0b.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aa1a7f982c44ff2e230ba37caf03aaa0b"><span class="std std-ref">NvBlastExtTriangleIntersectionGraphShader</span></a>: Triangle Intersection damage for both graph and subgraph shaders.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8cd81f47a4c823b3fa5ed0dee6a114bb.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8cd81f47a4c823b3fa5ed0dee6a114bb"><span class="std std-ref">NvBlastExtTriangleIntersectionSubgraphShader</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a6d774be820fc1ff7df4d2241df1db220.html#exhale-function-nv-blast-8h-1a6d774be820fc1ff7df4d2241df1db220"><span class="std std-ref">NvBlastFamilyCreateFirstActor</span></a>: Instance the family’s asset into a new, unfractured actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a38e8e96d5b62bf19dc3135603ed38240.html#exhale-function-nv-blast-8h-1a38e8e96d5b62bf19dc3135603ed38240"><span class="std std-ref">NvBlastFamilyDeserializeActor</span></a>: Deserialize a single Actor from a buffer into the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a673e56d8a36466d6c636aa264dd0cb15.html#exhale-function-nv-blast-8h-1a673e56d8a36466d6c636aa264dd0cb15"><span class="std std-ref">NvBlastFamilyGetActorByIndex</span></a>: Retrieve the actor associated with the given actor index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a88fd777ba36d4ad6c6d7a7913810c24d.html#exhale-function-nv-blast-8h-1a88fd777ba36d4ad6c6d7a7913810c24d"><span class="std std-ref">NvBlastFamilyGetActorCount</span></a>: Retrieve the number of active actors associated with the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aeb9144660cd1dbdb4dc23720a3e542de.html#exhale-function-nv-blast-8h-1aeb9144660cd1dbdb4dc23720a3e542de"><span class="std std-ref">NvBlastFamilyGetActors</span></a>: Retrieve the active actors associated with the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1adca8ba4a5449c530cfdb9a39e50215dd.html#exhale-function-nv-blast-8h-1adca8ba4a5449c530cfdb9a39e50215dd"><span class="std std-ref">NvBlastFamilyGetAsset</span></a>: Retrieve the asset of the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1afa406b4fc35520001060b529ec95e820.html#exhale-function-nv-blast-8h-1afa406b4fc35520001060b529ec95e820"><span class="std std-ref">NvBlastFamilyGetAssetID</span></a>: Retrieve the asset ID of the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a5c7e938874e2f930ea5b55fedb27b12e.html#exhale-function-nv-blast-8h-1a5c7e938874e2f930ea5b55fedb27b12e"><span class="std std-ref">NvBlastFamilyGetChunkActor</span></a>: Retrieve the actor associated with the given chunk.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aecb6ec09b8d34ee733d667cacb1cd83a.html#exhale-function-nv-blast-8h-1aecb6ec09b8d34ee733d667cacb1cd83a"><span class="std std-ref">NvBlastFamilyGetChunkActorIndices</span></a>: Retrieve the actor indices associated with chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a15f297534c834b7335747be318303aa7.html#exhale-function-nv-blast-8h-1a15f297534c834b7335747be318303aa7"><span class="std std-ref">NvBlastFamilyGetFormatVersion</span></a>: Retrieve the data format version for the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac9e06ffe539277ccbdb648c97308fa65.html#exhale-function-nv-blast-8h-1ac9e06ffe539277ccbdb648c97308fa65"><span class="std std-ref">NvBlastFamilyGetMaxActorCount</span></a>: Retrieve the max active actor count family could have.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a730a6ea95065b53b9d9b65bde8cbb336.html#exhale-function-nv-blast-8h-1a730a6ea95065b53b9d9b65bde8cbb336"><span class="std std-ref">NvBlastFamilyGetRequiredScratchForCreateFirstActor</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastFamilyCreateFirstActor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1af2316e686029f931812a3ddf11de6547.html#exhale-function-nv-blast-8h-1af2316e686029f931812a3ddf11de6547"><span class="std std-ref">NvBlastFamilyGetSize</span></a>: Retrieve the size (in bytes) of the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1afa4b1c5e96650587b8daabb5ab86d2f1.html#exhale-function-nv-blast-8h-1afa4b1c5e96650587b8daabb5ab86d2f1"><span class="std std-ref">NvBlastFamilySetAsset</span></a>: Set asset to the family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a6b27b9cc240bef3481cbfa23f7051060.html#exhale-function-nv-blast-8h-1a6b27b9cc240bef3481cbfa23f7051060"><span class="std std-ref">NvBlastGetAssetMemorySize</span></a>: Calculates the memory requirements for an asset based upon its descriptor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae3c5502847a6e55d08153e068b20d0ce.html#exhale-function-nv-blast-8h-1ae3c5502847a6e55d08153e068b20d0ce"><span class="std std-ref">NvBlastGetAssetMemorySizeFromSizeData</span></a>: Calculates the memory requirements for an asset based upon supplied sized data.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_px_callbacks_8h_1a15f2153c1787da20f75c53ea938c930a.html#exhale-function-nv-blast-px-callbacks-8h-1a15f2153c1787da20f75c53ea938c930a"><span class="std std-ref">NvBlastGetPxAllocatorCallback</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_px_callbacks_8h_1a44f2369218a36c94379fc81d30b20df0.html#exhale-function-nv-blast-px-callbacks-8h-1a44f2369218a36c94379fc81d30b20df0"><span class="std std-ref">NvBlastGetPxErrorCallback</span></a>: This file contains helper functions to get PxShared compatible versions of global AllocatorCallback and ErrorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a7517e528d4862b5e09853140bd4a2e46.html#exhale-function-nv-blast-8h-1a7517e528d4862b5e09853140bd4a2e46"><span class="std std-ref">NvBlastGetRequiredScratchForCreateAsset</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastCreateAsset, based upon the descriptor that will be passed into that function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a6960a904cca030a87f4a569d0cd6a4fa.html#exhale-function-nv-blast-globals-8h-1a6960a904cca030a87f4a569d0cd6a4fa"><span class="std std-ref">NvBlastGlobalGetAllocatorCallback</span></a>: Retrieve a pointer to the global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1adfce9f2ac7e3acfdd5c82cdbc9db0f36.html#exhale-function-nv-blast-globals-8h-1adfce9f2ac7e3acfdd5c82cdbc9db0f36"><span class="std std-ref">NvBlastGlobalGetErrorCallback</span></a>: Retrieve a pointer to the global ErrorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a593586b9c9276aecb5a8f552f526f73b.html#exhale-function-nv-blast-globals-8h-1a593586b9c9276aecb5a8f552f526f73b"><span class="std std-ref">NvBlastGlobalSetAllocatorCallback</span></a>: Set global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a67996f009abbedc2d6c769f4af11f95f.html#exhale-function-nv-blast-globals-8h-1a67996f009abbedc2d6c769f4af11f95f"><span class="std std-ref">NvBlastGlobalSetErrorCallback</span></a>: Set global ErrorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_profiler_8h_1afba345e0f5a9689ded425622ea9a659b.html#exhale-function-nv-blast-profiler-8h-1afba345e0f5a9689ded425622ea9a659b"><span class="std std-ref">NvBlastProfilerSetCallback</span></a>: Profiler features are only active in checked, debug and profile builds.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_profiler_8h_1a13f57e40a8f414e4004336f0ed82c540.html#exhale-function-nv-blast-profiler-8h-1a13f57e40a8f414e4004336f0ed82c540"><span class="std std-ref">NvBlastProfilerSetDetail</span></a>: Sets the depth of reported profile zones.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a773ddce30d6fdeebf0a770dcc5fc1305.html#exhale-function-nv-blast-8h-1a773ddce30d6fdeebf0a770dcc5fc1305"><span class="std std-ref">NvBlastReorderAssetDescChunks</span></a>: Build and apply chunk reorder map.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a749f932dc54fa2d3f413bd6fcc1ba6e9.html#exhale-function-nv-blast-8h-1a749f932dc54fa2d3f413bd6fcc1ba6e9"><span class="std std-ref">NvBlastTicksToSeconds</span></a>: Convert a tick value from <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> to seconds.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ab3059b35f2c62b8110d90336f5cecefc.html#exhale-function-nv-blast-8h-1ab3059b35f2c62b8110d90336f5cecefc"><span class="std std-ref">NvBlastTimersReset</span></a>: Resets all values in the given <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> struct to zero.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1abffad36b5cbe769ac6d119bfb58d3523.html#exhale-function-nv-blast-tk-framework-8h-1abffad36b5cbe769ac6d119bfb58d3523"><span class="std std-ref">NvBlastTkFrameworkCreate</span></a>: Create a new TkFramework.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1ac9ef4ab9d817890d7a0f456cc6f07907.html#exhale-function-nv-blast-tk-framework-8h-1ac9ef4ab9d817890d7a0f456cc6f07907"><span class="std std-ref">NvBlastTkFrameworkGet</span></a>: Retrieve a pointer to the global TkFramework singleton (if it exists).</p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef.html#exhale-function-nv-c-math-8h-1a1688e60463aa975a84b9b39cd4a34bef"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6753f5de02113c898460719debac36f1.html#exhale-function-nv-c-math-8h-1a6753f5de02113c898460719debac36f1"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d.html#exhale-function-nv-c-math-8h-1abc8762e6469df555d6477e68aa8e3f9d"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98.html#exhale-function-nv-c-math-8h-1a63e23251d052c92a756bad8e591b3a98"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502.html#exhale-function-nv-c-math-8h-1abd56d8b3f515161d33d990bc578b1502"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381.html#exhale-function-nv-c-math-8h-1a507b474809ef6f3d5c0bbb3f33af5381"><span class="std std-ref">operator*</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a5e415ffc6af2c1c9d7872fa90ddff626.html#exhale-function-nv-c-math-8h-1a5e415ffc6af2c1c9d7872fa90ddff626"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ae71dadb6c73f7cbfa9e962d9d7f64fbb.html#exhale-function-nv-c-math-8h-1ae71dadb6c73f7cbfa9e962d9d7f64fbb"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a83380b68327cdb0690a5b454498496f6.html#exhale-function-nv-c-math-8h-1a83380b68327cdb0690a5b454498496f6"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a62cf197236c23c5c96d1f355c638d988.html#exhale-function-nv-c-math-8h-1a62cf197236c23c5c96d1f355c638d988"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11.html#exhale-function-nv-c-math-8h-1a38631d57cea0f9c9ff55e06982c6bf11"><span class="std std-ref">operator+</span></a>: Some basic operators for <a class="reference internal" href="struct_nvc_vec2.html#exhale-struct-struct-nvc-vec2"><span class="std std-ref">NvcVec2</span></a> and <a class="reference internal" href="struct_nvc_vec3.html#exhale-struct-struct-nvc-vec3"><span class="std std-ref">NvcVec3</span></a>.</p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130.html#exhale-function-nv-c-math-8h-1ac952738fe58b6ccf375037c9ef914130"><span class="std std-ref">operator+</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1afbf0addc3d96ac7eca9624f7f3e6973f.html#exhale-function-nv-c-math-8h-1afbf0addc3d96ac7eca9624f7f3e6973f"><span class="std std-ref">operator+=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1acbc334922b42a4c4cd4b969d3c543f10.html#exhale-function-nv-c-math-8h-1acbc334922b42a4c4cd4b969d3c543f10"><span class="std std-ref">operator+=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d.html#exhale-function-nv-c-math-8h-1a13a8c7f04e60b858d494e21582044b5d"><span class="std std-ref">operator-</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300.html#exhale-function-nv-c-math-8h-1ad5d890cf7acb13499f0c1eeabc39c300"><span class="std std-ref">operator-</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1afda8027df3884875fbe538913053d73d.html#exhale-function-nv-c-math-8h-1afda8027df3884875fbe538913053d73d"><span class="std std-ref">operator-</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f.html#exhale-function-nv-c-math-8h-1a928a677f0333c676c8050d1a1c7b689f"><span class="std std-ref">operator-</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1af14298a4833923b3252a4ecab7411f18.html#exhale-function-nv-c-math-8h-1af14298a4833923b3252a4ecab7411f18"><span class="std std-ref">operator-=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a91aa1ef14d69069a2874afdaf95e362b.html#exhale-function-nv-c-math-8h-1a91aa1ef14d69069a2874afdaf95e362b"><span class="std std-ref">operator-=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d.html#exhale-function-nv-c-math-8h-1a52325d979f123f131fa8de8ba7a1919d"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4.html#exhale-function-nv-c-math-8h-1aa8e8475ea48862fbf67c826a408cd0d4"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521.html#exhale-function-nv-c-math-8h-1a6df191085c33b1ace13a2113196d6521"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b.html#exhale-function-nv-c-math-8h-1a6fe2490b55b057497b07c364ae927c2b"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e.html#exhale-function-nv-c-math-8h-1a3611b94ab71c272ff7bec5230474602e"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc.html#exhale-function-nv-c-math-8h-1a8ac7d4f0c1cacd24219f53b16b2f18dc"><span class="std std-ref">operator/</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aee9d40098a20ba995017f53ba597a20f.html#exhale-function-nv-c-math-8h-1aee9d40098a20ba995017f53ba597a20f"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a76026c3838607d3be986f10ffe954bfc.html#exhale-function-nv-c-math-8h-1a76026c3838607d3be986f10ffe954bfc"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a1b079a619644b63364deec2aac2e4b63.html#exhale-function-nv-c-math-8h-1a1b079a619644b63364deec2aac2e4b63"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aedeea26cfc242b2099b3ba4c20ae78e9.html#exhale-function-nv-c-math-8h-1aedeea26cfc242b2099b3ba4c20ae78e9"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60.html#exhale-function-nv-c-math-8h-1a68dfaa9aee29c4c44472edb04528eb60"><span class="std std-ref">operator^</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7.html#exhale-function-nv-c-math-8h-1aa12da244dd84d18bb1516cd65654f0c7"><span class="std std-ref">operator|</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031.html#exhale-function-nv-c-math-8h-1aa24e75f0f0f976ebe5333b3e70dc2031"><span class="std std-ref">operator|</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="variables">
+<h1>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138.html#exhale-variable-nv-blast-ext-authoring-types-8h-1ad2d1cde5813011ad60c5a70903063138"><span class="std std-ref">Nv::Blast::kMaterialInteriorId</span></a></p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea.html#exhale-variable-nv-blast-ext-authoring-types-8h-1aef4edf41a556a4a3a47621a9335b10ea"><span class="std std-ref">Nv::Blast::kNotValidVertexIndex</span></a></p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4.html#exhale-variable-nv-blast-ext-authoring-types-8h-1adbf9e9203bf8bee845964d16b181bec4"><span class="std std-ref">Nv::Blast::kSmoothingGroupInteriorId</span></a></p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7.html#exhale-variable-nv-blast-types-8h-1a1d6a0f220e269f62129e3ac6f13f75e7"><span class="std std-ref">Nv::Blast::kUnbreakableLimit</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="defines">
+<h1>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="define__nv_blast_ext_r_t_8h_1a9cce5b0c1e6c644cdf4d10ca630fb07d.html#exhale-define-nv-blast-ext-r-t-8h-1a9cce5b0c1e6c644cdf4d10ca630fb07d"><span class="std std-ref">BLASTRT_MAX_CHUNKS</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_ext_r_t_8h_1aa56085b830bbfc750734bc2fec8c0070.html#exhale-define-nv-blast-ext-r-t-8h-1aa56085b830bbfc750734bc2fec8c0070"><span class="std std-ref">BLASTRT_MAX_EDGES_PER_CHUNK</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_ext_r_t_8h_1ab61e2620c8f2917beffb61e2d42cbc88.html#exhale-define-nv-blast-ext-r-t-8h-1ab61e2620c8f2917beffb61e2d42cbc88"><span class="std std-ref">BLASTRT_MAX_VERTICES</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_ext_authoring_8h_1a8cce5fb79e2923fd9f846edec21c226c.html#exhale-define-nv-blast-ext-authoring-8h-1a8cce5fb79e2923fd9f846edec21c226c"><span class="std std-ref">kBBoxBasedAcceleratorDefaultResolution</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5c14e5e0d9641e29d184997f0c8b5ede.html#exhale-define-group-foundation-1ga5c14e5e0d9641e29d184997f0c8b5ede"><span class="std std-ref">NV_A64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5a10a2ef5a9db1edafe12bfc0af52869.html#exhale-define-group-foundation-1ga5a10a2ef5a9db1edafe12bfc0af52869"><span class="std std-ref">NV_ALIGN</span></a>: Alignment macros.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gabe5430f2c9a3661ad09593408d2389b0.html#exhale-define-group-foundation-1gabe5430f2c9a3661ad09593408d2389b0"><span class="std std-ref">NV_ALIGN_PREFIX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7bad965576a26ea4543e6717f2a3367b.html#exhale-define-group-foundation-1ga7bad965576a26ea4543e6717f2a3367b"><span class="std std-ref">NV_ALIGN_SUFFIX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaa58561a6bd8c7797488a51be7bb41f57.html#exhale-define-group-foundation-1gaa58561a6bd8c7797488a51be7bb41f57"><span class="std std-ref">NV_ANDROID</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3399c6295a0a286d2753b466baec803a.html#exhale-define-group-foundation-1ga3399c6295a0a286d2753b466baec803a"><span class="std std-ref">NV_APPLE_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaaba32693e5dd5095968e0b608ad91435.html#exhale-define-group-foundation-1gaaba32693e5dd5095968e0b608ad91435"><span class="std std-ref">NV_ARM</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9be1389e02a540f72e549e47ebd69ad3.html#exhale-define-group-foundation-1ga9be1389e02a540f72e549e47ebd69ad3"><span class="std std-ref">NV_ARM_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga19a2d2985857d5965342df4f355a6c0e.html#exhale-define-group-foundation-1ga19a2d2985857d5965342df4f355a6c0e"><span class="std std-ref">NV_C_EXPORT</span></a>: DLL export macros.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga32dc60ff799b586ada4b484b0222dbd4.html#exhale-define-group-foundation-1ga32dc60ff799b586ada4b484b0222dbd4"><span class="std std-ref">NV_CALL_CONV</span></a>: Calling convention.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadc7c92598000916bb7dc9870cbdf3673.html#exhale-define-group-foundation-1gadc7c92598000916bb7dc9870cbdf3673"><span class="std std-ref">NV_CHECKED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga370315a9675c8a022aa13938c24795cd.html#exhale-define-group-foundation-1ga370315a9675c8a022aa13938c24795cd"><span class="std std-ref">NV_CLANG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga75e36581442a14a7187644fd92b799f5.html#exhale-define-group-foundation-1ga75e36581442a14a7187644fd92b799f5"><span class="std std-ref">NV_COMPILE_TIME_ASSERT</span></a>: General defines.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae5369ee72783436b1679b593f06c038d.html#exhale-define-group-foundation-1gae5369ee72783436b1679b593f06c038d"><span class="std std-ref">NV_CONCAT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6e5cc78f0b9d8e462049d53f4b5181ae.html#exhale-define-group-foundation-1ga6e5cc78f0b9d8e462049d53f4b5181ae"><span class="std std-ref">NV_CONCAT_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaf345e5634817936729c938b00cf10a25.html#exhale-define-group-foundation-1gaf345e5634817936729c938b00cf10a25"><span class="std std-ref">NV_CUDA_CALLABLE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaca12a62d0167edbf87022fc19b442f3f.html#exhale-define-group-foundation-1gaca12a62d0167edbf87022fc19b442f3f"><span class="std std-ref">NV_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2f137f0791dcbf897e62583f14399f65.html#exhale-define-group-foundation-1ga2f137f0791dcbf897e62583f14399f65"><span class="std std-ref">NV_DEPRECATED</span></a>: Deprecated macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gab099143f4f29cc000cff7819bbf0f9e0.html#exhale-define-group-foundation-1gab099143f4f29cc000cff7819bbf0f9e0"><span class="std std-ref">NV_DLL_EXPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5186e106b0627ce43b3ed7c6bea75252.html#exhale-define-group-foundation-1ga5186e106b0627ce43b3ed7c6bea75252"><span class="std std-ref">NV_DLL_IMPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9ca5b4b95cee3052f5a81085b93ea0b0.html#exhale-define-group-foundation-1ga9ca5b4b95cee3052f5a81085b93ea0b0"><span class="std std-ref">NV_DOXYGEN</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga82f2b8161bc1f7e726ac645c200769a3.html#exhale-define-group-foundation-1ga82f2b8161bc1f7e726ac645c200769a3"><span class="std std-ref">NV_DUMMY_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga436bd62778801fb05c2e3feb74469fc2.html#exhale-define-group-foundation-1ga436bd62778801fb05c2e3feb74469fc2"><span class="std std-ref">NV_ENABLE_ASSERTS</span></a>: Assert macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae9e06fb68b9ca307fa4377186da9052e.html#exhale-define-group-foundation-1gae9e06fb68b9ca307fa4377186da9052e"><span class="std std-ref">NV_FORCE_INLINE</span></a>: Force inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8023fffe9c79bf224a19de4e608b7644.html#exhale-define-group-foundation-1ga8023fffe9c79bf224a19de4e608b7644"><span class="std std-ref">NV_FOUNDATION_API</span></a>: Define API function declaration.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5da4978ba2d6d5dba81650d4ba75ca33.html#exhale-define-group-foundation-1ga5da4978ba2d6d5dba81650d4ba75ca33"><span class="std std-ref">NV_GCC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafd60b0665f37480ed74e7ce61618bda7.html#exhale-define-group-foundation-1gafd60b0665f37480ed74e7ce61618bda7"><span class="std std-ref">NV_GCC_FAMILY</span></a>: family shortcuts</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaa8fa59562b3ff1f6e7d157357ef13341.html#exhale-define-group-foundation-1gaa8fa59562b3ff1f6e7d157357ef13341"><span class="std std-ref">NV_GHS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga36a01a4a51968418a26b06da7e1ad5d0.html#exhale-define-group-foundation-1ga36a01a4a51968418a26b06da7e1ad5d0"><span class="std std-ref">NV_INLINE</span></a>: Inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae0d9bcbded673342d8eb643b3f6ab80f.html#exhale-define-group-foundation-1gae0d9bcbded673342d8eb643b3f6ab80f"><span class="std std-ref">NV_INTEL_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga42f9ade4a1a0e3546f020cf24f41a2fe.html#exhale-define-group-foundation-1ga42f9ade4a1a0e3546f020cf24f41a2fe"><span class="std std-ref">NV_IOS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae113833df736001a9b536ebd991a7a9f.html#exhale-define-group-foundation-1gae113833df736001a9b536ebd991a7a9f"><span class="std std-ref">NV_LINUX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga715e5def4ab649f06ef2797528754a23.html#exhale-define-group-foundation-1ga715e5def4ab649f06ef2797528754a23"><span class="std std-ref">NV_LINUX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga135d491d4fa5afae888bcbc1c02f9745.html#exhale-define-group-foundation-1ga135d491d4fa5afae888bcbc1c02f9745"><span class="std std-ref">NV_MICROSOFT_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga57eadff0b64e7b4886a481d0539d6096.html#exhale-define-group-foundation-1ga57eadff0b64e7b4886a481d0539d6096"><span class="std std-ref">NV_NEON</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8d631fdab8fe45ea1e4dad3caa8f7a95.html#exhale-define-group-foundation-1ga8d631fdab8fe45ea1e4dad3caa8f7a95"><span class="std std-ref">NV_NOALIAS</span></a>: Noalias macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gacf9618bbfb96b6c415429e69a922d7cd.html#exhale-define-group-foundation-1gacf9618bbfb96b6c415429e69a922d7cd"><span class="std std-ref">NV_NOCOPY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga883c8e56338740a881af1e1071fd19cc.html#exhale-define-group-foundation-1ga883c8e56338740a881af1e1071fd19cc"><span class="std std-ref">NV_NOINLINE</span></a>: Noinline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9cb70a50d55e516eca829ff6680804d6.html#exhale-define-group-foundation-1ga9cb70a50d55e516eca829ff6680804d6"><span class="std std-ref">NV_NVTX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7c2d7c9e736e71bfdf8524c2155a13ed.html#exhale-define-group-foundation-1ga7c2d7c9e736e71bfdf8524c2155a13ed"><span class="std std-ref">NV_OFFSET_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaf3a2e42fdfaeb8ba7832216b3fd8f8bd.html#exhale-define-group-foundation-1gaf3a2e42fdfaeb8ba7832216b3fd8f8bd"><span class="std std-ref">NV_OFFSET_OF_RT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac028758258875ccf553bf9d54d4095a6.html#exhale-define-group-foundation-1gac028758258875ccf553bf9d54d4095a6"><span class="std std-ref">NV_OFFSETOF_BASE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaf8c6a384ad2d9150720d111c154ac570.html#exhale-define-group-foundation-1gaf8c6a384ad2d9150720d111c154ac570"><span class="std std-ref">NV_OSX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafff0169bf95189167358fd42525ea524.html#exhale-define-group-foundation-1gafff0169bf95189167358fd42525ea524"><span class="std std-ref">NV_P64_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga67b78c1675d9669274bf61e170ad8d68.html#exhale-define-group-foundation-1ga67b78c1675d9669274bf61e170ad8d68"><span class="std std-ref">NV_POP_PACK</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8b9c3f255c9417e6dea000798efe5e14.html#exhale-define-group-foundation-1ga8b9c3f255c9417e6dea000798efe5e14"><span class="std std-ref">NV_PPC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3ebfc6594317671a0dee92ee3a442097.html#exhale-define-group-foundation-1ga3ebfc6594317671a0dee92ee3a442097"><span class="std std-ref">NV_PPU</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9f8c142fe7fa19e70ab9ed0fb2f4bbf4.html#exhale-define-group-foundation-1ga9f8c142fe7fa19e70ab9ed0fb2f4bbf4"><span class="std std-ref">NV_PROFILE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3f573c8d2c64b62808208d2821115a9b.html#exhale-define-group-foundation-1ga3f573c8d2c64b62808208d2821115a9b"><span class="std std-ref">NV_PS3</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae077cc2ead6684130598df6505f35047.html#exhale-define-group-foundation-1gae077cc2ead6684130598df6505f35047"><span class="std std-ref">NV_PS4</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga741b29f3573822e82729569f0d7d7425.html#exhale-define-group-foundation-1ga741b29f3573822e82729569f0d7d7425"><span class="std std-ref">NV_PSP2</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gabeef70ca4881b4e7dab66c905b6077db.html#exhale-define-group-foundation-1gabeef70ca4881b4e7dab66c905b6077db"><span class="std std-ref">NV_PUSH_PACK_DEFAULT</span></a>: Pack macros - disabled on SPU because they are not supported.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4c0c4cd5144f3366fc6e6a2c30a68c37.html#exhale-define-group-foundation-1ga4c0c4cd5144f3366fc6e6a2c30a68c37"><span class="std std-ref">NV_RESTRICT</span></a>: Restrict macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5d408962e8f40688ed6e1822476f4df8.html#exhale-define-group-foundation-1ga5d408962e8f40688ed6e1822476f4df8"><span class="std std-ref">NV_SNC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae3a914c12073dca7995a96def860cbb9.html#exhale-define-group-foundation-1gae3a914c12073dca7995a96def860cbb9"><span class="std std-ref">NV_SPU</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0ebb9e273e6fb1e6a3512540b992987d.html#exhale-define-group-foundation-1ga0ebb9e273e6fb1e6a3512540b992987d"><span class="std std-ref">NV_SSE2</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3eaed087256d1041f293b4ee82db4d46.html#exhale-define-group-foundation-1ga3eaed087256d1041f293b4ee82db4d46"><span class="std std-ref">NV_STRINGIZE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga28bcef106e19cb60cd318a30acd14f05.html#exhale-define-group-foundation-1ga28bcef106e19cb60cd318a30acd14f05"><span class="std std-ref">NV_STRINGIZE_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga1ac455e380b982cc3c4b696c9c0116e1.html#exhale-define-group-foundation-1ga1ac455e380b982cc3c4b696c9c0116e1"><span class="std std-ref">NV_UNIX_EXPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3fbf498d4752502d264017ea75e9a18d.html#exhale-define-group-foundation-1ga3fbf498d4752502d264017ea75e9a18d"><span class="std std-ref">NV_UNIX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8803531575c33ce69a53cc887908fc33.html#exhale-define-group-foundation-1ga8803531575c33ce69a53cc887908fc33"><span class="std std-ref">NV_VC</span></a>: Compiler defines, see <a class="reference external" href="http://sourceforge.net/p/predef/wiki/Compilers/">http://sourceforge.net/p/predef/wiki/Compilers/</a>.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2800fec521cb345698308d35a2507ef8.html#exhale-define-group-foundation-1ga2800fec521cb345698308d35a2507ef8"><span class="std std-ref">NV_VMX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac77dc6def0440a1b6eaafe31abeaea34.html#exhale-define-group-foundation-1gac77dc6def0440a1b6eaafe31abeaea34"><span class="std std-ref">NV_WEAK_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6669bc19a93cd4e2ca5b7a91654e506d.html#exhale-define-group-foundation-1ga6669bc19a93cd4e2ca5b7a91654e506d"><span class="std std-ref">NV_WIIU</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3cc94c20a8e2edb457fe19d591d130f6.html#exhale-define-group-foundation-1ga3cc94c20a8e2edb457fe19d591d130f6"><span class="std std-ref">NV_WIN32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga760e0cc06a731a203709b1341adea8aa.html#exhale-define-group-foundation-1ga760e0cc06a731a203709b1341adea8aa"><span class="std std-ref">NV_WIN64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga87ed101f72d7c221456c5888d262b143.html#exhale-define-group-foundation-1ga87ed101f72d7c221456c5888d262b143"><span class="std std-ref">NV_WINDOWS_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gabaf152fefb2013909c162f535bc34fe0.html#exhale-define-group-foundation-1gabaf152fefb2013909c162f535bc34fe0"><span class="std std-ref">NV_WINRT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga581f7937204f23d8f9603643bd847caa.html#exhale-define-group-foundation-1ga581f7937204f23d8f9603643bd847caa"><span class="std std-ref">NV_X360</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadbb99bc24045921bec5225ba8f31e49b.html#exhale-define-group-foundation-1gadbb99bc24045921bec5225ba8f31e49b"><span class="std std-ref">NV_X64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4986f9a9ce04c5584456e72fd08b954d.html#exhale-define-group-foundation-1ga4986f9a9ce04c5584456e72fd08b954d"><span class="std std-ref">NV_X86</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga61b0b6f3fcd356e6803e02ba39d1748f.html#exhale-define-group-foundation-1ga61b0b6f3fcd356e6803e02ba39d1748f"><span class="std std-ref">NV_XBOXONE</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a5d66f893822bf7f14f90e2b5480c6741.html#exhale-define-nv-blast-globals-8h-1a5d66f893822bf7f14f90e2b5480c6741"><span class="std std-ref">NVBLAST_ALLOC</span></a>: Alloc/Free macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a8b44c099b2f3dd78e4887065cbd3844d.html#exhale-define-nv-blast-globals-8h-1a8b44c099b2f3dd78e4887065cbd3844d"><span class="std std-ref">NVBLAST_ALLOC_NAMED</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a12c3113fdc58a74fd2cf9e4839a14d74.html#exhale-define-nv-blast-globals-8h-1a12c3113fdc58a74fd2cf9e4839a14d74"><span class="std std-ref">NVBLAST_CHECK</span></a>: Check macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1afee8367abfa398f31a979b6a6918492f.html#exhale-define-nv-blast-globals-8h-1afee8367abfa398f31a979b6a6918492f"><span class="std std-ref">NVBLAST_CHECK_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a7ac166d3622489e15ed28c5e61b22e0b.html#exhale-define-nv-blast-globals-8h-1a7ac166d3622489e15ed28c5e61b22e0b"><span class="std std-ref">NVBLAST_CHECK_ERROR</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a9118c6afe116051855dcd7fcd38baa9a.html#exhale-define-nv-blast-globals-8h-1a9118c6afe116051855dcd7fcd38baa9a"><span class="std std-ref">NVBLAST_CHECK_INFO</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1addfc51da498a3e77d748dff30084df79.html#exhale-define-nv-blast-globals-8h-1addfc51da498a3e77d748dff30084df79"><span class="std std-ref">NVBLAST_CHECK_WARNING</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a169634cc0a7d8a8567b8b390c926b2e7.html#exhale-define-nv-blast-globals-8h-1a169634cc0a7d8a8567b8b390c926b2e7"><span class="std std-ref">NVBLAST_DELETE</span></a>: Respective delete to NVBLAST_NEW The obj pointer may be NULL (to match the behavior of standard C++ delete) Example: <a class="reference internal" href="define__nv_blast_globals_8h_1a169634cc0a7d8a8567b8b390c926b2e7.html#exhale-define-nv-blast-globals-8h-1a169634cc0a7d8a8567b8b390c926b2e7"><span class="std std-ref">NVBLAST_DELETE</span></a>;.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a05d6e56bfb4bc7ffdaccd9e32ef1551e.html#exhale-define-nv-blast-globals-8h-1a05d6e56bfb4bc7ffdaccd9e32ef1551e"><span class="std std-ref">NVBLAST_FOURCC</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1af968d9c2dc2aaeb87f55bbd85488f741.html#exhale-define-nv-blast-globals-8h-1af968d9c2dc2aaeb87f55bbd85488f741"><span class="std std-ref">NVBLAST_FREE</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1aaa478c2c6c4b296431d526caa7ee6369.html#exhale-define-nv-blast-globals-8h-1aaa478c2c6c4b296431d526caa7ee6369"><span class="std std-ref">NVBLAST_LOG</span></a>: Logging macros that use global AllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a840ebe37ee602bb328d88d629f8f3017.html#exhale-define-nv-blast-globals-8h-1a840ebe37ee602bb328d88d629f8f3017"><span class="std std-ref">NVBLAST_LOG_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a67129e1adea0a0ed0c08da1b16497da0.html#exhale-define-nv-blast-globals-8h-1a67129e1adea0a0ed0c08da1b16497da0"><span class="std std-ref">NVBLAST_LOG_ERROR</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a9315f52cc9bb2de8f03b544716a06dce.html#exhale-define-nv-blast-globals-8h-1a9315f52cc9bb2de8f03b544716a06dce"><span class="std std-ref">NVBLAST_LOG_INFO</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a571a982fe46cf7f797e63393a027d359.html#exhale-define-nv-blast-globals-8h-1a571a982fe46cf7f797e63393a027d359"><span class="std std-ref">NVBLAST_LOG_WARNING</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_globals_8h_1acae7d0ae139069c3dc07f095d16bff83.html#exhale-define-nv-blast-globals-8h-1acae7d0ae139069c3dc07f095d16bff83"><span class="std std-ref">NVBLAST_NEW</span></a>: Placement new.</p></li>
+<li><p><a class="reference internal" href="define__nv_blast_8h_1a72f7ca021d885848e5ca7e09f708f18c.html#exhale-define-nv-blast-8h-1a72f7ca021d885848e5ca7e09f708f18c"><span class="std std-ref">NvBlastActorIsBoundToWorld</span></a></p></li>
+<li><p><a class="reference internal" href="define__nv_blast_ext_asset_utils_8h_1a5bd0bc634ba2a0eb03aa8ced8412947c.html#exhale-define-nv-blast-ext-asset-utils-8h-1a5bd0bc634ba2a0eb03aa8ced8412947c"><span class="std std-ref">NvBlastExtAssetUtilsAddWorldBonds</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="typedefs">
+<h1>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef__nv_blast_ext_px_impact_damage_manager_8h_1ad18fa486067c588cf4e38f50d604f46a.html#exhale-typedef-nv-blast-ext-px-impact-damage-manager-8h-1ad18fa486067c588cf4e38f50d604f46a"><span class="std std-ref">Nv::Blast::ExtImpactDamageFunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__nv_blast_ext_px_manager_8h_1ad850cb90e735a499140c9b9dee734669.html#exhale-typedef-nv-blast-ext-px-manager-8h-1ad850cb90e735a499140c9b9dee734669"><span class="std std-ref">Nv::Blast::ExtPxCreateJointFunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html#exhale-typedef-nv-blast-ext-authoring-pattern-generator-8h-1a4e5bb14b7dd9af36721e2510c8cf4a88"><span class="std std-ref">Nv::Blast::RNG_CALLBACK</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1a82519adf79b20af687b7c8734b19e87a.html#exhale-typedef-nv-blast-types-8h-1a82519adf79b20af687b7c8734b19e87a"><span class="std std-ref">NvBlastGraphShaderFunction</span></a>: Damage shader for actors with more then one node in support graph.</p></li>
+<li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1aca9b64ae20263de0d18e0f58cb51b1ab.html#exhale-typedef-nv-blast-types-8h-1aca9b64ae20263de0d18e0f58cb51b1ab"><span class="std std-ref">NvBlastLog</span></a>: Function pointer type for logging.</p></li>
+<li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1a84db34681482d19f9e58ce89adc7a918.html#exhale-typedef-nv-blast-types-8h-1a84db34681482d19f9e58ce89adc7a918"><span class="std std-ref">NvBlastSubgraphShaderFunction</span></a>: Damage shader for actors with single chunk.</p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMPMMaterial &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMPMMaterial</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmpmmaterial">
+<span id="exhale-class-class-px-m-p-m-material"></span><h1>PxMPMMaterial<a class="headerlink" href="#pxmpmmaterial" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxMPMMaterial.h.html#file-include-pxmpmmaterial-h"><span class="std std-ref">include/PxMPMMaterial.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxParticleMaterial</span></code> (<a class="reference internal" href="class_px_particle_material.html#exhale-class-class-px-particle-material"><span class="std std-ref">PxParticleMaterial</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxMPMMaterial">
+<span id="_CPPv313PxMPMMaterial"></span><span id="_CPPv213PxMPMMaterial"></span><span id="PxMPMMaterial"></span><span class="target" id="class_px_m_p_m_material"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMPMMaterial</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_particle_material.html#_CPPv418PxParticleMaterial" title="PxParticleMaterial"><span class="n"><span class="pre">PxParticleMaterial</span></span></a><a class="headerlink" href="#_CPPv413PxMPMMaterial" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Material class to represent a set of MPM particle material properties. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1aef9d1918cf2c0392370cf523f543f3e2"><span class="std std-ref">PxPhysics.createMPMMaterial</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial25setStretchAndShearDampingE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial25setStretchAndShearDampingE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial25setStretchAndShearDampingE6PxReal"></span><span id="PxMPMMaterial::setStretchAndShearDamping__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a66fd44bbfbad5c87627b9d68d38d3081"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStretchAndShearDamping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stretchAndShearDamping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial25setStretchAndShearDampingE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets stretch and shear damping which dampens stretch and shear motion of MPM bodies. </p>
+<p>The effect is comparable to viscosity for fluids.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a948a03f9a3e74959d6b785fbf299e795"><span class="std std-ref">getStretchAndShearDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stretchAndShearDamping</strong> – <strong>[in]</strong> The stretch and shear damping</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial25getStretchAndShearDampingEv">
+<span id="_CPPv3NK13PxMPMMaterial25getStretchAndShearDampingEv"></span><span id="_CPPv2NK13PxMPMMaterial25getStretchAndShearDampingEv"></span><span id="PxMPMMaterial::getStretchAndShearDampingC"></span><span class="target" id="class_px_m_p_m_material_1a948a03f9a3e74959d6b785fbf299e795"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStretchAndShearDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial25getStretchAndShearDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the stretch and shear damping. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a66fd44bbfbad5c87627b9d68d38d3081"><span class="std std-ref">setStretchAndShearDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The stretch and shear damping</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial20setRotationalDampingE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial20setRotationalDampingE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial20setRotationalDampingE6PxReal"></span><span id="PxMPMMaterial::setRotationalDamping__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a788464d1dd3aa8582605e6918edd76c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRotationalDamping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">rotationalDamping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial20setRotationalDampingE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the rotational damping which dampens rotations of mpm bodies. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ae9163cc9372ce21d4f7148656c79cb29"><span class="std std-ref">getRotationalDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rotationalDamping</strong> – <strong>[in]</strong> The rotational damping</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial20getRotationalDampingEv">
+<span id="_CPPv3NK13PxMPMMaterial20getRotationalDampingEv"></span><span id="_CPPv2NK13PxMPMMaterial20getRotationalDampingEv"></span><span id="PxMPMMaterial::getRotationalDampingC"></span><span class="target" id="class_px_m_p_m_material_1ae9163cc9372ce21d4f7148656c79cb29"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRotationalDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial20getRotationalDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the rotational damping. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a788464d1dd3aa8582605e6918edd76c2"><span class="std std-ref">setRotationalDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The rotational damping</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial10setDensityE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial10setDensityE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial10setDensityE6PxReal"></span><span id="PxMPMMaterial::setDensity__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a1a732ae6393d90266341483cf5a56e1e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDensity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial10setDensityE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets density which influences the body’s weight. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ad4118a66963c7955544121294b5dca74"><span class="std std-ref">getDensity()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>density</strong> – <strong>[in]</strong> The material’s density</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial10getDensityEv">
+<span id="_CPPv3NK13PxMPMMaterial10getDensityEv"></span><span id="_CPPv2NK13PxMPMMaterial10getDensityEv"></span><span id="PxMPMMaterial::getDensityC"></span><span class="target" id="class_px_m_p_m_material_1ad4118a66963c7955544121294b5dca74"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDensity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial10getDensityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the density value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a1a732ae6393d90266341483cf5a56e1e"><span class="std std-ref">setDensity()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The density</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial16setMaterialModelEN18PxMPMMaterialModel4EnumE">
+<span id="_CPPv3N13PxMPMMaterial16setMaterialModelEN18PxMPMMaterialModel4EnumE"></span><span id="_CPPv2N13PxMPMMaterial16setMaterialModelEN18PxMPMMaterialModel4EnumE"></span><span id="PxMPMMaterial::setMaterialModel__PxMPMMaterialModel::Enum"></span><span class="target" id="class_px_m_p_m_material_1a2c26101227293d1e3759e4115782ba89"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaterialModel</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_m_p_m_material_model.html#_CPPv418PxMPMMaterialModel" title="PxMPMMaterialModel"><span class="n"><span class="pre">PxMPMMaterialModel</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_m_p_m_material_model.html#_CPPv4N18PxMPMMaterialModel4EnumE" title="PxMPMMaterialModel::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">materialModel</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial16setMaterialModelEN18PxMPMMaterialModel4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the material model which influences interaction between MPM particles. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a0ba56443effbcdcd8e5476dc3d4782bc"><span class="std std-ref">getMaterialModel()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>materialModel</strong> – <strong>[in]</strong> The material model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial16getMaterialModelEv">
+<span id="_CPPv3NK13PxMPMMaterial16getMaterialModelEv"></span><span id="_CPPv2NK13PxMPMMaterial16getMaterialModelEv"></span><span id="PxMPMMaterial::getMaterialModelC"></span><span class="target" id="class_px_m_p_m_material_1a0ba56443effbcdcd8e5476dc3d4782bc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_m_p_m_material_model.html#_CPPv418PxMPMMaterialModel" title="PxMPMMaterialModel"><span class="n"><span class="pre">PxMPMMaterialModel</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_m_p_m_material_model.html#_CPPv4N18PxMPMMaterialModel4EnumE" title="PxMPMMaterialModel::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaterialModel</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial16getMaterialModelEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the material model. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a2c26101227293d1e3759e4115782ba89"><span class="std std-ref">setMaterialModel()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The material model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial15setCuttingFlagsE17PxMPMCuttingFlags">
+<span id="_CPPv3N13PxMPMMaterial15setCuttingFlagsE17PxMPMCuttingFlags"></span><span id="_CPPv2N13PxMPMMaterial15setCuttingFlagsE17PxMPMCuttingFlags"></span><span id="PxMPMMaterial::setCuttingFlags__PxMPMCuttingFlags"></span><span class="target" id="class_px_m_p_m_material_1a2c88902538c1a7548281ad24ad69b0e2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCuttingFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__physics_1ga189659947c7960fedd8181b05e6f33a7.html#_CPPv417PxMPMCuttingFlags" title="PxMPMCuttingFlags"><span class="n"><span class="pre">PxMPMCuttingFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">cuttingFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial15setCuttingFlagsE17PxMPMCuttingFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the cutting flags which can enable damage tracking or thin blade support. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a91d077e931ae1f7e569afe137fa4b6fe"><span class="std std-ref">getCuttingFlags()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cuttingFlags</strong> – <strong>[in]</strong> The cutting flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial15getCuttingFlagsEv">
+<span id="_CPPv3NK13PxMPMMaterial15getCuttingFlagsEv"></span><span id="_CPPv2NK13PxMPMMaterial15getCuttingFlagsEv"></span><span id="PxMPMMaterial::getCuttingFlagsC"></span><span class="target" id="class_px_m_p_m_material_1a91d077e931ae1f7e569afe137fa4b6fe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga189659947c7960fedd8181b05e6f33a7.html#_CPPv417PxMPMCuttingFlags" title="PxMPMCuttingFlags"><span class="n"><span class="pre">PxMPMCuttingFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCuttingFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial15getCuttingFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the cutting flags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a2c88902538c1a7548281ad24ad69b0e2"><span class="std std-ref">setCuttingFlags()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The cutting flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial20setSandFrictionAngleE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial20setSandFrictionAngleE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial20setSandFrictionAngleE6PxReal"></span><span id="PxMPMMaterial::setSandFrictionAngle__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a9e80c6c236fdc74545802466cb6a1de7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSandFrictionAngle</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">sandFrictionAngle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial20setSandFrictionAngleE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the sand friction angle, only applied if the material model is set to sand. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a156e6bee9c7bae5c370763dc8ef3153a"><span class="std std-ref">getSandFrictionAngle()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sandFrictionAngle</strong> – <strong>[in]</strong> The sand friction angle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial20getSandFrictionAngleEv">
+<span id="_CPPv3NK13PxMPMMaterial20getSandFrictionAngleEv"></span><span id="_CPPv2NK13PxMPMMaterial20getSandFrictionAngleEv"></span><span id="PxMPMMaterial::getSandFrictionAngleC"></span><span class="target" id="class_px_m_p_m_material_1a156e6bee9c7bae5c370763dc8ef3153a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSandFrictionAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial20getSandFrictionAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the sand friction angle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a9e80c6c236fdc74545802466cb6a1de7"><span class="std std-ref">setSandFrictionAngle()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The sand friction angle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial14setYieldStressE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial14setYieldStressE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial14setYieldStressE6PxReal"></span><span id="PxMPMMaterial::setYieldStress__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a962bb88ecab12c11a72a287873234b5b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setYieldStress</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">yieldStress</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial14setYieldStressE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the yield stress, only applied if the material model is set to Von Mises. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ac5d4e2700e7f735bb55cad3cbf810a1d"><span class="std std-ref">getYieldStress()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>yieldStress</strong> – <strong>[in]</strong> The yield stress</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial14getYieldStressEv">
+<span id="_CPPv3NK13PxMPMMaterial14getYieldStressEv"></span><span id="_CPPv2NK13PxMPMMaterial14getYieldStressEv"></span><span id="PxMPMMaterial::getYieldStressC"></span><span class="target" id="class_px_m_p_m_material_1ac5d4e2700e7f735bb55cad3cbf810a1d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getYieldStress</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial14getYieldStressEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the yield stress. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a962bb88ecab12c11a72a287873234b5b"><span class="std std-ref">setYieldStress()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The yield stress</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial12setIsPlasticEb">
+<span id="_CPPv3N13PxMPMMaterial12setIsPlasticEb"></span><span id="_CPPv2N13PxMPMMaterial12setIsPlasticEb"></span><span id="PxMPMMaterial::setIsPlastic__b"></span><span class="target" id="class_px_m_p_m_material_1a79360540f3ecdf3431d45e8e8117a3ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setIsPlastic</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">isPlastic</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial12setIsPlasticEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set material to plastic. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a9c1aa53e947bf47c50e2014bb075429e"><span class="std std-ref">getIsPlastic()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>isPlastic</strong> – <strong>[in]</strong> True if plastic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial12getIsPlasticEv">
+<span id="_CPPv3NK13PxMPMMaterial12getIsPlasticEv"></span><span id="_CPPv2NK13PxMPMMaterial12getIsPlasticEv"></span><span id="PxMPMMaterial::getIsPlasticC"></span><span class="target" id="class_px_m_p_m_material_1a9c1aa53e947bf47c50e2014bb075429e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getIsPlastic</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial12getIsPlasticEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if material is plastic. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a79360540f3ecdf3431d45e8e8117a3ed"><span class="std std-ref">setIsPlastic()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if plastic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial16setYoungsModulusE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial16setYoungsModulusE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial16setYoungsModulusE6PxReal"></span><span id="PxMPMMaterial::setYoungsModulus__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a63bc912961026da41d1dc3dfa4b59097"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setYoungsModulus</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">young</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial16setYoungsModulusE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets Young’s modulus which defines the body’s stiffness. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a5c60ce5bf60e6a3c7f1f59be1a44da95"><span class="std std-ref">getYoungsModulus()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>young</strong> – <strong>[in]</strong> Young’s modulus. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial16getYoungsModulusEv">
+<span id="_CPPv3NK13PxMPMMaterial16getYoungsModulusEv"></span><span id="_CPPv2NK13PxMPMMaterial16getYoungsModulusEv"></span><span id="PxMPMMaterial::getYoungsModulusC"></span><span class="target" id="class_px_m_p_m_material_1a5c60ce5bf60e6a3c7f1f59be1a44da95"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getYoungsModulus</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial16getYoungsModulusEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the Young’s modulus value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a63bc912961026da41d1dc3dfa4b59097"><span class="std std-ref">setYoungsModulus()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The Young’s modulus value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial11setPoissonsE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial11setPoissonsE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial11setPoissonsE6PxReal"></span><span id="PxMPMMaterial::setPoissons__PxReal"></span><span class="target" id="class_px_m_p_m_material_1acb28a13425bc07ae8ce685753cbd0eab"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPoissons</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">poisson</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial11setPoissonsE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets Poisson’s ratio defines the body’s volume preservation. </p>
+<p>Completely incompressible materials have a Poisson ratio of 0.5 which will lead to numerical problems.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a7c8d3701e209cb389c21dcc6b2caff60"><span class="std std-ref">getPoissons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>poisson</strong> – <strong>[in]</strong> Poisson’s ratio. <strong>Range:</strong> [0, 0.5)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial11getPoissonsEv">
+<span id="_CPPv3NK13PxMPMMaterial11getPoissonsEv"></span><span id="_CPPv2NK13PxMPMMaterial11getPoissonsEv"></span><span id="PxMPMMaterial::getPoissonsC"></span><span class="target" id="class_px_m_p_m_material_1a7c8d3701e209cb389c21dcc6b2caff60"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPoissons</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial11getPoissonsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the Poisson’s ratio. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1acb28a13425bc07ae8ce685753cbd0eab"><span class="std std-ref">setPoissons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The Poisson’s ratio.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial12setHardeningE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial12setHardeningE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial12setHardeningE6PxReal"></span><span id="PxMPMMaterial::setHardening__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a2d74e647035c6d9b83577606549db931"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHardening</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hardening</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial12setHardeningE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material hardening coefficient. </p>
+<p>Tendency to get more rigid under compression. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ac63dfdfcac4c7072471b18640a862fec"><span class="std std-ref">getHardening</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hardening</strong> – <strong>[in]</strong> Material hardening coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial12getHardeningEv">
+<span id="_CPPv3NK13PxMPMMaterial12getHardeningEv"></span><span id="_CPPv2NK13PxMPMMaterial12getHardeningEv"></span><span id="PxMPMMaterial::getHardeningC"></span><span class="target" id="class_px_m_p_m_material_1ac63dfdfcac4c7072471b18640a862fec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHardening</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial12getHardeningEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the hardening coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a2d74e647035c6d9b83577606549db931"><span class="std std-ref">setHardening()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The hardening coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial22setCriticalCompressionE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial22setCriticalCompressionE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial22setCriticalCompressionE6PxReal"></span><span id="PxMPMMaterial::setCriticalCompression__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a947516af617b5c3c55703e02b0906f76"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCriticalCompression</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">criticalCompression</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial22setCriticalCompressionE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material critical compression coefficient. </p>
+<p>Compression clamping threshold (higher means more compression is allowed before yield). <strong>Range:</strong> [0, 1)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1afcbd3248f4add78ada6a03d2ad34c1dd"><span class="std std-ref">getCriticalCompression</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>criticalCompression</strong> – <strong>[in]</strong> Material critical compression coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial22getCriticalCompressionEv">
+<span id="_CPPv3NK13PxMPMMaterial22getCriticalCompressionEv"></span><span id="_CPPv2NK13PxMPMMaterial22getCriticalCompressionEv"></span><span id="PxMPMMaterial::getCriticalCompressionC"></span><span class="target" id="class_px_m_p_m_material_1afcbd3248f4add78ada6a03d2ad34c1dd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCriticalCompression</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial22getCriticalCompressionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the critical compression coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a947516af617b5c3c55703e02b0906f76"><span class="std std-ref">setCriticalCompression()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The criticalCompression coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial18setCriticalStretchE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial18setCriticalStretchE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial18setCriticalStretchE6PxReal"></span><span id="PxMPMMaterial::setCriticalStretch__PxReal"></span><span class="target" id="class_px_m_p_m_material_1afb67514c9c4236cdc8fdfca4ab21340c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCriticalStretch</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">criticalStretch</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial18setCriticalStretchE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material critical stretch coefficient. </p>
+<p>Stretch clamping threshold (higher means more stretching is allowed before yield). <strong>Range:</strong> [0, 1]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a2de4e7a5bc321625718a5c2cbf4b55ce"><span class="std std-ref">getCriticalStretch</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>criticalStretch</strong> – <strong>[in]</strong> Material critical stretch coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial18getCriticalStretchEv">
+<span id="_CPPv3NK13PxMPMMaterial18getCriticalStretchEv"></span><span id="_CPPv2NK13PxMPMMaterial18getCriticalStretchEv"></span><span id="PxMPMMaterial::getCriticalStretchC"></span><span class="target" id="class_px_m_p_m_material_1a2de4e7a5bc321625718a5c2cbf4b55ce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCriticalStretch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial18getCriticalStretchEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the critical stretch coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1afb67514c9c4236cdc8fdfca4ab21340c"><span class="std std-ref">setCriticalStretch()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The criticalStretch coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial27setTensileDamageSensitivityE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial27setTensileDamageSensitivityE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial27setTensileDamageSensitivityE6PxReal"></span><span id="PxMPMMaterial::setTensileDamageSensitivity__PxReal"></span><span class="target" id="class_px_m_p_m_material_1a6d71a5dc5ba5c7444a1074d31cc08529"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTensileDamageSensitivity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">tensileDamageSensitivity</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial27setTensileDamageSensitivityE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material tensile damage sensitivity coefficient. </p>
+<p>Sensitivity to tensile loads. The higher the sensitivity, the quicker damage will occur under tensile loads. <strong>Range:</strong> [0, PX_MAX_U32)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a8183cd626dc120bddafddf0106b46073"><span class="std std-ref">getTensileDamageSensitivity</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tensileDamageSensitivity</strong> – <strong>[in]</strong> Material tensile damage sensitivity coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial27getTensileDamageSensitivityEv">
+<span id="_CPPv3NK13PxMPMMaterial27getTensileDamageSensitivityEv"></span><span id="_CPPv2NK13PxMPMMaterial27getTensileDamageSensitivityEv"></span><span id="PxMPMMaterial::getTensileDamageSensitivityC"></span><span class="target" id="class_px_m_p_m_material_1a8183cd626dc120bddafddf0106b46073"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTensileDamageSensitivity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial27getTensileDamageSensitivityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the tensile damage sensitivity coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a6d71a5dc5ba5c7444a1074d31cc08529"><span class="std std-ref">setTensileDamageSensitivity()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The tensileDamageSensitivity coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial31setCompressiveDamageSensitivityE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial31setCompressiveDamageSensitivityE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial31setCompressiveDamageSensitivityE6PxReal"></span><span id="PxMPMMaterial::setCompressiveDamageSensitivity__PxReal"></span><span class="target" id="class_px_m_p_m_material_1adc4e36e658c6c64ef9e805dfd73a102d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setCompressiveDamageSensitivity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">compressiveDamageSensitivity</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial31setCompressiveDamageSensitivityE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material compressive damage sensitivity coefficient. </p>
+<p>Sensitivity to compressive loads. The higher the sensitivity, the quicker damage will occur under compressive loads <strong>Range:</strong> [0, PX_MAX_U32)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1a8257cb7375a535ab3a918f77f4172ef4"><span class="std std-ref">getCompressiveDamageSensitivity</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>compressiveDamageSensitivity</strong> – <strong>[in]</strong> Material compressive damage sensitivity coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial31getCompressiveDamageSensitivityEv">
+<span id="_CPPv3NK13PxMPMMaterial31getCompressiveDamageSensitivityEv"></span><span id="_CPPv2NK13PxMPMMaterial31getCompressiveDamageSensitivityEv"></span><span id="PxMPMMaterial::getCompressiveDamageSensitivityC"></span><span class="target" id="class_px_m_p_m_material_1a8257cb7375a535ab3a918f77f4172ef4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCompressiveDamageSensitivity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial31getCompressiveDamageSensitivityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the compressive damage sensitivity coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1adc4e36e658c6c64ef9e805dfd73a102d"><span class="std std-ref">setCompressiveDamageSensitivity()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The compressiveDamageSensitivity coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial26setAttractiveForceResidualE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial26setAttractiveForceResidualE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial26setAttractiveForceResidualE6PxReal"></span><span id="PxMPMMaterial::setAttractiveForceResidual__PxReal"></span><span class="target" id="class_px_m_p_m_material_1ad4fb336c4af3215c81e3da52bc4c5cb2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAttractiveForceResidual</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attractiveForceResidual</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial26setAttractiveForceResidualE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material attractive force residual coefficient. </p>
+<p>Relative amount of attractive force a fully damaged particle can exert on other particles compared to an undamaged one. <strong>Range:</strong> [0, 1]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ad042bee0c5fbec697d8a9254342b2007"><span class="std std-ref">getAttractiveForceResidual</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>attractiveForceResidual</strong> – <strong>[in]</strong> Material attractive force residual coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial26getAttractiveForceResidualEv">
+<span id="_CPPv3NK13PxMPMMaterial26getAttractiveForceResidualEv"></span><span id="_CPPv2NK13PxMPMMaterial26getAttractiveForceResidualEv"></span><span id="PxMPMMaterial::getAttractiveForceResidualC"></span><span class="target" id="class_px_m_p_m_material_1ad042bee0c5fbec697d8a9254342b2007"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttractiveForceResidual</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial26getAttractiveForceResidualEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the attractive force residual coefficient. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_m_p_m_material_1ad4fb336c4af3215c81e3da52bc4c5cb2"><span class="std std-ref">setAttractiveForceResidual()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The attractiveForceResidual coefficient.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial19getConcreteTypeNameEv">
+<span id="_CPPv3NK13PxMPMMaterial19getConcreteTypeNameEv"></span><span id="_CPPv2NK13PxMPMMaterial19getConcreteTypeNameEv"></span><span id="PxMPMMaterial::getConcreteTypeNameC"></span><span class="target" id="class_px_m_p_m_material_1a8bb156ec540fb1c5dfcea641dafe0f0e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial11setFrictionE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial11setFrictionE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial11setFrictionE6PxReal"></span><span id="PxMPMMaterial::setFriction__PxReal"></span><span class="target" id="class_px_particle_material_1a3c1ed442ae330c7d657dc1fc6195e180"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFriction</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">friction</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial11setFrictionE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets friction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1ad11fc900872861605d6d9198d4029952"><span class="std std-ref">getFriction()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>friction</strong> – <strong>[in]</strong> Friction. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial11getFrictionEv">
+<span id="_CPPv3NK13PxMPMMaterial11getFrictionEv"></span><span id="_CPPv2NK13PxMPMMaterial11getFrictionEv"></span><span id="PxMPMMaterial::getFrictionC"></span><span class="target" id="class_px_particle_material_1ad11fc900872861605d6d9198d4029952"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFriction</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial11getFrictionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the friction value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1a3c1ed442ae330c7d657dc1fc6195e180"><span class="std std-ref">setFriction()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The friction value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial10setDampingE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial10setDampingE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial10setDampingE6PxReal"></span><span id="PxMPMMaterial::setDamping__PxReal"></span><span class="target" id="class_px_particle_material_1ab67cb48b05489bd39f50276b361f6fee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDamping</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">damping</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial10setDampingE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets velocity damping term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1a6ce2c977c464c7e00f13bcfcf33b8702"><span class="std std-ref">getDamping</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>damping</strong> – <strong>[in]</strong> Velocity damping term. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial10getDampingEv">
+<span id="_CPPv3NK13PxMPMMaterial10getDampingEv"></span><span id="_CPPv2NK13PxMPMMaterial10getDampingEv"></span><span id="PxMPMMaterial::getDampingC"></span><span class="target" id="class_px_particle_material_1a6ce2c977c464c7e00f13bcfcf33b8702"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDamping</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial10getDampingEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the velocity damping term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1ab67cb48b05489bd39f50276b361f6fee"><span class="std std-ref">setDamping()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The velocity damping term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial11setAdhesionE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial11setAdhesionE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial11setAdhesionE6PxReal"></span><span id="PxMPMMaterial::setAdhesion__PxReal"></span><span class="target" id="class_px_particle_material_1a9fca3052046a4d2ee03e1f483914727f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAdhesion</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">adhesion</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial11setAdhesionE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets adhesion term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1aa2790807d4c2a2938faa0dccb50d48e8"><span class="std std-ref">getAdhesion</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>adhesion</strong> – <strong>[in]</strong> adhesion coefficient. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial11getAdhesionEv">
+<span id="_CPPv3NK13PxMPMMaterial11getAdhesionEv"></span><span id="_CPPv2NK13PxMPMMaterial11getAdhesionEv"></span><span id="PxMPMMaterial::getAdhesionC"></span><span class="target" id="class_px_particle_material_1aa2790807d4c2a2938faa0dccb50d48e8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAdhesion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial11getAdhesionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the adhesion term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1a9fca3052046a4d2ee03e1f483914727f"><span class="std std-ref">setAdhesion()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The adhesion term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial15setGravityScaleE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial15setGravityScaleE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial15setGravityScaleE6PxReal"></span><span id="PxMPMMaterial::setGravityScale__PxReal"></span><span class="target" id="class_px_particle_material_1a1ae0dc821d38f5439a327a9548c97212"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGravityScale</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial15setGravityScaleE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets gravity scale term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1aa2790807d4c2a2938faa0dccb50d48e8"><span class="std std-ref">getAdhesion</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> gravity scale coefficient. <strong>Range:</strong> (-PX_MAX_F32, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial15getGravityScaleEv">
+<span id="_CPPv3NK13PxMPMMaterial15getGravityScaleEv"></span><span id="_CPPv2NK13PxMPMMaterial15getGravityScaleEv"></span><span id="PxMPMMaterial::getGravityScaleC"></span><span class="target" id="class_px_particle_material_1aa2c886365bd989f2db0491b6a11e27a6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGravityScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial15getGravityScaleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the gravity scale term. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1a9fca3052046a4d2ee03e1f483914727f"><span class="std std-ref">setAdhesion()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The gravity scale term.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial22setAdhesionRadiusScaleE6PxReal">
+<span id="_CPPv3N13PxMPMMaterial22setAdhesionRadiusScaleE6PxReal"></span><span id="_CPPv2N13PxMPMMaterial22setAdhesionRadiusScaleE6PxReal"></span><span id="PxMPMMaterial::setAdhesionRadiusScale__PxReal"></span><span class="target" id="class_px_particle_material_1a035c0ff5784d0bf1297a33c80a5af76c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAdhesionRadiusScale</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial22setAdhesionRadiusScaleE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets material adhesion radius scale. </p>
+<p>This is multiplied by the particle rest offset to compute the fall-off distance at which point adhesion ceases to operate.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1aaa59789da66fbe3f7deb1266397f84ed"><span class="std std-ref">getAdhesionRadiusScale</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – <strong>[in]</strong> Material adhesion radius scale. <strong>Range:</strong> [0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial22getAdhesionRadiusScaleEv">
+<span id="_CPPv3NK13PxMPMMaterial22getAdhesionRadiusScaleEv"></span><span id="_CPPv2NK13PxMPMMaterial22getAdhesionRadiusScaleEv"></span><span id="PxMPMMaterial::getAdhesionRadiusScaleC"></span><span class="target" id="class_px_particle_material_1aaa59789da66fbe3f7deb1266397f84ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAdhesionRadiusScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial22getAdhesionRadiusScaleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the adhesion radius scale. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material_1a035c0ff5784d0bf1297a33c80a5af76c"><span class="std std-ref">setAdhesionRadiusScale()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The adhesion radius scale.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial7releaseEv">
+<span id="_CPPv3N13PxMPMMaterial7releaseEv"></span><span id="_CPPv2N13PxMPMMaterial7releaseEv"></span><span id="PxMPMMaterial::release"></span><span class="target" id="class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of the object and releases it if the new reference count is zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial17getReferenceCountEv">
+<span id="_CPPv3NK13PxMPMMaterial17getReferenceCountEv"></span><span id="_CPPv2NK13PxMPMMaterial17getReferenceCountEv"></span><span id="PxMPMMaterial::getReferenceCountC"></span><span class="target" id="class_px_ref_counted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial16acquireReferenceEv">
+<span id="_CPPv3N13PxMPMMaterial16acquireReferenceEv"></span><span id="_CPPv2N13PxMPMMaterial16acquireReferenceEv"></span><span id="PxMPMMaterial::acquireReference"></span><span class="target" id="class_px_ref_counted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN13PxMPMMaterial2isEP1Tv">
+<span id="_CPPv3I0EN13PxMPMMaterial2isEv"></span><span id="_CPPv2I0EN13PxMPMMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN13PxMPMMaterial2isEP1Tv" title="PxMPMMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN13PxMPMMaterial2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxMPMMaterial2isEPK1Tv">
+<span id="_CPPv3I0ENK13PxMPMMaterial2isEv"></span><span id="_CPPv2I0ENK13PxMPMMaterial2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK13PxMPMMaterial2isEPK1Tv" title="PxMPMMaterial::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxMPMMaterial2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial15getConcreteTypeEv">
+<span id="_CPPv3NK13PxMPMMaterial15getConcreteTypeEv"></span><span id="_CPPv2NK13PxMPMMaterial15getConcreteTypeEv"></span><span id="PxMPMMaterial::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N13PxMPMMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N13PxMPMMaterial11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxMPMMaterial::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N13PxMPMMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N13PxMPMMaterial12setBaseFlagsE11PxBaseFlags"></span><span id="PxMPMMaterial::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial12getBaseFlagsEv">
+<span id="_CPPv3NK13PxMPMMaterial12getBaseFlagsEv"></span><span id="_CPPv2NK13PxMPMMaterial12getBaseFlagsEv"></span><span id="PxMPMMaterial::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial12isReleasableEv">
+<span id="_CPPv3NK13PxMPMMaterial12isReleasableEv"></span><span id="_CPPv2NK13PxMPMMaterial12isReleasableEv"></span><span id="PxMPMMaterial::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial8userDataE">
+<span id="_CPPv3N13PxMPMMaterial8userDataE"></span><span id="_CPPv2N13PxMPMMaterial8userDataE"></span><span id="PxMPMMaterial::userData__voidP"></span><span class="target" id="class_px_base_material_1a3c1e944e2b05981f594c91cdd4ec9041"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial13PxMPMMaterialE6PxType11PxBaseFlags">
+<span id="_CPPv3N13PxMPMMaterial13PxMPMMaterialE6PxType11PxBaseFlags"></span><span id="_CPPv2N13PxMPMMaterial13PxMPMMaterialE6PxType11PxBaseFlags"></span><span id="PxMPMMaterial::PxMPMMaterial__PxType.PxBaseFlags"></span><span class="target" id="class_px_m_p_m_material_1a3966b9880b40ae761dfadd971158e8e5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMPMMaterial</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial13PxMPMMaterialE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial13PxMPMMaterialE11PxBaseFlags">
+<span id="_CPPv3N13PxMPMMaterial13PxMPMMaterialE11PxBaseFlags"></span><span id="_CPPv2N13PxMPMMaterial13PxMPMMaterialE11PxBaseFlags"></span><span id="PxMPMMaterial::PxMPMMaterial__PxBaseFlags"></span><span class="target" id="class_px_m_p_m_material_1a38013f207052fce71c0adb17e3e21364"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMPMMaterial</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial13PxMPMMaterialE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterialD0Ev">
+<span id="_CPPv3N13PxMPMMaterialD0Ev"></span><span id="_CPPv2N13PxMPMMaterialD0Ev"></span><span id="PxMPMMaterial::~PxMPMMaterial"></span><span class="target" id="class_px_m_p_m_material_1a39fb32c755a417d1f79aefba2c730568"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxMPMMaterial</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterialD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMPMMaterial8isKindOfEPKc">
+<span id="_CPPv3NK13PxMPMMaterial8isKindOfEPKc"></span><span id="_CPPv2NK13PxMPMMaterial8isKindOfEPKc"></span><span id="PxMPMMaterial::isKindOf__cCPC"></span><span class="target" id="class_px_m_p_m_material_1ae148e197fee9e3d2a629816f9edc4e69"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMPMMaterial8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial14onRefCountZeroEv">
+<span id="_CPPv3N13PxMPMMaterial14onRefCountZeroEv"></span><span id="_CPPv2N13PxMPMMaterial14onRefCountZeroEv"></span><span id="PxMPMMaterial::onRefCountZero"></span><span class="target" id="class_px_ref_counted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK13PxMPMMaterial9typeMatchEbv">
+<span id="_CPPv3I0ENK13PxMPMMaterial9typeMatchEv"></span><span id="_CPPv2I0ENK13PxMPMMaterial9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK13PxMPMMaterial9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial13mConcreteTypeE">
+<span id="_CPPv3N13PxMPMMaterial13mConcreteTypeE"></span><span id="_CPPv2N13PxMPMMaterial13mConcreteTypeE"></span><span id="PxMPMMaterial::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial10mBaseFlagsE">
+<span id="_CPPv3N13PxMPMMaterial10mBaseFlagsE"></span><span id="_CPPv2N13PxMPMMaterial10mBaseFlagsE"></span><span id="PxMPMMaterial::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMPMMaterial16mBuiltInRefCountE">
+<span id="_CPPv3N13PxMPMMaterial16mBuiltInRefCountE"></span><span id="_CPPv2N13PxMPMMaterial16mBuiltInRefCountE"></span><span id="PxMPMMaterial::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N13PxMPMMaterial16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

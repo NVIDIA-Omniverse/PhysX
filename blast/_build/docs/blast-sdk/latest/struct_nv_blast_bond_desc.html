@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>NvBlastBondDesc &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>NvBlastBondDesc</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nvblastbonddesc">
+<span id="exhale-struct-struct-nv-blast-bond-desc"></span><h1>NvBlastBondDesc<a class="headerlink" href="#nvblastbonddesc" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
+<div class="section" id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">NvBlastExtAssetUtilsBondDesc</span></code> (<a class="reference internal" href="struct_nv_blast_ext_asset_utils_bond_desc.html#exhale-struct-struct-nv-blast-ext-asset-utils-bond-desc"><span class="std std-ref">NvBlastExtAssetUtilsBondDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt id="_CPPv415NvBlastBondDesc">
+<span id="_CPPv315NvBlastBondDesc"></span><span id="_CPPv215NvBlastBondDesc"></span><span id="NvBlastBondDesc"></span><span class="target" id="struct_nv_blast_bond_desc"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastBondDesc</span></code><a class="headerlink" href="#_CPPv415NvBlastBondDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Chunk bond descriptor used to build an asset. </p>
+<p>See <a class="reference internal" href="struct_nv_blast_asset_desc.html#struct_nv_blast_asset_desc"><span class="std std-ref">NvBlastAssetDesc</span></a>. </p>
+<p>Subclassed by <a class="reference internal" href="struct_nv_blast_ext_asset_utils_bond_desc.html#struct_nv_blast_ext_asset_utils_bond_desc"><span class="std std-ref">NvBlastExtAssetUtilsBondDesc</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N15NvBlastBondDesc4bondE">
+<span id="_CPPv3N15NvBlastBondDesc4bondE"></span><span id="_CPPv2N15NvBlastBondDesc4bondE"></span><span id="NvBlastBondDesc::bond__NvBlastBond"></span><span class="target" id="struct_nv_blast_bond_desc_1abd236b0aab459eac98b48a6f33a6fa21"></span><a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="pre">NvBlastBond</span></a> <code class="sig-name descname"><span class="pre">bond</span></code><a class="headerlink" href="#_CPPv4N15NvBlastBondDesc4bondE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bond data (see <a class="reference internal" href="struct_nv_blast_bond.html#struct_nv_blast_bond"><span class="std std-ref">NvBlastBond</span></a>). </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N15NvBlastBondDesc12chunkIndicesE">
+<span id="_CPPv3N15NvBlastBondDesc12chunkIndicesE"></span><span id="_CPPv2N15NvBlastBondDesc12chunkIndicesE"></span><span id="NvBlastBondDesc::chunkIndices__uint32_tA"></span><span class="target" id="struct_nv_blast_bond_desc_1a84e9141449f357a74e3e77b3464fb629"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">chunkIndices</span></code><span class="pre">[</span><span class="pre">2</span><span class="pre">]</span><a class="headerlink" href="#_CPPv4N15NvBlastBondDesc12chunkIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The indices of the chunks linked by this bond. </p>
+<p>They must be different support chunk indices. If one of the chunk indices is the invalid index (UINT32_MAX), then this will create a bond between the chunk indexed by the other index (which must be valid) and something external. Any actor containing this bond will cause the function NvBlastActorHasExternalBonds to return true. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

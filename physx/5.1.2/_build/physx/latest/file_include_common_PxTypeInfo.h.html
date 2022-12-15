@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/common/PxTypeInfo.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/common/PxTypeInfo.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-common-pxtypeinfo-h">
+<span id="file-include-common-pxtypeinfo-h"></span><h1>include/common/PxTypeInfo.h<a class="headerlink" href="#include-common-pxtypeinfo-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_common.html#dir-include-common"><span class="std std-ref">include/common/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_common_PxTypeInfo.h.html#program-listing-file-include-common-pxtypeinfo-h"><span class="std std-ref">include/common/PxTypeInfo.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_common_PxBase.h.html#file-include-common-pxbase-h"><span class="std std-ref">include/common/PxBase.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxSerialization.h.html#file-include-extensions-pxserialization-h"><span class="std std-ref">include/extensions/PxSerialization.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleBuffer.h.html#file-include-pxparticlebuffer-h"><span class="std std-ref">include/PxParticleBuffer.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_concrete_type.html#exhale-struct-struct-px-concrete-type"><span class="std std-ref">PxConcreteType</span></a>: an enumeration of concrete classes inheriting from <a class="reference internal" href="class_px_base.html#exhale-class-class-px-base"><span class="std std-ref">PxBase</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info.html#exhale-struct-struct-px-type-info"><span class="std std-ref">PxTypeInfo</span></a>: a structure containing per-type information for types inheriting from <a class="reference internal" href="class_px_base.html#exhale-class-class-px-base"><span class="std std-ref">PxBase</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_actor_01_4.html#exhale-struct-struct-px-type-info-3-01-px-actor-01-4"><span class="std std-ref">PxTypeInfo&lt; PxActor &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_aggregate_01_4.html#exhale-struct-struct-px-type-info-3-01-px-aggregate-01-4"><span class="std std-ref">PxTypeInfo&lt; PxAggregate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_joint_reduced_coordinate_01_4.html#exhale-struct-struct-px-type-info-3-01-px-articulation-joint-reduced-coordinate-01-4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationJointReducedCoordinate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_link_01_4.html#exhale-struct-struct-px-type-info-3-01-px-articulation-link-01-4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationLink &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_reduced_coordinate_01_4.html#exhale-struct-struct-px-type-info-3-01-px-articulation-reduced-coordinate-01-4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationReducedCoordinate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_base_01_4.html#exhale-struct-struct-px-type-info-3-01-px-base-01-4"><span class="std std-ref">PxTypeInfo&lt; PxBase &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h33_triangle_mesh_01_4.html#exhale-struct-struct-px-type-info-3-01-px-b-v-h33-triangle-mesh-01-4"><span class="std std-ref">PxTypeInfo&lt; PxBVH33TriangleMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h34_triangle_mesh_01_4.html#exhale-struct-struct-px-type-info-3-01-px-b-v-h34-triangle-mesh-01-4"><span class="std std-ref">PxTypeInfo&lt; PxBVH34TriangleMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_constraint_01_4.html#exhale-struct-struct-px-type-info-3-01-px-constraint-01-4"><span class="std std-ref">PxTypeInfo&lt; PxConstraint &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_convex_mesh_01_4.html#exhale-struct-struct-px-type-info-3-01-px-convex-mesh-01-4"><span class="std std-ref">PxTypeInfo&lt; PxConvexMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_custom_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-custom-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxCustomMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_custom_particle_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-custom-particle-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxCustomParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_01_4.html#exhale-struct-struct-px-type-info-3-01-px-f-e-m-cloth-01-4"><span class="std std-ref">PxTypeInfo&lt; PxFEMCloth &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-f-e-m-cloth-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxFEMClothMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_soft_body_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-f-e-m-soft-body-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxFEMSoftBodyMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_l_i_p_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-f-l-i-p-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxFLIPMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_l_i_p_particle_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-f-l-i-p-particle-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxFLIPParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_hair_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-hair-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxHairSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_height_field_01_4.html#exhale-struct-struct-px-type-info-3-01-px-height-field-01-4"><span class="std std-ref">PxTypeInfo&lt; PxHeightField &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_m_p_m_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-m-p-m-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxMPMMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_m_p_m_particle_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-m-p-m-particle-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxMPMParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_and_diffuse_buffer_01_4.html#exhale-struct-struct-px-type-info-3-01-px-particle-and-diffuse-buffer-01-4"><span class="std std-ref">PxTypeInfo&lt; PxParticleAndDiffuseBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_buffer_01_4.html#exhale-struct-struct-px-type-info-3-01-px-particle-buffer-01-4"><span class="std std-ref">PxTypeInfo&lt; PxParticleBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_cloth_buffer_01_4.html#exhale-struct-struct-px-type-info-3-01-px-particle-cloth-buffer-01-4"><span class="std std-ref">PxTypeInfo&lt; PxParticleClothBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_rigid_buffer_01_4.html#exhale-struct-struct-px-type-info-3-01-px-particle-rigid-buffer-01-4"><span class="std std-ref">PxTypeInfo&lt; PxParticleRigidBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-particle-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_material_01_4.html#exhale-struct-struct-px-type-info-3-01-px-p-b-d-material-01-4"><span class="std std-ref">PxTypeInfo&lt; PxPBDMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_particle_system_01_4.html#exhale-struct-struct-px-type-info-3-01-px-p-b-d-particle-system-01-4"><span class="std std-ref">PxTypeInfo&lt; PxPBDParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_pruning_structure_01_4.html#exhale-struct-struct-px-type-info-3-01-px-pruning-structure-01-4"><span class="std std-ref">PxTypeInfo&lt; PxPruningStructure &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_actor_01_4.html#exhale-struct-struct-px-type-info-3-01-px-rigid-actor-01-4"><span class="std std-ref">PxTypeInfo&lt; PxRigidActor &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_body_01_4.html#exhale-struct-struct-px-type-info-3-01-px-rigid-body-01-4"><span class="std std-ref">PxTypeInfo&lt; PxRigidBody &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_dynamic_01_4.html#exhale-struct-struct-px-type-info-3-01-px-rigid-dynamic-01-4"><span class="std std-ref">PxTypeInfo&lt; PxRigidDynamic &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_static_01_4.html#exhale-struct-struct-px-type-info-3-01-px-rigid-static-01-4"><span class="std std-ref">PxTypeInfo&lt; PxRigidStatic &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_shape_01_4.html#exhale-struct-struct-px-type-info-3-01-px-shape-01-4"><span class="std std-ref">PxTypeInfo&lt; PxShape &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_soft_body_01_4.html#exhale-struct-struct-px-type-info-3-01-px-soft-body-01-4"><span class="std std-ref">PxTypeInfo&lt; PxSoftBody &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_tetrahedron_mesh_01_4.html#exhale-struct-struct-px-type-info-3-01-px-tetrahedron-mesh-01-4"><span class="std std-ref">PxTypeInfo&lt; PxTetrahedronMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_triangle_mesh_01_4.html#exhale-struct-struct-px-type-info-3-01-px-triangle-mesh-01-4"><span class="std std-ref">PxTypeInfo&lt; PxTriangleMesh &gt;</span></a></p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__common_1ga922d48697d998518e12a16e589f0c75a.html#exhale-define-group-common-1ga922d48697d998518e12a16e589f0c75a"><span class="std std-ref">PX_DEFINE_TYPEINFO</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

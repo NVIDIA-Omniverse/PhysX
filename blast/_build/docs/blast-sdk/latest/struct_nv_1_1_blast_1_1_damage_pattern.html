@@ -1,0 +1,286 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::DamagePattern &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::DamagePattern</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-damagepattern">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-damage-pattern"></span><h1>Nv::Blast::DamagePattern<a class="headerlink" href="#nv-blast-damagepattern" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#file-extensions-authoringcommon-nvblastextauthoringpatterngenerator-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast13DamagePatternE">
+<span id="_CPPv3N2Nv5Blast13DamagePatternE"></span><span id="_CPPv2N2Nv5Blast13DamagePatternE"></span><span id="Nv::Blast::DamagePattern"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">DamagePattern</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePatternE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceTypeE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern22ActivationDistanceTypeE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern22ActivationDistanceTypeE"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1aac014f5d85ffaecb95328a2b10a2154b"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">ActivationDistanceType</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceTypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType5PointE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern22ActivationDistanceType5PointE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern22ActivationDistanceType5PointE"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1aac014f5d85ffaecb95328a2b10a2154bafa9e687314a5a446df72c678e5bb63ba"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">Point</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType5PointE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType4LineE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern22ActivationDistanceType4LineE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern22ActivationDistanceType4LineE"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1aac014f5d85ffaecb95328a2b10a2154ba75ce7d138672d2c743512b41123383d5"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">Line</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType4LineE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType4ConeE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern22ActivationDistanceType4ConeE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern22ActivationDistanceType4ConeE"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1aac014f5d85ffaecb95328a2b10a2154ba2274b06a8d29f17584653284b7fd86c5"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">Cone</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType4ConeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern7releaseEv">
+<span id="_CPPv3N2Nv5Blast13DamagePattern7releaseEv"></span><span id="_CPPv2N2Nv5Blast13DamagePattern7releaseEv"></span><span id="Nv::Blast::DamagePattern::release"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1a2ec2cd7c6c436a165325f5fd0bb0be59"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern16activationRadiusE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern16activationRadiusE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern16activationRadiusE"></span><span id="Nv::Blast::DamagePattern::activationRadius__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1afba7f2aaf59f24992c8d95a418160d17"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">activationRadius</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern16activationRadiusE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Used to compute activated chunks. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern5angleE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern5angleE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern5angleE"></span><span id="Nv::Blast::DamagePattern::angle__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1abade8f3d71809556586e2eb70bfd79b9"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">angle</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern5angleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern14activationTypeE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern14activationTypeE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern14activationTypeE"></span><span id="Nv::Blast::DamagePattern::activationType__ActivationDistanceType"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1a4e82aa0e47674b6a14cbeae50563a6ea"></span><a class="reference internal" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceTypeE" title="Nv::Blast::DamagePattern::ActivationDistanceType"><span class="pre">ActivationDistanceType</span></a> <code class="sig-name descname"><span class="pre">activationType</span></code> <span class="pre">=</span> <a class="reference internal" href="#_CPPv4N2Nv5Blast13DamagePattern22ActivationDistanceType5PointE" title="Nv::Blast::DamagePattern::Point"><span class="pre">Point</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern14activationTypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern10cellsCountE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern10cellsCountE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern10cellsCountE"></span><span id="Nv::Blast::DamagePattern::cellsCount__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1a4158abd1adffefe93bcecc89c4d7254d"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">cellsCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern10cellsCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast13DamagePattern11cellsMeshesE">
+<span id="_CPPv3N2Nv5Blast13DamagePattern11cellsMeshesE"></span><span id="_CPPv2N2Nv5Blast13DamagePattern11cellsMeshesE"></span><span id="Nv::Blast::DamagePattern::cellsMeshes__MeshPP"></span><span class="target" id="struct_nv_1_1_blast_1_1_damage_pattern_1ae22859e075aa4f750ba79ab7dce42059"></span><em class="property"><span class="pre">class</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><span class="pre">*</span><code class="sig-name descname"><span class="pre">cellsMeshes</span></code> <span class="pre">=</span> <span class="pre">nullptr</span><a class="headerlink" href="#_CPPv4N2Nv5Blast13DamagePattern11cellsMeshesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

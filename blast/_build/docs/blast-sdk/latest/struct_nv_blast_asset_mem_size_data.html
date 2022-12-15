@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>NvBlastAssetMemSizeData &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>NvBlastAssetMemSizeData</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nvblastassetmemsizedata">
+<span id="exhale-struct-struct-nv-blast-asset-mem-size-data"></span><h1>NvBlastAssetMemSizeData<a class="headerlink" href="#nvblastassetmemsizedata" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv423NvBlastAssetMemSizeData">
+<span id="_CPPv323NvBlastAssetMemSizeData"></span><span id="_CPPv223NvBlastAssetMemSizeData"></span><span id="NvBlastAssetMemSizeData"></span><span class="target" id="struct_nv_blast_asset_mem_size_data"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastAssetMemSizeData</span></code><a class="headerlink" href="#_CPPv423NvBlastAssetMemSizeData" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Info used to construct an Asset or Family instance. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N23NvBlastAssetMemSizeData9bondCountE">
+<span id="_CPPv3N23NvBlastAssetMemSizeData9bondCountE"></span><span id="_CPPv2N23NvBlastAssetMemSizeData9bondCountE"></span><span id="NvBlastAssetMemSizeData::bondCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_mem_size_data_1ad48923893501306ed63cdd05063087de"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">bondCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastAssetMemSizeData9bondCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N23NvBlastAssetMemSizeData10chunkCountE">
+<span id="_CPPv3N23NvBlastAssetMemSizeData10chunkCountE"></span><span id="_CPPv2N23NvBlastAssetMemSizeData10chunkCountE"></span><span id="NvBlastAssetMemSizeData::chunkCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_mem_size_data_1ae2eba0a17c36df1a4c50089b434feb1b"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">chunkCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastAssetMemSizeData10chunkCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N23NvBlastAssetMemSizeData9nodeCountE">
+<span id="_CPPv3N23NvBlastAssetMemSizeData9nodeCountE"></span><span id="_CPPv2N23NvBlastAssetMemSizeData9nodeCountE"></span><span id="NvBlastAssetMemSizeData::nodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_mem_size_data_1a943860ffa86bda69d340e7893867ba28"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">nodeCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastAssetMemSizeData9nodeCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N23NvBlastAssetMemSizeData22lowerSupportChunkCountE">
+<span id="_CPPv3N23NvBlastAssetMemSizeData22lowerSupportChunkCountE"></span><span id="_CPPv2N23NvBlastAssetMemSizeData22lowerSupportChunkCountE"></span><span id="NvBlastAssetMemSizeData::lowerSupportChunkCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_mem_size_data_1a51020092b1999f6848256f3cfffc0d4e"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">lowerSupportChunkCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastAssetMemSizeData22lowerSupportChunkCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N23NvBlastAssetMemSizeData22upperSupportChunkCountE">
+<span id="_CPPv3N23NvBlastAssetMemSizeData22upperSupportChunkCountE"></span><span id="_CPPv2N23NvBlastAssetMemSizeData22upperSupportChunkCountE"></span><span id="NvBlastAssetMemSizeData::upperSupportChunkCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_mem_size_data_1a091717ccce99d791cc711b631b9b2ec4"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">upperSupportChunkCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastAssetMemSizeData22upperSupportChunkCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

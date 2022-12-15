@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Serialization (NvBlastExtSerialization) &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="BlastTk Serialization (NvBlastExtTkSerialization)" href="ext_tkserialization.html" />
+    <link rel="prev" title="Asset Authoring (NvBlastExtAuthoring)" href="ext_authoring.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Extensions (NvBlastExt)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ext_shaders.html">Damage Shaders (NvBlastExtShaders)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_stress.html">Stress Solver (NvBlastExtStress)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_assetutils.html">Asset Utilities (NvBlastExtAssetUtils)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ext_authoring.html">Asset Authoring (NvBlastExtAuthoring)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Serialization (NvBlastExtSerialization)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#serialization-writing">Serialization (writing)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#using-a-buffer-provider">Using a Buffer Provider</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#deserialization-reading">Deserialization (reading)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#detecting-the-object-type-in-a-buffer">Detecting the Object Type in a Buffer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#peeking-at-and-skipping-buffer-data">Peeking at and Skipping Buffer Data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#cleaning-up">Cleaning Up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ext_tkserialization.html">BlastTk Serialization (NvBlastExtTkSerialization)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
+        
+      <li>Serialization (NvBlastExtSerialization)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="serialization-nvblastextserialization">
+<span id="pageextserialization"></span><h1>Serialization (NvBlastExtSerialization)<a class="headerlink" href="#serialization-nvblastextserialization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<span id="serialization-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>This extension defines the Nv::Blast::ExtSerialization class, a modular serialization manager which can be extended to handle data types from different Blast modules
+(such as low-level and Tk).</p>
+<p>An ExtSerialization manager is created using the global function NvBlastExtSerializationCreate:</p>
+<p>(From now on we’ll assume we are using the Nv::Blast namespace.)</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ExtSerialization* ser = NvBlastExtSerializationCreate();
+</pre></div>
+</div>
+<p>ExtSerialization is capable of loading sets of serializers for different data types and encodings.  The NvBlastExtSerialization extension comes with a set of low-level data serializers,
+with types enumerated in the header <strong>NvBlastExtLlSerialization.h</strong>.</p>
+<p><strong>The low-level serializers are automatically loaded into an ExtSerialization when it is created.</strong></p>
+<p>To load serializers for ExtTk assets, you must also load the extension <a class="reference internal" href="ext_tkserialization.html#pageexttkserialization"><span class="std std-ref">BlastTk Serialization (NvBlastExtTkSerialization)</span></a>.  See the documentation for that module.</p>
+<p>Each serializer is capable of reading (and writing, if it is not read-only) a single data type in a single encoding (format).  Some serializers are read-only, in order to read legacy
+formats.</p>
+<p>The encodings available are enumerated in ExtSerialization::EncodingID.  They are currently:</p>
+<ul class="simple">
+<li><p>CapnProtoBinary - Uses Cap’n Proto’s binary serialization format</p></li>
+<li><p>Raw - For low-level NvBlastAsset and NvBlastFamily types, this is simply a memory copy.</p></li>
+</ul>
+</div>
+<div class="section" id="serialization-writing">
+<span id="serialization-ser"></span><h2>Serialization (writing)<a class="headerlink" href="#serialization-writing" title="Permalink to this headline">¶</a></h2>
+<p>To serialize an object, the serialization manager’s write encoding ID must be set to the desired value.  By default it is set to EncodingID::CapnProtoBinary, as this is the only
+encoding which supports writing for all object types (at the present time).  When other encodings become available, use ExtSerialization::setSerializationEncoding to set the write
+encoding to the desired type.</p>
+<p>Each serialization module defines the object types it can serialize.  ExtSerialization defines the low-level types in <strong>NvBlastExtLlSerialization.h</strong>:</p>
+<ul class="simple">
+<li><p>LlObjectTypeID::Asset - An NvBlastAsset</p></li>
+<li><p>LlObjectTypeID::Family - An NvBlastFamily</p></li>
+</ul>
+<p>To serialize an object, for example an NvBlastAsset, use ExtSerialization::serializeIntoBuffer as follows:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const NvBlastAsset* asset = ... // Given pointer to an NvBlastAsset
+
+void* buffer;
+uint64_t size = ser-&gt;serializeIntoBuffer(buffer, asset, LlObjectTypeID::Asset);
+</pre></div>
+</div>
+<p>If successful, the data is written into a buffer allocated using the NvBlastGlobals allocator, written to the “buffer” parameter, and the size of the buffer
+written is the return value of the function.  If the function returns 0, then serialization was unsuccessful.  Notice that the second function parameter is actually a void*,
+so it requires the last parameter to tell it what object it is serializing.  A utility wrapper function is given in <strong>NvBlastExtLlSerialization.h</strong> which performs the
+same operation with an NvBlastAsset, so one could equivalently use</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>void* buffer;
+uint64_t size = NvBlastExtSerializationSerializeAssetIntoBuffer(buffer, *ser, asset);
+</pre></div>
+</div>
+<p>A corresponding function also exists for NvBlastFamily, as well as other data types supported by other serialization extensions.</p>
+<p>This buffer may be written to disk, memory, networked, etc.  Since the memory for the buffer is allocated using the allocator
+in NvBlastGlobals, it may be freed using the same allocator:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NVBLAST_FREE(buffer)
+</pre></div>
+</div>
+<div class="section" id="using-a-buffer-provider">
+<span id="bufferproviders"></span><h3>Using a Buffer Provider<a class="headerlink" href="#using-a-buffer-provider" title="Permalink to this headline">¶</a></h3>
+<p>If you wish to provide the serialization buffer by some means other than the NvBlastGlobals allocator, you may set a “buffer provider”
+in the serialization manager.  A buffer provider is simply a callback that requests a buffer from the user of the necessary size.
+The user implements the interface ExtSerialization::BufferProvider, and passes a pointer to an instance of one to the serialization
+manager using ExtSerialization::setBufferProvider.</p>
+<p>For example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>std::vector&lt;char&gt; growableBuffer;
+
+class MyBufferProvider : public Nv::Blast::ExtSerialization::BufferProvider
+{
+public:
+    MyBufferProvider(std::vector&lt;char&gt;&amp; growableBuffer) : m_growableBuffer(growableBuffer) {}
+
+    virtual void*   requestBuffer(size_t size) override
+    {
+            if (m_growableBuffer.size() &lt; size)
+            {
+                    m_growableBuffer.resize(size);
+            }
+            return m_growableBuffer.data();
+    }
+
+private:
+    std::vector&lt;char&gt;&amp;      m_growableBuffer;
+} myBufferProvider(growableBuffer);
+
+ser-&gt;setBufferProvider(&amp;myBufferProvider);
+</pre></div>
+</div>
+<p>Passing NULL to setBufferProvider returns the serialization to its default behavior of using the NvBlastGlobals allocator.</p>
+</div>
+</div>
+<div class="section" id="deserialization-reading">
+<span id="serialization-deser"></span><h2>Deserialization (reading)<a class="headerlink" href="#deserialization-reading" title="Permalink to this headline">¶</a></h2>
+<p>To deserialize an object, use the ExtSerialization::deserializeFromBuffer method.  If you know the type of object in the buffer,
+you may directly cast the returned pointer to one of that type.  For example, if the buffer contains an NvBlastAsset, use:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const void* buffer = ... // A given buffer, may be read from disk, memory, etc.
+const uint64_t size = ... // The buffer&#39;s size in bytes
+
+NvBlastAsset* asset = static_cast&lt;NvBlastAsset*&gt;(ser-&gt;deserializeFromBuffer(buffer, size));
+</pre></div>
+</div>
+<p>This returns a valid pointer if deserialization was successful, or NULL otherwise.  If no serializer is loaded which can handle
+the object type in the stream in its given encoding, it will fail and return NULL.</p>
+<p>Again, the memory for the asset is allocated using NvBlastGlobals, so that the asset may be released using</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NVBLAST_FREE(asset);
+</pre></div>
+</div>
+</div>
+<div class="section" id="detecting-the-object-type-in-a-buffer">
+<span id="detecting-object-type"></span><h2>Detecting the Object Type in a Buffer<a class="headerlink" href="#detecting-the-object-type-in-a-buffer" title="Permalink to this headline">¶</a></h2>
+<p>If you don’t know the object type in the buffer, you may use the last (optional) argument in deserializeFromBuffer to return the type:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>uint32_t objTypeID;
+void* obj = ser-&gt;deserializeFromBuffer(buffer, size, &amp;objTypeID);
+
+NVBLAST_CHECK_ERROR(obj != nullptr, &quot;Object could not be read from buffer.&quot;, return);
+
+switch (objTypeID)
+{
+case LlObjectTypeID::Asset:
+    handleAssetLoad(static_cast&lt;NvBlastAsset*&gt;(obj));
+    break;
+case LlObjectTypeID::Family:
+    handleFamilyLoad(static_cast&lt;NvBlastFamily*&gt;(obj));
+    break;
+default:
+    NVBLAST_LOG_ERROR(&quot;Unknown object type &quot;);
+}
+</pre></div>
+</div>
+<div class="section" id="peeking-at-and-skipping-buffer-data">
+<span id="peeking-and-skipping"></span><h3>Peeking at and Skipping Buffer Data<a class="headerlink" href="#peeking-at-and-skipping-buffer-data" title="Permalink to this headline">¶</a></h3>
+<p>If a buffer contains multiple objects, you may peek at the buffer to get object information including object type, encoding, and data size, and skip to
+the next object in the buffer (whether or not you have chosen to read the current object).  For example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const void* buffer = ... // The input buffer
+uint64_t size = ... // The input buffer size
+
+while (size)
+{
+    uint64_t objTypeID;
+    if (!ser-&gt;peekHeader(&amp;objTypeID, NULL, NULL, buffer, size))     // Only reading the object type ID; may pass in NULL for the other header value pointers
+    {
+            break;  // Read error, stop
+    }
+
+    if (objectShouldBeLoaded(objTypeID))    // Some function to determine whether or not we want this object
+    {
+            void* obj = ser-&gt;deserializeFromBuffer(buffer, size);
+            // Handle loaded object ...
+    }
+
+    // Jump to next object:
+    buffer = ser-&gt;skipObject(size, buffer); // Updates size as well
+}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="cleaning-up">
+<span id="serialization-term"></span><h2>Cleaning Up<a class="headerlink" href="#cleaning-up" title="Permalink to this headline">¶</a></h2>
+<p>When finished with the serialization manager, it may be released using its release() method:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ser-&gt;release();
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

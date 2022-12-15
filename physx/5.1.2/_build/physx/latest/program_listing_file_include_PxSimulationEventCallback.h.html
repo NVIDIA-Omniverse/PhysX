@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Listing for include/PxSimulationEventCallback.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Program Listing for include/PxSimulationEventCallback.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="program-listing-for-include-pxsimulationeventcallback-h">
+<span id="program-listing-file-include-pxsimulationeventcallback-h"></span><h1>Program Listing for include/PxSimulationEventCallback.h<a class="headerlink" href="#program-listing-for-include-pxsimulationeventcallback-h" title="Permalink to this headline"></a></h1>
+<p>↰ Return to documentation for <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#file-include-pxsimulationeventcallback-h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_SIMULATION_EVENT_CALLBACK_H</span>
+<span class="cp">#define PX_SIMULATION_EVENT_CALLBACK_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxVec3.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxTransform.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxMemory.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysXConfig.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxFiltering.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxContact.h&quot;</span><span class="cp"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxShape</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxActor</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxRigidActor</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxRigidBody</span><span class="p">;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PxConstraint</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairExtraDataType</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ePRE_SOLVER_VELOCITY</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ePOST_SOLVER_VELOCITY</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eCONTACT_EVENT_POSE</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eCONTACT_PAIR_INDEX</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairExtraDataItem</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU8</span><span class="w"> </span><span class="n">type</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairVelocity</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxContactPairVelocity</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">angularVelocity</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairPose</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxContactPairPose</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">globalPose</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairIndex</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxContactPairIndex</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU16</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairExtraDataIterator</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="nf">PxContactPairExtraDataIterator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">currPtr</span><span class="p">(</span><span class="n">stream</span><span class="p">),</span><span class="w"> </span><span class="n">endPtr</span><span class="p">(</span><span class="n">stream</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">size</span><span class="p">),</span><span class="w"> </span><span class="n">contactPairIndex</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">clearDataPtrs</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">nextItemSet</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">clearDataPtrs</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">foundEntry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">endOfItemSet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">currPtr</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">endPtr</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">endOfItemSet</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="o">*</span><span class="w"> </span><span class="n">edItem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairExtraDataItem</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">currPtr</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxU8</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">edItem</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">switch</span><span class="p">(</span><span class="n">type</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="k">case</span><span class="w"> </span><span class="no">PxContactPairExtraDataType</span><span class="o">::</span><span class="no">ePRE_SOLVER_VELOCITY</span><span class="p">:</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="n">PX_ASSERT</span><span class="p">(</span><span class="o">!</span><span class="n">preSolverVelocity</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">preSolverVelocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairVelocity</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">edItem</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">currPtr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPairVelocity</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">foundEntry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">case</span><span class="w"> </span><span class="no">PxContactPairExtraDataType</span><span class="o">::</span><span class="no">ePOST_SOLVER_VELOCITY</span><span class="p">:</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="n">postSolverVelocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairVelocity</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">edItem</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">currPtr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPairVelocity</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">foundEntry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">case</span><span class="w"> </span><span class="no">PxContactPairExtraDataType</span><span class="o">::</span><span class="no">eCONTACT_EVENT_POSE</span><span class="p">:</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="n">eventPose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairPose</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">edItem</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">currPtr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPairPose</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">foundEntry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">case</span><span class="w"> </span><span class="no">PxContactPairExtraDataType</span><span class="o">::</span><span class="no">eCONTACT_PAIR_INDEX</span><span class="p">:</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">foundEntry</span><span class="p">)</span><span class="w"></span>
+<span class="w">                    </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="n">contactPairIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairIndex</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">edItem</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">index</span><span class="p">;</span><span class="w"></span>
+<span class="w">                        </span><span class="n">currPtr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPairIndex</span><span class="p">);</span><span class="w"></span>
+<span class="w">                        </span><span class="n">foundEntry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="k">else</span><span class="w"></span>
+<span class="w">                        </span><span class="n">endOfItemSet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">default</span><span class="o">:</span><span class="w"></span>
+<span class="w">                    </span><span class="k">return</span><span class="w"> </span><span class="n">foundEntry</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">foundEntry</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">clearDataPtrs</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">preSolverVelocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">postSolverVelocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">eventPose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">currPtr</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">endPtr</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairVelocity</span><span class="o">*</span><span class="w"> </span><span class="n">preSolverVelocity</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairVelocity</span><span class="o">*</span><span class="w"> </span><span class="n">postSolverVelocity</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairPose</span><span class="o">*</span><span class="w"> </span><span class="n">eventPose</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">contactPairIndex</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairHeaderFlag</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eREMOVED_ACTOR_0</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eREMOVED_ACTOR_1</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxContactPairHeaderFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxContactPairHeaderFlags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxContactPairHeaderFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="p">)</span><span class="w"></span>
+
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairHeader</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_INLINE</span><span class="w">   </span><span class="n">PxContactPairHeader</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxActor</span><span class="o">*</span><span class="w">                </span><span class="n">actors</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w">                 </span><span class="n">extraDataStream</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU16</span><span class="w">                       </span><span class="n">extraDataStreamSize</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxContactPairHeaderFlags</span><span class="w">    </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">                       </span><span class="n">nbPairs</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairFlag</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eREMOVED_SHAPE_0</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eREMOVED_SHAPE_1</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eACTOR_PAIR_HAS_FIRST_TOUCH</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">),</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eACTOR_PAIR_LOST_TOUCH</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">3</span><span class="p">),</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eINTERNAL_HAS_IMPULSES</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">4</span><span class="p">),</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eINTERNAL_CONTACTS_ARE_FLIPPED</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">5</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxContactPairFlags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="p">)</span><span class="w"></span>
+
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPairPoint</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">  </span><span class="n">position</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxReal</span><span class="w">  </span><span class="n">separation</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">  </span><span class="n">normal</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">internalFaceIndex0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">  </span><span class="n">impulse</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">   </span><span class="n">internalFaceIndex1</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxContactPair</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_INLINE</span><span class="w">   </span><span class="n">PxContactPair</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxShape</span><span class="o">*</span><span class="w">                </span><span class="n">shapes</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">contactPatches</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">contactPoints</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w">           </span><span class="n">contactImpulses</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">                   </span><span class="n">requiredBufferSize</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU8</span><span class="w">                    </span><span class="n">contactCount</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU8</span><span class="w">                    </span><span class="n">patchCount</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU16</span><span class="w">                   </span><span class="n">contactStreamSize</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxContactPairFlags</span><span class="w">      </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxPairFlags</span><span class="w">             </span><span class="n">events</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">                   </span><span class="n">internalData</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">    </span><span class="c1">// For internal use only</span>
+
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w">         </span><span class="n">extractContacts</span><span class="p">(</span><span class="n">PxContactPairPoint</span><span class="o">*</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w">              </span><span class="n">bufferContacts</span><span class="p">(</span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">newPair</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">bufferMemory</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w">      </span><span class="n">getInternalFaceIndices</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">::</span><span class="n">extractContacts</span><span class="p">(</span><span class="n">PxContactPairPoint</span><span class="o">*</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbContacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">contactCount</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxContactStreamIterator</span><span class="w"> </span><span class="nf">iter</span><span class="p">(</span><span class="n">contactPatches</span><span class="p">,</span><span class="w"> </span><span class="n">contactPoints</span><span class="p">,</span><span class="w"> </span><span class="n">getInternalFaceIndices</span><span class="p">(),</span><span class="w"> </span><span class="n">patchCount</span><span class="p">,</span><span class="w"> </span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">impulses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contactImpulses</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">flippedContacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">eINTERNAL_CONTACTS_ARE_FLIPPED</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">hasImpulses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">eINTERNAL_HAS_IMPULSES</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">hasNextPatch</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">iter</span><span class="p">.</span><span class="n">nextPatch</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">hasNextContact</span><span class="p">())</span><span class="w"></span>
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">iter</span><span class="p">.</span><span class="n">nextContact</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">PxContactPairPoint</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dst</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">userBuffer</span><span class="p">[</span><span class="n">nbContacts</span><span class="p">];</span><span class="w"></span>
+<span class="w">                </span><span class="n">dst</span><span class="p">.</span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getContactPoint</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">dst</span><span class="p">.</span><span class="n">separation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getSeparation</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">dst</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getContactNormal</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">flippedContacts</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">internalFaceIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex0</span><span class="p">();</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">internalFaceIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex1</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">else</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">internalFaceIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex1</span><span class="p">();</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">internalFaceIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex0</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">hasImpulses</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">impulse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">impulses</span><span class="p">[</span><span class="n">nbContacts</span><span class="p">];</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">impulse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dst</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">impulse</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">else</span><span class="w"></span>
+<span class="w">                    </span><span class="n">dst</span><span class="p">.</span><span class="n">impulse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="o">++</span><span class="n">nbContacts</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">nbContacts</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">)</span><span class="w"></span>
+<span class="w">                    </span><span class="k">return</span><span class="w"> </span><span class="n">nbContacts</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">nbContacts</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">::</span><span class="n">bufferContacts</span><span class="p">(</span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">newPair</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">bufferMemory</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">patches</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bufferMemory</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">contacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">contacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bufferMemory</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">patchCount</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPatch</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxMemCopy</span><span class="p">(</span><span class="n">patches</span><span class="p">,</span><span class="w"> </span><span class="n">contactPatches</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPatch</span><span class="p">)</span><span class="o">*</span><span class="n">patchCount</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxMemCopy</span><span class="p">(</span><span class="n">contacts</span><span class="p">,</span><span class="w"> </span><span class="n">contactPoints</span><span class="p">,</span><span class="w"> </span><span class="n">contactStreamSize</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxContactPatch</span><span class="p">)</span><span class="o">*</span><span class="n">patchCount</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">contactImpulses</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxMemCopy</span><span class="p">(</span><span class="n">bufferMemory</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">((</span><span class="n">contactStreamSize</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">15</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">(</span><span class="o">~</span><span class="mi">15</span><span class="p">)),</span><span class="w"> </span><span class="n">contactImpulses</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxReal</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">newPair</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">newPair</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="k">this</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">newPair</span><span class="o">-&gt;</span><span class="n">contactPatches</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">patches</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">newPair</span><span class="o">-&gt;</span><span class="n">contactPoints</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contacts</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+<span class="n">PX_INLINE</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">::</span><span class="n">getInternalFaceIndices</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">contactImpulses</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTriggerPairFlag</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eREMOVED_SHAPE_TRIGGER</span><span class="w">                  </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eREMOVED_SHAPE_OTHER</span><span class="w">                    </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">eNEXT_FREE</span><span class="w">                              </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxTriggerPairFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxTriggerPairFlags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">PxTriggerPairFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU8</span><span class="p">)</span><span class="w"></span>
+
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxTriggerPair</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="nf">PxTriggerPair</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxShape</span><span class="o">*</span><span class="w">                </span><span class="n">triggerShape</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxActor</span><span class="o">*</span><span class="w">                </span><span class="n">triggerActor</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxShape</span><span class="o">*</span><span class="w">                </span><span class="n">otherShape</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxActor</span><span class="o">*</span><span class="w">                </span><span class="n">otherActor</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">Enum</span><span class="w">        </span><span class="n">status</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxTriggerPairFlags</span><span class="w">      </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintInfo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="nf">PxConstraintInfo</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="nf">PxConstraintInfo</span><span class="p">(</span><span class="n">PxConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">extRef</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">constraint</span><span class="p">(</span><span class="n">c</span><span class="p">),</span><span class="w"> </span><span class="n">externalReference</span><span class="p">(</span><span class="n">extRef</span><span class="p">),</span><span class="w"> </span><span class="n">type</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxConstraint</span><span class="o">*</span><span class="w">   </span><span class="n">constraint</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w">           </span><span class="n">externalReference</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w">           </span><span class="n">type</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxSimulationEventCallback</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">onConstraintBreak</span><span class="p">(</span><span class="n">PxConstraintInfo</span><span class="o">*</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onWake</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onSleep</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onTrigger</span><span class="p">(</span><span class="n">PxTriggerPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onAdvance</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBody</span><span class="o">*</span><span class="k">const</span><span class="o">*</span><span class="w"> </span><span class="n">bodyBuffer</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">poseBuffer</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxSimulationEventCallback</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

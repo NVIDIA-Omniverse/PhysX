@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMetaDataFlag &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMetaDataFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmetadataflag">
+<span id="exhale-struct-struct-px-meta-data-flag"></span><h1>PxMetaDataFlag<a class="headerlink" href="#pxmetadataflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxMetaDataFlags.h.html#file-include-common-pxmetadataflags-h"><span class="std std-ref">include/common/PxMetaDataFlags.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxMetaDataFlag">
+<span id="_CPPv314PxMetaDataFlag"></span><span id="_CPPv214PxMetaDataFlag"></span><span id="PxMetaDataFlag"></span><span class="target" id="struct_px_meta_data_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMetaDataFlag</span></span></span><a class="headerlink" href="#_CPPv414PxMetaDataFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags used to configure binary meta data entries, typically set through PX_DEF_BIN_METADATA defines. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_meta_data_entry.html#struct_px_meta_data_entry"><span class="std std-ref">PxMetaDataEntry</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4EnumE">
+<span id="_CPPv3N14PxMetaDataFlag4EnumE"></span><span id="_CPPv2N14PxMetaDataFlag4EnumE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654c"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum6eCLASSE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum6eCLASSE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum6eCLASSE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654cad9aa10c12e5694495894ce759636071a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCLASS</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum6eCLASSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares a class </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8eVIRTUALE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8eVIRTUALE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8eVIRTUALE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca5af5b1fe2c903eef9584a6d6d24f9a47"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eVIRTUAL</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8eVIRTUALE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares class to be virtual </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8eTYPEDEFE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8eTYPEDEFE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8eTYPEDEFE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca01cb08bb8663787a10fdc899fdcc5d41"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTYPEDEF</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8eTYPEDEFE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares a typedef </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum4ePTRE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum4ePTRE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum4ePTRE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca1d241c59c1e26a777c46ff7688f8f1dd"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePTR</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum4ePTRE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares a pointer </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum7eHANDLEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum7eHANDLEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum7eHANDLEE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654cab9d90e378cc25d7bf6fee1c0c04df432"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHANDLE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum7eHANDLEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares a handle </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_DATAE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_DATAE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_DATAE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654caed572f08dc7c6adff8f2b229a7354cce"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_DATA</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_DATAE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares extra data exported with <a class="reference internal" href="class_px_serializer.html#class_px_serializer_1ac3531178852e0c6e43519aa254ceb823"><span class="std std-ref">PxSerializer::exportExtraData</span></a> </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_ITEME">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_ITEME"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_ITEME"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca798b67b9b884d9937c5e020f227ac72d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_ITEM</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_ITEME" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies one element of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca0480301f6d90a4bfdafa082c2be71b14"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_ITEMS</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum12eEXTRA_ITEMSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies an array of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_NAMEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum11eEXTRA_NAMEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum11eEXTRA_NAMEE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca0d903640b00c4f61682c59c792108e96"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEXTRA_NAME</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum11eEXTRA_NAMEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies a name of extra data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum6eUNIONE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum6eUNIONE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum6eUNIONE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca1e6f153be653b33f7abfc2e91bd473cc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUNION</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum6eUNIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares a union </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum8ePADDINGE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum8ePADDINGE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum8ePADDINGE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca9b31caa710193a63e3c4f6952379410e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePADDING</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum8ePADDINGE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares explicit padding data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum10eALIGNMENTE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum10eALIGNMENTE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum10eALIGNMENTE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca50e48879be65410602056c6c386e798f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eALIGNMENT</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum10eALIGNMENTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>declares aligned data </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca1c334cca9e1cb29487a78e17c9d4a257"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOUNT_MASK_MSB</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum15eCOUNT_MASK_MSBE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies that the count value’s most significant bit needs to be masked out </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca2e8ace3233bfe1a331ef8b2fe196e022"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOUNT_SKIP_IF_ONE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum18eCOUNT_SKIP_IF_ONEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies that the count value is treated as zero for a variable value of one - special case for single triangle meshes </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_FLIPE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum13eCONTROL_FLIPE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum13eCONTROL_FLIPE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca8d15e5a39bfb17a0b856e16b4600e3b5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_FLIP</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_FLIPE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies that the control value is the negate of the variable value </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_MASKE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum13eCONTROL_MASKE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum13eCONTROL_MASKE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654ca361e04e4149dd27200c276f908a4106b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_MASK</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum13eCONTROL_MASKE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>specifies that the control value is masked - mask bits are assumed to be within eCONTROL_MASK_RANGE </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654cabec61fbbaa42b2bf3ad7a397455f2f87"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTROL_MASK_RANGE</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum19eCONTROL_MASK_RANGEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>mask range allowed for eCONTROL_MASK </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxMetaDataFlag4Enum12eFORCE_DWORDE">
+<span id="_CPPv3N14PxMetaDataFlag4Enum12eFORCE_DWORDE"></span><span id="_CPPv2N14PxMetaDataFlag4Enum12eFORCE_DWORDE"></span><span class="target" id="struct_px_meta_data_flag_1a5125f2eba9d78234a2bc7a00b3c3654cadc74b55b18447acfcf32f0d3ca7a4463"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_DWORD</span></span></span><a class="headerlink" href="#_CPPv4N14PxMetaDataFlag4Enum12eFORCE_DWORDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

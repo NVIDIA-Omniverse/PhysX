@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxHeightFieldSample &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxHeightFieldSample</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxheightfieldsample">
+<span id="exhale-struct-struct-px-height-field-sample"></span><h1>PxHeightFieldSample<a class="headerlink" href="#pxheightfieldsample" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxHeightFieldSample.h.html#file-include-geometry-pxheightfieldsample-h"><span class="std std-ref">include/geometry/PxHeightFieldSample.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv419PxHeightFieldSample">
+<span id="_CPPv319PxHeightFieldSample"></span><span id="_CPPv219PxHeightFieldSample"></span><span id="PxHeightFieldSample"></span><span class="target" id="struct_px_height_field_sample"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightFieldSample</span></span></span><a class="headerlink" href="#_CPPv419PxHeightFieldSample" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Heightfield sample format. </p>
+<p>This format corresponds to the <a class="reference internal" href="struct_px_height_field_format.html#struct_px_height_field_format"><span class="std std-ref">PxHeightFieldFormat</span></a> member <a class="reference internal" href="struct_px_height_field_format.html#struct_px_height_field_format_1ad28e3afa439f8ff1df6067288c46d9c5aa8ba1edf74a561d830b5f40e2c3e64e7"><span class="std std-ref">PxHeightFieldFormat::eS16_TM</span></a>.</p>
+<p>An array of heightfield samples are used when creating a <a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> to specify the elevation of the heightfield points. In addition the material and tessellation of the adjacent triangles are specified.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> <a class="reference internal" href="class_px_height_field_desc.html#class_px_height_field_desc"><span class="std std-ref">PxHeightFieldDesc</span></a> <a class="reference internal" href="class_px_height_field_desc.html#class_px_height_field_desc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxHeightFieldSample8tessFlagEv">
+<span id="_CPPv3NK19PxHeightFieldSample8tessFlagEv"></span><span id="_CPPv2NK19PxHeightFieldSample8tessFlagEv"></span><span id="PxHeightFieldSample::tessFlagC"></span><span class="target" id="struct_px_height_field_sample_1a90414af85d9ce4487a89a685d3409fcc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tessFlag</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxHeightFieldSample8tessFlagEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxHeightFieldSample11setTessFlagEv">
+<span id="_CPPv3N19PxHeightFieldSample11setTessFlagEv"></span><span id="_CPPv2N19PxHeightFieldSample11setTessFlagEv"></span><span id="PxHeightFieldSample::setTessFlag"></span><span class="target" id="struct_px_height_field_sample_1a0d87e6b2f77dfc405cabf0dc4e81d71d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTessFlag</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxHeightFieldSample11setTessFlagEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxHeightFieldSample13clearTessFlagEv">
+<span id="_CPPv3N19PxHeightFieldSample13clearTessFlagEv"></span><span id="_CPPv2N19PxHeightFieldSample13clearTessFlagEv"></span><span id="PxHeightFieldSample::clearTessFlag"></span><span class="target" id="struct_px_height_field_sample_1aa492d2d5910a479055cb6fcacfaa7727"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clearTessFlag</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxHeightFieldSample13clearTessFlagEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxHeightFieldSample6heightE">
+<span id="_CPPv3N19PxHeightFieldSample6heightE"></span><span id="_CPPv2N19PxHeightFieldSample6heightE"></span><span id="PxHeightFieldSample::height__PxI16"></span><span class="target" id="struct_px_height_field_sample_1acfdb9fa8a4f56b5c3354cd552768a026"></span><a class="reference internal" href="typedef_group__foundation_1ga7e7ee1e36fd2eee807d53763addb76cd.html#_CPPv45PxI16" title="PxI16"><span class="n"><span class="pre">PxI16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">height</span></span></span><a class="headerlink" href="#_CPPv4N19PxHeightFieldSample6heightE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The height of the heightfield sample. </p>
+<p>This value is scaled by <a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry_1a8ced165e5b805d5e6c2b6a4fdc33ed2a"><span class="std std-ref">PxHeightFieldGeometry::heightScale</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxHeightFieldSample14materialIndex0E">
+<span id="_CPPv3N19PxHeightFieldSample14materialIndex0E"></span><span id="_CPPv2N19PxHeightFieldSample14materialIndex0E"></span><span id="PxHeightFieldSample::materialIndex0__PxBitAndByte"></span><span class="target" id="struct_px_height_field_sample_1a6ec426622c36188a3de6f295caed819f"></span><a class="reference internal" href="typedef_group__foundation_1ga14fb75b9ecfe655e045173ff85283d8b.html#_CPPv412PxBitAndByte" title="PxBitAndByte"><span class="n"><span class="pre">PxBitAndByte</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndex0</span></span></span><a class="headerlink" href="#_CPPv4N19PxHeightFieldSample14materialIndex0E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The triangle material index of the quad’s lower triangle + tesselation flag. </p>
+<p>An index pointing into the material table of the shape which instantiates the heightfield. This index determines the material of the lower of the quad’s two triangles (i.e. the quad whose upper-left corner is this sample, see the Guide for illustrations).</p>
+<p>Special values of the 7 data bits are defined by <a class="reference internal" href="struct_px_height_field_material.html#struct_px_height_field_material"><span class="std std-ref">PxHeightFieldMaterial</span></a></p>
+<p>The tesselation flag specifies which way the quad is split whose upper left corner is this sample. If the flag is set, the diagonal of the quad will run from this sample to the opposite vertex; if not, it will run between the other two vertices (see the Guide for illustrations).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="#struct_px_height_field_sample_1ae97419cbc1c9fdaa3f7f88fbe2298b1a"><span class="std std-ref">materialIndex1</span></a> PxShape.setmaterials() <a class="reference internal" href="class_px_shape.html#class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"><span class="std std-ref">PxShape.getMaterials()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxHeightFieldSample14materialIndex1E">
+<span id="_CPPv3N19PxHeightFieldSample14materialIndex1E"></span><span id="_CPPv2N19PxHeightFieldSample14materialIndex1E"></span><span id="PxHeightFieldSample::materialIndex1__PxBitAndByte"></span><span class="target" id="struct_px_height_field_sample_1ae97419cbc1c9fdaa3f7f88fbe2298b1a"></span><a class="reference internal" href="typedef_group__foundation_1ga14fb75b9ecfe655e045173ff85283d8b.html#_CPPv412PxBitAndByte" title="PxBitAndByte"><span class="n"><span class="pre">PxBitAndByte</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialIndex1</span></span></span><a class="headerlink" href="#_CPPv4N19PxHeightFieldSample14materialIndex1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The triangle material index of the quad’s upper triangle + reserved flag. </p>
+<p>An index pointing into the material table of the shape which instantiates the heightfield. This index determines the material of the upper of the quad’s two triangles (i.e. the quad whose upper-left corner is this sample, see the Guide for illustrations).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="#struct_px_height_field_sample_1a6ec426622c36188a3de6f295caed819f"><span class="std std-ref">materialIndex0</span></a> PxShape.setmaterials() <a class="reference internal" href="class_px_shape.html#class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"><span class="std std-ref">PxShape.getMaterials()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

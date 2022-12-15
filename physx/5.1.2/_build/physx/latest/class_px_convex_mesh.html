@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxConvexMesh &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxConvexMesh</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxconvexmesh">
+<span id="exhale-class-class-px-convex-mesh"></span><h1>PxConvexMesh<a class="headerlink" href="#pxconvexmesh" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxConvexMesh.h.html#file-include-geometry-pxconvexmesh-h"><span class="std std-ref">include/geometry/PxConvexMesh.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxRefCounted</span></code> (<a class="reference internal" href="class_px_ref_counted.html#exhale-class-class-px-ref-counted"><span class="std std-ref">PxRefCounted</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxConvexMesh">
+<span id="_CPPv312PxConvexMesh"></span><span id="_CPPv212PxConvexMesh"></span><span id="PxConvexMesh"></span><span class="target" id="class_px_convex_mesh"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMesh</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_ref_counted.html#_CPPv412PxRefCounted" title="PxRefCounted"><span class="n"><span class="pre">PxRefCounted</span></span></a><a class="headerlink" href="#_CPPv412PxConvexMesh" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A convex mesh. </p>
+<p>Internally represented as a list of convex polygons. The number of polygons is limited to 256.</p>
+<p>To avoid duplicating data when you have several instances of a particular mesh positioned differently, you do not use this class to represent a convex object directly. Instead, you create an instance of this mesh via the <a class="reference internal" href="class_px_convex_mesh_geometry.html#class_px_convex_mesh_geometry"><span class="std std-ref">PxConvexMeshGeometry</span></a> and <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> classes.</p>
+<p><em>Creation</em></p>
+<p>To create an instance of this class call <a class="reference internal" href="class_px_physics.html#class_px_physics_1a54fc5f8b0884977ccfd45ea829392a52"><span class="std std-ref">PxPhysics::createConvexMesh()</span></a>, and <a class="reference internal" href="#class_px_convex_mesh_1a48b0167c5d565c96e6e5a721b7d9fe41"><span class="std std-ref">PxConvexMesh::release()</span></a> to delete it. This is only possible once you have released all of its <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> instances.</p>
+<p><em>Visualizations:</em></p>
+<p><ul class="simple">
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a714f24bab39d1bbe8b131bd10ef5552b"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AABBS</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a515f4c3c72ee88d7507b52d6ccd14eab"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_SHAPES</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0ad9dcb10f5f3d6ded3baecfc1e387d3"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AXES</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10afd900f30ba421d555e7f7b087126cd92"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_FNORMALS</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10aa0e06ca7fa1a0445abe0f4d293feb961"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_EDGES</span></a></p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_convex_mesh_desc.html#class_px_convex_mesh_desc"><span class="std std-ref">PxConvexMeshDesc</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a54fc5f8b0884977ccfd45ea829392a52"><span class="std std-ref">PxPhysics.createConvexMesh()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh13getNbVerticesEv">
+<span id="_CPPv3NK12PxConvexMesh13getNbVerticesEv"></span><span id="_CPPv2NK12PxConvexMesh13getNbVerticesEv"></span><span id="PxConvexMesh::getNbVerticesC"></span><span class="target" id="class_px_convex_mesh_1a5aaad4a5bbc8b17af0a632995e019b9b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh13getNbVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_convex_mesh_1a60df9d2e112eb9bffa1d6c297464df43"><span class="std std-ref">getVertices()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of vertices. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh11getVerticesEv">
+<span id="_CPPv3NK12PxConvexMesh11getVerticesEv"></span><span id="_CPPv2NK12PxConvexMesh11getVerticesEv"></span><span id="PxConvexMesh::getVerticesC"></span><span class="target" id="class_px_convex_mesh_1a60df9d2e112eb9bffa1d6c297464df43"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh11getVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_convex_mesh_1a5aaad4a5bbc8b17af0a632995e019b9b"><span class="std std-ref">getNbVertices()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Array of vertices. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh14getIndexBufferEv">
+<span id="_CPPv3NK12PxConvexMesh14getIndexBufferEv"></span><span id="_CPPv2NK12PxConvexMesh14getIndexBufferEv"></span><span id="PxConvexMesh::getIndexBufferC"></span><span class="target" id="class_px_convex_mesh_1a15b7c17f5cd2c0fb2e167ae55ebbb937"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getIndexBuffer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh14getIndexBufferEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the index buffer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_convex_mesh_1a85b9818aa930b3bc5bb6d5973b655778"><span class="std std-ref">getNbPolygons()</span></a> <a class="reference internal" href="#class_px_convex_mesh_1af5a9f84f6811e1b22d85332b11df0388"><span class="std std-ref">getPolygonData()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Index buffer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh13getNbPolygonsEv">
+<span id="_CPPv3NK12PxConvexMesh13getNbPolygonsEv"></span><span id="_CPPv2NK12PxConvexMesh13getNbPolygonsEv"></span><span id="PxConvexMesh::getNbPolygonsC"></span><span class="target" id="class_px_convex_mesh_1a85b9818aa930b3bc5bb6d5973b655778"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbPolygons</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh13getNbPolygonsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of polygons. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_convex_mesh_1a15b7c17f5cd2c0fb2e167ae55ebbb937"><span class="std std-ref">getIndexBuffer()</span></a> <a class="reference internal" href="#class_px_convex_mesh_1af5a9f84f6811e1b22d85332b11df0388"><span class="std std-ref">getPolygonData()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of polygons. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh14getPolygonDataE5PxU32R13PxHullPolygon">
+<span id="_CPPv3NK12PxConvexMesh14getPolygonDataE5PxU32R13PxHullPolygon"></span><span id="_CPPv2NK12PxConvexMesh14getPolygonDataE5PxU32R13PxHullPolygon"></span><span id="PxConvexMesh::getPolygonData__PxU32.PxHullPolygonRC"></span><span class="target" id="class_px_convex_mesh_1af5a9f84f6811e1b22d85332b11df0388"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPolygonData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span>, <a class="reference internal" href="struct_px_hull_polygon.html#_CPPv413PxHullPolygon" title="PxHullPolygon"><span class="n"><span class="pre">PxHullPolygon</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh14getPolygonDataE5PxU32R13PxHullPolygon" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the polygon data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_convex_mesh_1a15b7c17f5cd2c0fb2e167ae55ebbb937"><span class="std std-ref">getIndexBuffer()</span></a> <a class="reference internal" href="#class_px_convex_mesh_1a85b9818aa930b3bc5bb6d5973b655778"><span class="std std-ref">getNbPolygons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> – <strong>[in]</strong> Polygon index in [0 ; <a class="reference internal" href="#class_px_convex_mesh_1a85b9818aa930b3bc5bb6d5973b655778"><span class="std std-ref">getNbPolygons()</span></a>[. </p></li>
+<li><p><strong>data</strong> – <strong>[out]</strong> Polygon data. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh7releaseEv">
+<span id="_CPPv3N12PxConvexMesh7releaseEv"></span><span id="_CPPv2N12PxConvexMesh7releaseEv"></span><span id="PxConvexMesh::release"></span><span class="target" id="class_px_convex_mesh_1a48b0167c5d565c96e6e5a721b7d9fe41"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConvexMesh7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of a convex mesh and releases it if the new reference count is zero. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a54fc5f8b0884977ccfd45ea829392a52"><span class="std std-ref">PxPhysics.createConvexMesh()</span></a> <a class="reference internal" href="class_px_convex_mesh_geometry.html#class_px_convex_mesh_geometry"><span class="std std-ref">PxConvexMeshGeometry</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3">
+<span id="_CPPv3NK12PxConvexMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="_CPPv2NK12PxConvexMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="PxConvexMesh::getMassInformation__PxRealR.PxMat33R.PxVec3RC"></span><span class="target" id="class_px_convex_mesh_1a512d0f349edd60449032b7d38d486a73"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMassInformation</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mass</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localInertia</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localCenterOfMass</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the mass properties of the mesh assuming unit density. </p>
+<p>The following relationship holds between mass and volume: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volume</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">density</span><span class="w"></span>
+</pre></div>
+</div>
+</p>
+<p>The mass of a unit density mesh is equal to its volume, so this function returns the volume of the mesh.</p>
+<p>Similarly, to obtain the localInertia of an identically shaped object with a uniform density of d, simply multiply the localInertia of the unit density mesh by d.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mass</strong> – <strong>[out]</strong> The mass of the mesh assuming unit density. </p></li>
+<li><p><strong>localInertia</strong> – <strong>[out]</strong> The inertia tensor in mesh local space assuming unit density. </p></li>
+<li><p><strong>localCenterOfMass</strong> – <strong>[out]</strong> Position of center of mass (or centroid) in mesh local space. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh14getLocalBoundsEv">
+<span id="_CPPv3NK12PxConvexMesh14getLocalBoundsEv"></span><span id="_CPPv2NK12PxConvexMesh14getLocalBoundsEv"></span><span id="PxConvexMesh::getLocalBoundsC"></span><span class="target" id="class_px_convex_mesh_1acfde3b4af6c5a10d44e4bb2aaf66e6c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh14getLocalBoundsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the local-space (vertex space) AABB from the convex mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>local-space bounds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh6getSDFEv">
+<span id="_CPPv3NK12PxConvexMesh6getSDFEv"></span><span id="_CPPv2NK12PxConvexMesh6getSDFEv"></span><span id="PxConvexMesh::getSDFC"></span><span class="target" id="class_px_convex_mesh_1a4d41bb21c3f8d7fa69c31da75ed2b80a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSDF</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh6getSDFEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the local-space Signed Distance Field for this mesh if it has one. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>local-space SDF. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh19getConcreteTypeNameEv">
+<span id="_CPPv3NK12PxConvexMesh19getConcreteTypeNameEv"></span><span id="_CPPv2NK12PxConvexMesh19getConcreteTypeNameEv"></span><span id="PxConvexMesh::getConcreteTypeNameC"></span><span class="target" id="class_px_convex_mesh_1a1c428a35421245876e7d253f097b5789"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh15isGpuCompatibleEv">
+<span id="_CPPv3NK12PxConvexMesh15isGpuCompatibleEv"></span><span id="_CPPv2NK12PxConvexMesh15isGpuCompatibleEv"></span><span id="PxConvexMesh::isGpuCompatibleC"></span><span class="target" id="class_px_convex_mesh_1a735214c0b424c4a0edd991bffb5a4a2f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isGpuCompatible</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh15isGpuCompatibleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This method decides whether a convex mesh is gpu compatible. </p>
+<p>If the total number of vertices are more than 64 or any number of vertices in a polygon is more than 32, or convex hull data was not cooked with GPU data enabled during cooking or was loaded from a serialized collection, the convex hull is incompatible with GPU collision detection. Otherwise it is compatible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the convex hull is gpu compatible </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh17getReferenceCountEv">
+<span id="_CPPv3NK12PxConvexMesh17getReferenceCountEv"></span><span id="_CPPv2NK12PxConvexMesh17getReferenceCountEv"></span><span id="PxConvexMesh::getReferenceCountC"></span><span class="target" id="class_px_ref_counted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh16acquireReferenceEv">
+<span id="_CPPv3N12PxConvexMesh16acquireReferenceEv"></span><span id="_CPPv2N12PxConvexMesh16acquireReferenceEv"></span><span id="PxConvexMesh::acquireReference"></span><span class="target" id="class_px_ref_counted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxConvexMesh16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxConvexMesh2isEP1Tv">
+<span id="_CPPv3I0EN12PxConvexMesh2isEv"></span><span id="_CPPv2I0EN12PxConvexMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN12PxConvexMesh2isEP1Tv" title="PxConvexMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxConvexMesh2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK12PxConvexMesh2isEPK1Tv">
+<span id="_CPPv3I0ENK12PxConvexMesh2isEv"></span><span id="_CPPv2I0ENK12PxConvexMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK12PxConvexMesh2isEPK1Tv" title="PxConvexMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK12PxConvexMesh2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh15getConcreteTypeEv">
+<span id="_CPPv3NK12PxConvexMesh15getConcreteTypeEv"></span><span id="_CPPv2NK12PxConvexMesh15getConcreteTypeEv"></span><span id="PxConvexMesh::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N12PxConvexMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N12PxConvexMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxConvexMesh::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMesh11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N12PxConvexMesh12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N12PxConvexMesh12setBaseFlagsE11PxBaseFlags"></span><span id="PxConvexMesh::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMesh12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh12getBaseFlagsEv">
+<span id="_CPPv3NK12PxConvexMesh12getBaseFlagsEv"></span><span id="_CPPv2NK12PxConvexMesh12getBaseFlagsEv"></span><span id="PxConvexMesh::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh12isReleasableEv">
+<span id="_CPPv3NK12PxConvexMesh12isReleasableEv"></span><span id="_CPPv2NK12PxConvexMesh12isReleasableEv"></span><span id="PxConvexMesh::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh12PxConvexMeshE6PxType11PxBaseFlags">
+<span id="_CPPv3N12PxConvexMesh12PxConvexMeshE6PxType11PxBaseFlags"></span><span id="_CPPv2N12PxConvexMesh12PxConvexMeshE6PxType11PxBaseFlags"></span><span id="PxConvexMesh::PxConvexMesh__PxType.PxBaseFlags"></span><span class="target" id="class_px_convex_mesh_1a7c954b076479f8b18d95ce450ab98ead"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMesh12PxConvexMeshE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh12PxConvexMeshE11PxBaseFlags">
+<span id="_CPPv3N12PxConvexMesh12PxConvexMeshE11PxBaseFlags"></span><span id="_CPPv2N12PxConvexMesh12PxConvexMeshE11PxBaseFlags"></span><span id="PxConvexMesh::PxConvexMesh__PxBaseFlags"></span><span class="target" id="class_px_convex_mesh_1ac9a245fbdf919a5a1c75226f8cddf518"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConvexMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMesh12PxConvexMeshE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMeshD0Ev">
+<span id="_CPPv3N12PxConvexMeshD0Ev"></span><span id="_CPPv2N12PxConvexMeshD0Ev"></span><span id="PxConvexMesh::~PxConvexMesh"></span><span class="target" id="class_px_convex_mesh_1a1aee1cb5dc2d439fb8e0116d57cdc070"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxConvexMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMeshD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxConvexMesh8isKindOfEPKc">
+<span id="_CPPv3NK12PxConvexMesh8isKindOfEPKc"></span><span id="_CPPv2NK12PxConvexMesh8isKindOfEPKc"></span><span id="PxConvexMesh::isKindOf__cCPC"></span><span class="target" id="class_px_convex_mesh_1a3a5add58ddef5b7d618a7b12364669e4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxConvexMesh8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh14onRefCountZeroEv">
+<span id="_CPPv3N12PxConvexMesh14onRefCountZeroEv"></span><span id="_CPPv2N12PxConvexMesh14onRefCountZeroEv"></span><span id="PxConvexMesh::onRefCountZero"></span><span class="target" id="class_px_ref_counted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxConvexMesh14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK12PxConvexMesh9typeMatchEbv">
+<span id="_CPPv3I0ENK12PxConvexMesh9typeMatchEv"></span><span id="_CPPv2I0ENK12PxConvexMesh9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK12PxConvexMesh9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh13mConcreteTypeE">
+<span id="_CPPv3N12PxConvexMesh13mConcreteTypeE"></span><span id="_CPPv2N12PxConvexMesh13mConcreteTypeE"></span><span id="PxConvexMesh::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexMesh13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh10mBaseFlagsE">
+<span id="_CPPv3N12PxConvexMesh10mBaseFlagsE"></span><span id="_CPPv2N12PxConvexMesh10mBaseFlagsE"></span><span id="PxConvexMesh::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexMesh10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxConvexMesh16mBuiltInRefCountE">
+<span id="_CPPv3N12PxConvexMesh16mBuiltInRefCountE"></span><span id="_CPPv2N12PxConvexMesh16mBuiltInRefCountE"></span><span id="PxConvexMesh::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N12PxConvexMesh16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::BlastBondGenerator &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::BlastBondGenerator</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-blastbondgenerator">
+<span id="exhale-class-class-nv-1-1-blast-1-1-blast-bond-generator"></span><h1>Nv::Blast::BlastBondGenerator<a class="headerlink" href="#nv-blast-blastbondgenerator" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringBondGenerator.h.html#file-extensions-authoring-nvblastextauthoringbondgenerator-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringBondGenerator.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGeneratorE">
+<span id="_CPPv3N2Nv5Blast18BlastBondGeneratorE"></span><span id="_CPPv2N2Nv5Blast18BlastBondGeneratorE"></span><span id="Nv::Blast::BlastBondGenerator"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">BlastBondGenerator</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGeneratorE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Tool for gathering bond information from provided mesh geometry. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGeneratorD0Ev">
+<span id="_CPPv3N2Nv5Blast18BlastBondGeneratorD0Ev"></span><span id="_CPPv2N2Nv5Blast18BlastBondGeneratorD0Ev"></span><span id="Nv::Blast::BlastBondGenerator::~BlastBondGenerator"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1a922132c5bfe713b12cf061147106e00f"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~BlastBondGenerator</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGeneratorD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator7releaseEv">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator7releaseEv"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator7releaseEv"></span><span id="Nv::Blast::BlastBondGenerator::release"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1af9a062b2696ecd7764eb5e196b959f64"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release <a class="reference internal" href="#class_nv_1_1_blast_1_1_blast_bond_generator"><span class="std std-ref">BlastBondGenerator</span></a> memory. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator29buildDescFromInternalFractureEP12FractureToolPKbRP15NvBlastBondDescRP16NvBlastChunkDesc">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator29buildDescFromInternalFractureEP12FractureToolPKbRP15NvBlastBondDescRP16NvBlastChunkDesc"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator29buildDescFromInternalFractureEP12FractureToolPKbRP15NvBlastBondDescRP16NvBlastChunkDesc"></span><span id="Nv::Blast::BlastBondGenerator::buildDescFromInternalFracture__FractureToolP.bCP.NvBlastBondDescPR.NvBlastChunkDescPR"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1afbf304132c5600fbe6b4f423ac2e2452"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">buildDescFromInternalFracture</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_tool.html#_CPPv4N2Nv5Blast12FractureToolE" title="Nv::Blast::FractureTool"><span class="pre">FractureTool</span></a> <span class="pre">*</span><em><span class="pre">tool</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">bool</span> <span class="pre">*</span><em><span class="pre">chunkIsSupport</span></em>, <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">resultBondDescs</span></em>, <a class="reference internal" href="struct_nv_blast_chunk_desc.html#_CPPv416NvBlastChunkDesc" title="NvBlastChunkDesc"><span class="pre">NvBlastChunkDesc</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">resultChunkDescriptors</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator29buildDescFromInternalFractureEP12FractureToolPKbRP15NvBlastBondDescRP16NvBlastChunkDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>This method based on marking triangles during fracture process, so can be used only with internally fractured meshes. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>User should call NVBLAST_FREE for resultBondDescs when it not needed anymore </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tool</strong> – <strong>[in]</strong> <a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_tool.html#class_nv_1_1_blast_1_1_fracture_tool"><span class="std std-ref">FractureTool</span></a> which contains chunks representation, tool-&gt;finalizeFracturing() should be called before. </p></li>
+<li><p><strong>chunkIsSupport</strong> – <strong>[in]</strong> Pointer to array of flags, if true - chunk is support. Array size should be equal to chunk count in tool. </p></li>
+<li><p><strong>resultBondDescs</strong> – <strong>[out]</strong> Pointer to array of created bond descriptors. </p></li>
+<li><p><strong>resultChunkDescriptors</strong> – <strong>[out]</strong> Pointer to array of created chunk descriptors. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of created bonds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8Triangle8uint32_tPK8TriangleR11NvBlastBond20BondGenerationConfig">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8Triangle8uint32_tPK8TriangleR11NvBlastBond20BondGenerationConfig"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8Triangle8uint32_tPK8TriangleR11NvBlastBond20BondGenerationConfig"></span><span id="Nv::Blast::BlastBondGenerator::createBondBetweenMeshes__uint32_t.TriangleCP.uint32_t.TriangleCP.NvBlastBondR.BondGenerationConfig"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1a210b3c6cd2d759cb4f724c120beaf4ff"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">createBondBetweenMeshes</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">meshACount</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><em><span class="pre">meshA</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">meshBCount</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><em><span class="pre">meshB</span></em>, <a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="pre">NvBlastBond</span></a> <span class="pre">&amp;</span><em><span class="pre">resultBond</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_bond_generation_config.html#_CPPv4N2Nv5Blast20BondGenerationConfigE" title="Nv::Blast::BondGenerationConfig"><span class="pre">BondGenerationConfig</span></a> <em><span class="pre">conf</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8Triangle8uint32_tPK8TriangleR11NvBlastBond20BondGenerationConfig" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Creates bond description between two meshes. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshACount</strong> – <strong>[in]</strong> Number of triangles in mesh A </p></li>
+<li><p><strong>meshA</strong> – <strong>[in]</strong> Pointer to array of triangles of mesh A. </p></li>
+<li><p><strong>meshBCount</strong> – <strong>[in]</strong> Number of triangles in mesh B </p></li>
+<li><p><strong>meshB</strong> – <strong>[in]</strong> Pointer to array of triangles of mesh B. </p></li>
+<li><p><strong>resultBond</strong> – <strong>[out]</strong> Result bond description. </p></li>
+<li><p><strong>conf</strong> – <strong>[in]</strong> Bond creation mode. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>0 if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8uint32_tPK8Triangle8uint32_tPK8uint32_tPK8uint32_tRP15NvBlastBondDesc20BondGenerationConfig">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8uint32_tPK8Triangle8uint32_tPK8uint32_tPK8uint32_tRP15NvBlastBondDesc20BondGenerationConfig"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8uint32_tPK8Triangle8uint32_tPK8uint32_tPK8uint32_tRP15NvBlastBondDesc20BondGenerationConfig"></span><span id="Nv::Blast::BlastBondGenerator::createBondBetweenMeshes__uint32_t.uint32_tCP.TriangleCP.uint32_t.uint32_tCP.uint32_tCP.NvBlastBondDescPR.BondGenerationConfig"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1ae2f6a1a14917cac480eef0110ecc5af5"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">createBondBetweenMeshes</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">meshCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">geometryOffset</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><em><span class="pre">geometry</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">overlapsCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">overlapsA</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">overlapsB</span></em>, <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">resultBond</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_bond_generation_config.html#_CPPv4N2Nv5Blast20BondGenerationConfigE" title="Nv::Blast::BondGenerationConfig"><span class="pre">BondGenerationConfig</span></a> <em><span class="pre">cfg</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator23createBondBetweenMeshesE8uint32_tPK8uint32_tPK8Triangle8uint32_tPK8uint32_tPK8uint32_tRP15NvBlastBondDesc20BondGenerationConfig" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Creates bond description between number of meshes. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>User should call NVBLAST_FREE for resultBondDescs when it not needed anymore </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshCount</strong> – <strong>[in]</strong> Number of meshes </p></li>
+<li><p><strong>geometryOffset</strong> – <strong>[in]</strong> Pointer to array of triangle offsets for each mesh. Containts meshCount + 1 element, last one is total number of triangles in geometry </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Pointer to array of triangles. Triangles from geometryOffset[i] to geometryOffset[i+1] correspond to i-th mesh. </p></li>
+<li><p><strong>overlapsCount</strong> – <strong>[in]</strong> Number of overlaps </p></li>
+<li><p><strong>overlaps</strong> – <strong>[in]</strong> Pointer to array of pairs - indexes of chunks, for which bond should be created. </p></li>
+<li><p><strong>resultBond</strong> – <strong>[out]</strong> Pointer to array of result bonds. </p></li>
+<li><p><strong>cfg</strong> – <strong>[in]</strong> Bond creation mode. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of created bonds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPK8TrianglePKbRP15NvBlastBondDesc20BondGenerationConfig">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPK8TrianglePKbRP15NvBlastBondDesc20BondGenerationConfig"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPK8TrianglePKbRP15NvBlastBondDesc20BondGenerationConfig"></span><span id="Nv::Blast::BlastBondGenerator::bondsFromPrefractured__uint32_t.uint32_tCP.TriangleCP.bCP.NvBlastBondDescPR.BondGenerationConfig"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1a52733b31fdd4f8c4f10de5993d8f75d2"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">bondsFromPrefractured</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">meshCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">geometryOffset</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><em><span class="pre">geometry</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">bool</span> <span class="pre">*</span><em><span class="pre">chunkIsSupport</span></em>, <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">resultBondDescs</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_bond_generation_config.html#_CPPv4N2Nv5Blast20BondGenerationConfigE" title="Nv::Blast::BondGenerationConfig"><span class="pre">BondGenerationConfig</span></a> <em><span class="pre">conf</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPK8TrianglePKbRP15NvBlastBondDesc20BondGenerationConfig" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Creates bond description for prefractured meshes, when there is no info about which chunks should be connected with bond. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>User should call NVBLAST_FREE for resultBondDescs when it not needed anymore </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshCount</strong> – <strong>[in]</strong> Number of meshes </p></li>
+<li><p><strong>geometryOffset</strong> – <strong>[in]</strong> Pointer to array of triangle offsets for each mesh. Containts meshCount + 1 element, last one is total number of triangles in geometry </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Pointer to array of triangles. Triangles from geometryOffset[i] to geometryOffset[i+1] correspond to i-th mesh. </p></li>
+<li><p><strong>chunkIsSupport</strong> – <strong>[in]</strong> Pointer to array of flags, if true - chunk is support. Array size should be equal to chunk count in tool. </p></li>
+<li><p><strong>resultBondDescs</strong> – <strong>[out]</strong> Pointer to array of result bonds. </p></li>
+<li><p><strong>conf</strong> – <strong>[in]</strong> Bond creation mode. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of created bonds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPPK13CollisionHullPKbPK8uint32_tRP15NvBlastBondDescf">
+<span id="_CPPv3N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPPK13CollisionHullPKbPK8uint32_tRP15NvBlastBondDescf"></span><span id="_CPPv2N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPPK13CollisionHullPKbPK8uint32_tRP15NvBlastBondDescf"></span><span id="Nv::Blast::BlastBondGenerator::bondsFromPrefractured__uint32_t.uint32_tCP.CollisionHullCPP.bCP.uint32_tCP.NvBlastBondDescPR.float"></span><span class="target" id="class_nv_1_1_blast_1_1_blast_bond_generator_1a9710899f9d54068d1bdac8b24e69f89a"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">bondsFromPrefractured</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">meshCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">convexHullOffset</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#_CPPv4N2Nv5Blast13CollisionHullE" title="Nv::Blast::CollisionHull"><span class="pre">CollisionHull</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">chunkHulls</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">bool</span> <span class="pre">*</span><em><span class="pre">chunkIsSupport</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">meshGroups</span></em>, <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">resultBondDescs</span></em>, <span class="pre">float</span> <em><span class="pre">maxSeparation</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast18BlastBondGenerator21bondsFromPrefracturedE8uint32_tPK8uint32_tPPK13CollisionHullPKbPK8uint32_tRP15NvBlastBondDescf" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Creates bond description for prefractured meshes, when there is no info about which chunks should be connected with bond. </p>
+<p>This uses the same process as bondsFromPrefractured using the BondGenMode::AVERAGE mode however the existing collision data is used. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>User should call NVBLAST_FREE for resultBondDescs when it not needed anymore. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshCount</strong> – <strong>[in]</strong> Number of meshes </p></li>
+<li><p><strong>convexHullOffset</strong> – <strong>[in]</strong> Pointer to array of convex hull offsets for each mesh. Containts meshCount + 1 element, last one is total number of hulls in the geometry </p></li>
+<li><p><strong>chunkHulls</strong> – <strong>[in]</strong> Pointer to array of convex hulls. Hulls from convexHullOffset[i] to convexHullOffset[i+1] correspond to i-th mesh. </p></li>
+<li><p><strong>chunkIsSupport</strong> – <strong>[in]</strong> Pointer to array of flags, if true - chunk is support. Array size should be equal to chunk count in tool. </p></li>
+<li><p><strong>meshGroups</strong> – <strong>[in]</strong> Pointer to array of group ids for each mesh, bonds will not be generated between meshs of the same group. If null each mesh is assumed to be in it’s own group. </p></li>
+<li><p><strong>resultBondDescs</strong> – <strong>[out]</strong> Pointer to array of result bonds. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of created bonds </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

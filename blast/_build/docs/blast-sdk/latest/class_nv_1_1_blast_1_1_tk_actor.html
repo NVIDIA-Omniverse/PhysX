@@ -1,0 +1,505 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::TkActor &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::TkActor</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-tkactor">
+<span id="exhale-class-class-nv-1-1-blast-1-1-tk-actor"></span><h1>Nv::Blast::TkActor<a class="headerlink" href="#nv-blast-tkactor" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkActor.h.html#file-toolkit-nvblasttkactor-h"><span class="std std-ref">toolkit/NvBlastTkActor.h</span></a></p>
+<div class="section" id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::TkObject</span></code> (<a class="reference internal" href="class_nv_1_1_blast_1_1_tk_object.html#exhale-class-class-nv-1-1-blast-1-1-tk-object"><span class="std std-ref">Nv::Blast::TkObject</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast7TkActorE">
+<span id="_CPPv3N2Nv5Blast7TkActorE"></span><span id="_CPPv2N2Nv5Blast7TkActorE"></span><span id="Nv::Blast::TkActor"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkActor</span></code> <span class="pre">:</span> <em class="property"><span class="pre">public</span></em> <span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><span class="pre">::</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_object.html#_CPPv4N2Nv5Blast8TkObjectE" title="Nv::Blast::TkObject"><span class="pre">TkObject</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActorE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The BlastTk entity which encapsulates an <a class="reference internal" href="struct_nv_blast_actor.html#struct_nv_blast_actor"><span class="std std-ref">NvBlastActor</span></a>. </p>
+<p>Every <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> represents a group of chunks which may correspond to a single physical rigid body. TkActors are created using <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework_1a30b4f2c95a00aa2cd98a3ba4001b0cb8"><span class="std std-ref">TkFramework::createActor</span></a>. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor10getActorLLEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor10getActorLLEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor10getActorLLEv"></span><span id="Nv::Blast::TkActor::getActorLLC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a3f6fc8b1d10cbcadc0accdb50d86ca50"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_actor.html#_CPPv412NvBlastActor" title="NvBlastActor"><span class="pre">NvBlastActor</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getActorLL</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor10getActorLLEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Access to underlying low-level actor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a pointer to the (const) low-level <a class="reference internal" href="struct_nv_blast_actor.html#struct_nv_blast_actor"><span class="std std-ref">NvBlastActor</span></a> object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor9getFamilyEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor9getFamilyEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor9getFamilyEv"></span><span id="Nv::Blast::TkActor::getFamilyC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a36af13fc7fc1bcc12d329db6278c9b50"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#_CPPv4N2Nv5Blast8TkFamilyE" title="Nv::Blast::TkFamily"><span class="pre">TkFamily</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getFamily</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor9getFamilyEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Every actor is part of an actor family, even if that family contains a single actor. </p>
+<p>This function returns a reference to the actor’s <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a pointer to the actor’s <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor8getIndexEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor8getIndexEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor8getIndexEv"></span><span id="Nv::Blast::TkActor::getIndexC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a9f89112a12e4183432c6aa827ea97875"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getIndex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor8getIndexEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Every actor has a unique index within a family. </p>
+<p>This function returns that index. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor8getGroupEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor8getGroupEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor8getGroupEv"></span><span id="Nv::Blast::TkActor::getGroupC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a81f07e9885669b62c6b5400e6b322e3d"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#_CPPv4N2Nv5Blast7TkGroupE" title="Nv::Blast::TkGroup"><span class="pre">TkGroup</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getGroup</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor8getGroupEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Actors may be part of (no more than) one group. </p>
+<p>See <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#class_nv_1_1_blast_1_1_tk_group"><span class="std std-ref">TkGroup</span></a> for the functions to add and remove actors. This function returns a pointer to the actor’s group, or NULL if it is not in a group. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkActor15removeFromGroupEv">
+<span id="_CPPv3N2Nv5Blast7TkActor15removeFromGroupEv"></span><span id="_CPPv2N2Nv5Blast7TkActor15removeFromGroupEv"></span><span id="Nv::Blast::TkActor::removeFromGroup"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a848142c7567f5eec053a3c9e8520d131"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#_CPPv4N2Nv5Blast7TkGroupE" title="Nv::Blast::TkGroup"><span class="pre">TkGroup</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">removeFromGroup</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActor15removeFromGroupEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Remove this actor from its group, if it is in one. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the actor’s former group if successful, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor8getAssetEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor8getAssetEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor8getAssetEv"></span><span id="Nv::Blast::TkActor::getAssetC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1aa9bfedd2a888e9cfdf99f83047501a41"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#_CPPv4N2Nv5Blast7TkAssetE" title="Nv::Blast::TkAsset"><span class="pre">TkAsset</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getAsset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor8getAssetEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Every actor has an associated asset. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a pointer to the (const) <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a> object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor20getVisibleChunkCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor20getVisibleChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor20getVisibleChunkCountEv"></span><span id="Nv::Blast::TkActor::getVisibleChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a8893ef15edb5ed7878f636438df97274"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVisibleChunkCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor20getVisibleChunkCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get the number of visible chunks for this actor. </p>
+<p>May be used in conjunction with getVisibleChunkIndices.</p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetVisibleChunkCount for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of visible chunk indices for the actor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor22getVisibleChunkIndicesEP8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast7TkActor22getVisibleChunkIndicesEP8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast7TkActor22getVisibleChunkIndicesEP8uint32_t8uint32_t"></span><span id="Nv::Blast::TkActor::getVisibleChunkIndices__uint32_tP.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a78c00a774558ed4f74b980d2f66d8548"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVisibleChunkIndices</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">visibleChunkIndices</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">visibleChunkIndicesSize</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor22getVisibleChunkIndicesEP8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve a list of visible chunk indices for the actor into the given array. </p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetVisibleChunkIndices for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>visibleChunkIndices</strong> – <strong>[in]</strong> User-supplied array to be filled in with indices of visible chunks for this actor. </p></li>
+<li><p><strong>visibleChunkIndicesSize</strong> – <strong>[in]</strong> The size of the visibleChunkIndices array. To receive all visible chunk indices, the size must be at least that given by <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_actor_1a8893ef15edb5ed7878f636438df97274"><span class="std std-ref">getVisibleChunkCount()</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of indices written to visibleChunkIndices. This will not exceed visibleChunkIndicesSize. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor17getGraphNodeCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor17getGraphNodeCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor17getGraphNodeCountEv"></span><span id="Nv::Blast::TkActor::getGraphNodeCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a1b43f234c8c6f831db35758d76cc0e09"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getGraphNodeCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor17getGraphNodeCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get the number of graph nodes for this actor. </p>
+<p>May be used in conjunction with getGraphNodeIndices.</p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetGraphNodeCount for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of graph node indices for the actor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor19getGraphNodeIndicesEP8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast7TkActor19getGraphNodeIndicesEP8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast7TkActor19getGraphNodeIndicesEP8uint32_t8uint32_t"></span><span id="Nv::Blast::TkActor::getGraphNodeIndices__uint32_tP.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1ada97e22b4b93d924b3f70562cb727228"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getGraphNodeIndices</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">graphNodeIndices</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">graphNodeIndicesSize</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor19getGraphNodeIndicesEP8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve a list of graph node indices for the actor into the given array. </p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetGraphNodeIndices for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graphNodeIndices</strong> – <strong>[in]</strong> User-supplied array to be filled in with indices of graph nodes for this actor. </p></li>
+<li><p><strong>graphNodeIndicesSize</strong> – <strong>[in]</strong> The size of the graphNodeIndices array. To receive all graph node indices, the size must be at least that given by <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_actor_1a1b43f234c8c6f831db35758d76cc0e09"><span class="std std-ref">getGraphNodeCount()</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of indices written to graphNodeIndices. This will not exceed graphNodeIndicesSize. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor14getBondHealthsEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor14getBondHealthsEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor14getBondHealthsEv"></span><span id="Nv::Blast::TkActor::getBondHealthsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a9cc9071ff62db5b24f11716b15c2c369"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getBondHealths</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor14getBondHealthsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Access the bond health data for an actor. </p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetBondHealths for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the array of bond healths for the actor’s family, or NULL if the actor is invalid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor21getSplitMaxActorCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor21getSplitMaxActorCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor21getSplitMaxActorCountEv"></span><span id="Nv::Blast::TkActor::getSplitMaxActorCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a16de12b18d7b6b06413b58f1a0180e6d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getSplitMaxActorCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor21getSplitMaxActorCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Returns the upper-bound number of actors which can be created by splitting this actor. </p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGetMaxActorCountForSplit for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the upper-bound number of actors which can be created by splitting this actor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor9isPendingEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor9isPendingEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor9isPendingEv"></span><span id="Nv::Blast::TkActor::isPendingC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a2079bb8ac6d223c5941357994e8ae522"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isPending</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor9isPendingEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Report whether this actor is in ‘pending’ state. </p>
+<p>Being in ‘pending’ state leads to actor being processed by group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true iff actor is in ‘pending’ state. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkActor6damageERK20NvBlastDamageProgramPKv">
+<span id="_CPPv3N2Nv5Blast7TkActor6damageERK20NvBlastDamageProgramPKv"></span><span id="_CPPv2N2Nv5Blast7TkActor6damageERK20NvBlastDamageProgramPKv"></span><span id="Nv::Blast::TkActor::damage__NvBlastDamageProgramCR.voidCP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a4969506ea54271b432ee5de4145779a6"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">damage</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_damage_program.html#_CPPv420NvBlastDamageProgram" title="NvBlastDamageProgram"><span class="pre">NvBlastDamageProgram</span></a> <span class="pre">&amp;</span><em><span class="pre">program</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">programParams</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActor6damageERK20NvBlastDamageProgramPKv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Apply damage to this actor. </p>
+<p>Actual damage processing is deferred till the group worker process() call. Sets actor in ‘pending’ state.</p>
+<p>It’s the user’s responsibility to keep programParams pointer alive until the group endProcess() call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>program</strong> – <strong>[in]</strong> A <a class="reference internal" href="struct_nv_blast_damage_program.html#struct_nv_blast_damage_program"><span class="std std-ref">NvBlastDamageProgram</span></a> containing damage shaders. </p></li>
+<li><p><strong>programParams</strong> – <strong>[in]</strong> Parameters for the <a class="reference internal" href="struct_nv_blast_damage_program.html#struct_nv_blast_damage_program"><span class="std std-ref">NvBlastDamageProgram</span></a>. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor16generateFractureEP22NvBlastFractureBuffersRK20NvBlastDamageProgramPKv">
+<span id="_CPPv3NK2Nv5Blast7TkActor16generateFractureEP22NvBlastFractureBuffersRK20NvBlastDamageProgramPKv"></span><span id="_CPPv2NK2Nv5Blast7TkActor16generateFractureEP22NvBlastFractureBuffersRK20NvBlastDamageProgramPKv"></span><span id="Nv::Blast::TkActor::generateFracture__NvBlastFractureBuffersP.NvBlastDamageProgramCR.voidCPC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1aee5e7fdfa7cd0b33f5ba92168841d4b2"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">generateFracture</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">*</span><em><span class="pre">commands</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_damage_program.html#_CPPv420NvBlastDamageProgram" title="NvBlastDamageProgram"><span class="pre">NvBlastDamageProgram</span></a> <span class="pre">&amp;</span><em><span class="pre">program</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">programParams</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor16generateFractureEP22NvBlastFractureBuffersRK20NvBlastDamageProgramPKv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Creates fracture commands for the actor using an NvBlastMaterialFunction. </p>
+<p>Cannot be called during group processing, in that case a warning will be raised and function will do nothing.</p>
+<p>NOTE: Wrapper function over low-level function call, see NvBlastActorGenerateFracture for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>commands</strong> – <strong>[inout]</strong> Target buffers to hold generated commands. To avoid data loss, provide an entry for every support chunk and every bond in the original actor. </p></li>
+<li><p><strong>program</strong> – <strong>[in]</strong> A <a class="reference internal" href="struct_nv_blast_damage_program.html#struct_nv_blast_damage_program"><span class="std std-ref">NvBlastDamageProgram</span></a> containing damage shaders. </p></li>
+<li><p><strong>programParams</strong> – <strong>[in]</strong> Parameters for the <a class="reference internal" href="struct_nv_blast_damage_program.html#struct_nv_blast_damage_program"><span class="std std-ref">NvBlastDamageProgram</span></a>. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkActor13applyFractureEP22NvBlastFractureBuffersPK22NvBlastFractureBuffers">
+<span id="_CPPv3N2Nv5Blast7TkActor13applyFractureEP22NvBlastFractureBuffersPK22NvBlastFractureBuffers"></span><span id="_CPPv2N2Nv5Blast7TkActor13applyFractureEP22NvBlastFractureBuffersPK22NvBlastFractureBuffers"></span><span id="Nv::Blast::TkActor::applyFracture__NvBlastFractureBuffersP.NvBlastFractureBuffersCP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1aa02c42add8033877003cd907a0818785"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">applyFracture</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">*</span><em><span class="pre">eventBuffers</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">*</span><em><span class="pre">commands</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActor13applyFractureEP22NvBlastFractureBuffersPK22NvBlastFractureBuffers" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Function applies the direct fracture and breaks graph bonds/edges as necessary. </p>
+<p>Sets actor in ‘pending’ state if any bonds or chunks were damaged. Dispatches FractureCommand events.</p>
+<p>NOTE: Calls NvBlastActorApplyFracture internally. see NvBlastActorApplyFracture for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eventBuffers</strong> – <strong>[inout]</strong> Target buffers to hold applied fracture events. May be NULL, in which case events are not reported. To avoid data loss, provide an entry for every lower-support chunk and every bond in the original actor. </p></li>
+<li><p><strong>commands</strong> – <strong>[in]</strong> The fracture commands to process. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor13getJointCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor13getJointCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor13getJointCountEv"></span><span id="Nv::Blast::TkActor::getJointCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1ae1582f709880a58d222530b6095da48e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getJointCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor13getJointCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of joints currently attached to this actor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of TkJoints that are currently attached to this actor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor9getJointsEPP7TkJoint8uint32_t">
+<span id="_CPPv3NK2Nv5Blast7TkActor9getJointsEPP7TkJoint8uint32_t"></span><span id="_CPPv2NK2Nv5Blast7TkActor9getJointsEPP7TkJoint8uint32_t"></span><span id="Nv::Blast::TkActor::getJoints__TkJointPP.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1ad4f8ce52518ca4654e1c16485fb13d8f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getJoints</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#_CPPv4N2Nv5Blast7TkJointE" title="Nv::Blast::TkJoint"><span class="pre">TkJoint</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">joints</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">jointsSize</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor9getJointsEPP7TkJoint8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve an array of pointers (into the user-supplied buffer) to joints. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>joints</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> pointers. </p></li>
+<li><p><strong>jointsSize</strong> – <strong>[in]</strong> The number of elements available to write into the joints array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> pointers written to the joints array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor16hasExternalBondsEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor16hasExternalBondsEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor16hasExternalBondsEv"></span><span id="Nv::Blast::TkActor::hasExternalBondsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1ab777749b75966c1cb1a832b5af5ee12d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">hasExternalBonds</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor16hasExternalBondsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Whether or not this actor is bound to an external body using a bond with an invalid chunk index to represent the NRF. </p>
+<p>NOTE: Wrapper function over low-level function call NvBlastActorHasExternalBonds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true iff this actor contains the “external” support graph node, created when a bond contains the UINT32_MAX value for one of their chunkIndices. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast7TkActor14isBoundToWorldEv">
+<span id="_CPPv3NK2Nv5Blast7TkActor14isBoundToWorldEv"></span><span id="_CPPv2NK2Nv5Blast7TkActor14isBoundToWorldEv"></span><span id="Nv::Blast::TkActor::isBoundToWorldC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_actor_1a9f5245eff4680191ed641feda3e9a0d2"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isBoundToWorld</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkActor14isBoundToWorldEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast7TkActor7releaseEv">
+<span id="_CPPv3N2Nv5Blast7TkActor7releaseEv"></span><span id="_CPPv2N2Nv5Blast7TkActor7releaseEv"></span><span id="Nv::Blast::TkActor::release"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1a848b4a7ade17edc49a071c472cbfad12"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActor7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this object and free associated memory. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast7TkActor8userDataE">
+<span id="_CPPv3N2Nv5Blast7TkActor8userDataE"></span><span id="_CPPv2N2Nv5Blast7TkActor8userDataE"></span><span id="Nv::Blast::TkActor::userData__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1ae1a1d9f53d372a748f615fc47b730a42"></span><span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">userData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkActor8userDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Pointer field available to the user. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

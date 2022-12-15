@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::CutoutSet &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::CutoutSet</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-cutoutset">
+<span id="exhale-class-class-nv-1-1-blast-1-1-cutout-set"></span><h1>Nv::Blast::CutoutSet<a class="headerlink" href="#nv-blast-cutoutset" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringCutout.h.html#file-extensions-authoring-nvblastextauthoringcutout-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringCutout.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast9CutoutSetE">
+<span id="_CPPv3N2Nv5Blast9CutoutSetE"></span><span id="_CPPv2N2Nv5Blast9CutoutSetE"></span><span id="Nv::Blast::CutoutSet"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">CutoutSet</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9CutoutSetE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Interface to a “cutout set,” used with chippable fracturing. </p>
+<p>A cutout set is created from a bitmap. The result is turned into cutouts which are applied to the mesh. For example, a bitmap which looks like a brick pattern will generate a cutout for each “brick,” forming the cutout set.</p>
+<p>Each cutout is a 2D entity, meant to be projected onto various faces of a mesh. They are represented by a set of 2D vertices, which form closed loops. More than one loop may represent a single cutout, if the loops are forced to be convex. Otherwise, a cutout is represented by a single loop. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet14getCutoutCountEv">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet14getCutoutCountEv"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet14getCutoutCountEv"></span><span id="Nv::Blast::CutoutSet::getCutoutCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1abada00015d8e7fab698ab65979ff1429"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getCutoutCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet14getCutoutCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Returns the number of cutouts in the set. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet20getCutoutVertexCountE8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet20getCutoutVertexCountE8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet20getCutoutVertexCountE8uint32_t8uint32_t"></span><span id="Nv::Blast::CutoutSet::getCutoutVertexCount__uint32_t.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a409a1bb7a56c5224ddc469d555041e16"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getCutoutVertexCount</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">cutoutIndex</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">loopIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet20getCutoutVertexCountE8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Applies to the cutout indexed by cutoutIndex: Returns the number of vertices in the cutout. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet18getCutoutLoopCountE8uint32_t">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet18getCutoutLoopCountE8uint32_t"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet18getCutoutLoopCountE8uint32_t"></span><span id="Nv::Blast::CutoutSet::getCutoutLoopCount__uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a8348b26fd9eda511ccb71b1e201d099b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getCutoutLoopCount</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">cutoutIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet18getCutoutLoopCountE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Applies to the cutout indexed by cutoutIndex: Returns the number of loops in this cutout. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet15getCutoutVertexE8uint32_t8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet15getCutoutVertexE8uint32_t8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet15getCutoutVertexE8uint32_t8uint32_t8uint32_t"></span><span id="Nv::Blast::CutoutSet::getCutoutVertex__uint32_t.uint32_t.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a6f6877d1b4eacf09ceb2233a79b607e2"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getCutoutVertex</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">cutoutIndex</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">loopIndex</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">vertexIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet15getCutoutVertexE8uint32_t8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Applies to the cutout indexed by cutoutIndex: Returns the vertex indexed by vertexIndex. </p>
+<p>(Only the X and Y coordinates are used.) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet34isCutoutVertexToggleSmoothingGroupE8uint32_t8uint32_t8uint32_t">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet34isCutoutVertexToggleSmoothingGroupE8uint32_t8uint32_t8uint32_t"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet34isCutoutVertexToggleSmoothingGroupE8uint32_t8uint32_t8uint32_t"></span><span id="Nv::Blast::CutoutSet::isCutoutVertexToggleSmoothingGroup__uint32_t.uint32_t.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a45d0b1d3f50647cd3b5517b70485f338"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isCutoutVertexToggleSmoothingGroup</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">cutoutIndex</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">loopIndex</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">vertexIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet34isCutoutVertexToggleSmoothingGroupE8uint32_t8uint32_t8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>If smoothing group should be changed for adjacent to this vertex faces return true. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet10isPeriodicEv">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet10isPeriodicEv"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet10isPeriodicEv"></span><span id="Nv::Blast::CutoutSet::isPeriodicC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a6d3a1b817c323ca2385d1cacf52c98ce"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isPeriodic</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet10isPeriodicEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Whether or not this cutout set is to be tiled. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast9CutoutSet13getDimensionsEv">
+<span id="_CPPv3NK2Nv5Blast9CutoutSet13getDimensionsEv"></span><span id="_CPPv2NK2Nv5Blast9CutoutSet13getDimensionsEv"></span><span id="Nv::Blast::CutoutSet::getDimensionsC"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a7f13e3c6104d0b306d373024b8f4ffc9"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec2.html#_CPPv47NvcVec2" title="NvcVec2"><span class="pre">NvcVec2</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getDimensions</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast9CutoutSet13getDimensionsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The dimensions of the fracture map used to create the cutout set. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast9CutoutSet7releaseEv">
+<span id="_CPPv3N2Nv5Blast9CutoutSet7releaseEv"></span><span id="_CPPv2N2Nv5Blast9CutoutSet7releaseEv"></span><span id="Nv::Blast::CutoutSet::release"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a98936273f2f572f73933a62eded49e6c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9CutoutSet7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Releases all memory and deletes itself. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast9CutoutSetD0Ev">
+<span id="_CPPv3N2Nv5Blast9CutoutSetD0Ev"></span><span id="_CPPv2N2Nv5Blast9CutoutSetD0Ev"></span><span id="Nv::Blast::CutoutSet::~CutoutSet"></span><span class="target" id="class_nv_1_1_blast_1_1_cutout_set_1a6122cea44eca2907f01ec61f1d963e93"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~CutoutSet</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9CutoutSetD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Protected destructor. </p>
+<p>Use the <a class="reference internal" href="#class_nv_1_1_blast_1_1_cutout_set_1a98936273f2f572f73933a62eded49e6c"><span class="std std-ref">release()</span></a> method. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

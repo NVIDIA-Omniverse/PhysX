@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBitMapBase &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBitMapBase</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbitmapbase">
+<span id="exhale-class-class-px-bit-map-base"></span><h1>PxBitMapBase<a class="headerlink" href="#pxbitmapbase" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxBitMap.h.html#file-include-foundation-pxbitmap-h"><span class="std std-ref">include/foundation/PxBitMap.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxUserAllocated</span></code> (<a class="reference internal" href="class_px_user_allocated.html#exhale-class-class-px-user-allocated"><span class="std std-ref">PxUserAllocated</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E12PxBitMapBase">
+<span id="_CPPv3I0E12PxBitMapBase"></span><span id="_CPPv2I0E12PxBitMapBase"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAllocator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_bit_map_base"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBitMapBase</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_user_allocated.html#_CPPv415PxUserAllocated" title="PxUserAllocated"><span class="n"><span class="pre">PxUserAllocated</span></span></a><a class="headerlink" href="#_CPPv4I0E12PxBitMapBase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Hold a bitmap with operations to set,reset or test given bit.</p>
+<p>We inhibit copy to prevent unintentional copies. If a copy is desired copy() should be used or alternatively a copy constructor implemented. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12PxBitMapBaseEK7PxEMPTY">
+<span id="_CPPv3N12PxBitMapBase12PxBitMapBaseEK7PxEMPTY"></span><span id="_CPPv2N12PxBitMapBase12PxBitMapBaseEK7PxEMPTY"></span><span id="PxBitMapBase::PxBitMapBase__PxEMPTYC"></span><span class="target" id="class_px_bit_map_base_1a36fa5c84ca749421dc9dcfbab0f98151"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBitMapBase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="enum_group__foundation_1ga0326e4ec6e9082ac70f32df5edc6eb5f.html#_CPPv47PxEMPTY" title="PxEMPTY"><span class="n"><span class="pre">PxEMPTY</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12PxBitMapBaseEK7PxEMPTY" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12PxBitMapBaseERK11PxAllocator">
+<span id="_CPPv3N12PxBitMapBase12PxBitMapBaseERK11PxAllocator"></span><span id="_CPPv2N12PxBitMapBase12PxBitMapBaseERK11PxAllocator"></span><span id="PxBitMapBase::PxBitMapBase__PxAllocatorCR"></span><span class="target" id="class_px_bit_map_base_1acf7f08f92bf1757ec419b418025d8fec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBitMapBase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12PxBitMapBaseERK11PxAllocator" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12PxBitMapBaseEv">
+<span id="_CPPv3N12PxBitMapBase12PxBitMapBaseEv"></span><span id="_CPPv2N12PxBitMapBase12PxBitMapBaseEv"></span><span id="PxBitMapBase::PxBitMapBase"></span><span class="target" id="class_px_bit_map_base_1ac612fce5c954824147d01c74517753e5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBitMapBase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12PxBitMapBaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBaseD0Ev">
+<span id="_CPPv3N12PxBitMapBaseD0Ev"></span><span id="_CPPv2N12PxBitMapBaseD0Ev"></span><span id="PxBitMapBase::~PxBitMapBase"></span><span class="target" id="class_px_bit_map_base_1a05fecc53c6bed03906a3ad07cc8d2a02"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBitMapBase</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBaseD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase7releaseEv">
+<span id="_CPPv3N12PxBitMapBase7releaseEv"></span><span id="_CPPv2N12PxBitMapBase7releaseEv"></span><span id="PxBitMapBase::release"></span><span class="target" id="class_px_bit_map_base_1a30366830603a2bdd80c9e96ccf4eb941"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12getAllocatorEv">
+<span id="_CPPv3N12PxBitMapBase12getAllocatorEv"></span><span id="_CPPv2N12PxBitMapBase12getAllocatorEv"></span><span id="PxBitMapBase::getAllocator"></span><span class="target" id="class_px_bit_map_base_1a6519a8fc2b8660e0b7bb056b1ecf3b25"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAllocator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12getAllocatorEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase10growAndSetE5PxU32">
+<span id="_CPPv3N12PxBitMapBase10growAndSetE5PxU32"></span><span id="_CPPv2N12PxBitMapBase10growAndSetE5PxU32"></span><span id="PxBitMapBase::growAndSet__PxU32"></span><span class="target" id="class_px_bit_map_base_1a2aaad51861d4debdbd66d231208a26e7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">growAndSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase10growAndSetE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12growAndResetE5PxU32">
+<span id="_CPPv3N12PxBitMapBase12growAndResetE5PxU32"></span><span id="_CPPv2N12PxBitMapBase12growAndResetE5PxU32"></span><span id="PxBitMapBase::growAndReset__PxU32"></span><span class="target" id="class_px_bit_map_base_1a0eb4d0d39ce6128bba200cec85313c7f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">growAndReset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12growAndResetE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase11boundedTestE5PxU32">
+<span id="_CPPv3NK12PxBitMapBase11boundedTestE5PxU32"></span><span id="_CPPv2NK12PxBitMapBase11boundedTestE5PxU32"></span><span id="PxBitMapBase::boundedTest__PxU32C"></span><span class="target" id="class_px_bit_map_base_1a161aa2890ef334cb0416a8bcbecfa327"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gafe69b4e42388471a93aa2b4c8b2b3537.html#_CPPv49PxIntBool" title="PxIntBool"><span class="n"><span class="pre">PxIntBool</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">boundedTest</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase11boundedTestE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12boundedResetE5PxU32">
+<span id="_CPPv3N12PxBitMapBase12boundedResetE5PxU32"></span><span id="_CPPv2N12PxBitMapBase12boundedResetE5PxU32"></span><span id="PxBitMapBase::boundedReset__PxU32"></span><span class="target" id="class_px_bit_map_base_1ae428dac8aa8def174de8c0a35ba9048d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">boundedReset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12boundedResetE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase3setE5PxU32">
+<span id="_CPPv3N12PxBitMapBase3setE5PxU32"></span><span id="_CPPv2N12PxBitMapBase3setE5PxU32"></span><span id="PxBitMapBase::set__PxU32"></span><span class="target" id="class_px_bit_map_base_1ac7c07f907f039376f182d851c7d7aeb8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase3setE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase5resetE5PxU32">
+<span id="_CPPv3N12PxBitMapBase5resetE5PxU32"></span><span id="_CPPv2N12PxBitMapBase5resetE5PxU32"></span><span id="PxBitMapBase::reset__PxU32"></span><span class="target" id="class_px_bit_map_base_1ac80a023f11b75a8aac898c960b678909"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase5resetE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase4testE5PxU32">
+<span id="_CPPv3NK12PxBitMapBase4testE5PxU32"></span><span id="_CPPv2NK12PxBitMapBase4testE5PxU32"></span><span id="PxBitMapBase::test__PxU32C"></span><span class="target" id="class_px_bit_map_base_1a87531fdff90167170b6e589481c61506"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gafe69b4e42388471a93aa2b4c8b2b3537.html#_CPPv49PxIntBool" title="PxIntBool"><span class="n"><span class="pre">PxIntBool</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">test</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase4testE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase13getNibbleFastE5PxU32">
+<span id="_CPPv3NK12PxBitMapBase13getNibbleFastE5PxU32"></span><span id="_CPPv2NK12PxBitMapBase13getNibbleFastE5PxU32"></span><span id="PxBitMapBase::getNibbleFast__PxU32C"></span><span class="target" id="class_px_bit_map_base_1ac810fcd5eef729223581b01aa26e906f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNibbleFast</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nibIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase13getNibbleFastE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase13andNibbleFastE5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase13andNibbleFastE5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase13andNibbleFastE5PxU325PxU32"></span><span id="PxBitMapBase::andNibbleFast__PxU32.PxU32"></span><span class="target" id="class_px_bit_map_base_1a91a37f48b86f2e8b6d9264224fa852fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">andNibbleFast</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nibIndex</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase13andNibbleFastE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase12orNibbleFastE5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase12orNibbleFastE5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase12orNibbleFastE5PxU325PxU32"></span><span id="PxBitMapBase::orNibbleFast__PxU32.PxU32"></span><span class="target" id="class_px_bit_map_base_1a368ecb55ae44445cc19615f7f84519e7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">orNibbleFast</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nibIndex</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase12orNibbleFastE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase5clearEv">
+<span id="_CPPv3N12PxBitMapBase5clearEv"></span><span id="_CPPv2N12PxBitMapBase5clearEv"></span><span id="PxBitMapBase::clear"></span><span class="target" id="class_px_bit_map_base_1a5067eab82c3bd258c3f93e68a20f6cbf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase5clearEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase14resizeAndClearE5PxU32">
+<span id="_CPPv3N12PxBitMapBase14resizeAndClearE5PxU32"></span><span id="_CPPv2N12PxBitMapBase14resizeAndClearE5PxU32"></span><span id="PxBitMapBase::resizeAndClear__PxU32"></span><span class="target" id="class_px_bit_map_base_1a39856a69bb0fb0ef95cffad1ac1f366e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resizeAndClear</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">newBitCount</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase14resizeAndClearE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8setEmptyEv">
+<span id="_CPPv3N12PxBitMapBase8setEmptyEv"></span><span id="_CPPv2N12PxBitMapBase8setEmptyEv"></span><span id="PxBitMapBase::setEmpty"></span><span class="target" id="class_px_bit_map_base_1abb981efb9fedb3a50305ed8b52c607c1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setEmpty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8setEmptyEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8setWordsEP5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase8setWordsEP5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase8setWordsEP5PxU325PxU32"></span><span id="PxBitMapBase::setWords__PxU32P.PxU32"></span><span class="target" id="class_px_bit_map_base_1ac4b64ec337593ba6d48fec1d45913dbb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setWords</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">map</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">wordCount</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8setWordsEP5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase6resizeE5PxU32b">
+<span id="_CPPv3N12PxBitMapBase6resizeE5PxU32b"></span><span id="_CPPv2N12PxBitMapBase6resizeE5PxU32b"></span><span id="PxBitMapBase::resize__PxU32.b"></span><span class="target" id="class_px_bit_map_base_1ac6134953e921c2b4ff0cd6f258e76d94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">newBitCount</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase6resizeE5PxU32b" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase4sizeEv">
+<span id="_CPPv3NK12PxBitMapBase4sizeEv"></span><span id="_CPPv2NK12PxBitMapBase4sizeEv"></span><span id="PxBitMapBase::sizeC"></span><span class="target" id="class_px_bit_map_base_1a0e01f218b60ebb94021eed5aa9b7edc2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase4sizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase4copyERK12PxBitMapBase">
+<span id="_CPPv3N12PxBitMapBase4copyERK12PxBitMapBase"></span><span id="_CPPv2N12PxBitMapBase4copyERK12PxBitMapBase"></span><span id="PxBitMapBase::copy__PxBitMapBaseCR"></span><span class="target" id="class_px_bit_map_base_1ae58addf2882f9e80f2bdf2374135d5a9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase4copyERK12PxBitMapBase" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase5countEv">
+<span id="_CPPv3NK12PxBitMapBase5countEv"></span><span id="_CPPv2NK12PxBitMapBase5countEv"></span><span id="PxBitMapBase::countC"></span><span class="target" id="class_px_bit_map_base_1a9b2fcb860ba35afbd9424b10536966a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase5countEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase5countE5PxU325PxU32">
+<span id="_CPPv3NK12PxBitMapBase5countE5PxU325PxU32"></span><span id="_CPPv2NK12PxBitMapBase5countE5PxU325PxU32"></span><span id="PxBitMapBase::count__PxU32.PxU32C"></span><span class="target" id="class_px_bit_map_base_1a1ce401beb305d5d732fd1ba0a1d765f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">start</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">length</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase5countE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase8findLastEv">
+<span id="_CPPv3NK12PxBitMapBase8findLastEv"></span><span id="_CPPv2NK12PxBitMapBase8findLastEv"></span><span id="PxBitMapBase::findLastC"></span><span class="target" id="class_px_bit_map_base_1ac76d37983144f290e39a3233989dbaa6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">findLast</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase8findLastEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns 0 if no bits set (!!!) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN12PxBitMapBase14combineInPlaceEvRK12PxBitMapBaseI1_E">
+<span id="_CPPv3I00EN12PxBitMapBase14combineInPlaceERK12PxBitMapBaseI1_E"></span><span id="_CPPv2I00EN12PxBitMapBase14combineInPlaceERK12PxBitMapBaseI1_E"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Combiner</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">_</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_bit_map_base_1a8d92fc7482c65827a819bf2069980b71"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">combineInPlace</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00EN12PxBitMapBase14combineInPlaceEvRK12PxBitMapBaseI1_E" title="PxBitMapBase::combineInPlace::_"><span class="n"><span class="pre">_</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I00EN12PxBitMapBase14combineInPlaceEvRK12PxBitMapBaseI1_E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I000EN12PxBitMapBase7combineEvRK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E">
+<span id="_CPPv3I000EN12PxBitMapBase7combineERK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E"></span><span id="_CPPv2I000EN12PxBitMapBase7combineERK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Combiner</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">_1</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">_2</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_bit_map_base_1a0e269d302df304717d490122bdac8cde"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">combine</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I000EN12PxBitMapBase7combineEvRK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E" title="PxBitMapBase::combine::_1"><span class="n"><span class="pre">_1</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I000EN12PxBitMapBase7combineEvRK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E" title="PxBitMapBase::combine::_2"><span class="n"><span class="pre">_2</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I000EN12PxBitMapBase7combineEvRK12PxBitMapBaseI2_1ERK12PxBitMapBaseI2_2E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase8getWordsEv">
+<span id="_CPPv3NK12PxBitMapBase8getWordsEv"></span><span id="_CPPv2NK12PxBitMapBase8getWordsEv"></span><span id="PxBitMapBase::getWordsC"></span><span class="target" id="class_px_bit_map_base_1ae85c35bf2bfbb710b9ece74e9f4b2774"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getWords</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase8getWordsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8getWordsEv">
+<span id="_CPPv3N12PxBitMapBase8getWordsEv"></span><span id="_CPPv2N12PxBitMapBase8getWordsEv"></span><span id="PxBitMapBase::getWords"></span><span class="target" id="class_px_bit_map_base_1a88472d89c9bbdc2edd34fbd46d3811c5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getWords</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8getWordsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase12getWordCountEv">
+<span id="_CPPv3NK12PxBitMapBase12getWordCountEv"></span><span id="_CPPv2NK12PxBitMapBase12getWordCountEv"></span><span id="PxBitMapBase::getWordCountC"></span><span class="target" id="class_px_bit_map_base_1a05c1db9f937e7e6254274b5bbc1ef4d6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWordCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase12getWordCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxBitMapBase14isInUserMemoryEv">
+<span id="_CPPv3NK12PxBitMapBase14isInUserMemoryEv"></span><span id="_CPPv2NK12PxBitMapBase14isInUserMemoryEv"></span><span id="PxBitMapBase::isInUserMemoryC"></span><span class="target" id="class_px_bit_map_base_1a0d338ba515a9add4c899cecc8d8fad47"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isInUserMemory</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxBitMapBase14isInUserMemoryEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBasenwE6size_tPv">
+<span id="_CPPv3N12PxBitMapBasenwE6size_tPv"></span><span id="_CPPv2N12PxBitMapBasenwE6size_tPv"></span><span id="PxBitMapBase::new-operator__s.voidP"></span><span class="target" id="class_px_user_allocated_1a043559a17027a1d32204be66e9b1d3f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBasenwE6size_tPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasenwEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasenwE6size_t5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasenwE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1af3309032413ea5ee85c18785a6ad56a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasenwEPv6size_t5AllocPKci" title="PxBitMapBase::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasenwEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasenwEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasenwE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasenwE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1ade2b81f765dc68139ce8ae091b54796f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasenwEPv6size_t6size_t5AllocPKci" title="PxBitMapBase::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasenwEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBasedlEPvPv">
+<span id="_CPPv3N12PxBitMapBasedlEPvPv"></span><span id="_CPPv2N12PxBitMapBasedlEPvPv"></span><span id="PxBitMapBase::delete-operator__voidP.voidP"></span><span class="target" id="class_px_user_allocated_1a04c7cb45584c4f0ce7a8347ca740896b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span>, <span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBasedlEPvPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasedlEvPv5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasedlEPv5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasedlEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a3cf613200747f3cefb86a365c74aa162"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasedlEvPv5AllocPKci" title="PxBitMapBase::operator delete::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasedlEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBasedlEPv">
+<span id="_CPPv3N12PxBitMapBasedlEPv"></span><span id="_CPPv2N12PxBitMapBasedlEPv"></span><span id="PxBitMapBase::delete-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2c4e502fe3d2248c358dd77dd3057238"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBasedlEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasenaEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasenaE6size_t5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasenaE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a20c94aa14dae1e05c23b2c9d2a6a0362"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasenaEPv6size_t5AllocPKci" title="PxBitMapBase::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasenaEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasenaEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasenaE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasenaE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a71597b7a868015bda81c507955cc580d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasenaEPv6size_t6size_t5AllocPKci" title="PxBitMapBase::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasenaEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBasedaEvPv5AllocPKci">
+<span id="_CPPv3I0EN12PxBitMapBasedaEPv5AllocPKci"></span><span id="_CPPv2I0EN12PxBitMapBasedaEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a27bba9023c672c7294bf98666139f482"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN12PxBitMapBasedaEvPv5AllocPKci" title="PxBitMapBase::operator delete[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBasedaEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBasedaEPv">
+<span id="_CPPv3N12PxBitMapBasedaEPv"></span><span id="_CPPv2N12PxBitMapBasedaEPv"></span><span id="PxBitMapBase::delete-array-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2b6969f7ac154e808f41a906a25a4a05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBasedaEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase6extendE5PxU32">
+<span id="_CPPv3N12PxBitMapBase6extendE5PxU32"></span><span id="_CPPv2N12PxBitMapBase6extendE5PxU32"></span><span id="PxBitMapBase::extend__PxU32"></span><span class="target" id="class_px_bit_map_base_1abef21f29abebeffe02ecabe9ca980f4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extend</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase6extendE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase19extendUninitializedE5PxU32">
+<span id="_CPPv3N12PxBitMapBase19extendUninitializedE5PxU32"></span><span id="_CPPv2N12PxBitMapBase19extendUninitializedE5PxU32"></span><span id="PxBitMapBase::extendUninitialized__PxU32"></span><span class="target" id="class_px_bit_map_base_1add6236e28a87589e935776a646ab741f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">extendUninitialized</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase19extendUninitializedE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBase8combine1EvPK5PxU325PxU32">
+<span id="_CPPv3I0EN12PxBitMapBase8combine1EPK5PxU325PxU32"></span><span id="_CPPv2I0EN12PxBitMapBase8combine1EPK5PxU325PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Combiner</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_bit_map_base_1a2fad1e20a324c0813b9dc180d4fe70c7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">combine1</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">words</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">length</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBase8combine1EvPK5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN12PxBitMapBase8combine2EvPK5PxU325PxU32PK5PxU325PxU32">
+<span id="_CPPv3I0EN12PxBitMapBase8combine2EPK5PxU325PxU32PK5PxU325PxU32"></span><span id="_CPPv2I0EN12PxBitMapBase8combine2EPK5PxU325PxU32PK5PxU325PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Combiner</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_bit_map_base_1ad0d1522dbe732c27e6a56aff5820171a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">combine2</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">words1</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">length1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">words2</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">length2</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN12PxBitMapBase8combine2EvPK5PxU325PxU32PK5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase4mMapE">
+<span id="_CPPv3N12PxBitMapBase4mMapE"></span><span id="_CPPv2N12PxBitMapBase4mMapE"></span><span id="PxBitMapBase::mMap__PxU32P"></span><span class="target" id="class_px_bit_map_base_1a40151217753b6b2494d1ae10d08d89b5"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mMap</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase4mMapE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase10mWordCountE">
+<span id="_CPPv3N12PxBitMapBase10mWordCountE"></span><span id="_CPPv2N12PxBitMapBase10mWordCountE"></span><span id="PxBitMapBase::mWordCount__PxU32"></span><span class="target" id="class_px_bit_map_base_1a9545b60620957b2e3a9838413819ec9a"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mWordCount</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase10mWordCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase10mAllocatorE">
+<span id="_CPPv3N12PxBitMapBase10mAllocatorE"></span><span id="_CPPv2N12PxBitMapBase10mAllocatorE"></span><span id="PxBitMapBase::mAllocator__PxAllocator"></span><span class="target" id="class_px_bit_map_base_1ac2c4d0d6d1680e80eb1dfd6f32d764d1"></span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase::PxAllocator"><span class="n"><span class="pre">PxAllocator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mAllocator</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase10mAllocatorE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8mPaddingE">
+<span id="_CPPv3N12PxBitMapBase8mPaddingE"></span><span id="_CPPv2N12PxBitMapBase8mPaddingE"></span><span id="PxBitMapBase::mPadding__PxU8A"></span><span class="target" id="class_px_bit_map_base_1a144361223f00aa882fad43c4d376b900"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mPadding</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8mPaddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-friends">Friends</p>
+<dl>
+<dt class="sig sig-object cpp">
+<em class="property"><span class="pre">friend</span> <span class="pre">class</span></em> <span class="pre">Iterator</span></dt>
+</dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase3ANDE">
+<span id="_CPPv3N12PxBitMapBase3ANDE"></span><span id="_CPPv2N12PxBitMapBase3ANDE"></span><span id="PxBitMapBase::AND"></span><span class="target" id="struct_px_bit_map_base_1_1_a_n_d"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">AND</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase3ANDE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase3ANDclE5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase3ANDclE5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase3ANDclE5PxU325PxU32"></span><span id="PxBitMapBase::AND::call-operator__PxU32.PxU32"></span><span class="target" id="struct_px_bit_map_base_1_1_a_n_d_1a1b163eda3087e655ec86fafd08e887cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase3ANDclE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8IteratorE">
+<span id="_CPPv3N12PxBitMapBase8IteratorE"></span><span id="_CPPv2N12PxBitMapBase8IteratorE"></span><span id="PxBitMapBase::Iterator"></span><span class="target" id="class_px_bit_map_base_1_1_iterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8IteratorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Iterate over indices in a bitmap</p>
+<p>This iterator is good because it finds the set bit without looping over the cached bits upto 31 times. However it does require a variable shift. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8Iterator8IteratorERK12PxBitMapBase">
+<span id="_CPPv3N12PxBitMapBase8Iterator8IteratorERK12PxBitMapBase"></span><span id="_CPPv2N12PxBitMapBase8Iterator8IteratorERK12PxBitMapBase"></span><span id="PxBitMapBase::Iterator::Iterator__PxBitMapBaseCR"></span><span class="target" id="class_px_bit_map_base_1_1_iterator_1a2ae99cfa618e21124fc3b86be4d29214"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">map</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8Iterator8IteratorERK12PxBitMapBase" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8IteratoraSERK8Iterator">
+<span id="_CPPv3N12PxBitMapBase8IteratoraSERK8Iterator"></span><span id="_CPPv2N12PxBitMapBase8IteratoraSERK8Iterator"></span><span id="PxBitMapBase::Iterator::assign-operator__IteratorCR"></span><span class="target" id="class_px_bit_map_base_1_1_iterator_1aec49ad7f507e4973b931aa807a391277"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N12PxBitMapBase8IteratorE" title="PxBitMapBase::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N12PxBitMapBase8IteratorE" title="PxBitMapBase::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8IteratoraSERK8Iterator" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8Iterator7getNextEv">
+<span id="_CPPv3N12PxBitMapBase8Iterator7getNextEv"></span><span id="_CPPv2N12PxBitMapBase8Iterator7getNextEv"></span><span id="PxBitMapBase::Iterator::getNext"></span><span class="target" id="class_px_bit_map_base_1_1_iterator_1af2bc912f1a0271e062e23f2a538a20bf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8Iterator7getNextEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8Iterator5resetEv">
+<span id="_CPPv3N12PxBitMapBase8Iterator5resetEv"></span><span id="_CPPv2N12PxBitMapBase8Iterator5resetEv"></span><span id="PxBitMapBase::Iterator::reset"></span><span class="target" id="class_px_bit_map_base_1_1_iterator_1a85c6a2a98ad2a3009684935183505614"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8Iterator5resetEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase8Iterator4DONEE">
+<span id="_CPPv3N12PxBitMapBase8Iterator4DONEE"></span><span id="_CPPv2N12PxBitMapBase8Iterator4DONEE"></span><span id="PxBitMapBase::Iterator::DONE__PxU32C"></span><span class="target" id="class_px_bit_map_base_1_1_iterator_1a2fc864022fa47df2225e1fb730d5faa4"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">DONE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0xffffffff</span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase8Iterator4DONEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase2ORE">
+<span id="_CPPv3N12PxBitMapBase2ORE"></span><span id="_CPPv2N12PxBitMapBase2ORE"></span><span id="PxBitMapBase::OR"></span><span class="target" id="struct_px_bit_map_base_1_1_o_r"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OR</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase2ORE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase2ORclE5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase2ORclE5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase2ORclE5PxU325PxU32"></span><span id="PxBitMapBase::OR::call-operator__PxU32.PxU32"></span><span class="target" id="struct_px_bit_map_base_1_1_o_r_1aa6c948ceadd88d07cd7e492b197ba1b4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase2ORclE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase18PxCircularIteratorE">
+<span id="_CPPv3N12PxBitMapBase18PxCircularIteratorE"></span><span id="_CPPv2N12PxBitMapBase18PxCircularIteratorE"></span><span id="PxBitMapBase::PxCircularIterator"></span><span class="target" id="class_px_bit_map_base_1_1_px_circular_iterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCircularIterator</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase18PxCircularIteratorE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase18PxCircularIterator18PxCircularIteratorERK12PxBitMapBase5PxU32">
+<span id="_CPPv3N12PxBitMapBase18PxCircularIterator18PxCircularIteratorERK12PxBitMapBase5PxU32"></span><span id="_CPPv2N12PxBitMapBase18PxCircularIterator18PxCircularIteratorERK12PxBitMapBase5PxU32"></span><span id="PxBitMapBase::PxCircularIterator::PxCircularIterator__PxBitMapBaseCR.PxU32"></span><span class="target" id="class_px_bit_map_base_1_1_px_circular_iterator_1ad2764ef9b71d01b1852edcf5aa1eb2da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCircularIterator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">map</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase18PxCircularIterator18PxCircularIteratorERK12PxBitMapBase5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase18PxCircularIterator7getNextEv">
+<span id="_CPPv3N12PxBitMapBase18PxCircularIterator7getNextEv"></span><span id="_CPPv2N12PxBitMapBase18PxCircularIterator7getNextEv"></span><span id="PxBitMapBase::PxCircularIterator::getNext"></span><span class="target" id="class_px_bit_map_base_1_1_px_circular_iterator_1af818e164aa916808e53a41423668feca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase18PxCircularIterator7getNextEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase18PxCircularIterator4DONEE">
+<span id="_CPPv3N12PxBitMapBase18PxCircularIterator4DONEE"></span><span id="_CPPv2N12PxBitMapBase18PxCircularIterator4DONEE"></span><span id="PxBitMapBase::PxCircularIterator::DONE__PxU32C"></span><span class="target" id="class_px_bit_map_base_1_1_px_circular_iterator_1abc6c2b529fc6d92a9c447fc2a9ef1fbb"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">DONE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0xffffffff</span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase18PxCircularIterator4DONEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase14PxLoopIteratorE">
+<span id="_CPPv3N12PxBitMapBase14PxLoopIteratorE"></span><span id="_CPPv2N12PxBitMapBase14PxLoopIteratorE"></span><span id="PxBitMapBase::PxLoopIterator"></span><span class="target" id="class_px_bit_map_base_1_1_px_loop_iterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxLoopIterator</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase14PxLoopIteratorE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase14PxLoopIterator14PxLoopIteratorERK12PxBitMapBase">
+<span id="_CPPv3N12PxBitMapBase14PxLoopIterator14PxLoopIteratorERK12PxBitMapBase"></span><span id="_CPPv2N12PxBitMapBase14PxLoopIterator14PxLoopIteratorERK12PxBitMapBase"></span><span id="PxBitMapBase::PxLoopIterator::PxLoopIterator__PxBitMapBaseCR"></span><span class="target" id="class_px_bit_map_base_1_1_px_loop_iterator_1ac30e488d51d82d84967f550e3538d623"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxLoopIterator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E12PxBitMapBase" title="PxBitMapBase"><span class="n"><span class="pre">PxBitMapBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">map</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase14PxLoopIterator14PxLoopIteratorERK12PxBitMapBase" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase14PxLoopIterator7hasBitsEv">
+<span id="_CPPv3N12PxBitMapBase14PxLoopIterator7hasBitsEv"></span><span id="_CPPv2N12PxBitMapBase14PxLoopIterator7hasBitsEv"></span><span id="PxBitMapBase::PxLoopIterator::hasBits"></span><span class="target" id="class_px_bit_map_base_1_1_px_loop_iterator_1acf339b7f657d74ca569a09bac872cb1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasBits</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase14PxLoopIterator7hasBitsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase14PxLoopIterator7getNextEv">
+<span id="_CPPv3N12PxBitMapBase14PxLoopIterator7getNextEv"></span><span id="_CPPv2N12PxBitMapBase14PxLoopIterator7getNextEv"></span><span id="PxBitMapBase::PxLoopIterator::getNext"></span><span class="target" id="class_px_bit_map_base_1_1_px_loop_iterator_1a5095b765aef3b7ca39d9cf0b3ed3a13f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase14PxLoopIterator7getNextEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase3XORE">
+<span id="_CPPv3N12PxBitMapBase3XORE"></span><span id="_CPPv2N12PxBitMapBase3XORE"></span><span id="PxBitMapBase::XOR"></span><span class="target" id="struct_px_bit_map_base_1_1_x_o_r"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">XOR</span></span></span><a class="headerlink" href="#_CPPv4N12PxBitMapBase3XORE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxBitMapBase3XORclE5PxU325PxU32">
+<span id="_CPPv3N12PxBitMapBase3XORclE5PxU325PxU32"></span><span id="_CPPv2N12PxBitMapBase3XORclE5PxU325PxU32"></span><span id="PxBitMapBase::XOR::call-operator__PxU32.PxU32"></span><span class="target" id="struct_px_bit_map_base_1_1_x_o_r_1a4fa7c9162883bcd5819b1c2705a5fcd8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxBitMapBase3XORclE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

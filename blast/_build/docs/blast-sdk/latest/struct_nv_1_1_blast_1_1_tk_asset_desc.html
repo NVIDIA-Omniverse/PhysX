@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::TkAssetDesc &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::TkAssetDesc</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-tkassetdesc">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-tk-asset-desc"></span><h1>Nv::Blast::TkAssetDesc<a class="headerlink" href="#nv-blast-tkassetdesc" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkFramework.h.html#file-toolkit-nvblasttkframework-h"><span class="std std-ref">toolkit/NvBlastTkFramework.h</span></a></p>
+<div class="section" id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">NvBlastAssetDesc</span></code> (<a class="reference internal" href="struct_nv_blast_asset_desc.html#exhale-struct-struct-nv-blast-asset-desc"><span class="std std-ref">NvBlastAssetDesc</span></a>)</p></li>
+</ul>
+</div>
+<div class="section" id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::ExtPxAssetDesc</span></code> (<a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_asset_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-ext-px-asset-desc"><span class="std std-ref">Nv::Blast::ExtPxAssetDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDescE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDescE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDescE"></span><span id="Nv::Blast::TkAssetDesc"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkAssetDesc</span></code> <span class="pre">:</span> <em class="property"><span class="pre">public</span></em> <a class="reference internal" href="struct_nv_blast_asset_desc.html#_CPPv416NvBlastAssetDesc" title="NvBlastAssetDesc"><span class="pre">NvBlastAssetDesc</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDescE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Descriptor for asset creation. </p>
+<p>Used to create a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a>. This may be used by an authoring tool to describe the asset to be created.</p>
+<p>The <a class="reference internal" href="#struct_nv_1_1_blast_1_1_tk_asset_desc"><span class="std std-ref">TkAssetDesc</span></a> is a simple extension of the low-level <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> descriptor, <a class="reference internal" href="struct_nv_blast_asset_desc.html#struct_nv_blast_asset_desc"><span class="std std-ref">NvBlastAssetDesc</span></a>. </p>
+<p>Subclassed by <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_asset_desc.html#struct_nv_1_1_blast_1_1_ext_px_asset_desc"><span class="std std-ref">Nv::Blast::ExtPxAssetDesc</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9BondFlagsE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9BondFlagsE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9BondFlagsE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc_1a15a3f484366da17014e60980753a39cc"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">BondFlags</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9BondFlagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Flags which may be associated with each bond described in the base <a class="reference internal" href="struct_nv_blast_asset_desc.html#struct_nv_blast_asset_desc"><span class="std std-ref">NvBlastAssetDesc</span></a>. </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9BondFlags7NoFlagsE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9BondFlags7NoFlagsE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9BondFlags7NoFlagsE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc_1a15a3f484366da17014e60980753a39cca1f14e7d9defb7fb5476b281741f3d2be"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">NoFlags</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9BondFlags7NoFlagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9BondFlags11BondJointedE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9BondFlags11BondJointedE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9BondFlags11BondJointedE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc_1a15a3f484366da17014e60980753a39cca6577aa74a8951c3cab057e369702e416"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">BondJointed</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9BondFlags11BondJointedE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>If this flag is set then a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> will be created joining the support chunks jointed by the bond. </p>
+<p>These joints will remain “quiet” until the actor is split in such a way that the joint joins two different actors. In that case, a <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#struct_nv_1_1_blast_1_1_tk_joint_update_event"><span class="std std-ref">TkJointUpdateEvent</span></a> will be dispatched with subtype External. (See <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#struct_nv_1_1_blast_1_1_tk_joint_update_event"><span class="std std-ref">TkJointUpdateEvent</span></a>.) </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc11TkAssetDescEv">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc11TkAssetDescEv"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc11TkAssetDescEv"></span><span id="Nv::Blast::TkAssetDesc::TkAssetDesc"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc_1a12f1bf331d235d678ea5b1d8c98d2e8e"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">TkAssetDesc</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc11TkAssetDescEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constructor sets sane default values. </p>
+<p>The zero chunkCount will cause TkFramework::createAsset(…) to fail, though gracefully. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9bondFlagsE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9bondFlagsE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9bondFlagsE"></span><span id="Nv::Blast::TkAssetDesc::bondFlags__uint8_tCP"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_asset_desc_1a7c465247a0317fe6a46f32c4850bfa87"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint8_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">bondFlags</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9bondFlagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>An array of size bondCount, see BondFlags. </p>
+<p>If NULL, all flags are assumed to be NoFlags. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc10chunkCountE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc10chunkCountE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc10chunkCountE"></span><span id="Nv::Blast::TkAssetDesc::chunkCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_desc_1a1114233ec7143f7bf17081de0958de88"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">chunkCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc10chunkCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of chunk descriptors. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc10chunkDescsE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc10chunkDescsE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc10chunkDescsE"></span><span id="Nv::Blast::TkAssetDesc::chunkDescs__NvBlastChunkDescCP"></span><span class="target" id="struct_nv_blast_asset_desc_1a262022943f835bbbf7c937b485f47cd7"></span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_chunk_desc.html#_CPPv416NvBlastChunkDesc" title="NvBlastChunkDesc"><span class="pre">NvBlastChunkDesc</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">chunkDescs</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc10chunkDescsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Array of chunk descriptors of size chunkCount. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9bondCountE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9bondCountE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9bondCountE"></span><span id="Nv::Blast::TkAssetDesc::bondCount__uint32_t"></span><span class="target" id="struct_nv_blast_asset_desc_1a99fc905bd927696652cfab4c562f1bdc"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">bondCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9bondCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of bond descriptors. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast11TkAssetDesc9bondDescsE">
+<span id="_CPPv3N2Nv5Blast11TkAssetDesc9bondDescsE"></span><span id="_CPPv2N2Nv5Blast11TkAssetDesc9bondDescsE"></span><span id="Nv::Blast::TkAssetDesc::bondDescs__NvBlastBondDescCP"></span><span class="target" id="struct_nv_blast_asset_desc_1af9ee95aba486c075fe87d8a117727d4f"></span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">bondDescs</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkAssetDesc9bondDescsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Array of bond descriptors of size bondCount. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

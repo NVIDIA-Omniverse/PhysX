@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMeshScale &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMeshScale</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmeshscale">
+<span id="exhale-class-class-px-mesh-scale"></span><h1>PxMeshScale<a class="headerlink" href="#pxmeshscale" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxMeshScale.h.html#file-include-geometry-pxmeshscale-h"><span class="std std-ref">include/geometry/PxMeshScale.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv411PxMeshScale">
+<span id="_CPPv311PxMeshScale"></span><span id="_CPPv211PxMeshScale"></span><span id="PxMeshScale"></span><span class="target" id="class_px_mesh_scale"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshScale</span></span></span><a class="headerlink" href="#_CPPv411PxMeshScale" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A class expressing a nonuniform scaling transformation. </p>
+<p>The scaling is along arbitrary axes that are specified by <a class="reference internal" href="#class_px_mesh_scale_1a63902c04c9a3f326b5f969fa931e53fd"><span class="std std-ref">PxMeshScale::rotation</span></a>. Specifically, <a class="reference internal" href="#class_px_mesh_scale_1a63902c04c9a3f326b5f969fa931e53fd"><span class="std std-ref">PxMeshScale::rotation</span></a> describes the rotation from the scaling-axes frame to the mesh-local frame, i.e. PxMeshScale::rotation.rotate(v) transforms the coordinates of vertex v from the mesh-local frame to the scaling-axes frame.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_convex_mesh_geometry.html#class_px_convex_mesh_geometry"><span class="std std-ref">PxConvexMeshGeometry</span></a> <a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Negative scale values are supported for <a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> with absolute values for each component within [PX_MIN_ABS_MESH_SCALE, PX_MAX_ABS_MESH_SCALE] range. Negative scale causes a reflection around the specified axis, in addition PhysX will flip the normals for mesh triangles when scale.x*scale.y*scale.z &lt; 0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only positive scale values are supported for <a class="reference internal" href="class_px_convex_mesh_geometry.html#class_px_convex_mesh_geometry"><span class="std std-ref">PxConvexMeshGeometry</span></a> with values for each component within [PX_MIN_ABS_MESH_SCALE, PX_MAX_ABS_MESH_SCALE] range).</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale11PxMeshScaleEv">
+<span id="_CPPv3N11PxMeshScale11PxMeshScaleEv"></span><span id="_CPPv2N11PxMeshScale11PxMeshScaleEv"></span><span id="PxMeshScale::PxMeshScale"></span><span class="target" id="class_px_mesh_scale_1a4e162ac163068189a01b6ef7e1be6411"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshScale11PxMeshScaleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor initializes to identity scale. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale11PxMeshScaleE6PxReal">
+<span id="_CPPv3N11PxMeshScale11PxMeshScaleE6PxReal"></span><span id="_CPPv2N11PxMeshScale11PxMeshScaleE6PxReal"></span><span id="PxMeshScale::PxMeshScale__PxReal"></span><span class="target" id="class_px_mesh_scale_1a4f2046a501c6d49a3417a2fde4efb534"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshScale</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">r</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshScale11PxMeshScaleE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor from scalar. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale11PxMeshScaleERK6PxVec3">
+<span id="_CPPv3N11PxMeshScale11PxMeshScaleERK6PxVec3"></span><span id="_CPPv2N11PxMeshScale11PxMeshScaleERK6PxVec3"></span><span id="PxMeshScale::PxMeshScale__PxVec3CR"></span><span class="target" id="class_px_mesh_scale_1a91b1285b7913425a4154b117dac29873"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">s</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshScale11PxMeshScaleERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to initialize to arbitrary scale and identity scale rotation. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale11PxMeshScaleERK6PxVec3RK6PxQuat">
+<span id="_CPPv3N11PxMeshScale11PxMeshScaleERK6PxVec3RK6PxQuat"></span><span id="_CPPv2N11PxMeshScale11PxMeshScaleERK6PxVec3RK6PxQuat"></span><span id="PxMeshScale::PxMeshScale__PxVec3CR.PxQuatCR"></span><span class="target" id="class_px_mesh_scale_1aa5cdc29a0a8e57e989d69739cc6235ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">s</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">r</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshScale11PxMeshScaleERK6PxVec3RK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to initialize to arbitrary scaling. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale10isIdentityEv">
+<span id="_CPPv3NK11PxMeshScale10isIdentityEv"></span><span id="_CPPv2NK11PxMeshScale10isIdentityEv"></span><span id="PxMeshScale::isIdentityC"></span><span class="target" id="class_px_mesh_scale_1a10e0202b25ceb55e516c7290c39e6eba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isIdentity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale10isIdentityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the scaling is an identity transformation. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale10getInverseEv">
+<span id="_CPPv3NK11PxMeshScale10getInverseEv"></span><span id="_CPPv2NK11PxMeshScale10getInverseEv"></span><span id="PxMeshScale::getInverseC"></span><span class="target" id="class_px_mesh_scale_1a7160ee21b6657f20e6c0ef296d4d23e0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInverse</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale10getInverseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the inverse of this scaling transformation. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale7toMat33Ev">
+<span id="_CPPv3NK11PxMeshScale7toMat33Ev"></span><span id="_CPPv2NK11PxMeshScale7toMat33Ev"></span><span id="PxMeshScale::toMat33C"></span><span class="target" id="class_px_mesh_scale_1a5e400f0d1c372288d663668c55875e68"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">toMat33</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale7toMat33Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Converts this transformation to a 3x3 matrix representation. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale22hasNegativeDeterminantEv">
+<span id="_CPPv3NK11PxMeshScale22hasNegativeDeterminantEv"></span><span id="_CPPv2NK11PxMeshScale22hasNegativeDeterminantEv"></span><span id="PxMeshScale::hasNegativeDeterminantC"></span><span class="target" id="class_px_mesh_scale_1a99c2bc4cc9e31e67c14a62a9aa28dcb6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hasNegativeDeterminant</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale22hasNegativeDeterminantEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if combination of negative scale components will cause the triangle normal to flip. </p>
+<p>The SDK will flip the normals internally. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale9transformERK6PxVec3">
+<span id="_CPPv3NK11PxMeshScale9transformERK6PxVec3"></span><span id="_CPPv2NK11PxMeshScale9transformERK6PxVec3"></span><span id="PxMeshScale::transform__PxVec3CRC"></span><span class="target" id="class_px_mesh_scale_1a0c82479cb5c6700dfb3216550622cc2b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale9transformERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale22isValidForTriangleMeshEv">
+<span id="_CPPv3NK11PxMeshScale22isValidForTriangleMeshEv"></span><span id="_CPPv2NK11PxMeshScale22isValidForTriangleMeshEv"></span><span id="PxMeshScale::isValidForTriangleMeshC"></span><span class="target" id="class_px_mesh_scale_1a5dbd0f273ae6b3df0647f9d10bde5e84"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValidForTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale22isValidForTriangleMeshEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxMeshScale20isValidForConvexMeshEv">
+<span id="_CPPv3NK11PxMeshScale20isValidForConvexMeshEv"></span><span id="_CPPv2NK11PxMeshScale20isValidForConvexMeshEv"></span><span id="PxMeshScale::isValidForConvexMeshC"></span><span class="target" id="class_px_mesh_scale_1aa02b575786ff1105637a9c99e95519e0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValidForConvexMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxMeshScale20isValidForConvexMeshEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale5scaleE">
+<span id="_CPPv3N11PxMeshScale5scaleE"></span><span id="_CPPv2N11PxMeshScale5scaleE"></span><span id="PxMeshScale::scale__PxVec3"></span><span class="target" id="class_px_mesh_scale_1a12f2dbcf5214c4c5956dab0e75831449"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N11PxMeshScale5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A nonuniform scaling. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshScale8rotationE">
+<span id="_CPPv3N11PxMeshScale8rotationE"></span><span id="_CPPv2N11PxMeshScale8rotationE"></span><span id="PxMeshScale::rotation__PxQuat"></span><span class="target" id="class_px_mesh_scale_1a63902c04c9a3f326b5f969fa931e53fd"></span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotation</span></span></span><a class="headerlink" href="#_CPPv4N11PxMeshScale8rotationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The orientation of the scaling axes. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

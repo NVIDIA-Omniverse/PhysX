@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtPxStressSolver &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtPxStressSolver</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extpxstresssolver">
+<span id="exhale-class-class-nv-1-1-blast-1-1-ext-px-stress-solver"></span><h1>Nv::Blast::ExtPxStressSolver<a class="headerlink" href="#nv-blast-extpxstresssolver" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_physx_NvBlastExtPxStressSolver.h.html#file-extensions-physx-nvblastextpxstresssolver-h"><span class="std std-ref">extensions/physx/NvBlastExtPxStressSolver.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast17ExtPxStressSolverE">
+<span id="_CPPv3N2Nv5Blast17ExtPxStressSolverE"></span><span id="_CPPv2N2Nv5Blast17ExtPxStressSolverE"></span><span id="Nv::Blast::ExtPxStressSolver"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_stress_solver"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtPxStressSolver</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast17ExtPxStressSolverE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Px Stress Solver. </p>
+<p>Px wrapper over <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>.</p>
+<p>Uses <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> and <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>. see #ExtStressSolver for more details. Works on both dynamic and static actor’s within family. For static actors it applies gravity. For dynamic actors it applies centrifugal force. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast17ExtPxStressSolver7releaseEv">
+<span id="_CPPv3N2Nv5Blast17ExtPxStressSolver7releaseEv"></span><span id="_CPPv2N2Nv5Blast17ExtPxStressSolver7releaseEv"></span><span id="Nv::Blast::ExtPxStressSolver::release"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_stress_solver_1ac7ec25ddae3a5d7a187139f98dc4752f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast17ExtPxStressSolver7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this stress solver. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast17ExtPxStressSolver9getSolverEv">
+<span id="_CPPv3NK2Nv5Blast17ExtPxStressSolver9getSolverEv"></span><span id="_CPPv2NK2Nv5Blast17ExtPxStressSolver9getSolverEv"></span><span id="Nv::Blast::ExtPxStressSolver::getSolverC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_stress_solver_1a380d5149991ddd30f4655381fec3479a"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#_CPPv4N2Nv5Blast15ExtStressSolverE" title="Nv::Blast::ExtStressSolver"><span class="pre">ExtStressSolver</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getSolver</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast17ExtPxStressSolver9getSolverEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get actual <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a> used. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the pointer to <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a> used internally. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast17ExtPxStressSolver6updateEb">
+<span id="_CPPv3N2Nv5Blast17ExtPxStressSolver6updateEb"></span><span id="_CPPv2N2Nv5Blast17ExtPxStressSolver6updateEb"></span><span id="Nv::Blast::ExtPxStressSolver::update__b"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_stress_solver_1a7e5295b0db1eb3224ffbc6cdf9b24681"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">update</span></code><span class="sig-paren">(</span><span class="pre">bool</span> <em><span class="pre">doDamage</span></em> <span class="pre">=</span> <span class="pre">true</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast17ExtPxStressSolver6updateEb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Update stress solver. </p>
+<p>Calculate stress and optionally apply damage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doDamage</strong> – <strong>[in]</strong> If ‘true’ damage will be applied after stress solver. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast17ExtPxStressSolver6createER11ExtPxFamily23ExtStressSolverSettings">
+<span id="_CPPv3N2Nv5Blast17ExtPxStressSolver6createER11ExtPxFamily23ExtStressSolverSettings"></span><span id="_CPPv2N2Nv5Blast17ExtPxStressSolver6createER11ExtPxFamily23ExtStressSolverSettings"></span><span id="Nv::Blast::ExtPxStressSolver::create__ExtPxFamilyR.ExtStressSolverSettings"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_stress_solver_1a2c98eb8bb98fd0c9823164df05c5f76c"></span><em class="property"><span class="pre">static</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast17ExtPxStressSolverE" title="Nv::Blast::ExtPxStressSolver"><span class="pre">ExtPxStressSolver</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#_CPPv4N2Nv5Blast11ExtPxFamilyE" title="Nv::Blast::ExtPxFamily"><span class="pre">ExtPxFamily</span></a> <span class="pre">&amp;</span><em><span class="pre">family</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a> <em><span class="pre">settings</span></em> <span class="pre">=</span> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html#_CPPv4N2Nv5Blast23ExtStressSolverSettingsE" title="Nv::Blast::ExtStressSolverSettings"><span class="pre">ExtStressSolverSettings</span></a><span class="pre">(</span><span class="pre">)</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast17ExtPxStressSolver6createER11ExtPxFamily23ExtStressSolverSettings" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a new <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>family</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> instance to calculate stress on. </p></li>
+<li><p><strong>settings</strong> – <strong>[in]</strong> The settings to be set on <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the new <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_stress_solver.html#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a> if successful, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

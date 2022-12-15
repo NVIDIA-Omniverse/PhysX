@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/PxBroadPhase.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/PxBroadPhase.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-pxbroadphase-h">
+<span id="file-include-pxbroadphase-h"></span><h1>include/PxBroadPhase.h<a class="headerlink" href="#include-pxbroadphase-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include.html#dir-include"><span class="std std-ref">include/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_PxBroadPhase.h.html#program-listing-file-include-pxbroadphase-h"><span class="std std-ref">include/PxBroadPhase.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_PxSceneDesc.h.html#file-include-pxscenedesc-h"><span class="std std-ref">include/PxSceneDesc.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_broad_phase_caps.html#exhale-struct-struct-px-broad-phase-caps"><span class="std std-ref">PxBroadPhaseCaps</span></a>: Caps class for broad phase.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_pair.html#exhale-struct-struct-px-broad-phase-pair"><span class="std std-ref">PxBroadPhasePair</span></a>: Broadphase pair.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_region.html#exhale-struct-struct-px-broad-phase-region"><span class="std std-ref">PxBroadPhaseRegion</span></a>: “Region of interest” for the broad-phase.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_region_info.html#exhale-struct-struct-px-broad-phase-region-info"><span class="std std-ref">PxBroadPhaseRegionInfo</span></a>: Information &amp; stats structure for a region.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_results.html#exhale-struct-struct-px-broad-phase-results"><span class="std std-ref">PxBroadPhaseResults</span></a>: Broadphase results.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_type.html#exhale-struct-struct-px-broad-phase-type"><span class="std std-ref">PxBroadPhaseType</span></a>: Broad phase algorithm used in the simulation.</p></li>
+<li><p><a class="reference internal" href="class_px_a_a_b_b_manager.html#exhale-class-class-px-a-a-b-b-manager"><span class="std std-ref">PxAABBManager</span></a>: High-level broadphase API.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase.html#exhale-class-class-px-broad-phase"><span class="std std-ref">PxBroadPhase</span></a>: Low-level broadphase API.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_desc.html#exhale-class-class-px-broad-phase-desc"><span class="std std-ref">PxBroadPhaseDesc</span></a>: Broadphase descriptor.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_regions.html#exhale-class-class-px-broad-phase-regions"><span class="std std-ref">PxBroadPhaseRegions</span></a>: Broadphase regions.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_update_data.html#exhale-class-class-px-broad-phase-update-data"><span class="std std-ref">PxBroadPhaseUpdateData</span></a>: Broadphase data update structure.</p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__physics_1ga31c52c7176f315ad16955e3f49bf53d0.html#exhale-function-group-physics-1ga31c52c7176f315ad16955e3f49bf53d0"><span class="std std-ref">PxCreateAABBManager</span></a>: AABB manager factory function.</p></li>
+<li><p><a class="reference internal" href="function_group__physics_1ga83abea8c6c41790d092e9c58ef23640d.html#exhale-function-group-physics-1ga83abea8c6c41790d092e9c58ef23640d"><span class="std std-ref">PxCreateBroadPhase</span></a>: Broadphase factory function.</p></li>
+<li><p><a class="reference internal" href="function_group__physics_1gac9d7297cfb5c65fcbcf805f9f0a11e79.html#exhale-function-group-physics-1gac9d7297cfb5c65fcbcf805f9f0a11e79"><span class="std std-ref">PxGetBroadPhaseDynamicFilterGroup</span></a>: Retrieves a filter group for dynamic objects.</p></li>
+<li><p><a class="reference internal" href="function_group__physics_1gabf82dd0942fbc9eb09a056d24bf15f38.html#exhale-function-group-physics-1gabf82dd0942fbc9eb09a056d24bf15f38"><span class="std std-ref">PxGetBroadPhaseKinematicFilterGroup</span></a>: Retrieves a filter group for kinematic objects.</p></li>
+<li><p><a class="reference internal" href="function_group__physics_1ga1f2c1eefbafd77c5fff1ea52f5a4925a.html#exhale-function-group-physics-1ga1f2c1eefbafd77c5fff1ea52f5a4925a"><span class="std std-ref">PxGetBroadPhaseStaticFilterGroup</span></a>: Retrieves the filter group for static objects.</p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0.html#exhale-define-group-physics-1ga958cab7a1c8dd03d27a259aff100e0e0"><span class="std std-ref">PX_INVALID_BP_FILTER_GROUP</span></a>: Invalid broadphase filter group.</p></li>
+</ul>
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef_group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58.html#exhale-typedef-group-physics-1ga8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a>: Broadphase filter group.</p></li>
+<li><p><a class="reference internal" href="typedef_group__physics_1ga1ae85a90f4c8bc8fa0119101077273a8.html#exhale-typedef-group-physics-1ga1ae85a90f4c8bc8fa0119101077273a8"><span class="std std-ref">PxBpIndex</span></a>: Broadphase index. Indexes bounds, groups and distance arrays.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::VoronoiSitesGenerator &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::VoronoiSitesGenerator</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-voronoisitesgenerator">
+<span id="exhale-class-class-nv-1-1-blast-1-1-voronoi-sites-generator"></span><h1>Nv::Blast::VoronoiSitesGenerator<a class="headerlink" href="#nv-blast-voronoisitesgenerator" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringFractureTool.h.html#file-extensions-authoring-nvblastextauthoringfracturetool-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringFractureTool.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGeneratorE">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGeneratorE"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGeneratorE"></span><span id="Nv::Blast::VoronoiSitesGenerator"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">VoronoiSitesGenerator</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGeneratorE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Class for voronoi sites generation inside supplied mesh. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGeneratorD0Ev">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGeneratorD0Ev"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGeneratorD0Ev"></span><span id="Nv::Blast::VoronoiSitesGenerator::~VoronoiSitesGenerator"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a8d4ddd2ad08b37a448fa033141a297a8"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~VoronoiSitesGenerator</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGeneratorD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator7releaseEv">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator7releaseEv"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator7releaseEv"></span><span id="Nv::Blast::VoronoiSitesGenerator::release"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a6a0531d652867a7f973dcd5559800b5b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release <a class="reference internal" href="#class_nv_1_1_blast_1_1_voronoi_sites_generator"><span class="std std-ref">VoronoiSitesGenerator</span></a> memory. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator11setBaseMeshEPK4Mesh">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator11setBaseMeshEPK4Mesh"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator11setBaseMeshEPK4Mesh"></span><span id="Nv::Blast::VoronoiSitesGenerator::setBaseMesh__MeshCP"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1ab25db00f7569db1719408b4cf2a0e112"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setBaseMesh</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><em><span class="pre">mesh</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator11setBaseMeshEPK4Mesh" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set base fracture mesh. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator15getVoronoiSitesERPK7NvcVec3">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator15getVoronoiSitesERPK7NvcVec3"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator15getVoronoiSitesERPK7NvcVec3"></span><span id="Nv::Blast::VoronoiSitesGenerator::getVoronoiSites__NvcVec3CPR"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1aa31f1b2170e2ba7f2971d43889be5b7e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVoronoiSites</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">sites</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator15getVoronoiSitesERPK7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Access to generated voronoi sites. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Pointer</strong> – <strong>[out]</strong> to generated voronoi sites </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Count of generated voronoi sites. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator7addSiteERK7NvcVec3">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator7addSiteERK7NvcVec3"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator7addSiteERK7NvcVec3"></span><span id="Nv::Blast::VoronoiSitesGenerator::addSite__NvcVec3CR"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a348cdad317d00510f625dd1997147aaf"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">addSite</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">site</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator7addSiteERK7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Add site in particular point. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>site</strong> – <strong>[in]</strong> Site coordinates </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator28uniformlyGenerateSitesInMeshE8uint32_t">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator28uniformlyGenerateSitesInMeshE8uint32_t"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator28uniformlyGenerateSitesInMeshE8uint32_t"></span><span id="Nv::Blast::VoronoiSitesGenerator::uniformlyGenerateSitesInMesh__uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a1940917c639e2f134530d24e144022b8"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">uniformlyGenerateSitesInMesh</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">numberOfSites</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator28uniformlyGenerateSitesInMeshE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Uniformly generate sites inside the mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>numberOfSites</strong> – <strong>[in]</strong> Number of generated sites </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator24clusteredSitesGenerationE8uint32_t8uint32_tf">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator24clusteredSitesGenerationE8uint32_t8uint32_tf"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator24clusteredSitesGenerationE8uint32_t8uint32_tf"></span><span id="Nv::Blast::VoronoiSitesGenerator::clusteredSitesGeneration__uint32_t.uint32_t.float"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1ac9261d76e925a9e514dbb68cf098e4ce"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">clusteredSitesGeneration</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">numberOfClusters</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">sitesPerCluster</span></em>, <span class="pre">float</span> <em><span class="pre">clusterRadius</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator24clusteredSitesGenerationE8uint32_t8uint32_tf" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Generate sites in clustered fashion. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>numberOfClusters</strong> – <strong>[in]</strong> Number of generated clusters </p></li>
+<li><p><strong>sitesPerCluster</strong> – <strong>[in]</strong> Number of sites in each cluster </p></li>
+<li><p><strong>clusterRadius</strong> – <strong>[in]</strong> Voronoi cells cluster radius </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator13radialPatternERK7NvcVec3RK7NvcVec3f7int32_t7int32_tff">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator13radialPatternERK7NvcVec3RK7NvcVec3f7int32_t7int32_tff"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator13radialPatternERK7NvcVec3RK7NvcVec3f7int32_t7int32_tff"></span><span id="Nv::Blast::VoronoiSitesGenerator::radialPattern__NvcVec3CR.NvcVec3CR.float.int32_t.int32_t.float.float"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a6215ef7c5124ef4b9baa24941102f740"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">radialPattern</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">center</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">normal</span></em>, <span class="pre">float</span> <em><span class="pre">radius</span></em>, <span class="pre">int32_t</span> <em><span class="pre">angularSteps</span></em>, <span class="pre">int32_t</span> <em><span class="pre">radialSteps</span></em>, <span class="pre">float</span> <em><span class="pre">angleOffset</span></em> <span class="pre">=</span> <span class="pre">0.0f</span>, <span class="pre">float</span> <em><span class="pre">variability</span></em> <span class="pre">=</span> <span class="pre">0.0f</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator13radialPatternERK7NvcVec3RK7NvcVec3f7int32_t7int32_tff" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Radial pattern of sites generation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>center</strong> – <strong>[in]</strong> Center of generated pattern </p></li>
+<li><p><strong>normal</strong> – <strong>[in]</strong> Normal to plane in which sites are generated </p></li>
+<li><p><strong>radius</strong> – <strong>[in]</strong> Pattern radius </p></li>
+<li><p><strong>angularSteps</strong> – <strong>[in]</strong> Number of angular steps </p></li>
+<li><p><strong>radialSteps</strong> – <strong>[in]</strong> Number of radial steps </p></li>
+<li><p><strong>angleOffset</strong> – <strong>[in]</strong> Angle offset at each radial step </p></li>
+<li><p><strong>variability</strong> – <strong>[in]</strong> Randomness of sites distribution </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator16generateInSphereEK8uint32_tKfRK7NvcVec3">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator16generateInSphereEK8uint32_tKfRK7NvcVec3"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator16generateInSphereEK8uint32_tKfRK7NvcVec3"></span><span id="Nv::Blast::VoronoiSitesGenerator::generateInSphere__uint32_tC.floatC.NvcVec3CR"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1ae304895ab92caa5c119bfc63370ee394"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">generateInSphere</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <em><span class="pre">count</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <em><span class="pre">radius</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">center</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator16generateInSphereEK8uint32_tKfRK7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Generate sites inside sphere. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>count</strong> – <strong>[in]</strong> Count of generated sites </p></li>
+<li><p><strong>radius</strong> – <strong>[in]</strong> Radius of sphere </p></li>
+<li><p><strong>center</strong> – <strong>[in]</strong> Center of sphere </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator10setStencilEPK4Mesh">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator10setStencilEPK4Mesh"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator10setStencilEPK4Mesh"></span><span id="Nv::Blast::VoronoiSitesGenerator::setStencil__MeshCP"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1abf0eeed0dc2a632c85572b4026b195c2"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setStencil</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><em><span class="pre">stencil</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator10setStencilEPK4Mesh" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set stencil mesh. </p>
+<p>With stencil mesh sites are generated only inside both of fracture and stencil meshes. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stencil</strong> – <strong>[in]</strong> Stencil mesh. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator12clearStencilEv">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator12clearStencilEv"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator12clearStencilEv"></span><span id="Nv::Blast::VoronoiSitesGenerator::clearStencil"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1a248bef86683470a1e3b83248cd2be110"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">clearStencil</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator12clearStencilEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Removes stencil mesh. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast21VoronoiSitesGenerator14deleteInSphereEKfRK7NvcVec3Kf">
+<span id="_CPPv3N2Nv5Blast21VoronoiSitesGenerator14deleteInSphereEKfRK7NvcVec3Kf"></span><span id="_CPPv2N2Nv5Blast21VoronoiSitesGenerator14deleteInSphereEKfRK7NvcVec3Kf"></span><span id="Nv::Blast::VoronoiSitesGenerator::deleteInSphere__floatC.NvcVec3CR.floatC"></span><span class="target" id="class_nv_1_1_blast_1_1_voronoi_sites_generator_1aa0c4ff542d7a89144e2cfe4e0ef734d9"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">deleteInSphere</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <em><span class="pre">radius</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">&amp;</span><em><span class="pre">center</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <em><span class="pre">eraserProbability</span></em> <span class="pre">=</span> <span class="pre">1</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast21VoronoiSitesGenerator14deleteInSphereEKfRK7NvcVec3Kf" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Deletes sites inside supplied sphere. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>radius</strong> – <strong>[in]</strong> Radius of sphere </p></li>
+<li><p><strong>center</strong> – <strong>[in]</strong> Center of sphere </p></li>
+<li><p><strong>eraserProbability</strong> – <strong>[in]</strong> Probability of removing some particular site </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

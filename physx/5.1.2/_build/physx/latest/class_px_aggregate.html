@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxAggregate &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxAggregate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxaggregate">
+<span id="exhale-class-class-px-aggregate"></span><h1>PxAggregate<a class="headerlink" href="#pxaggregate" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxAggregate.h.html#file-include-pxaggregate-h"><span class="std std-ref">include/PxAggregate.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxBase</span></code> (<a class="reference internal" href="class_px_base.html#exhale-class-class-px-base"><span class="std std-ref">PxBase</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv411PxAggregate">
+<span id="_CPPv311PxAggregate"></span><span id="_CPPv211PxAggregate"></span><span id="PxAggregate"></span><span class="target" id="class_px_aggregate"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAggregate</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><a class="headerlink" href="#_CPPv411PxAggregate" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Class to aggregate actors into a single broad-phase entry. </p>
+<p>A <a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> object is a collection of PxActors, which will exist as a single entry in the broad-phase structures. This has 3 main benefits:</p>
+<p>1) it reduces “broad phase pollution” by allowing a collection of spatially coherent broad-phase entries to be replaced by a single aggregated entry (e.g. a ragdoll or a single actor with a large number of attached shapes).</p>
+<p>2) it reduces broad-phase memory usage</p>
+<p>3) filtering can be optimized a lot if self-collisions within an aggregate are not needed. For example if you don’t need collisions between ragdoll bones, it’s faster to simply disable filtering once and for all, for the aggregate containing the ragdoll, rather than filtering out each bone-bone collision in the filter shader.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a>, <a class="reference internal" href="class_px_physics.html#class_px_physics_1ac9eb4d120f21ea39e1443f1aeac2cb83"><span class="std std-ref">PxPhysics.createAggregate</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate7releaseEv">
+<span id="_CPPv3N11PxAggregate7releaseEv"></span><span id="_CPPv2N11PxAggregate7releaseEv"></span><span id="PxAggregate::release"></span><span class="target" id="class_px_aggregate_1a4e49bed771f4c7804dfac6882c2af273"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deletes the aggregate object. </p>
+<p>Deleting the <a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> object does not delete the aggregated actors. If the <a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> object belongs to a scene, the aggregated actors are automatically re-inserted in that scene. If you intend to delete both the <a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> and its actors, it is best to release the actors first, then release the <a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> when it is empty. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate8addActorER7PxActorPK5PxBVH">
+<span id="_CPPv3N11PxAggregate8addActorER7PxActorPK5PxBVH"></span><span id="_CPPv2N11PxAggregate8addActorER7PxActorPK5PxBVH"></span><span id="PxAggregate::addActor__PxActorR.PxBVHCP"></span><span class="target" id="class_px_aggregate_1a8b5e6d597fda876c1d881c4e719d6c14"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addActor</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h.html#_CPPv45PxBVH" title="PxBVH"><span class="n"><span class="pre">PxBVH</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bvh</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate8addActorER7PxActorPK5PxBVH" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds an actor to the aggregate object. </p>
+<p>A warning is output if the total number of actors is reached, or if the incoming actor already belongs to an aggregate.</p>
+<p>If the aggregate belongs to a scene, adding an actor to the aggregate also adds the actor to that scene.</p>
+<p>If the actor already belongs to a scene, a warning is output and the call is ignored. You need to remove the actor from the scene first, before adding it to the aggregate.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When a BVH is provided the actor shapes are grouped together. The scene query pruning structure inside PhysX SDK will store/update one bound per actor. The scene queries against such an actor will query actor bounds and then make a local space query against the provided BVH, which is in actor’s local space.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The actor that should be added to the aggregate </p></li>
+<li><p><strong>bvh</strong> – <strong>[in]</strong> BVH for actor shapes. return true if success </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate11removeActorER7PxActor">
+<span id="_CPPv3N11PxAggregate11removeActorER7PxActor"></span><span id="_CPPv2N11PxAggregate11removeActorER7PxActor"></span><span id="PxAggregate::removeActor__PxActorR"></span><span class="target" id="class_px_aggregate_1a70b1868fc13cbd7675684380cd434613"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeActor</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate11removeActorER7PxActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes an actor from the aggregate object. </p>
+<p>A warning is output if the incoming actor does not belong to the aggregate. Otherwise the actor is removed from the aggregate. If the aggregate belongs to a scene, the actor is reinserted in that scene. If you intend to delete the actor, it is best to call <a class="reference internal" href="class_px_particle_system.html#class_px_actor_1a589a4e70ef83b583ee6a4fc5c7767762"><span class="std std-ref">PxActor::release()</span></a> directly. That way the actor will be automatically removed from its aggregate (if any) and not reinserted in a scene.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The actor that should be removed from the aggregate return true if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate15addArticulationER31PxArticulationReducedCoordinate">
+<span id="_CPPv3N11PxAggregate15addArticulationER31PxArticulationReducedCoordinate"></span><span id="_CPPv2N11PxAggregate15addArticulationER31PxArticulationReducedCoordinate"></span><span id="PxAggregate::addArticulation__PxArticulationReducedCoordinateR"></span><span class="target" id="class_px_aggregate_1a162c9655ba68ada224fb5f52b708ab27"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addArticulation</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#_CPPv431PxArticulationReducedCoordinate" title="PxArticulationReducedCoordinate"><span class="n"><span class="pre">PxArticulationReducedCoordinate</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">articulation</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate15addArticulationER31PxArticulationReducedCoordinate" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds an articulation to the aggregate object. </p>
+<p>A warning is output if the total number of actors is reached (every articulation link counts as an actor), or if the incoming articulation already belongs to an aggregate.</p>
+<p>If the aggregate belongs to a scene, adding an articulation to the aggregate also adds the articulation to that scene.</p>
+<p>If the articulation already belongs to a scene, a warning is output and the call is ignored. You need to remove the articulation from the scene first, before adding it to the aggregate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>articulation</strong> – <strong>[in]</strong> The articulation that should be added to the aggregate return true if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate18removeArticulationER31PxArticulationReducedCoordinate">
+<span id="_CPPv3N11PxAggregate18removeArticulationER31PxArticulationReducedCoordinate"></span><span id="_CPPv2N11PxAggregate18removeArticulationER31PxArticulationReducedCoordinate"></span><span id="PxAggregate::removeArticulation__PxArticulationReducedCoordinateR"></span><span class="target" id="class_px_aggregate_1a723766153500347d08875d6775ab8106"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeArticulation</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#_CPPv431PxArticulationReducedCoordinate" title="PxArticulationReducedCoordinate"><span class="n"><span class="pre">PxArticulationReducedCoordinate</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">articulation</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate18removeArticulationER31PxArticulationReducedCoordinate" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes an articulation from the aggregate object. </p>
+<p>A warning is output if the incoming articulation does not belong to the aggregate. Otherwise the articulation is removed from the aggregate. If the aggregate belongs to a scene, the articulation is reinserted in that scene. If you intend to delete the articulation, it is best to call <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1a15d00fc95ae61c2906977453e7597d9b"><span class="std std-ref">PxArticulationReducedCoordinate::release()</span></a> directly. That way the articulation will be automatically removed from its aggregate (if any) and not reinserted in a scene.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>articulation</strong> – <strong>[in]</strong> The articulation that should be removed from the aggregate return true if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate11getNbActorsEv">
+<span id="_CPPv3NK11PxAggregate11getNbActorsEv"></span><span id="_CPPv2NK11PxAggregate11getNbActorsEv"></span><span id="PxAggregate::getNbActorsC"></span><span class="target" id="class_px_aggregate_1a070c8dee88ae92f062417ac5a20a5a64"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbActors</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate11getNbActorsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of actors contained in the aggregate. </p>
+<p>You can use <a class="reference internal" href="#class_px_aggregate_1a0e87d0b4af5f03e6323ec3817086b366"><span class="std std-ref">getActors()</span></a> to retrieve the actor pointers.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> <a class="reference internal" href="#class_px_aggregate_1a0e87d0b4af5f03e6323ec3817086b366"><span class="std std-ref">getActors()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of actors contained in the aggregate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate14getMaxNbActorsEv">
+<span id="_CPPv3NK11PxAggregate14getMaxNbActorsEv"></span><span id="_CPPv2NK11PxAggregate14getMaxNbActorsEv"></span><span id="PxAggregate::getMaxNbActorsC"></span><span class="target" id="class_px_aggregate_1ae54ef106d3797674aa08b0d32400c8a3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxNbActors</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate14getMaxNbActorsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves max amount of actors that can be contained in the aggregate. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1ac9eb4d120f21ea39e1443f1aeac2cb83"><span class="std std-ref">PxPhysics::createAggregate()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> now supports an arbitrary number of actors. This method return PX_MAX_U32 and will be removed in a future release.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Max actor size.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate14getMaxNbShapesEv">
+<span id="_CPPv3NK11PxAggregate14getMaxNbShapesEv"></span><span id="_CPPv2NK11PxAggregate14getMaxNbShapesEv"></span><span id="PxAggregate::getMaxNbShapesC"></span><span class="target" id="class_px_aggregate_1acc5d487708fc19e5be669773c2f5298d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxNbShapes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate14getMaxNbShapesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves max amount of shapes that can be contained in the aggregate. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1ac9eb4d120f21ea39e1443f1aeac2cb83"><span class="std std-ref">PxPhysics::createAggregate()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Max shape size.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate9getActorsEPP7PxActor5PxU325PxU32">
+<span id="_CPPv3NK11PxAggregate9getActorsEPP7PxActor5PxU325PxU32"></span><span id="_CPPv2NK11PxAggregate9getActorsEPP7PxActor5PxU325PxU32"></span><span id="PxAggregate::getActors__PxActorPP.PxU32.PxU32C"></span><span class="target" id="class_px_aggregate_1a0e87d0b4af5f03e6323ec3817086b366"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getActors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate9getActorsEPP7PxActor5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve all actors contained in the aggregate. </p>
+<p>You can retrieve the number of actor pointers by calling <a class="reference internal" href="#class_px_aggregate_1a070c8dee88ae92f062417ac5a20a5a64"><span class="std std-ref">getNbActors()</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> getNbShapes() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> The buffer to store the actor pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of provided user buffer. </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first actor pointer to be retrieved </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of actor pointers written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate8getSceneEv">
+<span id="_CPPv3N11PxAggregate8getSceneEv"></span><span id="_CPPv2N11PxAggregate8getSceneEv"></span><span id="PxAggregate::getScene"></span><span class="target" id="class_px_aggregate_1aa70f305e7f2934d99afd74d28b0c0194"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N11PxAggregate8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the scene which this aggregate belongs to. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Owner Scene. NULL if not part of a scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate16getSelfCollisionEv">
+<span id="_CPPv3NK11PxAggregate16getSelfCollisionEv"></span><span id="_CPPv2NK11PxAggregate16getSelfCollisionEv"></span><span id="PxAggregate::getSelfCollisionC"></span><span class="target" id="class_px_aggregate_1aecc9a58a8966bb5b76fd82b655efb43e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSelfCollision</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate16getSelfCollisionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves aggregate’s self-collision flag. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>self-collision flag </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate19getConcreteTypeNameEv">
+<span id="_CPPv3NK11PxAggregate19getConcreteTypeNameEv"></span><span id="_CPPv2NK11PxAggregate19getConcreteTypeNameEv"></span><span id="PxAggregate::getConcreteTypeNameC"></span><span class="target" id="class_px_aggregate_1a41fd8f74448689e95c88a788a5a34fe3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN11PxAggregate2isEP1Tv">
+<span id="_CPPv3I0EN11PxAggregate2isEv"></span><span id="_CPPv2I0EN11PxAggregate2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN11PxAggregate2isEP1Tv" title="PxAggregate::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN11PxAggregate2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK11PxAggregate2isEPK1Tv">
+<span id="_CPPv3I0ENK11PxAggregate2isEv"></span><span id="_CPPv2I0ENK11PxAggregate2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK11PxAggregate2isEPK1Tv" title="PxAggregate::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK11PxAggregate2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate15getConcreteTypeEv">
+<span id="_CPPv3NK11PxAggregate15getConcreteTypeEv"></span><span id="_CPPv2NK11PxAggregate15getConcreteTypeEv"></span><span id="PxAggregate::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N11PxAggregate11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N11PxAggregate11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxAggregate::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxAggregate11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N11PxAggregate12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N11PxAggregate12setBaseFlagsE11PxBaseFlags"></span><span id="PxAggregate::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxAggregate12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate12getBaseFlagsEv">
+<span id="_CPPv3NK11PxAggregate12getBaseFlagsEv"></span><span id="_CPPv2NK11PxAggregate12getBaseFlagsEv"></span><span id="PxAggregate::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate12isReleasableEv">
+<span id="_CPPv3NK11PxAggregate12isReleasableEv"></span><span id="_CPPv2NK11PxAggregate12isReleasableEv"></span><span id="PxAggregate::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate8userDataE">
+<span id="_CPPv3N11PxAggregate8userDataE"></span><span id="_CPPv2N11PxAggregate8userDataE"></span><span id="PxAggregate::userData__voidP"></span><span class="target" id="class_px_aggregate_1a3c999858dd19859227a933780c28278a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N11PxAggregate8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate11PxAggregateE6PxType11PxBaseFlags">
+<span id="_CPPv3N11PxAggregate11PxAggregateE6PxType11PxBaseFlags"></span><span id="_CPPv2N11PxAggregate11PxAggregateE6PxType11PxBaseFlags"></span><span id="PxAggregate::PxAggregate__PxType.PxBaseFlags"></span><span class="target" id="class_px_aggregate_1ad685441e8afe7ab3aaa920bf31790db3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAggregate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxAggregate11PxAggregateE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate11PxAggregateE11PxBaseFlags">
+<span id="_CPPv3N11PxAggregate11PxAggregateE11PxBaseFlags"></span><span id="_CPPv2N11PxAggregate11PxAggregateE11PxBaseFlags"></span><span id="PxAggregate::PxAggregate__PxBaseFlags"></span><span class="target" id="class_px_aggregate_1afa81902ea0c15879f1be9cf0ebe5f56c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAggregate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxAggregate11PxAggregateE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregateD0Ev">
+<span id="_CPPv3N11PxAggregateD0Ev"></span><span id="_CPPv2N11PxAggregateD0Ev"></span><span id="PxAggregate::~PxAggregate"></span><span class="target" id="class_px_aggregate_1a3eff872c05654d1bea567c091cbee916"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxAggregate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxAggregateD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PxAggregate8isKindOfEPKc">
+<span id="_CPPv3NK11PxAggregate8isKindOfEPKc"></span><span id="_CPPv2NK11PxAggregate8isKindOfEPKc"></span><span id="PxAggregate::isKindOf__cCPC"></span><span class="target" id="class_px_aggregate_1a83cd67a19da4c9b8a53e57e3c72bd879"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK11PxAggregate8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK11PxAggregate9typeMatchEbv">
+<span id="_CPPv3I0ENK11PxAggregate9typeMatchEv"></span><span id="_CPPv2I0ENK11PxAggregate9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK11PxAggregate9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate13mConcreteTypeE">
+<span id="_CPPv3N11PxAggregate13mConcreteTypeE"></span><span id="_CPPv2N11PxAggregate13mConcreteTypeE"></span><span id="PxAggregate::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N11PxAggregate13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate10mBaseFlagsE">
+<span id="_CPPv3N11PxAggregate10mBaseFlagsE"></span><span id="_CPPv2N11PxAggregate10mBaseFlagsE"></span><span id="PxAggregate::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N11PxAggregate10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxAggregate16mBuiltInRefCountE">
+<span id="_CPPv3N11PxAggregate16mBuiltInRefCountE"></span><span id="_CPPv2N11PxAggregate16mBuiltInRefCountE"></span><span id="PxAggregate::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N11PxAggregate16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

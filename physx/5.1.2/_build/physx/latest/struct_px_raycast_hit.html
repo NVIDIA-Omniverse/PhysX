@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxRaycastHit &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxRaycastHit</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxraycasthit">
+<span id="exhale-struct-struct-px-raycast-hit"></span><h1>PxRaycastHit<a class="headerlink" href="#pxraycasthit" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxQueryReport.h.html#file-include-pxqueryreport-h"><span class="std std-ref">include/PxQueryReport.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-types">
+<h3>Base Types<a class="headerlink" href="#base-types" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxGeomRaycastHit</span></code> (<a class="reference internal" href="struct_px_geom_raycast_hit.html#exhale-struct-struct-px-geom-raycast-hit"><span class="std std-ref">PxGeomRaycastHit</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxActorShape</span></code> (<a class="reference internal" href="struct_px_actor_shape.html#exhale-struct-struct-px-actor-shape"><span class="std std-ref">PxActorShape</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv412PxRaycastHit">
+<span id="_CPPv312PxRaycastHit"></span><span id="_CPPv212PxRaycastHit"></span><span id="PxRaycastHit"></span><span class="target" id="struct_px_raycast_hit"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRaycastHit</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geom_raycast_hit.html#_CPPv416PxGeomRaycastHit" title="PxGeomRaycastHit"><span class="n"><span class="pre">PxGeomRaycastHit</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_actor_shape.html#_CPPv412PxActorShape" title="PxActorShape"><span class="n"><span class="pre">PxActorShape</span></span></a><a class="headerlink" href="#_CPPv412PxRaycastHit" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxRaycastHit17hadInitialOverlapEv">
+<span id="_CPPv3NK12PxRaycastHit17hadInitialOverlapEv"></span><span id="_CPPv2NK12PxRaycastHit17hadInitialOverlapEv"></span><span id="PxRaycastHit::hadInitialOverlapC"></span><span class="target" id="struct_px_location_hit_1a09a895e9ac33095e3fa87f22f014c0e1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hadInitialOverlap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK12PxRaycastHit17hadInitialOverlapEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For raycast hits: true for shapes overlapping with raycast origin. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For sweep hits: true for shapes overlapping at zero sweep distance.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit1uE">
+<span id="_CPPv3N12PxRaycastHit1uE"></span><span id="_CPPv2N12PxRaycastHit1uE"></span><span id="PxRaycastHit::u__PxReal"></span><span class="target" id="struct_px_geom_raycast_hit_1a18b9786ef1ad72185903aa8b37e0fe36"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">u</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit1uE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit1vE">
+<span id="_CPPv3N12PxRaycastHit1vE"></span><span id="_CPPv2N12PxRaycastHit1vE"></span><span id="PxRaycastHit::v__PxReal"></span><span class="target" id="struct_px_geom_raycast_hit_1a7fa3feec017aabaa6bed87ea641ad3ae"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">v</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit1vE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>barycentric coordinates of hit point, for triangle mesh and height field (flag: <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aac585040db8a8a2839de7104a81a370c"><span class="std std-ref">PxHitFlag::eUV</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit5flagsE">
+<span id="_CPPv3N12PxRaycastHit5flagsE"></span><span id="_CPPv2N12PxRaycastHit5flagsE"></span><span id="PxRaycastHit::flags__PxHitFlags"></span><span class="target" id="struct_px_location_hit_1a7a253cb291ae5850342dada5b4dfce34"></span><span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Hit flags specifying which members contain valid values. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit8positionE">
+<span id="_CPPv3N12PxRaycastHit8positionE"></span><span id="_CPPv2N12PxRaycastHit8positionE"></span><span id="PxRaycastHit::position__PxVec3"></span><span class="target" id="struct_px_location_hit_1ab7481e53d2f35a8249ae862d337fe5ac"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">position</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit8positionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>World-space hit position (flag: <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a21e4769575db55be01d8f91e06c59b1a"><span class="std std-ref">PxHitFlag::ePOSITION</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit6normalE">
+<span id="_CPPv3N12PxRaycastHit6normalE"></span><span id="_CPPv2N12PxRaycastHit6normalE"></span><span id="PxRaycastHit::normal__PxVec3"></span><span class="target" id="struct_px_location_hit_1a0e4815489090f4faced5e91f6f6cd336"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normal</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit6normalE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>World-space hit normal (flag: <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a5972f664c2fbe85c992fb9aaba46a5cf"><span class="std std-ref">PxHitFlag::eNORMAL</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit8distanceE">
+<span id="_CPPv3N12PxRaycastHit8distanceE"></span><span id="_CPPv2N12PxRaycastHit8distanceE"></span><span id="PxRaycastHit::distance__PxF32"></span><span class="target" id="struct_px_location_hit_1adaccd7aa233279818ecdf50356ed0c76"></span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distance</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit8distanceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Distance to hit. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the eMTD flag is used, distance will be a negative value if shapes are overlapping indicating the penetration depth. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Otherwise, this value will be &gt;= 0 </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit9faceIndexE">
+<span id="_CPPv3N12PxRaycastHit9faceIndexE"></span><span id="_CPPv2N12PxRaycastHit9faceIndexE"></span><span id="PxRaycastHit::faceIndex__PxU32"></span><span class="target" id="struct_px_query_hit_1ae3462529024eafa98ed2abe1b3b9146c"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">faceIndex</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit9faceIndexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Face index of touched triangle, for triangle meshes, convex meshes and height fields. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This index will default to 0xFFFFffff value for overlap queries. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please refer to the user guide for more details for sweep queries. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This index is remapped by mesh cooking. Use <a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh_1a6b36d40812d5cb70507472cd4e147ae0"><span class="std std-ref">PxTriangleMesh::getTrianglesRemap()</span></a> to convert to original mesh index. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For convex meshes use <a class="reference internal" href="class_px_convex_mesh.html#class_px_convex_mesh_1af5a9f84f6811e1b22d85332b11df0388"><span class="std std-ref">PxConvexMesh::getPolygonData()</span></a> to retrieve touched polygon data. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit5actorE">
+<span id="_CPPv3N12PxRaycastHit5actorE"></span><span id="_CPPv2N12PxRaycastHit5actorE"></span><span id="PxRaycastHit::actor__PxRigidActorP"></span><span class="target" id="struct_px_actor_shape_1a0d8da15967ebaee8935725195bbd509a"></span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">actor</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit5actorE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxRaycastHit5shapeE">
+<span id="_CPPv3N12PxRaycastHit5shapeE"></span><span id="_CPPv2N12PxRaycastHit5shapeE"></span><span id="PxRaycastHit::shape__PxShapeP"></span><span class="target" id="struct_px_actor_shape_1aee7fb87ffc62391b2968ce8f954416f7"></span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">shape</span></span></span><a class="headerlink" href="#_CPPv4N12PxRaycastHit5shapeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

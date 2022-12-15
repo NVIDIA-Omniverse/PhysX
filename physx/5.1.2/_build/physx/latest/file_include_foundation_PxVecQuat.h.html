@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/foundation/PxVecQuat.h &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/foundation/PxVecQuat.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-foundation-pxvecquat-h">
+<span id="file-include-foundation-pxvecquat-h"></span><h1>include/foundation/PxVecQuat.h<a class="headerlink" href="#include-foundation-pxvecquat-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_foundation.html#dir-include-foundation"><span class="std std-ref">include/foundation/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_foundation_PxVecQuat.h.html#program-listing-file-include-foundation-pxvecquat-h"><span class="std std-ref">include/foundation/PxVecQuat.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_foundation_PxVecMath.h.html#file-include-foundation-pxvecmath-h"><span class="std std-ref">include/foundation/PxVecMath.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="namespaces">
+<h2>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_aos.html#namespace-aos"><span class="std std-ref">aos</span></a></p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1afe30e03b53c44997db4da53a25b2e0a0.html#exhale-function-px-vec-math-8h-1afe30e03b53c44997db4da53a25b2e0a0"><span class="std std-ref">aos::isFiniteQuatV</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1ae4b80e933f35618e6274adfdd74a577b.html#exhale-function-px-vec-math-8h-1ae4b80e933f35618e6274adfdd74a577b"><span class="std std-ref">aos::isSaneQuatV</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a571d432bcb77177f19eb8cb9a16430b1.html#exhale-function-px-vec-math-8h-1a571d432bcb77177f19eb8cb9a16430b1"><span class="std std-ref">aos::isValidQuatV</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a734d8ba903ec2e5d2363459a96d5ce5e.html#exhale-function-px-vec-math-8h-1a734d8ba903ec2e5d2363459a96d5ce5e"><span class="std std-ref">aos::Mat33GetQuatV</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1ab001ce3080c20dde8a54147cc28b63db.html#exhale-function-px-vec-math-8h-1ab001ce3080c20dde8a54147cc28b63db"><span class="std std-ref">aos::QuatAdd</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a134a2c10be89402b5568b8caab52bc56.html#exhale-function-px-vec-math-8h-1a134a2c10be89402b5568b8caab52bc56"><span class="std std-ref">aos::QuatConjugate</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1aaf897abec89b8c4b6c8ba5e873aee2a9.html#exhale-function-px-vec-math-8h-1aaf897abec89b8c4b6c8ba5e873aee2a9"><span class="std std-ref">aos::QuatDot</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a9ca0f042fdcc1638e43f6e07b90cc404.html#exhale-function-px-vec-math-8h-1a9ca0f042fdcc1638e43f6e07b90cc404"><span class="std std-ref">aos::QuatGetBasisVector0</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a0a8605a1e9143601b203eab7b7f03e90.html#exhale-function-px-vec-math-8h-1a0a8605a1e9143601b203eab7b7f03e90"><span class="std std-ref">aos::QuatGetBasisVector1</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1acdd055fea9c67f598f0bb6f490d702b3.html#exhale-function-px-vec-math-8h-1acdd055fea9c67f598f0bb6f490d702b3"><span class="std std-ref">aos::QuatGetBasisVector2</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1ab97b11acbeed10d4ebcbfa3bd922b4a8.html#exhale-function-px-vec-math-8h-1ab97b11acbeed10d4ebcbfa3bd922b4a8"><span class="std std-ref">aos::QuatGetImaginaryPart</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_quat_8h_1aa67865a1cc5af3c1f046df545e8b7f96.html#exhale-function-px-vec-quat-8h-1aa67865a1cc5af3c1f046df545e8b7f96"><span class="std std-ref">aos::QuatGetMat33V</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a4535df39b9b2c274760a94b0f01fc9ad.html#exhale-function-px-vec-math-8h-1a4535df39b9b2c274760a94b0f01fc9ad"><span class="std std-ref">aos::QuatIdentity</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a78f81a3d13efc9114edb52d30485538f.html#exhale-function-px-vec-math-8h-1a78f81a3d13efc9114edb52d30485538f"><span class="std std-ref">aos::QuatLength</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a0252ca426343c1ab3e54e43e356f3e1d.html#exhale-function-px-vec-math-8h-1a0252ca426343c1ab3e54e43e356f3e1d"><span class="std std-ref">aos::QuatLengthSq</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a87304b70b847b1f547b7e907b5621ff2.html#exhale-function-px-vec-math-8h-1a87304b70b847b1f547b7e907b5621ff2"><span class="std std-ref">aos::QuatMerge</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_quat_8h_1aab1f288c7489fd314153f9956154183c.html#exhale-function-px-vec-quat-8h-1aab1f288c7489fd314153f9956154183c"><span class="std std-ref">aos::QuatMerge</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a47989cc0f894774b7451b7cc0d0b03d4.html#exhale-function-px-vec-math-8h-1a47989cc0f894774b7451b7cc0d0b03d4"><span class="std std-ref">aos::QuatMul</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a31340c9973ca2b786b95f3de2f7e6f1d.html#exhale-function-px-vec-math-8h-1a31340c9973ca2b786b95f3de2f7e6f1d"><span class="std std-ref">aos::QuatNeg</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1aab41098beb5d95087302281e1f93690c.html#exhale-function-px-vec-math-8h-1aab41098beb5d95087302281e1f93690c"><span class="std std-ref">aos::QuatNormalize</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a21e66de096aae5afdf4901e23a8cfe10.html#exhale-function-px-vec-math-8h-1a21e66de096aae5afdf4901e23a8cfe10"><span class="std std-ref">aos::QuatRotate</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1ac82eb2f727c5b9fbded4499d1eaa93f9.html#exhale-function-px-vec-math-8h-1ac82eb2f727c5b9fbded4499d1eaa93f9"><span class="std std-ref">aos::QuatRotateInv</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a0c83a39980db22592a32ef55327fef64.html#exhale-function-px-vec-math-8h-1a0c83a39980db22592a32ef55327fef64"><span class="std std-ref">aos::QuatScale</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a45cde7e5db6f3a9842da6dab1754f082.html#exhale-function-px-vec-math-8h-1a45cde7e5db6f3a9842da6dab1754f082"><span class="std std-ref">aos::QuatSub</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_quat_8h_1a8c05879c545bc4dc594ab0030b2ec1f0.html#exhale-function-px-vec-quat-8h-1a8c05879c545bc4dc594ab0030b2ec1f0"><span class="std std-ref">aos::QuatTransform</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a01fc8a7ee7fd5c7fa6ee4330a91a3038.html#exhale-function-px-vec-math-8h-1a01fc8a7ee7fd5c7fa6ee4330a91a3038"><span class="std std-ref">aos::QuatV_From_RotationAxisAngle</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a035324b51d7b8954a63429ce2ae2aa7f.html#exhale-function-px-vec-math-8h-1a035324b51d7b8954a63429ce2ae2aa7f"><span class="std std-ref">aos::QuatVLoadA</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1a3b8de20e2ce4311b68ad982ff3690f0a.html#exhale-function-px-vec-math-8h-1a3b8de20e2ce4311b68ad982ff3690f0a"><span class="std std-ref">aos::QuatVLoadU</span></a></p></li>
+<li><p><a class="reference internal" href="function__px_vec_math_8h_1ace230842fdd1e2486e379960da5d93e8.html#exhale-function-px-vec-math-8h-1ace230842fdd1e2486e379960da5d93e8"><span class="std std-ref">aos::QuatVLoadXYZW</span></a></p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define__px_vec_quat_8h_1ad4109353d74ef8690cc955790f2e63e2.html#exhale-define-px-vec-quat-8h-1ad4109353d74ef8690cc955790f2e63e2"><span class="std std-ref">PX_PIDIV2</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

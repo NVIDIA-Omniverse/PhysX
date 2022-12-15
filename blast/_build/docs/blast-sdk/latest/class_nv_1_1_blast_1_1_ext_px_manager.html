@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::ExtPxManager &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::ExtPxManager</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-extpxmanager">
+<span id="exhale-class-class-nv-1-1-blast-1-1-ext-px-manager"></span><h1>Nv::Blast::ExtPxManager<a class="headerlink" href="#nv-blast-extpxmanager" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_physx_NvBlastExtPxManager.h.html#file-extensions-physx-nvblastextpxmanager-h"><span class="std std-ref">extensions/physx/NvBlastExtPxManager.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManagerE">
+<span id="_CPPv3N2Nv5Blast12ExtPxManagerE"></span><span id="_CPPv2N2Nv5Blast12ExtPxManagerE"></span><span id="Nv::Blast::ExtPxManager"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ExtPxManager</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManagerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Physics Manager. </p>
+<p>Used to create and manage Physics Families. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager20FilterDataAttributesE">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager20FilterDataAttributesE"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager20FilterDataAttributesE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1acdb64014cad3dc9b0f40450ea394951d"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">FilterDataAttributes</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager20FilterDataAttributesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Simulation Filter data to be set on leaf chunk actors. </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager20FilterDataAttributes10LEAF_CHUNKE">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager20FilterDataAttributes10LEAF_CHUNKE"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager20FilterDataAttributes10LEAF_CHUNKE"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1acdb64014cad3dc9b0f40450ea394951da6e3c7382337952ba42cee04a0a36a21d"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">LEAF_CHUNK</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager20FilterDataAttributes10LEAF_CHUNKE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager7releaseEv">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager7releaseEv"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager7releaseEv"></span><span id="Nv::Blast::ExtPxManager::release"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a2bbdb735b145024952a844b2d29dff3e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this manager. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager12createFamilyERK15ExtPxFamilyDesc">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager12createFamilyERK15ExtPxFamilyDesc"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager12createFamilyERK15ExtPxFamilyDesc"></span><span id="Nv::Blast::ExtPxManager::createFamily__ExtPxFamilyDescCR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a4f76548a36265c068f6080cde0ef674a"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#_CPPv4N2Nv5Blast11ExtPxFamilyE" title="Nv::Blast::ExtPxFamily"><span class="pre">ExtPxFamily</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createFamily</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_family_desc.html#_CPPv4N2Nv5Blast15ExtPxFamilyDescE" title="Nv::Blast::ExtPxFamilyDesc"><span class="pre">ExtPxFamilyDesc</span></a> <span class="pre">&amp;</span><em><span class="pre">desc</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager12createFamilyERK15ExtPxFamilyDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a px family from the given descriptor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The family descriptor (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_px_family_desc.html#struct_nv_1_1_blast_1_1_ext_px_family_desc"><span class="std std-ref">ExtPxFamilyDesc</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created family, if the descriptor was valid and memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager11createJointER7TkJoint">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager11createJointER7TkJoint"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager11createJointER7TkJoint"></span><span id="Nv::Blast::ExtPxManager::createJoint__TkJointR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a93817a287d8c0eb2c658ad0e379b807c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">createJoint</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#_CPPv4N2Nv5Blast7TkJointE" title="Nv::Blast::TkJoint"><span class="pre">TkJoint</span></a> <span class="pre">&amp;</span><em><span class="pre">joint</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager11createJointER7TkJoint" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a px joint associated with <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a>. </p>
+<p>ExtPxCreateJointFunction will be called after this call. ExtPxCreateJointFunction must be set, nothing will happen otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>joint</strong> – <strong>[in]</strong> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> to be used to create px joint.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff Joint was created. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager12destroyJointER7TkJoint">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager12destroyJointER7TkJoint"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager12destroyJointER7TkJoint"></span><span id="Nv::Blast::ExtPxManager::destroyJoint__TkJointR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1ac624f3229ad94eac9845c013dd8d2c5c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">destroyJoint</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#_CPPv4N2Nv5Blast7TkJointE" title="Nv::Blast::TkJoint"><span class="pre">TkJoint</span></a> <span class="pre">&amp;</span><em><span class="pre">joint</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager12destroyJointER7TkJoint" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Destroy a px joint associated with <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>joint</strong> – <strong>[in]</strong> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> to be used to destroy px joint. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager22setCreateJointFunctionE24ExtPxCreateJointFunction">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager22setCreateJointFunctionE24ExtPxCreateJointFunction"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager22setCreateJointFunctionE24ExtPxCreateJointFunction"></span><span id="Nv::Blast::ExtPxManager::setCreateJointFunction__ExtPxCreateJointFunction"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a7bd2e41717fa1b91183c5da2ead62451"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setCreateJointFunction</span></code><span class="sig-paren">(</span><a class="reference internal" href="typedef__nv_blast_ext_px_manager_8h_1ad850cb90e735a499140c9b9dee734669.html#_CPPv4N2Nv5Blast24ExtPxCreateJointFunctionE" title="Nv::Blast::ExtPxCreateJointFunction"><span class="pre">ExtPxCreateJointFunction</span></a> <em><span class="pre">createFn</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager22setCreateJointFunctionE24ExtPxCreateJointFunction" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set ExtPxCreateJointFunction to be used when new joints are being created. </p>
+<p>\</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>createFn</strong> – <strong>[in]</strong> Create function pointer to set, can be nullptr. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager14getFamilyCountEv">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager14getFamilyCountEv"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager14getFamilyCountEv"></span><span id="Nv::Blast::ExtPxManager::getFamilyCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1aa7e84a48fef9067dd58e1a10852becf9"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getFamilyCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager14getFamilyCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of families currently in this manager. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> that currently exist in this manger. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager11getFamiliesEPP11ExtPxFamily8uint32_t">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager11getFamiliesEPP11ExtPxFamily8uint32_t"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager11getFamiliesEPP11ExtPxFamily8uint32_t"></span><span id="Nv::Blast::ExtPxManager::getFamilies__ExtPxFamilyPP.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a2bdfe8a62b060b9ef535d6ada381614b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getFamilies</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#_CPPv4N2Nv5Blast11ExtPxFamilyE" title="Nv::Blast::ExtPxFamily"><span class="pre">ExtPxFamily</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">buffer</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">bufferSize</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager11getFamiliesEPP11ExtPxFamily8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve an array of pointers (into the user-supplied buffer) to families. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> The number of elements available to write into buffer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> pointers written to the buffer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager21getFamilyFromTkFamilyER8TkFamily">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager21getFamilyFromTkFamilyER8TkFamily"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager21getFamilyFromTkFamilyER8TkFamily"></span><span id="Nv::Blast::ExtPxManager::getFamilyFromTkFamily__TkFamilyRC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a5a09e1c84f29170db94a36cbd4d43d20"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#_CPPv4N2Nv5Blast11ExtPxFamilyE" title="Nv::Blast::ExtPxFamily"><span class="pre">ExtPxFamily</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getFamilyFromTkFamily</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#_CPPv4N2Nv5Blast8TkFamilyE" title="Nv::Blast::TkFamily"><span class="pre">TkFamily</span></a> <span class="pre">&amp;</span><em><span class="pre">family</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager21getFamilyFromTkFamilyER8TkFamily" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Look up an associated <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> by <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a> pointer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>family</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a> pointer to look up.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pointer to the <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_family.html#class_nv_1_1_blast_1_1_ext_px_family"><span class="std std-ref">ExtPxFamily</span></a> object if it exists, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager22getActorFromPhysXActorERKN5physx14PxRigidDynamicE">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager22getActorFromPhysXActorERKN5physx14PxRigidDynamicE"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager22getActorFromPhysXActorERKN5physx14PxRigidDynamicE"></span><span id="Nv::Blast::ExtPxManager::getActorFromPhysXActor__physx::PxRigidDynamicCRC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1aeb79bcc50c66a2b6fcb12bc7dab4931f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_actor.html#_CPPv4N2Nv5Blast10ExtPxActorE" title="Nv::Blast::ExtPxActor"><span class="pre">ExtPxActor</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getActorFromPhysXActor</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxRigidDynamic</span> <span class="pre">&amp;</span><em><span class="pre">pxActor</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager22getActorFromPhysXActorERKN5physx14PxRigidDynamicE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Look up an associated <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_actor.html#class_nv_1_1_blast_1_1_ext_px_actor"><span class="std std-ref">ExtPxActor</span></a> by PxRigidDynamic pointer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pxActor</strong> – <strong>[in]</strong> The PxRigidDynamic pointer to look up.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pointer to the <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_actor.html#class_nv_1_1_blast_1_1_ext_px_actor"><span class="std std-ref">ExtPxActor</span></a> object if it exists, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager10getPhysicsEv">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager10getPhysicsEv"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager10getPhysicsEv"></span><span id="Nv::Blast::ExtPxManager::getPhysicsC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a06e777d56931a31c2677b2c3a0feb7fd"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxPhysics</span> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getPhysics</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager10getPhysicsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get a PxPhysics object pointer used upon manager creation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a pointer to the (const) PxPhysics object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager12getFrameworkEv">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager12getFrameworkEv"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager12getFrameworkEv"></span><span id="Nv::Blast::ExtPxManager::getFrameworkC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a5e9c4e9e900c63ce9234bf8f759df17f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#_CPPv4N2Nv5Blast11TkFrameworkE" title="Nv::Blast::TkFramework"><span class="pre">TkFramework</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getFramework</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager12getFrameworkEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework"><span class="std std-ref">TkFramework</span></a> object pointer used upon manager creation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a pointer to the <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework"><span class="std std-ref">TkFramework</span></a> object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager16isPxUserDataUsedEv">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager16isPxUserDataUsedEv"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager16isPxUserDataUsedEv"></span><span id="Nv::Blast::ExtPxManager::isPxUserDataUsedC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a0a70c5eca2121263fabf6e68e48258c1"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isPxUserDataUsed</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager16isPxUserDataUsedEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get if useUserData was set upon manager creation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true iff PxActor userData is used by manager. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager18setActorCountLimitE8uint32_t">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager18setActorCountLimitE8uint32_t"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager18setActorCountLimitE8uint32_t"></span><span id="Nv::Blast::ExtPxManager::setActorCountLimit__uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a7230ff2e8531d6f0cd86cfe5234452ff"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setActorCountLimit</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">limit</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager18setActorCountLimitE8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Limits the total number of actors that can exist at a given time. </p>
+<p>A value of zero disables this (gives no limit).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> If not zero, the maximum number of actors that will be allowed to exist. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager18getActorCountLimitEv">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager18getActorCountLimitEv"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager18getActorCountLimitEv"></span><span id="Nv::Blast::ExtPxManager::getActorCountLimit"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1ad564cce87386a7aeacf198446f31a50d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getActorCountLimit</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager18getActorCountLimitEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve the limit to the total number of actors that can exist at a given time. </p>
+<p>A value of zero disables this (gives no limit).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the limit to the total number of actors that can exist at a given time (or zero if there is no limit). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast12ExtPxManager15getPxActorCountEv">
+<span id="_CPPv3NK2Nv5Blast12ExtPxManager15getPxActorCountEv"></span><span id="_CPPv2NK2Nv5Blast12ExtPxManager15getPxActorCountEv"></span><span id="Nv::Blast::ExtPxManager::getPxActorCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1aaa920d404b5b131d61747a920f20292f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getPxActorCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12ExtPxManager15getPxActorCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The total number of PxActors generated by Blast. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the total number of PxActors generated by Blast. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager9subscribeER13ExtPxListener">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager9subscribeER13ExtPxListener"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager9subscribeER13ExtPxListener"></span><span id="Nv::Blast::ExtPxManager::subscribe__ExtPxListenerR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1ae47dd2fedc6bbfb5512f83a06b8782ed"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">subscribe</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_listener.html#_CPPv4N2Nv5Blast13ExtPxListenerE" title="Nv::Blast::ExtPxListener"><span class="pre">ExtPxListener</span></a> <span class="pre">&amp;</span><em><span class="pre">listener</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager9subscribeER13ExtPxListener" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Add a user implementation of <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_listener.html#class_nv_1_1_blast_1_1_ext_px_listener"><span class="std std-ref">ExtPxListener</span></a> to this family’s list of listeners. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>listener</strong> – <strong>[in]</strong> The event listener to add. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager11unsubscribeER13ExtPxListener">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager11unsubscribeER13ExtPxListener"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager11unsubscribeER13ExtPxListener"></span><span id="Nv::Blast::ExtPxManager::unsubscribe__ExtPxListenerR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a5b4189527d151328f1d9ce166fa5f9d1"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">unsubscribe</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_listener.html#_CPPv4N2Nv5Blast13ExtPxListenerE" title="Nv::Blast::ExtPxListener"><span class="pre">ExtPxListener</span></a> <span class="pre">&amp;</span><em><span class="pre">listener</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager11unsubscribeER13ExtPxListener" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Remove a user implementation of <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_listener.html#class_nv_1_1_blast_1_1_ext_px_listener"><span class="std std-ref">ExtPxListener</span></a> from this family’s list of listeners. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>listener</strong> – <strong>[in]</strong> The event listener to remove. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager6createERN5physx9PxPhysicsER11TkFramework24ExtPxCreateJointFunctionb">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager6createERN5physx9PxPhysicsER11TkFramework24ExtPxCreateJointFunctionb"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager6createERN5physx9PxPhysicsER11TkFramework24ExtPxCreateJointFunctionb"></span><span id="Nv::Blast::ExtPxManager::create__physx::PxPhysicsR.TkFrameworkR.ExtPxCreateJointFunction.b"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a887cfcc5831c53fe1e1f81e84be41a55"></span><em class="property"><span class="pre">static</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast12ExtPxManagerE" title="Nv::Blast::ExtPxManager"><span class="pre">ExtPxManager</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><span class="pre">physx</span><span class="pre">::</span><span class="pre">PxPhysics</span> <span class="pre">&amp;</span><em><span class="pre">physics</span></em>, <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#_CPPv4N2Nv5Blast11TkFrameworkE" title="Nv::Blast::TkFramework"><span class="pre">TkFramework</span></a> <span class="pre">&amp;</span><em><span class="pre">framework</span></em>, <a class="reference internal" href="typedef__nv_blast_ext_px_manager_8h_1ad850cb90e735a499140c9b9dee734669.html#_CPPv4N2Nv5Blast24ExtPxCreateJointFunctionE" title="Nv::Blast::ExtPxCreateJointFunction"><span class="pre">ExtPxCreateJointFunction</span></a> <em><span class="pre">createFn</span></em> <span class="pre">=</span> <span class="pre">nullptr</span>, <span class="pre">bool</span> <em><span class="pre">useUserData</span></em> <span class="pre">=</span> <span class="pre">true</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager6createERN5physx9PxPhysicsER11TkFramework24ExtPxCreateJointFunctionb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>physics</strong> – <strong>[in]</strong> The PxPhysics instance to be used by <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a>. </p></li>
+<li><p><strong>framework</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework"><span class="std std-ref">TkFramework</span></a> instance to be used by <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a>. </p></li>
+<li><p><strong>cooking</strong> – <strong>[in]</strong> The optional PxCooking. Required for collision builder. </p></li>
+<li><p><strong>createFn</strong> – <strong>[in]</strong> The function to be used when creating joints, can be nullptr. </p></li>
+<li><p><strong>useUserData</strong> – <strong>[in]</strong> Flag if <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a> is allowed to override PxActor’s userData, it will store pointer to PxActor there. It is recommended as fastest way. If set to ‘false’ HashMap will be used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_px_manager"><span class="std std-ref">ExtPxManager</span></a> if successful, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast12ExtPxManager22createCollisionBuilderERN5physx9PxPhysicsERN5physx9PxCookingE">
+<span id="_CPPv3N2Nv5Blast12ExtPxManager22createCollisionBuilderERN5physx9PxPhysicsERN5physx9PxCookingE"></span><span id="_CPPv2N2Nv5Blast12ExtPxManager22createCollisionBuilderERN5physx9PxPhysicsERN5physx9PxCookingE"></span><span id="Nv::Blast::ExtPxManager::createCollisionBuilder__physx::PxPhysicsR.physx::PxCookingR"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_px_manager_1a12296d50356db4664959dc3ea414dd9c"></span><em class="property"><span class="pre">static</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_ext_px_collision_builder.html#_CPPv4N2Nv5Blast21ExtPxCollisionBuilderE" title="Nv::Blast::ExtPxCollisionBuilder"><span class="pre">ExtPxCollisionBuilder</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createCollisionBuilder</span></code><span class="sig-paren">(</span><span class="pre">physx</span><span class="pre">::</span><span class="pre">PxPhysics</span> <span class="pre">&amp;</span><em><span class="pre">physics</span></em>, <span class="pre">physx</span><span class="pre">::</span><span class="pre">PxCooking</span> <span class="pre">&amp;</span><em><span class="pre">cooking</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12ExtPxManager22createCollisionBuilderERN5physx9PxPhysicsERN5physx9PxCookingE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create PhysX based convex mesh builder. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

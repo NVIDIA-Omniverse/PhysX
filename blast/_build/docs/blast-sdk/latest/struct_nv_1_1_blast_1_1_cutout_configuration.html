@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::CutoutConfiguration &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::CutoutConfiguration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-cutoutconfiguration">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-cutout-configuration"></span><h1>Nv::Blast::CutoutConfiguration<a class="headerlink" href="#nv-blast-cutoutconfiguration" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringFractureTool.h.html#file-extensions-authoring-nvblastextauthoringfracturetool-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringFractureTool.h</span></a></p>
+<dl class="cpp struct">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfigurationE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfigurationE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfigurationE"></span><span id="Nv::Blast::CutoutConfiguration"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">CutoutConfiguration</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfigurationE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Cutout fracturing configuration. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration9cutoutSetE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration9cutoutSetE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration9cutoutSetE"></span><span id="Nv::Blast::CutoutConfiguration::cutoutSet__CutoutSetP"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a30e10f98ba8ab88afa9b7ee5855dbd14"></span><a class="reference internal" href="class_nv_1_1_blast_1_1_cutout_set.html#_CPPv4N2Nv5Blast9CutoutSetE" title="Nv::Blast::CutoutSet"><span class="pre">CutoutSet</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">cutoutSet</span></code> <span class="pre">=</span> <span class="pre">nullptr</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration9cutoutSetE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set of grouped convex loop patterns for cutout in normal direction. </p>
+<p>Not required for PLANE_ONLY mode </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration9transformE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration9transformE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration9transformE"></span><span id="Nv::Blast::CutoutConfiguration::transform__NvcTransform"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1aa0c088a7b81ace3910d7dd53f2eab935"></span><a class="reference internal" href="struct_nvc_transform.html#_CPPv412NvcTransform" title="NvcTransform"><span class="pre">NvcTransform</span></a> <code class="sig-name descname"><span class="pre">transform</span></code> <span class="pre">=</span> <span class="pre">{</span><span class="pre">{</span><span class="pre">0</span><span class="pre">,</span> <span class="pre">0</span><span class="pre">,</span> <span class="pre">0</span><span class="pre">,</span> <span class="pre">1</span><span class="pre">}</span><span class="pre">,</span> <span class="pre">{</span><span class="pre">0</span><span class="pre">,</span> <span class="pre">0</span><span class="pre">,</span> <span class="pre">0</span><span class="pre">}</span><span class="pre">}</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration9transformE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Transform for initial pattern position and orientation. </p>
+<p>By default 2d pattern lies in XY plane (Y is up) the center of pattern is (0, 0) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration5scaleE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration5scaleE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration5scaleE"></span><span id="Nv::Blast::CutoutConfiguration::scale__NvcVec2"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a4474a4284f58e9e1b97956bbcc4f48d1"></span><a class="reference internal" href="struct_nvc_vec2.html#_CPPv47NvcVec2" title="NvcVec2"><span class="pre">NvcVec2</span></a> <code class="sig-name descname"><span class="pre">scale</span></code> <span class="pre">=</span> <span class="pre">{</span><span class="pre">-</span><span class="pre">1</span><span class="pre">,</span> <span class="pre">-</span><span class="pre">1</span><span class="pre">}</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration5scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Scale for pattern. </p>
+<p>Unscaled pattern has size (1, 1). For negative scale pattern will be placed at the center of chunk and scaled with max distance between points of its AABB </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration8apertureE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration8apertureE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration8apertureE"></span><span id="Nv::Blast::CutoutConfiguration::aperture__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a397831eed1776f363b068ea8879f33fc"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">aperture</span></code> <span class="pre">=</span> <span class="pre">0.f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration8apertureE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Conic aperture in degree, for cylindric cutout set it to 0. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration19isRelativeTransformE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration19isRelativeTransformE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration19isRelativeTransformE"></span><span id="Nv::Blast::CutoutConfiguration::isRelativeTransform__b"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a0614b4b06b7c4925c37c3d039887665e"></span><span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isRelativeTransform</span></code> <span class="pre">=</span> <span class="pre">true</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration19isRelativeTransformE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>If relative transform is set - position will be displacement vector from chunk’s center. </p>
+<p>Otherwise from global origin. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration12useSmoothingE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration12useSmoothingE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration12useSmoothingE"></span><span id="Nv::Blast::CutoutConfiguration::useSmoothing__b"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a61deebb0401642549a0772f6dd971065"></span><span class="pre">bool</span> <code class="sig-name descname"><span class="pre">useSmoothing</span></code> <span class="pre">=</span> <span class="pre">false</span><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration12useSmoothingE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Add generatad faces to the same smoothing group as original face without noise. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N2Nv5Blast19CutoutConfiguration5noiseE">
+<span id="_CPPv3N2Nv5Blast19CutoutConfiguration5noiseE"></span><span id="_CPPv2N2Nv5Blast19CutoutConfiguration5noiseE"></span><span id="Nv::Blast::CutoutConfiguration::noise__NoiseConfiguration"></span><span class="target" id="struct_nv_1_1_blast_1_1_cutout_configuration_1a64b0d84c82de63873bc0414d95ed036b"></span><a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html#_CPPv4N2Nv5Blast18NoiseConfigurationE" title="Nv::Blast::NoiseConfiguration"><span class="pre">NoiseConfiguration</span></a> <code class="sig-name descname"><span class="pre">noise</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast19CutoutConfiguration5noiseE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Noise parameters for cutout surface, see <a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html#struct_nv_1_1_blast_1_1_noise_configuration"><span class="std std-ref">NoiseConfiguration</span></a>. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

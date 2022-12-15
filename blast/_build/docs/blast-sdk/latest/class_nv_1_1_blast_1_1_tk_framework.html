@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Nv::Blast::TkFramework &mdash; blast-sdk 4.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script >mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Nv::Blast::TkFramework</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nv-blast-tkframework">
+<span id="exhale-class-class-nv-1-1-blast-1-1-tk-framework"></span><h1>Nv::Blast::TkFramework<a class="headerlink" href="#nv-blast-tkframework" title="Permalink to this headline">¶</a></h1>
+<p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkFramework.h.html#file-toolkit-nvblasttkframework-h"><span class="std std-ref">toolkit/NvBlastTkFramework.h</span></a></p>
+<dl class="cpp class">
+<dt id="_CPPv4N2Nv5Blast11TkFrameworkE">
+<span id="_CPPv3N2Nv5Blast11TkFrameworkE"></span><span id="_CPPv2N2Nv5Blast11TkFrameworkE"></span><span id="Nv::Blast::TkFramework"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkFramework</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFrameworkE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>BlastTk Framework. </p>
+<p>The framework exists as a singleton and is used to create objects, deserialize object streams, and hold references to identified objects (<a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a>, <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>, and <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#class_nv_1_1_blast_1_1_tk_group"><span class="std std-ref">TkGroup</span></a>) which may be recalled by their GUIDs. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework7releaseEv">
+<span id="_CPPv3N2Nv5Blast11TkFramework7releaseEv"></span><span id="_CPPv2N2Nv5Blast11TkFramework7releaseEv"></span><span id="Nv::Blast::TkFramework::release"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1ac98d733dfdddbbcfa806b4c282e17aa0"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Release this framework and all contained objects. </p>
+<p>Global singleton is set to NULL. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework7getTypeEN11TkTypeIndex4EnumE">
+<span id="_CPPv3NK2Nv5Blast11TkFramework7getTypeEN11TkTypeIndex4EnumE"></span><span id="_CPPv2NK2Nv5Blast11TkFramework7getTypeEN11TkTypeIndex4EnumE"></span><span id="Nv::Blast::TkFramework::getType__TkTypeIndex::EnumC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1ac675c056796a68b29fb303b135eab416"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getType</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html#_CPPv4N2Nv5Blast11TkTypeIndexE" title="Nv::Blast::TkTypeIndex"><span class="pre">TkTypeIndex</span></a><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html#_CPPv4N2Nv5Blast11TkTypeIndex4EnumE" title="Nv::Blast::TkTypeIndex::Enum"><span class="pre">Enum</span></a> <em><span class="pre">typeIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework7getTypeEN11TkTypeIndex4EnumE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>To find the type information for a given TkIdentifiable-derived class, use this funtion with the <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html#struct_nv_1_1_blast_1_1_tk_type_index_1a57681ffd26c84b5272b7e0c23103493a"><span class="std std-ref">TkTypeIndex::Enum</span></a> corresponding to the desired class name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>typeIndex</strong> – <strong>[in]</strong> Enumerated object type (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html#struct_nv_1_1_blast_1_1_tk_type_index"><span class="std std-ref">TkTypeIndex</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>type object associated with the object’s class. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework14findObjectByIDERK9NvBlastID">
+<span id="_CPPv3NK2Nv5Blast11TkFramework14findObjectByIDERK9NvBlastID"></span><span id="_CPPv2NK2Nv5Blast11TkFramework14findObjectByIDERK9NvBlastID"></span><span id="Nv::Blast::TkFramework::findObjectByID__NvBlastIDCRC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1ad6f25c2fa686ebe78a612ad657b6745f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#_CPPv4N2Nv5Blast14TkIdentifiableE" title="Nv::Blast::TkIdentifiable"><span class="pre">TkIdentifiable</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">findObjectByID</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="pre">NvBlastID</span></a> <span class="pre">&amp;</span><em><span class="pre">id</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework14findObjectByIDERK9NvBlastID" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Look up an object derived from <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#class_nv_1_1_blast_1_1_tk_identifiable"><span class="std std-ref">TkIdentifiable</span></a> by its ID. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – <strong>[in]</strong> The ID of the object to look up (see <a class="reference internal" href="struct_nv_blast_i_d.html#struct_nv_blast_i_d"><span class="std std-ref">NvBlastID</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pointer the object if it exists, NULL otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework14getObjectCountERK6TkType">
+<span id="_CPPv3NK2Nv5Blast11TkFramework14getObjectCountERK6TkType"></span><span id="_CPPv2NK2Nv5Blast11TkFramework14getObjectCountERK6TkType"></span><span id="Nv::Blast::TkFramework::getObjectCount__TkTypeCRC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a58225ad807e6aa4c2b54a7ede92fcabf"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getObjectCount</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">&amp;</span><em><span class="pre">type</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework14getObjectCountERK6TkType" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The number of TkIdentifiable-derived objects in the framework of the given type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>type</strong> – <strong>[in]</strong> The type object for the given type.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of objects that currently exist of the given type. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework10getObjectsEPP14TkIdentifiable8uint32_tRK6TkType8uint32_t">
+<span id="_CPPv3NK2Nv5Blast11TkFramework10getObjectsEPP14TkIdentifiable8uint32_tRK6TkType8uint32_t"></span><span id="_CPPv2NK2Nv5Blast11TkFramework10getObjectsEPP14TkIdentifiable8uint32_tRK6TkType8uint32_t"></span><span id="Nv::Blast::TkFramework::getObjects__TkIdentifiablePP.uint32_t.TkTypeCR.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a0de2324a24540ad80fff89f808532160"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getObjects</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#_CPPv4N2Nv5Blast14TkIdentifiableE" title="Nv::Blast::TkIdentifiable"><span class="pre">TkIdentifiable</span></a> <span class="pre">*</span><span class="pre">*</span><em><span class="pre">buffer</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">bufferSize</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">&amp;</span><em><span class="pre">type</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">indexStart</span></em> <span class="pre">=</span> <span class="pre">0</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework10getObjectsEPP14TkIdentifiable8uint32_tRK6TkType8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Retrieve an array of pointers (into the user-supplied buffer) to TkIdentifiable-derived objects of the given type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – <strong>[out]</strong> A user-supplied array of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#class_nv_1_1_blast_1_1_tk_identifiable"><span class="std std-ref">TkIdentifiable</span></a> pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> The number of elements available to write into buffer. </p></li>
+<li><p><strong>type</strong> – <strong>[in]</strong> The type object for the given type. </p></li>
+<li><p><strong>indexStart</strong> – <strong>[in]</strong> The starting index of the object.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#class_nv_1_1_blast_1_1_tk_identifiable"><span class="std std-ref">TkIdentifiable</span></a> pointers written to the buffer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework22reorderAssetDescChunksEP16NvBlastChunkDesc8uint32_tP15NvBlastBondDesc8uint32_tP8uint32_tb">
+<span id="_CPPv3NK2Nv5Blast11TkFramework22reorderAssetDescChunksEP16NvBlastChunkDesc8uint32_tP15NvBlastBondDesc8uint32_tP8uint32_tb"></span><span id="_CPPv2NK2Nv5Blast11TkFramework22reorderAssetDescChunksEP16NvBlastChunkDesc8uint32_tP15NvBlastBondDesc8uint32_tP8uint32_tb"></span><span id="Nv::Blast::TkFramework::reorderAssetDescChunks__NvBlastChunkDescP.uint32_t.NvBlastBondDescP.uint32_t.uint32_tP.bC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a5a0817a19d4f4c0f715d3a54fe25eadf"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">reorderAssetDescChunks</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_chunk_desc.html#_CPPv416NvBlastChunkDesc" title="NvBlastChunkDesc"><span class="pre">NvBlastChunkDesc</span></a> <span class="pre">*</span><em><span class="pre">chunkDescs</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">chunkCount</span></em>, <a class="reference internal" href="struct_nv_blast_bond_desc.html#_CPPv415NvBlastBondDesc" title="NvBlastBondDesc"><span class="pre">NvBlastBondDesc</span></a> <span class="pre">*</span><em><span class="pre">bondDescs</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">bondCount</span></em>, <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">chunkReorderMap</span></em> <span class="pre">=</span> <span class="pre">nullptr</span>, <span class="pre">bool</span> <em><span class="pre">keepBondNormalChunkOrder</span></em> <span class="pre">=</span> <span class="pre">false</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework22reorderAssetDescChunksEP16NvBlastChunkDesc8uint32_tP15NvBlastBondDesc8uint32_tP8uint32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Helper function to build and apply chunk reorder map, so that chunk descriptors are properly ordered for the createAsset function. </p>
+<p>This is a convenience wrapper for the low-level NvBlastReorderAssetDescChunks function.</p>
+<p>This function may modify both the chunkDescs and bondDescs array, since rearranging chunk descriptors requires re-indexing within the bond descriptors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunkDescs</strong> – <strong>[in]</strong> Array of chunk descriptors of size chunkCount. It will be updated accordingly. </p></li>
+<li><p><strong>chunkCount</strong> – <strong>[in]</strong> The number of chunk descriptors. </p></li>
+<li><p><strong>bondDescs</strong> – <strong>[in]</strong> Array of bond descriptors of size chunkCount. It will be updated accordingly. </p></li>
+<li><p><strong>bondCount</strong> – <strong>[in]</strong> The number of bond descriptors. </p></li>
+<li><p><strong>chunkReorderMap</strong> – <strong>[in]</strong> If not NULL, must be a pointer to a uint32_t array of size desc.chunkCount. Maps old chunk indices to the reordered chunk indices. </p></li>
+<li><p><strong>keepBondNormalChunkOrder</strong> – <strong>[in]</strong> If true, bond normals will be flipped if their chunk index order was reveresed by the reorder map.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff the chunks did not require reordering (chunkReorderMap is the identity map). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK2Nv5Blast11TkFramework31ensureAssetExactSupportCoverageEP16NvBlastChunkDesc8uint32_t">
+<span id="_CPPv3NK2Nv5Blast11TkFramework31ensureAssetExactSupportCoverageEP16NvBlastChunkDesc8uint32_t"></span><span id="_CPPv2NK2Nv5Blast11TkFramework31ensureAssetExactSupportCoverageEP16NvBlastChunkDesc8uint32_t"></span><span id="Nv::Blast::TkFramework::ensureAssetExactSupportCoverage__NvBlastChunkDescP.uint32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a80df575e224678953bd5ae33ac7ab22d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">ensureAssetExactSupportCoverage</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_chunk_desc.html#_CPPv416NvBlastChunkDesc" title="NvBlastChunkDesc"><span class="pre">NvBlastChunkDesc</span></a> <span class="pre">*</span><em><span class="pre">chunkDescs</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">chunkCount</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast11TkFramework31ensureAssetExactSupportCoverageEP16NvBlastChunkDesc8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Helper function to ensure (check and update) support coverage of chunks, required for asset creation via the createAsset function. </p>
+<p>This is a convenience wrapper for the low-level NvBlastEnsureAssetExactSupportCoverage function.</p>
+<p>The chunk descriptors may have their support flags be modified to ensure exact coverage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunkDescs</strong> – <strong>[in]</strong> An array of chunk descriptors. </p></li>
+<li><p><strong>chunkCount</strong> – <strong>[in]</strong> The size of the chunkDescs array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true iff coverage was already exact. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework11createAssetERK11TkAssetDesc">
+<span id="_CPPv3N2Nv5Blast11TkFramework11createAssetERK11TkAssetDesc"></span><span id="_CPPv2N2Nv5Blast11TkFramework11createAssetERK11TkAssetDesc"></span><span id="Nv::Blast::TkFramework::createAsset__TkAssetDescCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1af1279d3414ad43036ff3e9e4b37e0a43"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#_CPPv4N2Nv5Blast7TkAssetE" title="Nv::Blast::TkAsset"><span class="pre">TkAsset</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createAsset</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_desc.html#_CPPv4N2Nv5Blast11TkAssetDescE" title="Nv::Blast::TkAssetDesc"><span class="pre">TkAssetDesc</span></a> <span class="pre">&amp;</span><em><span class="pre">desc</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework11createAssetERK11TkAssetDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create an asset from the given descriptor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The asset descriptor (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_desc.html#struct_nv_1_1_blast_1_1_tk_asset_desc"><span class="std std-ref">TkAssetDesc</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created asset, if the descriptor was valid and memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework11createAssetEPK12NvBlastAssetPN2Nv5Blast16TkAssetJointDescE8uint32_tb">
+<span id="_CPPv3N2Nv5Blast11TkFramework11createAssetEPK12NvBlastAssetPN2Nv5Blast16TkAssetJointDescE8uint32_tb"></span><span id="_CPPv2N2Nv5Blast11TkFramework11createAssetEPK12NvBlastAssetPN2Nv5Blast16TkAssetJointDescE8uint32_tb"></span><span id="Nv::Blast::TkFramework::createAsset__NvBlastAssetCP.Nv::Blast::TkAssetJointDescP.uint32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a9f9ae6a30e80b39d3fcbb14483c20646"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#_CPPv4N2Nv5Blast7TkAssetE" title="Nv::Blast::TkAsset"><span class="pre">TkAsset</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createAsset</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_asset.html#_CPPv412NvBlastAsset" title="NvBlastAsset"><span class="pre">NvBlastAsset</span></a> <span class="pre">*</span><em><span class="pre">assetLL</span></em>, <span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html#_CPPv4N2Nv5Blast16TkAssetJointDescE" title="Nv::Blast::TkAssetJointDesc"><span class="pre">TkAssetJointDesc</span></a> <span class="pre">*</span><em><span class="pre">jointDescs</span></em> <span class="pre">=</span> <span class="pre">nullptr</span>, <span class="pre">uint32_t</span> <em><span class="pre">jointDescCount</span></em> <span class="pre">=</span> <span class="pre">0</span>, <span class="pre">bool</span> <em><span class="pre">ownsAsset</span></em> <span class="pre">=</span> <span class="pre">false</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework11createAssetEPK12NvBlastAssetPN2Nv5Blast16TkAssetJointDescE8uint32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create an asset from a low-level <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assetLL</strong> – <strong>[in]</strong> The low-level <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> to encapsulate. </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[in]</strong> Optional joint descriptors to add to the new asset. </p></li>
+<li><p><strong>jointDescCount</strong> – <strong>[in]</strong> The number of joint descriptors in the jointDescs array. If non-zero, jointDescs cannot be NULL. </p></li>
+<li><p><strong>ownsAsset</strong> – <strong>[in]</strong> Does this <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a> own the <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> and thus is responsible for freeing it.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created asset, if memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework11createGroupERK11TkGroupDesc">
+<span id="_CPPv3N2Nv5Blast11TkFramework11createGroupERK11TkGroupDesc"></span><span id="_CPPv2N2Nv5Blast11TkFramework11createGroupERK11TkGroupDesc"></span><span id="Nv::Blast::TkFramework::createGroup__TkGroupDescCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1afbb1cce46ef38bf0a3fb2a5e1b4e2499"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#_CPPv4N2Nv5Blast7TkGroupE" title="Nv::Blast::TkGroup"><span class="pre">TkGroup</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createGroup</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_desc.html#_CPPv4N2Nv5Blast11TkGroupDescE" title="Nv::Blast::TkGroupDesc"><span class="pre">TkGroupDesc</span></a> <span class="pre">&amp;</span><em><span class="pre">desc</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework11createGroupERK11TkGroupDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a group from the given descriptor. </p>
+<p>A group is a processing unit, to which the user may add TkActors. New actors generated from splitting a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> are automatically put into the same group. However, any actor may be removed from its group and optionally placed into another group, or left groupless.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The group descriptor (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_desc.html#struct_nv_1_1_blast_1_1_tk_group_desc"><span class="std std-ref">TkGroupDesc</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created group, if the descriptor was valid and memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework11createActorERK11TkActorDesc">
+<span id="_CPPv3N2Nv5Blast11TkFramework11createActorERK11TkActorDesc"></span><span id="_CPPv2N2Nv5Blast11TkFramework11createActorERK11TkActorDesc"></span><span id="Nv::Blast::TkFramework::createActor__TkActorDescCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a30b4f2c95a00aa2cd98a3ba4001b0cb8"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#_CPPv4N2Nv5Blast7TkActorE" title="Nv::Blast::TkActor"><span class="pre">TkActor</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createActor</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_desc.html#_CPPv4N2Nv5Blast11TkActorDescE" title="Nv::Blast::TkActorDesc"><span class="pre">TkActorDesc</span></a> <span class="pre">&amp;</span><em><span class="pre">desc</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework11createActorERK11TkActorDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create an actor from the given descriptor. </p>
+<p>The actor will be the first member of a new <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The actor descriptor (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_desc.html#struct_nv_1_1_blast_1_1_tk_actor_desc"><span class="std std-ref">TkActorDesc</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created actor, if the descriptor was valid and memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFramework11createJointERK11TkJointDesc">
+<span id="_CPPv3N2Nv5Blast11TkFramework11createJointERK11TkJointDesc"></span><span id="_CPPv2N2Nv5Blast11TkFramework11createJointERK11TkJointDesc"></span><span id="Nv::Blast::TkFramework::createJoint__TkJointDescCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a40b557778256cd6589a3b174015c3029"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#_CPPv4N2Nv5Blast7TkJointE" title="Nv::Blast::TkJoint"><span class="pre">TkJoint</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createJoint</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_desc.html#_CPPv4N2Nv5Blast11TkJointDescE" title="Nv::Blast::TkJointDesc"><span class="pre">TkJointDesc</span></a> <span class="pre">&amp;</span><em><span class="pre">desc</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFramework11createJointERK11TkJointDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Create a joint from the given descriptor. </p>
+<p>The following restrictions apply:</p>
+<p>Only one joint may be created between any two support chunks.</p>
+<p>A joint cannot be created between chunks within the same actor using this method. See <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_desc.html#struct_nv_1_1_blast_1_1_tk_asset_desc"><span class="std std-ref">TkAssetDesc</span></a> for a description of bond joint flags, which will create internal joints within an actor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – <strong>[in]</strong> The joint descriptor (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_desc.html#struct_nv_1_1_blast_1_1_tk_joint_desc"><span class="std std-ref">TkJointDesc</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the created joint, if the descriptor was valid and memory was available for the operation. Otherwise, returns NULL. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N2Nv5Blast11TkFrameworkD0Ev">
+<span id="_CPPv3N2Nv5Blast11TkFrameworkD0Ev"></span><span id="_CPPv2N2Nv5Blast11TkFrameworkD0Ev"></span><span id="Nv::Blast::TkFramework::~TkFramework"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_framework_1a64d7cfa0510f159444d37408dd1fdf05"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~TkFramework</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast11TkFrameworkD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Destructor is virtual and not public - use the <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_framework_1ac98d733dfdddbbcfa806b4c282e17aa0"><span class="std std-ref">release()</span></a> method instead of explicitly deleting the <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_framework"><span class="std std-ref">TkFramework</span></a>. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2017-2022, NVIDIA.
+      <span class="lastupdated">
+        Last updated on Dec 07, 2022.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

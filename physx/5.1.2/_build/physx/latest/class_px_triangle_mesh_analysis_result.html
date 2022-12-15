@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTriangleMeshAnalysisResult &mdash; physx 5.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTriangleMeshAnalysisResult</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtrianglemeshanalysisresult">
+<span id="exhale-class-class-px-triangle-mesh-analysis-result"></span><h1>PxTriangleMeshAnalysisResult<a class="headerlink" href="#pxtrianglemeshanalysisresult" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxTriangleMeshAnalysisResult.h.html#file-include-extensions-pxtrianglemeshanalysisresult-h"><span class="std std-ref">include/extensions/PxTriangleMeshAnalysisResult.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv428PxTriangleMeshAnalysisResult">
+<span id="_CPPv328PxTriangleMeshAnalysisResult"></span><span id="_CPPv228PxTriangleMeshAnalysisResult"></span><span id="PxTriangleMeshAnalysisResult"></span><span class="target" id="class_px_triangle_mesh_analysis_result"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshAnalysisResult</span></span></span><a class="headerlink" href="#_CPPv428PxTriangleMeshAnalysisResult" title="Permalink to this definition"></a><br /></dt>
+<dd><p>These flags indicate what kind of deficiencies a triangle mesh has and describe if the mesh is considered ok, problematic or invalid for tetmeshing. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4EnumE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4EnumE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4EnumE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum6eVALIDE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum6eVALIDE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum6eVALIDE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a0b96c8aa6c66e3d832c84e5a9b80e354"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eVALID</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum6eVALIDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum12eZERO_VOLUMEE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum12eZERO_VOLUMEE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum12eZERO_VOLUMEE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02af79b06a5c8ef6f5f7a77fba13fb9c513"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eZERO_VOLUME</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum12eZERO_VOLUMEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>invalid: Flat mesh without meaningful amount of volume - cannot be meshed since a tetmesh is volumetric </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum16eOPEN_BOUNDARIESE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum16eOPEN_BOUNDARIESE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum16eOPEN_BOUNDARIESE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02aecf9f4e09c783b934accf34d34a541bc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eOPEN_BOUNDARIES</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum16eOPEN_BOUNDARIESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>problematic: Open boundary means that the mesh is not watertight and that there are holes. The mesher can fill holes but the surface might have an unexpected shape where the hole was. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum19eSELF_INTERSECTIONSE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum19eSELF_INTERSECTIONSE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum19eSELF_INTERSECTIONSE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a20d038680a314513122b1ee25e57b59e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSELF_INTERSECTIONS</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum19eSELF_INTERSECTIONSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>problematic: The surface of the resulting mesh won’t match exactly at locations of self-intersections. The tetmesh might be connected at self-intersections even if the input triangle mesh is not </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum34eINCONSISTENT_TRIANGLE_ORIENTATIONE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum34eINCONSISTENT_TRIANGLE_ORIENTATIONE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum34eINCONSISTENT_TRIANGLE_ORIENTATIONE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02aa2f04111ea5d4c959844bbe6f8ce5050"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINCONSISTENT_TRIANGLE_ORIENTATION</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum34eINCONSISTENT_TRIANGLE_ORIENTATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>invalid: It is not possible to distinguish what is inside and outside of the mesh. If there are no self-intersections and not edges shared by more than two triangles, a call to makeTriOrientationConsistent can fix this. Without fixing it, the output from the tetmesher will be incorrect </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum32eCONTAINS_ACUTE_ANGLED_TRIANGLESE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum32eCONTAINS_ACUTE_ANGLED_TRIANGLESE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum32eCONTAINS_ACUTE_ANGLED_TRIANGLESE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a66e084096741d01b806c0fddd6848a5f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTAINS_ACUTE_ANGLED_TRIANGLES</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum32eCONTAINS_ACUTE_ANGLED_TRIANGLESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>problematic: An ideal mesh for a softbody has triangles with similar angles and evenly distributed vertices. Acute angles can be handled but might lead to a poor quality tetmesh. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum39eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLESE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum39eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLESE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum39eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLESE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02acbc871eb3687e48d12699142d368ea30"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLES</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum39eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>problematic: Border case of a self-intersecting mesh. The tetmesh might not match the surace exactly near such edges. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum26eCONTAINS_DUPLICATE_POINTSE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum26eCONTAINS_DUPLICATE_POINTSE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum26eCONTAINS_DUPLICATE_POINTSE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a0720a766525210c2d83349ff3b0cf352"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTAINS_DUPLICATE_POINTS</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum26eCONTAINS_DUPLICATE_POINTSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>ok: Duplicate points can be handled by the mesher without problems. The resulting tetmesh will only make use of first unique point that is found, duplicate points will get mapped to that unique point in the tetmesh. Therefore the tetmesh can contain points that are not accessed by a tet. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum24eCONTAINS_INVALID_POINTSE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum24eCONTAINS_INVALID_POINTSE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum24eCONTAINS_INVALID_POINTSE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02aad99fba977aa78cc1b8248dc68258e7f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTAINS_INVALID_POINTS</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum24eCONTAINS_INVALID_POINTSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>invalid: Points contain NAN, infinity or similar values that will lead to an invalid mesh </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum28eREQUIRES_32BIT_INDEX_BUFFERE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum28eREQUIRES_32BIT_INDEX_BUFFERE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum28eREQUIRES_32BIT_INDEX_BUFFERE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02ae1ec66b55d5e5a2cf720048f80b5a7f7"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREQUIRES_32BIT_INDEX_BUFFER</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum28eREQUIRES_32BIT_INDEX_BUFFERE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>invalid: Mesh contains more indices than a 16bit index buffer can address </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum20eMESH_IS_PROBLEMATICE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum20eMESH_IS_PROBLEMATICE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum20eMESH_IS_PROBLEMATICE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a22a2037ada29a7b007b1483da619b402"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_IS_PROBLEMATIC</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum20eMESH_IS_PROBLEMATICE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>flag is set if the mesh is categorized as problematic </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxTriangleMeshAnalysisResult4Enum16eMESH_IS_INVALIDE">
+<span id="_CPPv3N28PxTriangleMeshAnalysisResult4Enum16eMESH_IS_INVALIDE"></span><span id="_CPPv2N28PxTriangleMeshAnalysisResult4Enum16eMESH_IS_INVALIDE"></span><span class="target" id="class_px_triangle_mesh_analysis_result_1ac7aa970865e6dfbc719f63246edd5a02a83f51b93d9f18852f830a99bcc31d5d7"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_IS_INVALID</span></span></span><a class="headerlink" href="#_CPPv4N28PxTriangleMeshAnalysisResult4Enum16eMESH_IS_INVALIDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>flag is set if the mesh is categorized as invalid </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 12, 2022.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
