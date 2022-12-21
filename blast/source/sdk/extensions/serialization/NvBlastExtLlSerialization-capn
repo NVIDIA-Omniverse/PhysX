@@ -1,0 +1,172 @@
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Copyright (c) 2017-2022 NVIDIA Corporation. All rights reserved.
+
+
+@0x9a4a58fac38375e0;
+
+using Cxx = import "/capnp/c++.capnp";
+
+$Cxx.namespace("Nv::Blast::Serialization");
+
+struct Asset
+{
+    header @0 :NvBlastDataBlock;
+
+    iD @1 :UUID;
+
+    chunkCount @2 :UInt32;
+
+    graph @3 :NvBlastSupportGraph;
+
+    leafChunkCount @4 :UInt32;
+
+    firstSubsupportChunkIndex @5 :UInt32;
+
+    bondCount @6 :UInt32;
+
+    chunks @7: List(NvBlastChunk);
+
+    bonds @8: List(NvBlastBond);
+
+    subtreeLeafChunkCounts @9: List(UInt32);
+
+    chunkToGraphNodeMap @10: List(UInt32);
+}
+
+struct Family
+{
+    assetID @0: UUID;
+
+    actors @1: List(Actor);
+
+    visibleChunkIndexLinks @2: List(UInt32);
+
+    chunkActorIndices @3: List(UInt32);
+
+    graphNodeIndexLinks @4: List(UInt32);
+
+    lowerSupportChunkHealths @5: List(Float32);
+
+    graphBondHealths @6: List(Float32);
+
+    familyGraph @7: FamilyGraph;
+
+    actorCount @8: UInt32;
+
+    bondCount @9: UInt32;
+
+    chunkCount @10: UInt32;
+
+    nodeCount @11: UInt32;
+
+    lowerSupportChunkCount @12: UInt32;
+
+    upperSupportChunkCount @13: UInt32;
+}
+
+struct Actor
+{
+    familyOffset @0: UInt32;
+
+    firstVisibleChunkIndex @1: UInt32;
+
+    visibleChunkCount @2: UInt32;
+
+    firstGraphNodeIndex @3: UInt32;
+
+    graphNodeCount @4: UInt32;
+
+    leafChunkCount @5: UInt32;
+}
+
+struct FamilyGraph
+{
+    islandIds @0: List(UInt32);
+
+    dirtyNodeLinks @1: List(UInt32);
+
+    firstDirtyNodeIndices @2: List(UInt32);
+
+    fastRoute @3: List(UInt32);
+
+    hopCounts @4: List(UInt32);
+
+    isEdgeRemoved @5: Data;
+
+    isNodeInDirtyList @6: Data;
+
+    nodeCount @7: UInt32;
+}
+
+struct NvBlastDataBlock
+{
+    enum Type
+    {
+        assetDataBlock @0;
+        instanceDataBlock @1;
+    }
+
+    dataType @0 :Type;
+
+    formatVersion @1 :UInt32;
+
+    size @2 :UInt32;
+}
+
+struct NvBlastChunk
+{
+    centroid @0 :List(Float32);
+
+    volume @1 :Float32;
+
+    parentChunkIndex @2 :UInt32;
+    firstChildIndex @3 :UInt32;
+    childIndexStop @4 :UInt32;
+    userData @5 :UInt32;
+}
+
+struct NvBlastBond
+{
+    normal @0 :List(Float32);
+    area @1 :Float32;
+    centroid @2 :List(Float32);
+    userData @3 :UInt32;
+}
+
+struct NvBlastSupportGraph
+{
+    nodeCount @0 : UInt32;
+
+    chunkIndices @1 : List(UInt32);
+    adjacencyPartition @2 : List(UInt32);
+    adjacentNodeIndices @3 : List(UInt32);
+    adjacentBondIndices @4 : List(UInt32);
+}
+
+struct UUID
+{
+    value @0 : Data;
+}

@@ -60,6 +60,123 @@ static const int gVoxelMapDim = 20;
 static const float gVoxelMapSize = 80.0f;
 static VoxelMap* gVoxelMap;
 
+static PxArray<PxVec3> gVertices;
+static PxArray<PxU32> gIndices;
+static PxU32 gVertexCount;
+static PxU32 gIndexCount;
+static PxGeometryHolder gVoxelGeometryHolder;
+static const PxU32 gVertexOrder[12] = {
+	0, 2, 1, 2, 3, 1,
+	0, 1, 2, 2, 1, 3
+};
+
+PX_INLINE void cookVoxelFace(bool reverseWinding) {
+	for (int i = 0; i < 6; ++i) {
+		gIndices[gIndexCount + i] = gVertexCount + gVertexOrder[i + (reverseWinding ? 6 : 0)];
+	}
+	gVertexCount += 4;
+	gIndexCount += 6;
+}
+
+void cookVoxelMesh() {
+
+	int faceCount = 0;
+	gVertexCount = 0;
+	gIndexCount = 0;
+
+	float vx[2] = {gVoxelMap->voxelSize().x * -0.5f, gVoxelMap->voxelSize().x * 0.5f};
+	float vy[2] = {gVoxelMap->voxelSize().y * -0.5f, gVoxelMap->voxelSize().y * 0.5f};
+	float vz[2] = {gVoxelMap->voxelSize().z * -0.5f, gVoxelMap->voxelSize().z * 0.5f};
+
+	for (int x = 0; x < gVoxelMap->dimX(); ++x)
+		for (int y = 0; y < gVoxelMap->dimY(); ++y)
+			for (int z = 0; z < gVoxelMap->dimZ(); ++z)
+				if (gVoxelMap->voxel(x, y, z))
+				{
+					if (!gVoxelMap->voxel(x+1, y, z)) {faceCount++;}
+					if (!gVoxelMap->voxel(x-1, y, z)) {faceCount++;}
+					if (!gVoxelMap->voxel(x, y+1, z)) {faceCount++;}
+					if (!gVoxelMap->voxel(x, y-1, z)) {faceCount++;}
+					if (!gVoxelMap->voxel(x, y, z+1)) {faceCount++;}
+					if (!gVoxelMap->voxel(x, y, z-1)) {faceCount++;}
+				}
+
+	gVertices.resize(faceCount*4);
+	gIndices.resize(faceCount*6);
+
+	for (int x = 0; x < gVoxelMap->dimX(); ++x)
+	{
+		for (int y = 0; y < gVoxelMap->dimY(); ++y)
+		{
+			for (int z = 0; z < gVoxelMap->dimZ(); ++z)
+			{
+				PxVec3 voxelPos = gVoxelMap->voxelPos(x, y, z);
+
+				if (gVoxelMap->voxel(x, y, z))
+				{
+					if (!gVoxelMap->voxel(x+1, y, z)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[1], vy[0], vz[0]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[1], vy[0], vz[1]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[1], vy[1], vz[0]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[1], vy[1], vz[1]);
+						cookVoxelFace(false);
+					}
+					if (!gVoxelMap->voxel(x-1, y, z)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[0], vy[0], vz[0]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[0], vy[0], vz[1]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[0], vy[1], vz[0]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[0], vy[1], vz[1]);
+						cookVoxelFace(true);
+					}
+					if (!gVoxelMap->voxel(x, y+1, z)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[0], vy[1], vz[0]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[0], vy[1], vz[1]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[1], vy[1], vz[0]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[1], vy[1], vz[1]);
+						cookVoxelFace(true);
+					}
+					if (!gVoxelMap->voxel(x, y-1, z)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[0], vy[0], vz[0]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[0], vy[0], vz[1]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[1], vy[0], vz[0]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[1], vy[0], vz[1]);
+						cookVoxelFace(false);
+					}
+					if (!gVoxelMap->voxel(x, y, z+1)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[0], vy[0], vz[1]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[0], vy[1], vz[1]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[1], vy[0], vz[1]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[1], vy[1], vz[1]);
+						cookVoxelFace(false);
+					}
+					if (!gVoxelMap->voxel(x, y, z-1)) {
+						gVertices[gVertexCount + 0] = voxelPos + PxVec3(vx[0], vy[0], vz[0]);
+						gVertices[gVertexCount + 1] = voxelPos + PxVec3(vx[0], vy[1], vz[0]);
+						gVertices[gVertexCount + 2] = voxelPos + PxVec3(vx[1], vy[0], vz[0]);
+						gVertices[gVertexCount + 3] = voxelPos + PxVec3(vx[1], vy[1], vz[0]);
+						cookVoxelFace(true);
+					}
+				}
+			}
+		}
+	}
+
+	const PxTolerancesScale scale;
+	PxCookingParams params(scale);
+	params.midphaseDesc.setToDefault(PxMeshMidPhase::eBVH34);
+	params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+	params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+	PxTriangleMeshDesc triangleMeshDesc;
+	triangleMeshDesc.points.count = gVertexCount;
+	triangleMeshDesc.points.data = gVertices.begin();
+	triangleMeshDesc.points.stride = sizeof(PxVec3);
+	triangleMeshDesc.triangles.count = gIndexCount / 3;
+	triangleMeshDesc.triangles.data = gIndices.begin();
+	triangleMeshDesc.triangles.stride = 3 * sizeof(PxU32);
+	PxTriangleMesh* gTriangleMesh = PxCreateTriangleMesh(params, triangleMeshDesc);
+	gVoxelGeometryHolder.storeAny( PxTriangleMeshGeometry(gTriangleMesh) );
+}
+
 static PxRigidDynamic* createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& velocity = PxVec3(0), PxReal density = 1.0f)
 {
 	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, geometry, *gMaterial, density);
@@ -141,29 +258,14 @@ void initPhysics(bool /*interactive*/)
 	gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 
 	createStack(PxTransform(PxVec3(0, 22, 0)), 10, 2.0f);
+
+	cookVoxelMesh();
 }
 
 void debugRender()
 {
-	PxGeometryHolder geom;
-	geom.storeAny(PxBoxGeometry(gVoxelMap->voxelSize() * 0.5f));
-
-	for (int x = 0; x < gVoxelMap->dimX(); ++x)
-		for (int y = 0; y < gVoxelMap->dimY(); ++y)
-			for (int z = 0; z < gVoxelMap->dimZ(); ++z)
-				if (gVoxelMap->voxel(x, y, z))
-				{
-					if (gVoxelMap->voxel(x+1, y, z) &&
-						gVoxelMap->voxel(x-1, y, z) &&
-						gVoxelMap->voxel(x, y+1, z) &&
-						gVoxelMap->voxel(x, y-1, z) &&
-						gVoxelMap->voxel(x, y, z+1) &&
-						gVoxelMap->voxel(x, y, z-1))
-						continue;
-
-					PxTransform pose = gActor->getGlobalPose().transform(PxTransform(gVoxelMap->voxelPos(x, y, z)));
-					Snippets::renderGeoms(1, &geom, &pose, false, PxVec3(0.5f));
-				}
+	PxTransform pose = gActor->getGlobalPose();
+	Snippets::renderGeoms(1, &gVoxelGeometryHolder, &pose, false, PxVec3(0.5f));
 }
 
 void stepPhysics(bool /*interactive*/)

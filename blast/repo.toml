@@ -1,0 +1,259 @@
+########################################################################################################################
+# Repo tool base settings
+########################################################################################################################
+
+[repo]
+
+# Repository Name. It is used for solution name and final package name
+name = "blast-sdk"
+
+
+########################################################################################################################
+# Build tool setup
+########################################################################################################################
+
+[repo_build]
+
+# List of packman projects to pull (in order)
+fetch.packman_host_files_to_pull = [
+    "${root}/deps/host-deps.packman.xml",
+]
+fetch.packman_target_files_to_pull = [
+    "${root}/deps/target-deps.packman.xml",
+]
+
+vscode.python = "${root}/_build/target-deps/python36"
+vscode.python_env.PYTHONPATH= [
+    "$$$${PYTHONPATH}",
+    "${env:PYTHONPATH}"
+]
+vscode.python_env.PATH= [
+    "$$$${PATH}", 
+    "$root/_build/$platform/$config",
+]
+vscode.write_python_paths_in_settings_json = true
+vscode.generate_python_env_file = false
+
+#licensing.enabled = true
+#licensing.packages = [
+#    "${root}/deps/target-deps.packman.xml",
+#    "${root}/deps/usd-deps.packman.xml",
+#]
+#licensing.fail_on_missing = true
+
+# Disable pip license gathering (we don't have any)
+fetch.pip.gather_licenses_path = ""
+
+msbuild.sln_file = "blast-sdk.sln"
+msbuild.vs_version = "vs2017"
+
+[[repo_build.argument]]
+name = "-py"
+help = "Python version."
+kwargs.choices = ["0", "27", "36", "37"]
+kwargs.nargs = 1
+extra_premake_args = ["--python-version={}"]
+
+
+########################################################################################################################
+# Code Format Tool
+########################################################################################################################
+
+[repo_format]
+
+
+# PUBLIC_EXCLUDE_BEGIN
+########################################################################################################################
+# Packaging
+########################################################################################################################
+
+[repo_package.packages.main_package]
+
+name = "${conf:repo.name}"
+
+root = "_build/${platform}/${config}/${conf:repo.name}"
+
+files = [
+    ["**/include/**/*.*"],
+    ["**/source/**/*.*"],
+    ["**/PACKAGE-LICENSES/*.*"],
+]
+
+files_exclude = [
+    ["**/include/extensions/exporter/**"],
+    ["**/include/extensions/physx/**"],
+    ["**/include/extensions/serialization/*ExtPx*.*"],
+]
+
+windows-x86_64.files = [
+    ["**/bin/NvBlast*.dll"],
+    ["**/bin/NvBlast*.lib"],
+]
+
+linux-x86_64.files = [
+    ["**/bin/*NvBlast*.so"],
+]
+
+windows-x86_64.debug.files = [
+    ["**/NvBlast*.pdb"],
+    ["**/NvBlast*.exp"],
+]
+
+label_name = false
+
+version = "${env:BUILD_NUMBER}"
+package_per_config = true
+append_config = true
+version_separator = "."
+
+[repo_package.packages.test_package]
+
+name = "test-${conf:repo.name}"
+
+root = "_build/${platform}/${config}/${conf:repo.name}"
+
+windows-x86_64.files = [
+    ["**/bin/PhysX*.dll"],
+    ["**/bin/*Tests.exe"],
+]
+
+linux-x86_64.files = [
+    ["**/bin/*Tests"],
+]
+
+label_name = false
+
+version = "${env:BUILD_NUMBER}"
+create_package_info = false
+package_per_config = true
+append_config = true
+version_separator = "."
+
+[repo_package.packages."platform:windows-x86_64".docs]
+omniverse_flow_version_scheme = true
+files = [
+    ["_build/docs"]
+]
+
+
+########################################################################################################################
+# Build Number 
+########################################################################################################################
+
+[repo_build_number]
+enabled = true
+
+
+########################################################################################################################
+# Package publishing to packman
+########################################################################################################################
+
+[repo_publish]
+enabled = true
+packages = ["blast-sdk"]
+default_remote = "cloudfront"
+
+
+########################################################################################################################
+# Documentation building
+########################################################################################################################
+
+[repo_docs]
+enabled = true
+
+config = "release"
+
+doxygen_aliases = [
+]
+
+repo_url = "https://gitlab-master.nvidia.com/omniverse/blast-sdk"
+
+project = "${conf:repo.name}"
+version = "${file:${root}/VERSION.md}"
+name = "blast-sdk"
+api_title = "blast-sdk-${file:${root}/VERSION.md}"
+copyright_start = 2017
+
+sphinx_exclude_patterns = [
+    "_build",
+    "_compiler",
+    "_repo",
+    "deps",
+    "PACKAGE-LICENSES",
+    "source",
+    "test",
+    "tools",
+    "VERSION.md",
+    "COVER.md",
+    "NvPreprocessor.h",
+]
+
+doxygen_input = [
+    "include/extensions/assetutils/NvBlastExtAssetUtils.h",
+    "include/extensions/authoring/NvBlastExtAuthoring.h",
+    "include/extensions/authoring/NvBlastExtAuthoringBondGenerator.h",
+    "include/extensions/authoring/NvBlastExtAuthoringBooleanTool.h",
+    "include/extensions/authoring/NvBlastExtAuthoringCutout.h",
+    "include/extensions/authoring/NvBlastExtAuthoringFractureTool.h",
+    "include/extensions/authoring/NvBlastExtAuthoringMeshCleaner.h",
+    "include/extensions/authoringCommon/NvBlastExtAuthoringAccelerator.h",
+    "include/extensions/authoringCommon/NvBlastExtAuthoringConvexMeshBuilder.h",
+    "include/extensions/authoringCommon/NvBlastExtAuthoringMesh.h",
+    "include/extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h",
+    "include/extensions/authoringCommon/NvBlastExtAuthoringTypes.h",
+    "include/extensions/exporter/NvBlastExtExporter.h",
+    "include/extensions/exporter/NvBlastExtExporterJsonCollision.h",
+    "include/extensions/physx/NvBlastExtPx.h",
+    "include/extensions/physx/NvBlastExtPxActor.h",
+    "include/extensions/physx/NvBlastExtPxAsset.h",
+    "include/extensions/physx/NvBlastExtPxCollisionBuilder.h",
+    "include/extensions/physx/NvBlastExtPxFamily.h",
+    "include/extensions/physx/NvBlastExtPxImpactDamageManager.h",
+    "include/extensions/physx/NvBlastExtPxListener.h",
+    "include/extensions/physx/NvBlastExtPxManager.h",
+    "include/extensions/physx/NvBlastExtPxStressSolver.h",
+    "include/extensions/physx/NvBlastExtPxSync.h",
+    "include/extensions/physx/NvBlastExtPxTask.h",
+    "include/extensions/physx/NvBlastPxCallbacks.h",
+    "include/extensions/RT/NvBlastExtRT.h",
+    "include/extensions/serialization/NvBlastExtLlSerialization.h",
+    "include/extensions/serialization/NvBlastExtPxSerialization.h",
+    "include/extensions/serialization/NvBlastExtSerialization.h",
+    "include/extensions/serialization/NvBlastExtTkSerialization.h",
+    "include/extensions/shaders/NvBlastExtDamageShaders.h",
+    "include/extensions/stress/NvBlastExtStressSolver.h",
+    "include/globals/NvBlastAllocator.h",
+    "include/globals/NvBlastDebugRender.h",
+    "include/globals/NvBlastGlobals.h",
+    "include/globals/NvBlastProfiler.h",
+    "include/globals/NvCMath.h",
+    "include/lowlevel/NvBlast.h",
+    "include/lowlevel/NvBlastTypes.h",
+    "include/lowlevel/NvCTypes.h",
+    "include/lowlevel/NvPreprocessor.h",
+    "include/toolkit/NvBlastTk.h",
+    "include/toolkit/NvBlastTkActor.h",
+    "include/toolkit/NvBlastTkAsset.h",
+    "include/toolkit/NvBlastTkEvent.h",
+    "include/toolkit/NvBlastTkFamily.h",
+    "include/toolkit/NvBlastTkFramework.h",
+    "include/toolkit/NvBlastTkGroup.h",
+    "include/toolkit/NvBlastTkIdentifiable.h",
+    "include/toolkit/NvBlastTkJoint.h",
+    "include/toolkit/NvBlastTkObject.h",
+    "include/toolkit/NvBlastTkType.h",
+]
+
+doxygen_predefined = [
+    "NVBLAST_API=",
+    "NV_INLINE=inline",
+    "NV_COMPILE_TIME_ASSERT(arg)=",
+]
+
+
+[repo_docs.editions.s3web]
+protocol = "s3"
+bucket_name = "omniverse-docs"
+bucket_dir = "${project}/${version}"
+
+# PUBLIC_EXCLUDE_END

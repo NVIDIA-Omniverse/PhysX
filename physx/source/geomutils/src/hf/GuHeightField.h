@@ -40,7 +40,8 @@
 #include "GuHeightFieldData.h"
 
 //#define PX_HEIGHTFIELD_VERSION 0
-#define PX_HEIGHTFIELD_VERSION 1  // tiled version that was needed for PS3 only has been removed
+//#define PX_HEIGHTFIELD_VERSION 1  // tiled version that was needed for PS3 only has been removed
+#define PX_HEIGHTFIELD_VERSION 2  // some floats are now integers
 
 namespace physx
 {

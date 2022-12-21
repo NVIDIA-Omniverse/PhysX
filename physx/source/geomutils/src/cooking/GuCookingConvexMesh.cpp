@@ -96,7 +96,20 @@ static bool cookConvexMeshInternal(const PxCookingParams& params, const PxConvex
 
 	if(desc.points.count >= 256)
 		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Cooking::cookConvexMesh: user-provided hull must have less than 256 vertices!");
-		
+
+	if(desc.polygons.count >= 256)
+		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Cooking::cookConvexMesh: user-provided hull must have less than 256 faces!");
+
+	if (desc.flags & PxConvexFlag::eGPU_COMPATIBLE)
+	{
+		if (desc.points.count > 64)
+			return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Cooking::cookConvexMesh: GPU-compatible user-provided hull must have less than 65 vertices!");
+
+		if (desc.polygons.count > 64)
+			return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Cooking::cookConvexMesh: GPU-compatible user-provided hull must have less than 65 faces!");
+	}
+
+
 	if(!meshBuilder.build(desc, params.gaussMapLimit, false, hullLib))
 		return false;
 
@@ -111,10 +124,14 @@ static ConvexHullLib* createHullLib(PxConvexMeshDesc& desc, const PxCookingParam
 	if(desc.flags & PxConvexFlag::eCOMPUTE_CONVEX)
 	{			
 		const PxU16 gpuMaxVertsLimit = 64;
+		const PxU16 gpuMaxFacesLimit = 64;
 
 		// GRB supports 64 verts max
 		if(desc.flags & PxConvexFlag::eGPU_COMPATIBLE)
+		{
 			desc.vertexLimit = PxMin(desc.vertexLimit, gpuMaxVertsLimit);
+			desc.polygonLimit = PxMin(desc.polygonLimit, gpuMaxFacesLimit);
+		}
 
 		return PX_NEW(QuickHullConvexHullLib) (desc, params);
 	}

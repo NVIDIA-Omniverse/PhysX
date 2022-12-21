@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Welcome to the NVIDIA PhysX source code repository.
 
-This repository contains source releases of the PhysX and Flow SDKs used in NVIDIA Omniverse.
+This repository contains source releases of the PhysX, Flow, and Blast SDKs used in NVIDIA Omniverse.
 
 ## Documentation
 

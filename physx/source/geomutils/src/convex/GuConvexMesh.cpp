@@ -105,6 +105,7 @@ bool ConvexMesh::isGpuCompatible() const
 	PxReal ratio = maxR/minR;
 
 	return mHullData.mNbHullVertices <= 64 &&
+		mHullData.mNbPolygons <= 64 &&
 		mHullData.mPolygons[0].mNbVerts <= 32 &&
 		mHullData.mNbEdges.isBitSet() &&
 		ratio < 100.f;
