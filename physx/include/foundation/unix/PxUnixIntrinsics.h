@@ -32,10 +32,14 @@
 #include "foundation/PxAssert.h"
 #include <math.h>
 
+#if PX_ANDROID
+#include <signal.h> // for PxDebugBreak() { raise(SIGTRAP); }
+#endif
+
 // this file is for internal intrinsics - that is, intrinsics that are used in
 // cross platform code but do not appear in the API
 
-#if !(PX_LINUX || PX_APPLE_FAMILY)
+#if !(PX_LINUX || PX_ANDROID || PX_APPLE_FAMILY)
 #error "This file should only be included by unix builds!!"
 #endif
 
@@ -88,7 +92,7 @@ PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
 /*!
 Prefetch \c count bytes starting at \c ptr.
 */
-#if PX_IOS
+#if PX_ANDROID || PX_IOS
 PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
 {
 	const char* cp = static_cast<const char*>(ptr);

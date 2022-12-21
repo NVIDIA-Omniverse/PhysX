@@ -119,8 +119,8 @@ struct PxConvexFlag
 		eFAST_INERTIA_COMPUTATION = (1 << 6),
 
 		/**
-		\brief Convex hulls are created with respect to GPU simulation limitations. Vertex limit is set to 64 and
-		vertex limit per face is internally set to 32.
+		\brief Convex hulls are created with respect to GPU simulation limitations. Vertex limit and polygon limit
+		is set to 64 and vertex limit per face is internally set to 32.
 		\note Can be used only with eCOMPUTE_CONVEX flag.
 		*/
 		eGPU_COMPATIBLE = (1 << 7),
@@ -146,6 +146,8 @@ PX_FLAGS_OPERATORS(PxConvexFlag::Enum,PxU16)
 /**
 \brief Descriptor class for #PxConvexMesh.
 \note The number of vertices and the number of convex polygons in a cooked convex mesh is limited to 256.
+\note The number of vertices and the number of convex polygons in a GPU compatible convex mesh is limited to 64,
+and the number of faces per vertex is limited to 32.
 
 @see PxConvexMesh PxConvexMeshGeometry PxShape PxPhysics.createConvexMesh()
 
@@ -191,19 +193,31 @@ public:
 	PxConvexFlags flags;
 
 	/**
-	\brief Limits the number of vertices of the result convex mesh. Hard maximum limit is 256
+	\brief Limits the number of vertices of the result convex mesh. Hard maximum limit is 255
 	and minimum limit is 4 if PxConvexFlag::ePLANE_SHIFTING is used, otherwise the minimum
 	limit is 8.
 
 	\note Vertex limit is only used when PxConvexFlag::eCOMPUTE_CONVEX is specified.
 	\note The please see PxConvexFlag::ePLANE_SHIFTING for algorithm explanation
+	\note The maximum limit for GPU compatible convex meshes is 64.
 
 	@see PxConvexFlag::ePLANE_SHIFTING
 
 	<b>Range:</b> [4, 255]<br>
 	<b>Default:</b> 255
 	*/
-	PxU16 vertexLimit;	
+	PxU16 vertexLimit;
+	
+	/**
+	\brief Limits the number of polygons of the result convex mesh. Hard maximum limit is 255
+	and minimum limit is 4.
+
+	\note The maximum limit for GPU compatible convex meshes is 64.
+
+	<b>Range:</b> [4, 255]<br>
+	<b>Default:</b> 255
+	 */
+	PxU16 polygonLimit;
 
 	/**
 	\brief Maximum number of vertices after quantization. The quantization is done during the vertex cleaning phase. 
@@ -242,7 +256,7 @@ public:
 };
 
 PX_INLINE PxConvexMeshDesc::PxConvexMeshDesc()	//constructor sets to default
-: vertexLimit(255), quantizedCount(255), sdfDesc(NULL)
+: vertexLimit(255), polygonLimit(255), quantizedCount(255), sdfDesc(NULL)
 {
 
 }
@@ -300,7 +314,17 @@ PX_INLINE bool PxConvexMeshDesc::isValid() const
 		return false;
 	}
 
-	if(vertexLimit > 256)
+	if(vertexLimit > 255)
+	{
+		return false;
+	}
+
+	if (polygonLimit < 4)
+	{
+		return false;
+	}
+
+	if (polygonLimit > 255)
 	{
 		return false;
 	}

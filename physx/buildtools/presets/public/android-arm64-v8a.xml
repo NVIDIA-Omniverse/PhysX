@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preset name="android-arm64-v8a" comment="Android-29, arm64-v8a PhysX SDK ">
+  <platform targetPlatform="android" compiler="clang" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />  
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/android-29/PhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="ANDROID_NATIVE_API_LEVEL" value="android-29" comment="Android platform API level" />
+    <cmakeParam name="ANDROID_ABI" value="arm64-v8a" comment="Android arm 64 ABI" />
+  </CMakeParams>
+</preset>

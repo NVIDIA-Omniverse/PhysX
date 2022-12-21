@@ -1,3 +1,21 @@
+# v5.1.2
+
+## General
+
+### Fixed:
+
+* Binary serialization of materials' userData.
+* Fixed precision issue in index computation in Gu::HeightField::computeCellCoordinates [Issue #52](https://github.com/NVIDIA-Omniverse/PhysX/issues/52)
+* Performance for SnippetCustomGeometry is now much better, particularly on Linux
+* Compiler errors on Linux - [Issue #25](https://github.com/NVIDIA-Omniverse/PhysX/issues/25)
+
+## Cooking
+
+### Fixed
+
+* A bug that generated non-GPU compatible convex meshes even though GPU compatibility was requested.
+
+
 # v5.1.1
 
 ## General
