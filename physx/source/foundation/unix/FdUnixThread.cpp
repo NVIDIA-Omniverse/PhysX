@@ -32,7 +32,7 @@
 #include "foundation/PxThread.h"
 
 #include <math.h>
-#if !PX_APPLE_FAMILY && !defined(__CYGWIN__) && !PX_EMSCRIPTEN
+#if !PX_APPLE_FAMILY && !PX_ANDROID && !defined(__CYGWIN__) && !PX_EMSCRIPTEN
 #include <bits/local_lim.h> // PTHREAD_STACK_MIN
 #endif
 #include <stdio.h>
@@ -49,6 +49,13 @@
 #include <sys/sysctl.h>
 #include <TargetConditionals.h>
 #include <pthread.h>
+#endif
+
+// fwd
+#if PX_ANDROID
+extern "C" {
+int android_getCpuCount(void);
+}
 #endif
 
 #define PxSpinLockPause() asm("nop")
@@ -172,7 +179,7 @@ void PxThreadImpl::start(uint32_t stackSize, PxRunnable* runnable)
 	if(stackSize == 0)
 		stackSize = getDefaultStackSize();
 
-#if defined(PTHREAD_STACK_MIN)
+#if defined(PTHREAD_STACK_MIN) && !PX_ANDROID
 	if(stackSize < PTHREAD_STACK_MIN)
 	{
 		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
@@ -244,9 +251,14 @@ __attribute__((noreturn))
 
 void PxThreadImpl::kill()
 {
+#if !PX_ANDROID
 	if(getThread(this)->state == ePxThreadStarted)
 		pthread_cancel(getThread(this)->thread);
 	getThread(this)->state = ePxThreadStopped;
+#else
+	PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
+	                              "ThreadImpl::kill() called, but is not implemented");
+#endif
 }
 
 void PxThreadImpl::sleep(uint32_t ms)
@@ -308,6 +320,9 @@ void PxThreadImpl::setName(const char* name)
 
 	if (getThread(this)->state == ePxThreadStarted)
 	{
+#if PX_ANDROID && (__ANDROID_API__ > 8)
+		pthread_setname_np(getThread(this)->thread, name);
+#else
 		// not implemented because most unix APIs expect setName()
 		// to be called from the thread's context. Example see next comment:
 
@@ -315,6 +330,7 @@ void PxThreadImpl::setName(const char* name)
 		// the main process if used in the wrong context:
 		// prctl(PR_SET_NAME, reinterpret_cast<unsigned long>(name) ,0,0,0);
 		PX_UNUSED(name);
+#endif
 	}
 }
 
@@ -389,6 +405,8 @@ uint32_t PxThreadImpl::getNbPhysicalCores()
 	int count;
 	size_t size = sizeof(count);
 	return sysctlbyname("hw.physicalcpu", &count, &size, NULL, 0) ? 0 : count;
+#elif PX_ANDROID
+	return android_getCpuCount();
 #else
 	// Linux exposes CPU topology using /sys/devices/system/cpu
 	// https://www.kernel.org/doc/Documentation/cputopology.txt

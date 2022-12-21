@@ -129,6 +129,8 @@ __attribute__((noreturn))
 {
 #if PX_WINDOWS
 	__debugbreak();
+#elif PX_ANDROID
+	raise(SIGTRAP); // works better than __builtin_trap. Proper call stack and can be continued.
 #elif PX_LINUX
 	__builtin_trap();
 #elif PX_GCC_FAMILY

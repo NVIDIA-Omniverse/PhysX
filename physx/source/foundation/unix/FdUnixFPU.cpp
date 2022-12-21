@@ -27,7 +27,7 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 #include "foundation/PxFPU.h"
 
-#if !defined(__CYGWIN__)
+#if !(defined(__CYGWIN__) || PX_ANDROID)
 #include <fenv.h>
 PX_COMPILE_TIME_ASSERT(8 * sizeof(uint32_t) >= sizeof(fenv_t));
 #endif
@@ -41,6 +41,8 @@ physx::PxFPUGuard::PxFPUGuard()
 {
 #if defined(__CYGWIN__)
 #pragma message "FPUGuard::FPUGuard() is not implemented"
+#elif PX_ANDROID
+// not supported unless ARM_HARD_FLOAT is enabled.
 #elif PX_OSX
 	mControlWords[0] = _mm_getcsr();
 	// set default (disable exceptions: _MM_MASK_MASK) and FTZ (_MM_FLUSH_ZERO_ON), DAZ (_MM_DENORMALS_ZERO_ON: (1<<6))
@@ -66,6 +68,8 @@ physx::PxFPUGuard::~PxFPUGuard()
 {
 #if defined(__CYGWIN__)
 #pragma message "PxFPUGuard::~PxFPUGuard() is not implemented"
+#elif PX_ANDROID
+// not supported unless ARM_HARD_FLOAT is enabled.
 #elif PX_OSX
 	// restore control word and clear exception flags
 	// (setting exception state flags cause exceptions on the first following fp operation)

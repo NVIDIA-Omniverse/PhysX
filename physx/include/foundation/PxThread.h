@@ -36,7 +36,7 @@
 
 #if PX_WINDOWS_FAMILY
 #define PxSpinLockPause() __asm pause
-#elif PX_LINUX || PX_APPLE_FAMILY || PX_SWITCH
+#elif PX_LINUX || PX_ANDROID || PX_APPLE_FAMILY || PX_SWITCH
 #define PxSpinLockPause() asm("nop")
 #else
 #error "Platform not supported!"
