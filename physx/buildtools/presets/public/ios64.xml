@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preset name="ios64" comment="iOS Xcode PhysX general settings">
+  <platform targetPlatform="ios64" compiler="xcode" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />
+    <cmakeSwitch name="NV_FORCE_64BIT_SUFFIX" value="True" comment="Force a 64 bit suffix for platforms that don't register properly." />
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/ios64/PhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET" value="14.0" comment="iOS minimum deployment target" />
+  </CMakeParams>
+</preset>

@@ -32,7 +32,7 @@
 #include "foundation/PxThread.h"
 #include <pthread.h>
 
-#if PX_EMSCRIPTEN
+#if PX_IOS || PX_EMSCRIPTEN
 #define USE_MUTEX
 #endif
 

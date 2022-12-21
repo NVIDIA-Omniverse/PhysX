@@ -92,7 +92,7 @@ PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
 /*!
 Prefetch \c count bytes starting at \c ptr.
 */
-#if PX_ANDROID
+#if PX_ANDROID || PX_IOS
 PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
 {
 	const char* cp = static_cast<const char*>(ptr);
