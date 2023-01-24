@@ -8,19 +8,19 @@
 	</dependency>
 
 	<dependency name="vswhere">
-		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64  vc16win64 linux-crosscompile linux-aarch64-crosscompile "/>
+		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64  vc16win64 vc17win64 linux-crosscompile linux-aarch64-crosscompile "/>
 	</dependency>
 
 	<dependency name="PhysXDevice">
-		<package name="PhysXDevice" version="18.12.7.3"  platforms="vc15win64  vc16win64"/>
+		<package name="PhysXDevice" version="18.12.7.3"  platforms="vc15win64  vc16win64 vc17win64"/>
 	</dependency>
 
 	<dependency name="freeglut">
-		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64  vc16win64"/>
+		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64  vc16win64 vc17win64"/>
 	</dependency>
 
 	<dependency name="PhysXGpu">
-		<package name="PhysXGpu" version="104.1-5.1.1253.32184287-public"  platforms="vc15win64  vc16win64 linux linux-aarch64"/>
+		<package name="PhysXGpu" version="104.1-5.1.1253.32184287-public"  platforms="vc15win64  vc16win64 vc17win64 linux linux-aarch64"/>
 	</dependency>
 
 	<dependency name="opengllinux" tags="requiredForDistro">
