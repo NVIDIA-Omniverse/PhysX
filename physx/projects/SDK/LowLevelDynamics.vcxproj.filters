@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyArticulationContactPrep.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyArticulationContactPrepPF.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFeatherstoneArticulation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFeatherstoneForwardDynamic.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFeatherstoneInverseDynamic.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyConstraintPartition.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyConstraintSetup.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyConstraintSetupBlock.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrep.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrep4.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrep4PF.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrepPF.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyDynamics.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFrictionCorrelation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyRigidBodyToSolverBody.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraints.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraintsBlock.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverControl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverControlPF.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverPFConstraints.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverPFConstraintsBlock.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyThreadContext.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyThresholdTable.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyTGSDynamics.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyTGSContactPrep.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyTGSContactPrepBlock.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyArticulationCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyVArticulation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyArticulationTendon.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DySoftBodyCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DySoftBody.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyFEMClothCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyFEMCloth.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyHairSystemCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyHairSystem.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyFeatherstoneArticulation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyFeatherstoneArticulationJointData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyFeatherstoneArticulationUtils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyConstraint.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyConstraintWriteBack.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyContext.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DySleepingConfigulation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyThresholdTable.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyArticulationJointCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyParticleSystemCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\include\DyParticleSystem.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraint1DStep.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyArticulationContactPrep.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyArticulationPImpl.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyArticulationUtils.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFeatherstoneArticulationLink.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyBodyCoreIntegrator.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyConstraintPartition.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyConstraintPrep.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrep.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactPrepShared.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyContactReduction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyCorrelationBuffer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyDynamics.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFrictionPatch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyFrictionPatchStreamPair.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverBody.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraint1D.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraint1D4.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraintDesc.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraintExtShared.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraintsShared.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverConstraintTypes.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverContact.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverContact4.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverContactPF.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverContactPF4.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverContext.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverControl.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverControlPF.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverCore.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySolverExt.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DySpatial.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyThreadContext.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyTGSDynamics.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowleveldynamics\src\DyTGSContactPrep.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

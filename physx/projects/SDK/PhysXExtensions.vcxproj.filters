@@ -1,0 +1,657 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtBroadPhase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCollection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtConvexMeshExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCpuWorkerThread.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultCpuDispatcher.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultErrorCallback.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultSimulationFilterShader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultStreams.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtExtensions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtMetaData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPvd.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPxStringTable.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRaycastCCD.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRigidBodyExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRigidActorExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSceneQueryExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSceneQuerySystem.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCustomSceneQuerySystem.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqQuery.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSimpleFactory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSmoothNormals.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSoftBodyExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTriangleMeshExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTetrahedronMeshExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRemeshingExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSampling.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTetMakerExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGjkQueryExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCustomGeometryExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtParticleExt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtParticleClothCooker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtUtilities.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetUnionFind.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayBoundaryInserter.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayTetrahedralizer.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetSplitting.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtFastWindingNumber.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMeshSimplificator.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtBVH.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRemesher.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtInsideTester.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtOctreeTetrahedralizer.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVoxelTetrahedralizer.cpp">
+      <Filter>src\tet</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGearJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRackAndPinionJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6Joint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6JointCreate.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDistanceJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtContactJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtFixedJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPrismaticJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRevoluteJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSphericalJoint.cpp">
+      <Filter>src\joints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\src\PxExtensionAutoGeneratedMetaDataObjects.cpp">
+      <Filter>src\metadata</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsSampler.cpp">
+      <Filter>src\omnipvd</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialization.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerializationRegistry.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialUtils.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnJointRepXSerializer.cpp">
+      <Filter>serialization\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCoreSerializer.cpp">
+      <Filter>serialization\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXUpgrader.cpp">
+      <Filter>serialization\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSerialization.cpp">
+      <Filter>serialization\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnBinaryDeserialization.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnBinarySerialization.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Align.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Convert.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Error.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_MetaData.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Output.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Union.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnSerializationContext.cpp">
+      <Filter>serialization\binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\fastxml\src\PsFastXml.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqQuery.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCpuWorkerThread.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultCpuDispatcher.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtInertiaTensor.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPlatform.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPvd.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSerialization.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSharedQueueEntryPool.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTaskQueueHelper.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtUtilities.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetUnionFind.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayBoundaryInserter.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayTetrahedralizer.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVec3.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetSplitting.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtFastWindingNumber.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRandomAccessHeap.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtQuadric.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMeshSimplificator.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtBVH.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRemesher.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMarchingCubesTable.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMultiList.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtInsideTester.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtOctreeTetrahedralizer.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVoxelTetrahedralizer.h">
+      <Filter>src\tet</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGearJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRackAndPinionJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtConstraintHelper.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6Joint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDistanceJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtContactJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtFixedJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJointData.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJointMetaDataExtensions.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPrismaticJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRevoluteJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSphericalJoint.h">
+      <Filter>src\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionAutoGeneratedMetaDataObjectNames.h">
+      <Filter>src\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionAutoGeneratedMetaDataObjects.h">
+      <Filter>src\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionMetaDataObjects.h">
+      <Filter>src\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsTypes.h">
+      <Filter>src\omnipvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsSampler.h">
+      <Filter>src\omnipvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxBinaryConverter.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxBroadPhaseExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCollectionExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxConvexMeshExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultAllocator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultCpuDispatcher.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultErrorCallback.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultSimulationFilterShader.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultStreams.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxExtensionsAPI.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxMassProperties.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRaycastCCD.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRepXSerializer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRepXSimpleType.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRigidActorExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRigidBodyExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSceneQueryExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSceneQuerySystemExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCustomSceneQuerySystem.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSerialization.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxShapeExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSimpleFactory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSmoothNormals.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSoftBodyExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxStringTableExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTriangleMeshExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetrahedronMeshExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRemeshingExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTriangleMeshAnalysisResult.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetrahedronMeshAnalysisResult.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetMakerExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxGjkQueryExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCustomGeometryExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSamplingExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxParticleClothCooker.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxParticleExt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxConstraintExt.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxContactJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxD6Joint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxD6JointCreate.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDistanceJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxFixedJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxGearJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRackAndPinionJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxJointLimit.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxPrismaticJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRevoluteJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSphericalJoint.h">
+      <Filter>include\joints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\filebuf\PxFileBuf.h">
+      <Filter>include\filebuf</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerializationRegistry.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialUtils.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnJointRepXSerializer.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnPxStreamOperators.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX1_0Defaults.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX3_1Defaults.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX3_2Defaults.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCollection.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCoreSerializer.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXSerializerImpl.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXUpgrader.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnSimpleXmlWriter.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlDeserializer.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlImpl.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryAllocator.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryPool.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryPoolStreams.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlReader.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSerializer.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSimpleXmlWriter.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlStringToType.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlVisitorReader.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlVisitorWriter.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlWriter.h">
+      <Filter>serialization\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File\SnFile.h">
+      <Filter>serialization\file</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Align.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Common.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_MetaData.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Output.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Union.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnSerializationContext.h">
+      <Filter>serialization\binary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\fastxml\include\PsFastXml.h">
+      <Filter>External</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\filebuf">
+      <UniqueIdentifier>{9D859C4D-8E54-3CB9-8E07-592DB07CE65E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\joints">
+      <UniqueIdentifier>{0CADDB09-4086-323C-8243-5EB390862CC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serialization">
+      <UniqueIdentifier>{40AC3E98-1367-3428-BE02-F81F26D4629C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serialization\binary">
+      <UniqueIdentifier>{0D098EB6-454B-3D49-804F-C001ECE9E1A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serialization\file">
+      <UniqueIdentifier>{FC05F897-5DEA-32C3-86E7-D760A33A0E4D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serialization\xml">
+      <UniqueIdentifier>{5704772F-33C1-31A1-913A-1E492C081A30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\joints">
+      <UniqueIdentifier>{8BD0646A-D9EF-31E3-9A4E-E41094300508}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\metadata">
+      <UniqueIdentifier>{E073133F-C246-3316-A8AC-D390E21B0253}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\omnipvd">
+      <UniqueIdentifier>{52F522B7-6D45-327D-8E80-D9BD50478C2C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tet">
+      <UniqueIdentifier>{097DBB42-0549-3827-AB5A-1E5C81972B6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{934b8312-ec20-4c7c-b0c0-d17963c9fc27}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

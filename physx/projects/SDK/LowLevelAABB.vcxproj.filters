@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpAABBManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpAABBManagerBase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseUpdate.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseABP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseMBP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseSap.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseSapAux.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseShared.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpFiltering.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpAABBManager.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpVolumeData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpAABBManagerBase.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpAABBManagerTasks.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpBroadPhase.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpBroadPhaseUpdate.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\include\BpFiltering.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseABP.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseMBP.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseMBPCommon.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseSap.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseSapAux.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseShared.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\lowlevelaabb\src\BpBroadPhaseIntegerAABB.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

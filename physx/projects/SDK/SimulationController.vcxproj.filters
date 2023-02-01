@@ -1,0 +1,357 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScActorCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScActorSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationJointCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationTendonCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationJointSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationTendonJointCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationTendonSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationSensorSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSoftBodyCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSoftBodySim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSoftBodyShapeSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScFEMClothCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScFEMClothSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScFEMClothShapeSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemShapeCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemShapeSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemShapeCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemShapeSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScBodyCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScBodySim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintGroupNode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintInteraction.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintProjectionManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintProjectionTree.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScElementInteractionMarker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScElementSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScInteraction.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScIterators.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScMetaData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScNPhaseCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScPhysics.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScRigidCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScRigidSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScCCD.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeInteraction.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeSim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeSimBase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSimStats.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSimulationController.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSqBoundsManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScStaticCore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScTriggerInteraction.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScActorCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationJointCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationSensor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScBodyCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScConstraintCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScIterators.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScPhysics.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScRigidCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScScene.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScShapeCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScSqBoundsSync.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScStaticCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScSoftBodyCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScFEMClothCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScHairSystemCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScParticleSystemCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationTendonCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationAttachmentCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\include\ScArticulationTendonJointCore.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScActorPair.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScActorSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationJointSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationTendonSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScArticulationSensorSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSoftBodySim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSoftBodyShapeSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScFEMClothSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScFEMClothShapeSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemShapeCore.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScParticleSystemShapeSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemShapeCore.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScHairSystemShapeSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScBodySim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintGroupNode.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintInteraction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintProjectionManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintProjectionTree.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScConstraintSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScContactReportBuffer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScContactStream.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScElementInteractionMarker.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScElementSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScElementSimInteraction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScInteraction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScInteractionFlags.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScNPhaseCore.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScObjectIDTracker.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScRigidSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeInteraction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScShapeSimBase.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSimStateData.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSimStats.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSimulationController.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScSqBoundsManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScStaticSim.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScTriggerInteraction.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\simulationcontroller\src\ScTriggerPairs.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqFactory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruner.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruningPool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqQuery.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqFactory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqPruner.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqPrunerData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqManager.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqQuery.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqTypedef.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruner.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruningPool.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

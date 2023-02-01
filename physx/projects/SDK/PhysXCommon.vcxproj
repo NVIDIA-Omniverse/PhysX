@@ -1,0 +1,762 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="debug|x64">
+      <Configuration>debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="checked|x64">
+      <Configuration>checked</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="profile|x64">
+      <Configuration>profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|x64">
+      <Configuration>release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{81871168-997D-3615-897F-2F8F0CE350C3}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>PhysXCommon</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">PhysXCommon_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='debug|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">PhysXCommon_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='checked|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='checked|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">PhysXCommon_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='profile|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='profile|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">PhysXCommon_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>UninitializedLocalUsageCheck</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_DEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="debug";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"debug\";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>$(SolutionDir)\.bin\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>PhysXFoundation_64.dll</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="checked";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"checked\";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>$(SolutionDir)\.bin\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>PhysXFoundation_64.dll</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="profile";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"profile\";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>$(SolutionDir)\.bin\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>PhysXFoundation_64.dll</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR="release";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PHYSX_COMMON_EXPORTS;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR=\"release\";PhysXCommon_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\physxgpu\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>$(SolutionDir)\.bin\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>PhysXFoundation_64.dll</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\CmPtrTable.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmRenderBuffer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmBlockArray.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmCollection.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\CmCollection.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmConeLimitHelper.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmFlushPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmIDPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmMatrix34.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmPreallocatingPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmPriorityQueue.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmPtrTable.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmRadixSort.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\CmRadixSort.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmRandom.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmRefCountable.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmScaling.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmSerialize.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\CmSerialize.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmSpatialVector.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmTask.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmTransformUtils.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmUtils.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\src\CmVisualization.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\CmVisualization.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxBase.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxCollection.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxCoreUtilityTypes.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxMetaData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxMetaDataFlags.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxInsertionCallback.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxPhysXCommonConfig.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxRenderBuffer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxRenderOutput.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxSerialFramework.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxSerializer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxStringTable.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxTolerancesScale.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxTypeInfo.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\common\PxProfileZone.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxBoxGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxCapsuleGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxConvexMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxConvexMeshGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxCustomGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryInternal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryHelpers.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryHit.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryQuery.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryQueryFlags.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGeometryQueryContext.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHairSystemDesc.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHairSystemGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHeightField.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHeightFieldDesc.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHeightFieldFlag.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHeightFieldGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxHeightFieldSample.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxMeshQuery.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxMeshScale.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxPlaneGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxReportCallback.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxSimpleTriangleMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxSphereGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTriangleMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTriangleMeshGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxBVH.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxBVHBuildStrategy.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTetrahedron.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTetrahedronMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxTetrahedronMeshGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxParticleSystemGeometry.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geometry\PxGjkQuery.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geomutils\PxContactBuffer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\geomutils\PxContactPoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\collision\PxCollisionDefs.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\include\windows\CmWindowsLoadLibrary.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\common\include\windows\CmWindowsModuleUpdateLoader.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\windows\CmWindowsModuleUpdateLoader.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\common\src\windows\CmWindowsDelayLoadHook.cpp" />
+    <ResourceCompile Include="..\..\source\resources\PhysXCommon.rc" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuSphere.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuSegment.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuCapsule.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuCenterExtents.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuBounds.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuDistanceSegmentBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuDistanceSegmentSegment.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuIntersectionBoxBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuIntersectionTetrahedronBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuIntersectionTriangleBoxRef.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuIntersectionTriangleTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuRaycastTests.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuOverlapTests.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuSweepTests.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuCachedFuncs.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuPruner.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuPrunerTypedef.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuPrunerPayload.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuPrunerMergeData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuSqInternal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuActorShapeMap.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuQuerySystem.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuFactory.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuDistancePointTetrahedron.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuDistancePointTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuIntersectionTriangleBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\include\GuCooking.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuCCTSweepTests.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuGeometryQuery.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuInternal.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMeshFactory.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMetaData.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMTD.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuOverlapTests.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuRaycastTests.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSweepMTD.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSweepSharedTests.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSweepTests.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuGeometryChecks.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuInternal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMeshFactory.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMTD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSweepMTD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSweepSharedTests.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSDF.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSDF.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuCookingSDF.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuCookingSDF.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuGjkQuery.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuWindingNumber.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuWindingNumber.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuWindingNumberCluster.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuWindingNumberT.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\ccd\GuCCDSweepConvexMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\ccd\GuCCDSweepPrimitives.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\ccd\GuCCDSweepConvexMesh.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuBarycentricCoordinates.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuBarycentricCoordinates.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuBoxConversion.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuEdgeCache.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuAdjacencies.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuAdjacencies.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuEdgeList.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuEdgeList.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuSeparatingAxes.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuSeparatingAxes.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuQuantizer.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuQuantizer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuMeshCleaner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuMeshCleaner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuVertexReducer.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuVertexReducer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuMeshAnalysis.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\common\GuMeshAnalysis.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactBoxBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactCapsuleBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactCapsuleCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactCapsuleConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactCapsuleMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactConvexConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactConvexMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactPlaneBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactPlaneCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactPlaneConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactPolygonPolygon.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactSphereBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactSphereCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactSphereMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactSpherePlane.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactSphereSphere.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactCustomGeometry.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuFeatureCode.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactMethodImpl.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuContactPolygonPolygon.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\contact\GuFeatureCode.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuBigConvexData.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexHelper.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexSupportTable.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexUtilsInternal.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuHillClimbing.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuShapeConvex.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuBigConvexData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuBigConvexData2.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexEdgeFlags.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexHelper.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexMeshData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexSupportTable.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuConvexUtilsInternal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuCubeIndex.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuHillClimbing.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\convex\GuShapeConvex.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointTriangle.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentSegment.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentTriangle.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointTetrahedron.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointSegment.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointTriangleSIMD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentSegmentSIMD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistanceSegmentTriangleSIMD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\distance\GuDistancePointTetrahedron.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuEPA.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKSimplex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKTest.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuEPA.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuEPAFacet.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJK.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKPenetration.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKRaycast.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKSimplex.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKTest.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKType.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuGJKUtil.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecCapsule.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecConvex.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecConvexHull.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecConvexHullNoScale.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecPlane.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecSphere.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\gjk\GuVecTetrahedron.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuHeightField.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuHeightFieldUtil.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuOverlapTestsHF.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuSweepsHF.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuEntityReport.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuHeightField.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuHeightFieldData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\hf\GuHeightFieldUtil.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionBoxBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionCapsuleTriangle.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionEdgeEdge.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRaySphere.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionSphereBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionTetrahedronBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionTriangleBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionTriangleTriangle.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionCapsuleTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionEdgeEdge.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRay.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayBoxSIMD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayCapsule.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayPlane.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRaySphere.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionRayTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\intersection\GuIntersectionSphereBox.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4Build.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_AABBSweep.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_BoxOverlap.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_CapsuleSweep.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_CapsuleSweepAA.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_MeshMeshOverlap.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_OBBSweep.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Raycast.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_SphereOverlap.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_SphereSweep.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuMidphaseBV4.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuMeshQuery.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuMidphaseRTree.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuOverlapTestsMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuRTree.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuRTreeQueries.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuSweepsMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMeshBV4.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMeshRTree.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV32.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV32Build.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTetrahedronMesh.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV32.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV32Build.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4Build.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4Settings.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_AABBAABBSweepTest.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_BoxBoxOverlapTest.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_BoxOverlap_Internal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_BoxSweep_Internal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_BoxSweep_Params.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_CapsuleSweep_Internal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Common.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Internal.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamNoOrder_OBBOBB.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamNoOrder_SegmentAABB.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamNoOrder_SegmentAABB_Inflated.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamNoOrder_SphereAABB.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamOrdered_OBBOBB.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamOrdered_SegmentAABB.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_ProcessStreamOrdered_SegmentAABB_Inflated.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Slabs.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Slabs_KajiyaNoOrder.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Slabs_KajiyaOrdered.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Slabs_SwizzledNoOrder.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBV4_Slabs_SwizzledOrdered.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuBVConstants.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuMeshData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuMidphaseInterface.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuRTree.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuSweepConvexTri.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuSweepMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleCache.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMesh.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMeshBV4.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTriangleMeshRTree.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTetrahedron.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\mesh\GuTetrahedronMesh.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactBoxBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactBoxConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCapsuleBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCapsuleCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCapsuleConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCapsuleHeightField.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCapsuleMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactConvexCommon.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactConvexConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactConvexHeightField.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactConvexMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactGenBoxConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactGenSphereCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactPlaneBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactPlaneCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactPlaneConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereHeightField.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereMesh.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSpherePlane.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactSphereSphere.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactCustomGeometry.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMShapeConvex.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMTriangleContactGen.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPersistentContactManifold.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactConvexCommon.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactGen.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactGenUtil.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactGenUtil.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMContactMeshCallback.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMShapeConvex.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPCMTriangleContactGen.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\pcm\GuPersistentContactManifold.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxSphere.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxTriangle_FeatureBased.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxTriangle_SAT.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleBox.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleTriangle.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereCapsule.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereSphere.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereTriangle.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepTriangleUtils.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxSphere.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxTriangle_FeatureBased.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepBoxTriangle_SAT.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleBox.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleCapsule.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepCapsuleTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereCapsule.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereSphere.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepSphereTriangle.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\sweep\GuSweepTriangleUtils.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBounds.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuQuery.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTree.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTree.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeUpdateMap.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeUpdateMap.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeBounds.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeNode.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeBuildStats.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBTreeQuery.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSqInternal.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBTree.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBTree.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSAH.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSAH.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBVH.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBVH.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBVHTestsSIMD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBPrunerCore.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBPrunerCore.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuIncrementalAABBPruner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuPruningPool.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuPruningPool.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBucketPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuBucketPruner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMaverickNode.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuMaverickNode.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuExtendedBucketPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuExtendedBucketPruner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSecondaryPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuSecondaryPruner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuAABBPruner.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuActorShapeMap.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\GuCallbackAdapter.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuQuerySystem.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\GuFactory.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuRTreeCooking.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuRTreeCooking.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingBVH.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingHF.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingGrbTriangleMesh.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexMesh.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingTriangleMesh.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingTriangleMesh.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingTetrahedronMesh.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingTetrahedronMesh.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingVolumeIntegration.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingVolumeIntegration.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingQuickHullConvexHullLib.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingQuickHullConvexHullLib.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexPolygonsBuilder.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexPolygonsBuilder.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexMeshBuilder.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexMeshBuilder.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullUtils.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullUtils.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullLib.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullLib.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullBuilder.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingConvexHullBuilder.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingBigConvexDataBuilder.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\geomutils\src\cooking\GuCookingBigConvexDataBuilder.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

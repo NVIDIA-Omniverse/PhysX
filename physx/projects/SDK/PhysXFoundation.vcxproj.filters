@@ -1,0 +1,308 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdAllocator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdString.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdTempAllocator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdAssert.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdMathUtils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\FdFoundation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsAtomic.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsMutex.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsSync.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsThread.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsPrintString.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsSList.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsSocket.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsTime.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\foundation\windows\FdWindowsFPU.cpp">
+      <Filter>src\windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxFoundation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAssert.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxFoundationConfig.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMathUtils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\Px.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAlignedMalloc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAllocatorCallback.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxProfiler.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAoS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAlloca.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAllocator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxArray.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxAtomic.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBasicTemplates.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBitMap.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBitAndData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBitUtils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBounds3.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxBroadcast.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxErrorCallback.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxErrors.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxFlags.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxFPU.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxInlineAoS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxIntrinsics.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxHash.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxHashInternals.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxHashMap.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxHashSet.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxInlineAllocator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxInlineArray.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxPinnedArray.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMathIntrinsics.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMutex.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxIO.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMat33.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMat34.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMat44.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMath.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxMemory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxPlane.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxPool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxPreprocessor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxQuat.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxPhysicsVersion.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSortInternals.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSimpleTypes.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSList.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSocket.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSort.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxStrideIterator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxString.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSync.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxTempAllocator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxThread.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxTransform.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxTime.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxUnionCast.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxUserAllocated.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxUtilities.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVec2.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVec3.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVec4.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecMath.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecMathAoSScalar.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecMathAoSScalarInline.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecMathSSE.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecQuat.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxVecTransform.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\PxSIMDHelpers.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\foundation\FdFoundation.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsMathIntrinsics.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsIntrinsics.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsAoS.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsInlineAoS.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsTrigConstants.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsInclude.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\foundation\windows\PxWindowsFPU.h">
+      <Filter>include\windows</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\windows">
+      <UniqueIdentifier>{6C20891E-8F20-3E2B-8D66-8D239986F00A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\windows">
+      <UniqueIdentifier>{FEE1D115-5A9B-325F-9ECD-A19D32323DAE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{967F0646-8BD5-3644-8074-B20F990E1DEE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\source\resources\PhysXFoundation.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

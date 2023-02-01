@@ -1,0 +1,472 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="debug|x64">
+      <Configuration>debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="checked|x64">
+      <Configuration>checked</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="profile|x64">
+      <Configuration>profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|x64">
+      <Configuration>release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7DA26628-8D5A-3FCF-8B74-D09A1DF51AA8}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>PhysXExtensions</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">PhysXExtensions_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">PhysXExtensions_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">PhysXExtensions_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">PhysXExtensions_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\omnipvd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>UninitializedLocalUsageCheck</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_DEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\omnipvd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="checked"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"checked\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\omnipvd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="profile"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"profile\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\omnipvd;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR="release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR=\"release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\physxmetadata\core\include;E:\Repos\PhysX\physx\source\physxmetadata\extensions\include;E:\Repos\PhysX\physx\source\physxextensions\src;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary;E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File;E:\Repos\PhysX\physx\source\physx\src;E:\Repos\PhysX\physx\source\pvd\include;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\fastxml\include;E:\Repos\PhysX\physx\source\foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\fastxml\src\PsFastXml.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtBroadPhase.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCollection.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtConvexMeshExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCpuWorkerThread.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultCpuDispatcher.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultErrorCallback.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultSimulationFilterShader.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultStreams.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtExtensions.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtMetaData.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPvd.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPxStringTable.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRaycastCCD.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRigidBodyExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRigidActorExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSceneQueryExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSceneQuerySystem.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCustomSceneQuerySystem.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqQuery.cpp" />
+    <ClInclude Include="..\..\source\fastxml\include\PsFastXml.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqQuery.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqManager.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSqManager.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSimpleFactory.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSmoothNormals.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSoftBodyExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTriangleMeshExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTetrahedronMeshExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRemeshingExt.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCpuWorkerThread.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDefaultCpuDispatcher.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtInertiaTensor.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPlatform.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPvd.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSerialization.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSharedQueueEntryPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTaskQueueHelper.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSampling.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtTetMakerExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGjkQueryExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtCustomGeometryExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtParticleExt.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtParticleClothCooker.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtUtilities.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtUtilities.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetUnionFind.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetUnionFind.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayBoundaryInserter.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayBoundaryInserter.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayTetrahedralizer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtDelaunayTetrahedralizer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVec3.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetSplitting.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtTetSplitting.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtFastWindingNumber.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtFastWindingNumber.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRandomAccessHeap.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtQuadric.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMeshSimplificator.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMeshSimplificator.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtBVH.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtBVH.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRemesher.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtRemesher.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMarchingCubesTable.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtMultiList.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtInsideTester.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtInsideTester.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtOctreeTetrahedralizer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtOctreeTetrahedralizer.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVoxelTetrahedralizer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\tet\ExtVoxelTetrahedralizer.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGearJoint.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtGearJoint.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRackAndPinionJoint.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRackAndPinionJoint.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6Joint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6JointCreate.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDistanceJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtContactJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtFixedJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPrismaticJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRevoluteJoint.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSphericalJoint.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtConstraintHelper.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtD6Joint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtDistanceJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtContactJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtFixedJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJointData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtJointMetaDataExtensions.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtPrismaticJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtRevoluteJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\ExtSphericalJoint.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\src\PxExtensionAutoGeneratedMetaDataObjects.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionAutoGeneratedMetaDataObjectNames.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionAutoGeneratedMetaDataObjects.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxmetadata\extensions\include\PxExtensionMetaDataObjects.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsTypes.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsSampler.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\omnipvd\OmniPvdPxExtensionsSampler.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxBinaryConverter.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxBroadPhaseExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCollectionExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxConvexMeshExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultAllocator.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultCpuDispatcher.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultErrorCallback.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultSimulationFilterShader.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDefaultStreams.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxExtensionsAPI.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxMassProperties.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRaycastCCD.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRepXSerializer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRepXSimpleType.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRigidActorExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRigidBodyExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSceneQueryExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSceneQuerySystemExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCustomSceneQuerySystem.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSerialization.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxShapeExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSimpleFactory.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSmoothNormals.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSoftBodyExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxStringTableExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTriangleMeshExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetrahedronMeshExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRemeshingExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTriangleMeshAnalysisResult.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetrahedronMeshAnalysisResult.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxTetMakerExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxGjkQueryExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxCustomGeometryExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSamplingExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxParticleClothCooker.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxParticleExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxConstraintExt.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxContactJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxD6Joint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxD6JointCreate.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxDistanceJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxFixedJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxGearJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRackAndPinionJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxJointLimit.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxPrismaticJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxRevoluteJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\extensions\PxSphericalJoint.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\include\filebuf\PxFileBuf.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialization.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerializationRegistry.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerializationRegistry.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialUtils.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\SnSerialUtils.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnJointRepXSerializer.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnJointRepXSerializer.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCoreSerializer.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXUpgrader.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSerialization.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnPxStreamOperators.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX1_0Defaults.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX3_1Defaults.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepX3_2Defaults.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCollection.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXCoreSerializer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXSerializerImpl.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnRepXUpgrader.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnSimpleXmlWriter.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlDeserializer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlImpl.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryAllocator.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryPool.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlMemoryPoolStreams.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlReader.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSerializer.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlSimpleXmlWriter.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlStringToType.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlVisitorReader.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlVisitorWriter.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Xml\SnXmlWriter.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\File\SnFile.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnBinaryDeserialization.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnBinarySerialization.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Align.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Convert.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Error.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_MetaData.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Output.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Union.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnSerializationContext.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Align.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Common.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_MetaData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Output.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnConvX_Union.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxextensions\src\serialization\Binary\SnSerializationContext.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="PhysXFoundation.vcxproj">
+      <Project>{9c72bbad-81f9-3376-a46b-7fcab0d30220}</Project>
+    </ProjectReference>
+    <ProjectReference Include="PhysXPvdSDK.vcxproj">
+      <Project>{da3c24e8-452b-303a-95f6-6438ee6aae73}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

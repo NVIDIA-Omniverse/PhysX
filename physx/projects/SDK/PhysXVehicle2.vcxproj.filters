@@ -1,0 +1,321 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\commands\VhCommandHelpers.cpp">
+      <Filter>src\commands</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\drivetrain\VhDrivetrainFunctions.cpp">
+      <Filter>src\drivetrain</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\drivetrain\VhDrivetrainHelpers.cpp">
+      <Filter>src\drivetrain</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxActor\VhPhysXActorFunctions.cpp">
+      <Filter>src\physxActor</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxActor\VhPhysXActorHelpers.cpp">
+      <Filter>src\physxActor</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxConstraints\VhPhysXConstraintFunctions.cpp">
+      <Filter>src\physxConstraints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxConstraints\VhPhysXConstraintHelpers.cpp">
+      <Filter>src\physxConstraints</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxRoadGeometry\VhPhysXRoadGeometryFunctions.cpp">
+      <Filter>src\physxRoadGeometry</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\physxRoadGeometry\VhPhysXRoadGeometryHelpers.cpp">
+      <Filter>src\physxRoadGeometry</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\rigidBody\VhRigidBodyFunctions.cpp">
+      <Filter>src\rigidBody</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\steering\VhSteeringFunctions.cpp">
+      <Filter>src\steering</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\suspension\VhSuspensionFunctions.cpp">
+      <Filter>src\suspension</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\suspension\VhSuspensionHelpers.cpp">
+      <Filter>src\suspension</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\tire\VhTireFunctions.cpp">
+      <Filter>src\tire</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\tire\VhTireHelpers.cpp">
+      <Filter>src\tire</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\wheel\VhWheelFunctions.cpp">
+      <Filter>src\wheel</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdHelpers.cpp">
+      <Filter>src\pvd</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdFunctions.cpp">
+      <Filter>src\pvd</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdWriter.cpp">
+      <Filter>src\pvd</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdAttributeHandles.h">
+      <Filter>src\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdObjectHandles.h">
+      <Filter>src\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\physxvehicle2\src\pvd\VhPvdWriter.h">
+      <Filter>src\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleAPI.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleComponent.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleComponentSequence.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleLimits.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleFunctions.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleParams.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\PxVehicleMaths.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\braking\PxVehicleBrakingFunctions.h">
+      <Filter>include\braking</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\braking\PxVehicleBrakingParams.h">
+      <Filter>include\braking</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\commands\PxVehicleCommandHelpers.h">
+      <Filter>include\commands</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\commands\PxVehicleCommandParams.h">
+      <Filter>include\commands</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\commands\PxVehicleCommandStates.h">
+      <Filter>include\commands</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\drivetrain\PxVehicleDrivetrainComponents.h">
+      <Filter>include\drivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\drivetrain\PxVehicleDrivetrainFunctions.h">
+      <Filter>include\drivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\drivetrain\PxVehicleDrivetrainHelpers.h">
+      <Filter>include\drivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\drivetrain\PxVehicleDrivetrainParams.h">
+      <Filter>include\drivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\drivetrain\PxVehicleDrivetrainStates.h">
+      <Filter>include\drivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxActor\PxVehiclePhysXActorComponents.h">
+      <Filter>include\physxActor</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxActor\PxVehiclePhysXActorFunctions.h">
+      <Filter>include\physxActor</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxActor\PxVehiclePhysXActorHelpers.h">
+      <Filter>include\physxActor</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxActor\PxVehiclePhysXActorStates.h">
+      <Filter>include\physxActor</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxConstraints\PxVehiclePhysXConstraintComponents.h">
+      <Filter>include\physxConstraints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxConstraints\PxVehiclePhysXConstraintFunctions.h">
+      <Filter>include\physxConstraints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxConstraints\PxVehiclePhysXConstraintHelpers.h">
+      <Filter>include\physxConstraints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxConstraints\PxVehiclePhysXConstraintParams.h">
+      <Filter>include\physxConstraints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxConstraints\PxVehiclePhysXConstraintStates.h">
+      <Filter>include\physxConstraints</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxRoadGeometry\PxVehiclePhysXRoadGeometryComponents.h">
+      <Filter>include\physxRoadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxRoadGeometry\PxVehiclePhysXRoadGeometryFunctions.h">
+      <Filter>include\physxRoadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxRoadGeometry\PxVehiclePhysXRoadGeometryHelpers.h">
+      <Filter>include\physxRoadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxRoadGeometry\PxVehiclePhysXRoadGeometryParams.h">
+      <Filter>include\physxRoadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\physxRoadGeometry\PxVehiclePhysXRoadGeometryState.h">
+      <Filter>include\physxRoadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\rigidBody\PxVehicleRigidBodyComponents.h">
+      <Filter>include\rigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\rigidBody\PxVehicleRigidBodyFunctions.h">
+      <Filter>include\rigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\rigidBody\PxVehicleRigidBodyParams.h">
+      <Filter>include\rigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\rigidBody\PxVehicleRigidBodyStates.h">
+      <Filter>include\rigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\roadGeometry\PxVehicleRoadGeometryState.h">
+      <Filter>include\roadGeometry</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\steering\PxVehicleSteeringFunctions.h">
+      <Filter>include\steering</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\steering\PxVehicleSteeringParams.h">
+      <Filter>include\steering</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\suspension\PxVehicleSuspensionComponents.h">
+      <Filter>include\suspension</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\suspension\PxVehicleSuspensionFunctions.h">
+      <Filter>include\suspension</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\suspension\PxVehicleSuspensionParams.h">
+      <Filter>include\suspension</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\suspension\PxVehicleSuspensionStates.h">
+      <Filter>include\suspension</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\suspension\PxVehicleSuspensionHelpers.h">
+      <Filter>include\suspension</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\tire\PxVehicleTireComponents.h">
+      <Filter>include\tire</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\tire\PxVehicleTireFunctions.h">
+      <Filter>include\tire</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\tire\PxVehicleTireHelpers.h">
+      <Filter>include\tire</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\tire\PxVehicleTireParams.h">
+      <Filter>include\tire</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\tire\PxVehicleTireStates.h">
+      <Filter>include\tire</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\wheel\PxVehicleWheelComponents.h">
+      <Filter>include\wheel</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\wheel\PxVehicleWheelFunctions.h">
+      <Filter>include\wheel</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\wheel\PxVehicleWheelParams.h">
+      <Filter>include\wheel</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\wheel\PxVehicleWheelStates.h">
+      <Filter>include\wheel</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\wheel\PxVehicleWheelHelpers.h">
+      <Filter>include\wheel</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\pvd\PxVehiclePvdComponents.h">
+      <Filter>include\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\pvd\PxVehiclePvdFunctions.h">
+      <Filter>include\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\include\vehicle2\pvd\PxVehiclePvdHelpers.h">
+      <Filter>include\pvd</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\braking">
+      <UniqueIdentifier>{EA9C6E17-FB1F-3A8B-908C-1CD90076093D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\commands">
+      <UniqueIdentifier>{C4F1D3B3-6C91-3893-82F6-DDD208798315}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\drivetrain">
+      <UniqueIdentifier>{21CCCCFD-61FC-3768-A53D-AE9618378D93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\physxActor">
+      <UniqueIdentifier>{4ECC7132-87B3-3060-A470-1EC3A7EDD4CA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\physxConstraints">
+      <UniqueIdentifier>{45FE6F59-8E80-3DF8-A28C-6BCBA36F6AD5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\physxRoadGeometry">
+      <UniqueIdentifier>{5981BE15-90B9-3964-AF09-33A5438D83E7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\pvd">
+      <UniqueIdentifier>{450D8DB7-EC11-3CB2-983D-F03BE2DF876B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\rigidBody">
+      <UniqueIdentifier>{E5028C64-E85A-3534-9941-841D05A85E35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\roadGeometry">
+      <UniqueIdentifier>{8CA43791-5FEB-33FC-8804-C8611BF8D0B9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\steering">
+      <UniqueIdentifier>{AA261D3B-D3F9-32D8-84C9-AD9E4AFB9FE0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\suspension">
+      <UniqueIdentifier>{8917DF1E-1689-3664-9AB7-D8082DCDAA0E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\tire">
+      <UniqueIdentifier>{47C3E23A-FA3E-3307-9C96-AD4A26134CE2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\wheel">
+      <UniqueIdentifier>{FC34C78A-3EA3-3723-AE6E-E0AF9596F6BE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{FDAB677C-9E4D-3A0F-9D55-1A17A361EBF4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\commands">
+      <UniqueIdentifier>{533B4E6D-F112-384D-A550-D99B909CBF57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\drivetrain">
+      <UniqueIdentifier>{041DEB93-75D2-32BA-81C0-B67ED497A247}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\physxActor">
+      <UniqueIdentifier>{E719FAA7-1735-35BC-8AA1-B8D983A93260}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\physxConstraints">
+      <UniqueIdentifier>{5A775D53-0F66-39FC-A478-2C357C8849EE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\physxRoadGeometry">
+      <UniqueIdentifier>{7D012B20-7651-33C3-92FD-F003553C8D5D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\pvd">
+      <UniqueIdentifier>{8C26BAD7-A912-3957-8D33-BA79DD903096}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rigidBody">
+      <UniqueIdentifier>{61A8BE5D-7D8C-3011-8600-2CFC13E08BAA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\steering">
+      <UniqueIdentifier>{2A10D923-D9B8-32ED-9626-98F5464D23E4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\suspension">
+      <UniqueIdentifier>{66C4D806-A4E8-35AD-89FA-153F1BC39DE2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tire">
+      <UniqueIdentifier>{6F1D0BEE-EBC5-3D49-B391-C28F65B0B5ED}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\wheel">
+      <UniqueIdentifier>{87CF489A-83A1-3720-BF79-33E3B9EF8A85}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

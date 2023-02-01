@@ -1,0 +1,274 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="debug|x64">
+      <Configuration>debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="checked|x64">
+      <Configuration>checked</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="profile|x64">
+      <Configuration>profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|x64">
+      <Configuration>release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2A7319C7-D932-3C49-8C4E-D120FD740FD8}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>SceneQuery</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SceneQuery_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SceneQuery_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SceneQuery_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">SceneQuery_static_64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>UninitializedLocalUsageCheck</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_DEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="checked"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"checked\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="profile"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"profile\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4514;4820;4127;4710;4711;4577;4996</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR="release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR=\"release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\source\Common\src\windows;E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\common\include;E:\Repos\PhysX\physx\source\common\src;E:\Repos\PhysX\physx\source\geomutils\include;E:\Repos\PhysX\physx\source\geomutils\src;E:\Repos\PhysX\physx\source\geomutils\src\contact;E:\Repos\PhysX\physx\source\geomutils\src\common;E:\Repos\PhysX\physx\source\geomutils\src\convex;E:\Repos\PhysX\physx\source\geomutils\src\distance;E:\Repos\PhysX\physx\source\geomutils\src\sweep;E:\Repos\PhysX\physx\source\geomutils\src\gjk;E:\Repos\PhysX\physx\source\geomutils\src\intersection;E:\Repos\PhysX\physx\source\geomutils\src\mesh;E:\Repos\PhysX\physx\source\geomutils\src\hf;E:\Repos\PhysX\physx\source\geomutils\src\pcm;E:\Repos\PhysX\physx\source\geomutils\src\ccd;E:\Repos\PhysX\physx\source\scenequery\include;E:\Repos\PhysX\physx\source\pvd\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqFactory.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqPruner.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqPrunerData.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqManager.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqQuery.h" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\include\SqTypedef.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqFactory.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruner.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruner.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruningPool.cpp" />
+    <ClInclude Include="E:\Repos\PhysX\physx\source\scenequery\src\SqCompoundPruningPool.h" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqManager.cpp" />
+    <ClCompile Include="E:\Repos\PhysX\physx\source\scenequery\src\SqQuery.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

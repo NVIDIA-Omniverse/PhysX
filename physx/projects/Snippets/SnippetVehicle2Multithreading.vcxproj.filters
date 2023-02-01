@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetcommon\ClassicMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2multithreading\SnippetVehicleMultithreading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2multithreading\SnippetVehicleRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\base\Base.cpp">
+      <Filter>common\base</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\directdrivetrain\DirectDrivetrain.cpp">
+      <Filter>common\directdrivetrain</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\enginedrivetrain\EngineDrivetrain.cpp">
+      <Filter>common\enginedrivetrain</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\physxintegration\PhysXIntegration.cpp">
+      <Filter>common\physxintegration</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\BaseSerialization.cpp">
+      <Filter>common\serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\DirectDrivetrainSerialization.cpp">
+      <Filter>common\serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\EngineDrivetrainSerialization.cpp">
+      <Filter>common\serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\SerializationCommon.cpp">
+      <Filter>common\serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\SnippetVehicleHelpers.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\base\Base.h">
+      <Filter>common\base</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\directdrivetrain\DirectDrivetrain.h">
+      <Filter>common\directdrivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\enginedrivetrain\EngineDrivetrain.h">
+      <Filter>common\enginedrivetrain</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\physxintegration\PhysXIntegration.h">
+      <Filter>common\physxintegration</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\BaseSerialization.h">
+      <Filter>common\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\DirectDrivetrainSerialization.h">
+      <Filter>common\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\EngineDrivetrainSerialization.h">
+      <Filter>common\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\serialization\SerializationCommon.h">
+      <Filter>common\serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\allocators.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\cursorstreamwrapper.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\document.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\encodedstream.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\encodings.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\error\en.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\error\error.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\filereadstream.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\filewritestream.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\fwd.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\biginteger.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\diyfp.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\dtoa.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\ieee754.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\itoa.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\meta.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\pow10.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\regex.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\stack.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\strfunc.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\strtod.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\internal\swap.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\istreamwrapper.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\memorybuffer.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\memorystream.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\msinttypes\inttypes.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\msinttypes\stdint.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\ostreamwrapper.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\pointer.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\prettywriter.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\rapidjson.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\reader.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\schema.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\stream.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\stringbuffer.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\packman-repo\chk\rapidjson\1.1.0-67fac85-073453e1\include\rapidjson\writer.h">
+      <Filter>common\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetvehicle2common\SnippetVehicleHelpers.h">
+      <Filter>common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Repos\PhysX\physx\snippets\compiler\cmake\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{81AA75F7-5845-3E44-8A74-618CA41CF77F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{F826EF94-6B60-3FC7-9AEA-F5134794D0FB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\base">
+      <UniqueIdentifier>{2BA09682-8536-3F4C-825B-2DC4FBC86116}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\directdrivetrain">
+      <UniqueIdentifier>{1C09FA96-927B-311F-901D-0254D165AE16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\enginedrivetrain">
+      <UniqueIdentifier>{FF1BEA14-0E6F-34BC-8DA6-805037F8CDEB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\physxintegration">
+      <UniqueIdentifier>{0267FEC6-7052-3DF6-A086-5CA6BBDA5C63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\rapidjson">
+      <UniqueIdentifier>{AEC3F860-A7BB-31E5-9BA9-2D081D35C025}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\serialization">
+      <UniqueIdentifier>{F6F5D00E-7888-3EDF-AE3F-CCB585817F77}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

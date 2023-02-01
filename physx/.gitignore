@@ -1,4 +1,33 @@
-bin/
-compiler/linux-*
-compiler/vc*
-include/PxConfig.h
+# User-Specific Visual Studio Project Files
+*.vcxproj.user
+
+# Compiled Object files
+*.obj
+*.cso
+*.dxil
+
+# Precompiled Headers
+*.pch
+
+# Compiled Static libraries
+*.lib
+
+# Compiled Dynamic libraries
+*.dll
+
+# Executables
+*.exe
+
+# Programmer Database
+.pdb
+
+# Log and Error Files
+*.log
+*.tlog
+*.err
+
+# Directories
+.bin/
+.obj/
+.vs/
+packages/
