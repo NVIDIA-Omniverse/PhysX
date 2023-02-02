@@ -86,9 +86,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\Repos\PhysX\physx\pvdruntime\compiler\cmake\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{3801646B-BDBD-33B1-9618-F26821B63121}</UniqueIdentifier>
     </Filter>

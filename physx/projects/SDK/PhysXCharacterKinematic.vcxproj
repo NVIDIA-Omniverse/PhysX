@@ -59,20 +59,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">PhysXCharacterKinematic_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">PhysXCharacterKinematic_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">PhysXCharacterKinematic_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">PhysXCharacterKinematic_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
   </PropertyGroup>
@@ -282,12 +282,6 @@
     <ClInclude Include="E:\Repos\PhysX\physx\source\physxcharacterkinematic\src\CctSweptCapsule.h" />
     <ClInclude Include="E:\Repos\PhysX\physx\source\physxcharacterkinematic\src\CctSweptVolume.h" />
     <ClInclude Include="E:\Repos\PhysX\physx\source\physxcharacterkinematic\src\CctUtils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXFoundation.vcxproj">
-      <Project>{9C72BBAD-81F9-3376-A46B-7FCAB0D30220}</Project>
-      <Name>PhysXFoundation</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -59,26 +59,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">PhysXVehicle2_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">PhysXVehicle2_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">PhysXVehicle2_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">PhysXVehicle2_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>UninitializedLocalUsageCheck</BasicRuntimeChecks>
@@ -123,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='checked|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -167,7 +167,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='profile|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -211,7 +211,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\source\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Repos\PhysX\physx\include;E:\Repos\PhysX\physx\pvdruntime\include;E:\Repos\PhysX\physx\source\foundation\include;E:\Repos\PhysX\physx\source\geomutils\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /d2Zi+</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>

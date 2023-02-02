@@ -32,9 +32,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\Repos\PhysX\physx\snippets\compiler\cmake\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{47333C8A-31A9-3C3A-A954-FBD4189E238E}</UniqueIdentifier>
     </Filter>

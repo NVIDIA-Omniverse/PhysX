@@ -176,9 +176,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\Repos\PhysX\physx\snippets\compiler\cmake\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{81AA75F7-5845-3E44-8A74-618CA41CF77F}</UniqueIdentifier>
     </Filter>

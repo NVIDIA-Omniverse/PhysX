@@ -59,20 +59,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SceneQuery_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SceneQuery_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SceneQuery_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.bin\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)\.obj\SDK\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">SceneQuery_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
   </PropertyGroup>

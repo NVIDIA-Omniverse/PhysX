@@ -23,7 +23,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F724066E-E383-3415-A7B5-8E264D73BDD8}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>SnippetSpatialTendon</ProjectName>
@@ -59,26 +59,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SnippetSpatialTendon.dir\debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SnippetSpatialTendon_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='debug|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SnippetSpatialTendon.dir\checked\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SnippetSpatialTendon_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='checked|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='checked|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='checked|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SnippetSpatialTendon.dir\profile\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SnippetSpatialTendon_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='profile|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='profile|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='profile|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">SnippetSpatialTendon.dir\release\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">SnippetSpatialTendon_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='release|x64'">false</LinkIncremental>
@@ -108,6 +108,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_DEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_DEBUG=1;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"debug\"</PreprocessorDefinitions>
@@ -122,14 +123,15 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXVehicle_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXVehicle2_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXCharacterKinematic_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXCooking_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\SnippetUtils_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PVDRuntime_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\SnippetRender_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglutd.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysX_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXCommon_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\PhysXFoundation_64.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir).bin\SDK\PhysXExtensions\$(Configuration)\$(Platform)\PhysXExtensions_static_64.lib;$(SolutionDir).bin\SDK\PhysXPvdSDK\$(Configuration)\$(Platform)\PhysXPvdSDK_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle\$(Configuration)\$(Platform)\PhysXVehicle_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle2\$(Configuration)\$(Platform)\PhysXVehicle2_static_64.lib;$(SolutionDir).bin\SDK\PhysXCharacterKinematic\$(Configuration)\$(Platform)\PhysXCharacterKinematic_static_64.lib;$(SolutionDir).bin\SDK\PhysXCooking\$(Configuration)\$(Platform)\PhysXCooking_64.lib;$(SolutionDir).bin\Snippets\SnippetUtils\$(Configuration)\$(Platform)\SnippetUtils_static_64.lib;$(SolutionDir).bin\PVDRuntime\$(Configuration)\$(Platform)\PVDRuntime_64.lib;$(SolutionDir).bin\Snippets\SnippetRender\$(Configuration)\$(Platform)\SnippetRender_static_64.lib;$(SolutionDir).bin\SDK\SceneQuery\$(Configuration)\$(Platform)\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglutd.lib;$(SolutionDir).bin\SDK\PhysX\$(Configuration)\$(Platform)\PhysX_64.lib;$(SolutionDir).bin\SDK\PhysXCommon\$(Configuration)\$(Platform)\PhysXCommon_64.lib;$(SolutionDir).bin\SDK\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib;opengl32.lib;glu32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/debug/SnippetSpatialTendon_64.lib</ImportLibrary>
-      <ProgramDataBaseFile>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/debug/SnippetSpatialTendon_64.pdb</ProgramDataBaseFile>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -158,6 +160,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="checked"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_CHECKED=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"checked\"</PreprocessorDefinitions>
@@ -172,14 +175,15 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXVehicle_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXVehicle2_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXCharacterKinematic_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXCooking_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\SnippetUtils_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PVDRuntime_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\SnippetRender_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglut.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysX_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXCommon_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\PhysXFoundation_64.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir).bin\SDK\PhysXExtensions\$(Configuration)\$(Platform)\PhysXExtensions_static_64.lib;$(SolutionDir).bin\SDK\PhysXPvdSDK\$(Configuration)\$(Platform)\PhysXPvdSDK_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle\$(Configuration)\$(Platform)\PhysXVehicle_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle2\$(Configuration)\$(Platform)\PhysXVehicle2_static_64.lib;$(SolutionDir).bin\SDK\PhysXCharacterKinematic\$(Configuration)\$(Platform)\PhysXCharacterKinematic_static_64.lib;$(SolutionDir).bin\SDK\PhysXCooking\$(Configuration)\$(Platform)\PhysXCooking_64.lib;$(SolutionDir).bin\Snippets\SnippetUtils\$(Configuration)\$(Platform)\SnippetUtils_static_64.lib;$(SolutionDir).bin\PVDRuntime\$(Configuration)\$(Platform)\PVDRuntime_64.lib;$(SolutionDir).bin\Snippets\SnippetRender\$(Configuration)\$(Platform)\SnippetRender_static_64.lib;$(SolutionDir).bin\SDK\SceneQuery\$(Configuration)\$(Platform)\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglutd.lib;$(SolutionDir).bin\SDK\PhysX\$(Configuration)\$(Platform)\PhysX_64.lib;$(SolutionDir).bin\SDK\PhysXCommon\$(Configuration)\$(Platform)\PhysXCommon_64.lib;$(SolutionDir).bin\SDK\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib;opengl32.lib;glu32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/checked/SnippetSpatialTendon_64.lib</ImportLibrary>
-      <ProgramDataBaseFile>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/checked/SnippetSpatialTendon_64.pdb</ProgramDataBaseFile>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -208,6 +212,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR="profile"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_PROFILE=1;PX_NVTX=0;PX_SUPPORT_PVD=1;PX_SUPPORT_OMNI_PVD=1;CMAKE_INTDIR=\"profile\"</PreprocessorDefinitions>
@@ -222,14 +227,15 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXVehicle_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXVehicle2_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXCharacterKinematic_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXCooking_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\SnippetUtils_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PVDRuntime_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\SnippetRender_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglut.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysX_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXCommon_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\PhysXFoundation_64.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir).bin\SDK\PhysXExtensions\$(Configuration)\$(Platform)\PhysXExtensions_static_64.lib;$(SolutionDir).bin\SDK\PhysXPvdSDK\$(Configuration)\$(Platform)\PhysXPvdSDK_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle\$(Configuration)\$(Platform)\PhysXVehicle_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle2\$(Configuration)\$(Platform)\PhysXVehicle2_static_64.lib;$(SolutionDir).bin\SDK\PhysXCharacterKinematic\$(Configuration)\$(Platform)\PhysXCharacterKinematic_static_64.lib;$(SolutionDir).bin\SDK\PhysXCooking\$(Configuration)\$(Platform)\PhysXCooking_64.lib;$(SolutionDir).bin\Snippets\SnippetUtils\$(Configuration)\$(Platform)\SnippetUtils_static_64.lib;$(SolutionDir).bin\PVDRuntime\$(Configuration)\$(Platform)\PVDRuntime_64.lib;$(SolutionDir).bin\Snippets\SnippetRender\$(Configuration)\$(Platform)\SnippetRender_static_64.lib;$(SolutionDir).bin\SDK\SceneQuery\$(Configuration)\$(Platform)\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglutd.lib;$(SolutionDir).bin\SDK\PhysX\$(Configuration)\$(Platform)\PhysX_64.lib;$(SolutionDir).bin\SDK\PhysXCommon\$(Configuration)\$(Platform)\PhysXCommon_64.lib;$(SolutionDir).bin\SDK\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib;opengl32.lib;glu32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/profile/SnippetSpatialTendon_64.lib</ImportLibrary>
-      <ProgramDataBaseFile>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/profile/SnippetSpatialTendon_64.pdb</ProgramDataBaseFile>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -258,6 +264,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN32;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR="release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;PX_PUBLIC_RELEASE=1;RENDER_SNIPPET;PX_SUPPORT_PVD=0;PX_SUPPORT_OMNI_PVD=0;CMAKE_INTDIR=\"release\"</PreprocessorDefinitions>
@@ -272,136 +279,26 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXVehicle_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXVehicle2_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXCharacterKinematic_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXCooking_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\SnippetUtils_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PVDRuntime_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\SnippetRender_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglut.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXExtensions_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXPvdSDK_static_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysX_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXCommon_64.lib;E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\PhysXFoundation_64.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir).bin\SDK\PhysXExtensions\$(Configuration)\$(Platform)\PhysXExtensions_static_64.lib;$(SolutionDir).bin\SDK\PhysXPvdSDK\$(Configuration)\$(Platform)\PhysXPvdSDK_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle\$(Configuration)\$(Platform)\PhysXVehicle_static_64.lib;$(SolutionDir).bin\SDK\PhysXVehicle2\$(Configuration)\$(Platform)\PhysXVehicle2_static_64.lib;$(SolutionDir).bin\SDK\PhysXCharacterKinematic\$(Configuration)\$(Platform)\PhysXCharacterKinematic_static_64.lib;$(SolutionDir).bin\SDK\PhysXCooking\$(Configuration)\$(Platform)\PhysXCooking_64.lib;$(SolutionDir).bin\Snippets\SnippetUtils\$(Configuration)\$(Platform)\SnippetUtils_static_64.lib;$(SolutionDir).bin\PVDRuntime\$(Configuration)\$(Platform)\PVDRuntime_64.lib;$(SolutionDir).bin\Snippets\SnippetRender\$(Configuration)\$(Platform)\SnippetRender_static_64.lib;$(SolutionDir).bin\SDK\SceneQuery\$(Configuration)\$(Platform)\SceneQuery_static_64.lib;E:\packman-repo\chk\freeglut-windows\3.4_1.1\lib\win64\freeglutd.lib;$(SolutionDir).bin\SDK\PhysX\$(Configuration)\$(Platform)\PhysX_64.lib;$(SolutionDir).bin\SDK\PhysXCommon\$(Configuration)\$(Platform)\PhysXCommon_64.lib;$(SolutionDir).bin\SDK\PhysXFoundation\$(Configuration)\$(Platform)\PhysXFoundation_64.lib;opengl32.lib;glu32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/release/SnippetSpatialTendon_64.lib</ImportLibrary>
-      <ProgramDataBaseFile>E:/Repos/PhysX/physx/bin/win.x86_64.vc142.mt/release/SnippetSpatialTendon_64.pdb</ProgramDataBaseFile>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <ProgramDataBaseFile>$(OutDir)$(TargetName).pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\Repos\PhysX\physx\snippets\compiler\cmake\CMakeLists.txt">
-      <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='debug|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='debug|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='checked|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='checked|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='checked|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='profile|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='profile|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='profile|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='release|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='release|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='release|x64'">false</LinkObjects>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetcommon\ClassicMain.cpp" />
     <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetcommon\SnippetPrint.h" />
     <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetcommon\SnippetPVD.h" />
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetspatialtendon\SnippetSpatialTendon.cpp" />
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetspatialtendon\SnippetSpatialTendonRender.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\pvdruntime_bin\PVDRuntime.vcxproj">
-      <Project>{6F7C243B-AA8F-352F-8581-7E88B5470AA4}</Project>
-      <Name>PVDRuntime</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysX.vcxproj">
-      <Project>{1BF0BCE9-5A2B-30DE-BE59-6A816A12F8CB}</Project>
-      <Name>PhysX</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXCharacterKinematic.vcxproj">
-      <Project>{0D0A8BFA-5F8B-3169-B4B2-A062DBF1D8FF}</Project>
-      <Name>PhysXCharacterKinematic</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXCommon.vcxproj">
-      <Project>{81871168-997D-3615-897F-2F8F0CE350C3}</Project>
-      <Name>PhysXCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXCooking.vcxproj">
-      <Project>{64F7B0FF-DC16-3465-AD1F-09418DF7299C}</Project>
-      <Name>PhysXCooking</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXExtensions.vcxproj">
-      <Project>{7DA26628-8D5A-3FCF-8B74-D09A1DF51AA8}</Project>
-      <Name>PhysXExtensions</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXFoundation.vcxproj">
-      <Project>{9C72BBAD-81F9-3376-A46B-7FCAB0D30220}</Project>
-      <Name>PhysXFoundation</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXPvdSDK.vcxproj">
-      <Project>{DA3C24E8-452B-303A-95F6-6438EE6AAE73}</Project>
-      <Name>PhysXPvdSDK</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXVehicle.vcxproj">
-      <Project>{93C21B04-FD98-3A25-93C0-533AFF7F0859}</Project>
-      <Name>PhysXVehicle</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXVehicle2.vcxproj">
-      <Project>{FDC5A029-C223-3633-AFE9-DBBC8BD34FB6}</Project>
-      <Name>PhysXVehicle2</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\SceneQuery.vcxproj">
-      <Project>{2A7319C7-D932-3C49-8C4E-D120FD740FD8}</Project>
-      <Name>SceneQuery</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\SnippetRender.vcxproj">
-      <Project>{454AFA8A-D42E-38C3-9972-A17C7777FBB8}</Project>
-      <Name>SnippetRender</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\SnippetUtils.vcxproj">
-      <Project>{0209592A-91E4-3535-88D8-4A4E9C97FFCB}</Project>
-      <Name>SnippetUtils</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

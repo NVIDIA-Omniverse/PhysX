@@ -23,7 +23,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{454AFA8A-D42E-38C3-9972-A17C7777FBB8}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>SnippetRender</ProjectName>
@@ -59,20 +59,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SnippetRender.dir\debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">SnippetRender_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='debug|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\checked\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SnippetRender.dir\checked\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='checked|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='checked|x64'">SnippetRender_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='checked|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\profile\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SnippetRender.dir\profile\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='profile|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='profile|x64'">SnippetRender_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='profile|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\bin\win.x86_64.vc142.mt\release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">SnippetRender.dir\release\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir).bin\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir).obj\Snippets\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='release|x64'">SnippetRender_static_64</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='release|x64'">.lib</TargetExt>
   </PropertyGroup>
@@ -242,63 +242,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\Repos\PhysX\physx\snippets\compiler\cmake\CMakeLists.txt">
-      <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='debug|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='debug|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='debug|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='checked|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='checked|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='checked|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='checked|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='profile|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='profile|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='profile|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='profile|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='release|x64'">Building Custom Rule E:/Repos/PhysX/physx/snippets/compiler/cmake/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='release|x64'">setlocal
-E:\CMake\bin\cmake.exe -SE:/Repos/PhysX/physx/compiler/public -BE:/Repos/PhysX/physx/compiler/vc17win64 --check-stamp-file E:/Repos/PhysX/physx/compiler/vc17win64/sdk_snippets_bin/CMakeFiles/generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\SnippetVehicle2Template.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\CMakeLists.txt;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetRender.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetTemplate.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetUtils.cmake;E:\Repos\PhysX\physx\snippets\compiler\cmake\windows\SnippetVehicle2Template.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\ConfigureFileMT.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\GetCompilerAndPlatform.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\NvidiaBuildOptions.cmake;E:\packman-repo\chk\CMakeModules\1.28.trunk.31965103\SetOutputPaths.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='release|x64'">E:\Repos\PhysX\physx\compiler\vc17win64\sdk_snippets_bin\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='release|x64'">false</LinkObjects>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\graphics\src\glew.c" />
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetrender\SnippetCamera.cpp" />
     <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetrender\SnippetCamera.h" />
@@ -308,12 +251,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="E:\Repos\PhysX\physx\snippets\snippetrender\SnippetRender.cpp" />
     <ClInclude Include="E:\Repos\PhysX\physx\snippets\snippetrender\SnippetRender.h" />
     <ClInclude Include="E:\packman-repo\chk\freeglut-windows\3.4_1.1\include\GL\freeglut.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="E:\Repos\PhysX\physx\compiler\vc17win64\sdk_source_bin\PhysXFoundation.vcxproj">
-      <Project>{9C72BBAD-81F9-3376-A46B-7FCAB0D30220}</Project>
-      <Name>PhysXFoundation</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
