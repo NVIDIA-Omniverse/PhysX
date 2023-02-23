@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneQueryExt &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSceneQueryExt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenequeryext">
+<span id="exhale-class-class-px-scene-query-ext"></span><h1>PxSceneQueryExt<a class="headerlink" href="#pxscenequeryext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSceneQueryExt.h.html#file-include-extensions-pxscenequeryext-h"><span class="std std-ref">include/extensions/PxSceneQueryExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxSceneQueryExt">
+<span id="_CPPv315PxSceneQueryExt"></span><span id="_CPPv215PxSceneQueryExt"></span><span id="PxSceneQueryExt"></span><span class="target" id="class_px_scene_query_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQueryExt</span></span></span><a class="headerlink" href="#_CPPv415PxSceneQueryExt" title="Permalink to this definition"></a><br /></dt>
+<dd><p>utility functions for use with <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>, related to scene queries. </p>
+<p>Some of these functions have been deprecated (removed) in PhysX 3.4. We re-implement them here for easy migration from 3.3 to 3.4.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt10raycastAnyERK7PxSceneRK6PxVec3RK6PxVec3K6PxRealR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache">
+<span id="_CPPv3N15PxSceneQueryExt10raycastAnyERK7PxSceneRK6PxVec3RK6PxVec3K6PxRealR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="_CPPv2N15PxSceneQueryExt10raycastAnyERK7PxSceneRK6PxVec3RK6PxVec3K6PxRealR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="PxSceneQueryExt::raycastAny__PxSceneCR.PxVec3CR.PxVec3CR.PxRealC.PxSceneQueryHitR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP"></span><span class="target" id="class_px_scene_query_ext_1ace866afd7855433007206337d5da42fe"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycastAny</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga55259fcecc0dd432e8c97f80a1425aad.html#_CPPv415PxSceneQueryHit" title="PxSceneQueryHit"><span class="n"><span class="pre">PxSceneQueryHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt10raycastAnyERK7PxSceneRK6PxVec3RK6PxVec3K6PxRealR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast returning any blocking hit, not necessarily the closest. </p>
+<p>Returns whether any rigid actor is hit along the ray.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache PxSceneQueryHit </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in article SceneQuery. User can ignore such objects by using one of the provided filter mechanisms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Needs to be larger than 0. </p></li>
+<li><p><strong>hit</strong> – <strong>[out]</strong> Raycast hit information. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a blocking hit was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt13raycastSingleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsR12PxRaycastHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache">
+<span id="_CPPv3N15PxSceneQueryExt13raycastSingleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsR12PxRaycastHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="_CPPv2N15PxSceneQueryExt13raycastSingleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsR12PxRaycastHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="PxSceneQueryExt::raycastSingle__PxSceneCR.PxVec3CR.PxVec3CR.PxRealC.PxSceneQueryFlags.PxRaycastHitR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP"></span><span class="target" id="class_px_scene_query_ext_1ac873ab4f1e84f68cfe94cf4dd78c51a2"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycastSingle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga2ddebd682bdb0bdb1db7ba113a93afe4.html#_CPPv417PxSceneQueryFlags" title="PxSceneQueryFlags"><span class="n"><span class="pre">PxSceneQueryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><span class="n"><span class="pre">PxRaycastHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt13raycastSingleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsR12PxRaycastHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast returning a single result. </p>
+<p>Returns the first rigid actor that is hit along the ray. Data for a blocking hit will be returned as specified by the outputFlags field. Touching hits will be ignored.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in article SceneQuery. User can ignore such objects by using one of the provided filter mechanisms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Needs to be larger than 0. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information </p></li>
+<li><p><strong>hit</strong> – <strong>[out]</strong> Raycast hit information. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a blocking hit was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt15raycastMultipleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsP12PxRaycastHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache">
+<span id="_CPPv3N15PxSceneQueryExt15raycastMultipleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsP12PxRaycastHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="_CPPv2N15PxSceneQueryExt15raycastMultipleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsP12PxRaycastHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache"></span><span id="PxSceneQueryExt::raycastMultiple__PxSceneCR.PxVec3CR.PxVec3CR.PxRealC.PxSceneQueryFlags.PxRaycastHitP.PxU32.bR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP"></span><span class="target" id="class_px_scene_query_ext_1a6382f246b8aa6740e4c632421144c9ba"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycastMultiple</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga2ddebd682bdb0bdb1db7ba113a93afe4.html#_CPPv417PxSceneQueryFlags" title="PxSceneQueryFlags"><span class="n"><span class="pre">PxSceneQueryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><span class="n"><span class="pre">PxRaycastHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hitBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hitBufferSize</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">blockingHit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt15raycastMultipleERK7PxSceneRK6PxVec3RK6PxVec3K6PxReal17PxSceneQueryFlagsP12PxRaycastHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast returning multiple results. </p>
+<p>Find all rigid actors that get hit along the ray. Each result contains data as specified by the outputFlags field.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in article SceneQuery. User can ignore such objects by using one of the provided filter mechanisms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Needs to be larger than 0. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information </p></li>
+<li><p><strong>hitBuffer</strong> – <strong>[out]</strong> Raycast hit information buffer. If the buffer overflows, the blocking hit is returned as the last entry together with an arbitrary subset of the nearer touching hits (typically the query should be restarted with a larger buffer). </p></li>
+<li><p><strong>hitBufferSize</strong> – <strong>[in]</strong> Size of the hit buffer. </p></li>
+<li><p><strong>blockingHit</strong> – <strong>[out]</strong> True if a blocking hit was found. If found, it is the last in the buffer, preceded by any touching hits which are closer. Otherwise the touching hits are listed. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be touching. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of hits in the buffer, or -1 if the buffer overflowed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt8sweepAnyERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal">
+<span id="_CPPv3N15PxSceneQueryExt8sweepAnyERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="_CPPv2N15PxSceneQueryExt8sweepAnyERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="PxSceneQueryExt::sweepAny__PxSceneCR.PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxSceneQueryFlags.PxSceneQueryHitR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP.PxReal"></span><span class="target" id="class_px_scene_query_ext_1af7e85106326c08d8c98f73e55141eec1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweepAny</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga2ddebd682bdb0bdb1db7ba113a93afe4.html#_CPPv417PxSceneQueryFlags" title="PxSceneQueryFlags"><span class="n"><span class="pre">PxSceneQueryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga55259fcecc0dd432e8c97f80a1425aad.html#_CPPv415PxSceneQueryHit" title="PxSceneQueryHit"><span class="n"><span class="pre">PxSceneQueryHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt8sweepAnyERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR15PxSceneQueryHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep returning any blocking hit, not necessarily the closest. </p>
+<p>Returns whether any rigid actor is hit along the sweep path.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryHit PxSceneQueryCache </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, behavior is controlled by the PxSceneQueryFlag::eINITIAL_OVERLAP flag.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Combination of PxSceneQueryFlag defining the query behavior </p></li>
+<li><p><strong>hit</strong> – <strong>[out]</strong> Sweep hit information. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Sweep is performed against cached shape first. If no hit is found the sweep gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a blocking hit was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt11sweepSingleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR10PxSweepHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal">
+<span id="_CPPv3N15PxSceneQueryExt11sweepSingleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR10PxSweepHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="_CPPv2N15PxSceneQueryExt11sweepSingleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR10PxSweepHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="PxSceneQueryExt::sweepSingle__PxSceneCR.PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxSceneQueryFlags.PxSweepHitR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP.PxReal"></span><span class="target" id="class_px_scene_query_ext_1a79f11e1604dd70b31d92f695c4abdb2d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweepSingle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga2ddebd682bdb0bdb1db7ba113a93afe4.html#_CPPv417PxSceneQueryFlags" title="PxSceneQueryFlags"><span class="n"><span class="pre">PxSceneQueryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt11sweepSingleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsR10PxSweepHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep returning a single result. </p>
+<p>Returns the first rigid actor that is hit along the ray. Data for a blocking hit will be returned as specified by the outputFlags field. Touching hits will be ignored.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, behavior is controlled by the PxSceneQueryFlag::eINITIAL_OVERLAP flag.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information. </p></li>
+<li><p><strong>hit</strong> – <strong>[out]</strong> Sweep hit information. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Sweep is performed against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a blocking hit was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt13sweepMultipleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsP10PxSweepHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal">
+<span id="_CPPv3N15PxSceneQueryExt13sweepMultipleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsP10PxSweepHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="_CPPv2N15PxSceneQueryExt13sweepMultipleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsP10PxSweepHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal"></span><span id="PxSceneQueryExt::sweepMultiple__PxSceneCR.PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxSceneQueryFlags.PxSweepHitP.PxU32.bR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP.PxSceneQueryCacheCP.PxReal"></span><span class="target" id="class_px_scene_query_ext_1a2b2f50e1795b79105c257ffc5817f9e3"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweepMultiple</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="typedef_group__extensions_1ga2ddebd682bdb0bdb1db7ba113a93afe4.html#_CPPv417PxSceneQueryFlags" title="PxSceneQueryFlags"><span class="n"><span class="pre">PxSceneQueryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hitBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hitBufferSize</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">blockingHit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga871e9d89cdf9bbab58883b5f0822b5c3.html#_CPPv417PxSceneQueryCache" title="PxSceneQueryCache"><span class="n"><span class="pre">PxSceneQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt13sweepMultipleERK7PxSceneRK10PxGeometryRK11PxTransformRK6PxVec3K6PxReal17PxSceneQueryFlagsP10PxSweepHit5PxU32RbRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallbackPK17PxSceneQueryCache6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep returning multiple results. </p>
+<p>Find all rigid actors that get hit along the sweep. Each result contains data as specified by the outputFlags field.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, behavior is controlled by the PxSceneQueryFlag::eINITIAL_OVERLAP flag.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information. </p></li>
+<li><p><strong>hitBuffer</strong> – <strong>[out]</strong> Sweep hit information buffer. If the buffer overflows, the blocking hit is returned as the last entry together with an arbitrary subset of the nearer touching hits (typically the query should be restarted with a larger buffer). </p></li>
+<li><p><strong>hitBufferSize</strong> – <strong>[in]</strong> Size of the hit buffer. </p></li>
+<li><p><strong>blockingHit</strong> – <strong>[out]</strong> True if a blocking hit was found. If found, it is the last in the buffer, preceded by any touching hits which are closer. Otherwise the touching hits are listed. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to be touching. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Sweep is performed against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of hits in the buffer, or -1 if the buffer overflowed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt15overlapMultipleERK7PxSceneRK10PxGeometryRK11PxTransformP12PxOverlapHit5PxU32RK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback">
+<span id="_CPPv3N15PxSceneQueryExt15overlapMultipleERK7PxSceneRK10PxGeometryRK11PxTransformP12PxOverlapHit5PxU32RK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback"></span><span id="_CPPv2N15PxSceneQueryExt15overlapMultipleERK7PxSceneRK10PxGeometryRK11PxTransformP12PxOverlapHit5PxU32RK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback"></span><span id="PxSceneQueryExt::overlapMultiple__PxSceneCR.PxGeometryCR.PxTransformCR.PxOverlapHitP.PxU32.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP"></span><span class="target" id="class_px_scene_query_ext_1a97b72faeab77a4f70d9c5cc282903e8e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlapMultiple</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="struct_px_overlap_hit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><span class="n"><span class="pre">PxOverlapHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hitBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hitBufferSize</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt15overlapMultipleERK7PxSceneRK10PxGeometryRK11PxTransformP12PxOverlapHit5PxU32RK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Test overlap between a geometry and objects in the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Filtering: Overlap tests do not distinguish between touching and blocking hit types. Both get written to the hit buffer.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64ade0c4ad4267c954d51e99905e69a399e"><span class="std std-ref">PxHitFlag::eMESH_MULTIPLE</span></a> and <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"><span class="std std-ref">PxHitFlag::eMESH_BOTH_SIDES</span></a> have no effect in this case</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the object. </p></li>
+<li><p><strong>hitBuffer</strong> – <strong>[out]</strong> Buffer to store the overlapping objects to. If the buffer overflows, an arbitrary subset of overlapping objects is stored (typically the query should be restarted with a larger buffer). </p></li>
+<li><p><strong>hitBufferSize</strong> – <strong>[in]</strong> Size of the hit buffer. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to overlap. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of hits in the buffer, or -1 if the buffer overflowed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSceneQueryExt10overlapAnyERK7PxSceneRK10PxGeometryRK11PxTransformR12PxOverlapHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback">
+<span id="_CPPv3N15PxSceneQueryExt10overlapAnyERK7PxSceneRK10PxGeometryRK11PxTransformR12PxOverlapHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback"></span><span id="_CPPv2N15PxSceneQueryExt10overlapAnyERK7PxSceneRK10PxGeometryRK11PxTransformR12PxOverlapHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback"></span><span id="PxSceneQueryExt::overlapAny__PxSceneCR.PxGeometryCR.PxTransformCR.PxOverlapHitR.PxSceneQueryFilterDataCR.PxSceneQueryFilterCallbackP"></span><span class="target" id="class_px_scene_query_ext_1a6847acad836f2fe89dd56333fd221a95"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlapAny</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="struct_px_overlap_hit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><span class="n"><span class="pre">PxOverlapHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hit</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__extensions_1ga4d19f53556b8b6114e8a359d326c6d10.html#_CPPv422PxSceneQueryFilterData" title="PxSceneQueryFilterData"><span class="n"><span class="pre">PxSceneQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__extensions_1gaf9d442ec851f833a9276ddb7ea46dd23.html#_CPPv426PxSceneQueryFilterCallback" title="PxSceneQueryFilterCallback"><span class="n"><span class="pre">PxSceneQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSceneQueryExt10overlapAnyERK7PxSceneRK10PxGeometryRK11PxTransformR12PxOverlapHitRK22PxSceneQueryFilterDataP26PxSceneQueryFilterCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Test returning, for a given geometry, any overlapping object in the scene. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Filtering: Overlap tests do not distinguish between touching and blocking hit types. Both trigger a hit.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64ade0c4ad4267c954d51e99905e69a399e"><span class="std std-ref">PxHitFlag::eMESH_MULTIPLE</span></a> and <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"><span class="std std-ref">PxHitFlag::eMESH_BOTH_SIDES</span></a> have no effect in this case</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene </p></li>
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the object. </p></li>
+<li><p><strong>hit</strong> – <strong>[out]</strong> Pointer to store the overlapping object to. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags are set. If NULL, all hits are assumed to overlap. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if an overlap was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

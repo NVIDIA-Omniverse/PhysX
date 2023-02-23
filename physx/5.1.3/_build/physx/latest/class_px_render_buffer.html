@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxRenderBuffer &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxRenderBuffer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxrenderbuffer">
+<span id="exhale-class-class-px-render-buffer"></span><h1>PxRenderBuffer<a class="headerlink" href="#pxrenderbuffer" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxRenderBuffer.h.html#file-include-common-pxrenderbuffer-h"><span class="std std-ref">include/common/PxRenderBuffer.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxRenderBuffer">
+<span id="_CPPv314PxRenderBuffer"></span><span id="_CPPv214PxRenderBuffer"></span><span id="PxRenderBuffer"></span><span class="target" id="class_px_render_buffer"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRenderBuffer</span></span></span><a class="headerlink" href="#_CPPv414PxRenderBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Interface for points, lines, triangles, and text buffer. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBufferD0Ev">
+<span id="_CPPv3N14PxRenderBufferD0Ev"></span><span id="_CPPv2N14PxRenderBufferD0Ev"></span><span id="PxRenderBuffer::~PxRenderBuffer"></span><span class="target" id="class_px_render_buffer_1a205c1bd428f6b3705ea6bdada3c631cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxRenderBuffer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderBufferD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer11getNbPointsEv">
+<span id="_CPPv3NK14PxRenderBuffer11getNbPointsEv"></span><span id="_CPPv2NK14PxRenderBuffer11getNbPointsEv"></span><span id="PxRenderBuffer::getNbPointsC"></span><span class="target" id="class_px_render_buffer_1a332ccf3426d3f095deaef16562d9c3a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbPoints</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer11getNbPointsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer9getPointsEv">
+<span id="_CPPv3NK14PxRenderBuffer9getPointsEv"></span><span id="_CPPv2NK14PxRenderBuffer9getPointsEv"></span><span id="PxRenderBuffer::getPointsC"></span><span class="target" id="class_px_render_buffer_1a51525ad0435f55798c1dc343a5a39e71"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_point.html#_CPPv412PxDebugPoint" title="PxDebugPoint"><span class="n"><span class="pre">PxDebugPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPoints</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer9getPointsEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer8addPointERK12PxDebugPoint">
+<span id="_CPPv3N14PxRenderBuffer8addPointERK12PxDebugPoint"></span><span id="_CPPv2N14PxRenderBuffer8addPointERK12PxDebugPoint"></span><span id="PxRenderBuffer::addPoint__PxDebugPointCR"></span><span class="target" id="class_px_render_buffer_1aceb3859bad785f35fda30d50657275bd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addPoint</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_point.html#_CPPv412PxDebugPoint" title="PxDebugPoint"><span class="n"><span class="pre">PxDebugPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">point</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer8addPointERK12PxDebugPoint" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer10getNbLinesEv">
+<span id="_CPPv3NK14PxRenderBuffer10getNbLinesEv"></span><span id="_CPPv2NK14PxRenderBuffer10getNbLinesEv"></span><span id="PxRenderBuffer::getNbLinesC"></span><span class="target" id="class_px_render_buffer_1a6c6b26fc4d6e79bed72138148420c8a9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbLines</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer10getNbLinesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer8getLinesEv">
+<span id="_CPPv3NK14PxRenderBuffer8getLinesEv"></span><span id="_CPPv2NK14PxRenderBuffer8getLinesEv"></span><span id="PxRenderBuffer::getLinesC"></span><span class="target" id="class_px_render_buffer_1a48683764dfb58f5b79693ec267790bb2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_line.html#_CPPv411PxDebugLine" title="PxDebugLine"><span class="n"><span class="pre">PxDebugLine</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getLines</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer8getLinesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer7addLineERK11PxDebugLine">
+<span id="_CPPv3N14PxRenderBuffer7addLineERK11PxDebugLine"></span><span id="_CPPv2N14PxRenderBuffer7addLineERK11PxDebugLine"></span><span id="PxRenderBuffer::addLine__PxDebugLineCR"></span><span class="target" id="class_px_render_buffer_1a8e3a7dda58c1f72a5342ded6c1e73a62"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addLine</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_line.html#_CPPv411PxDebugLine" title="PxDebugLine"><span class="n"><span class="pre">PxDebugLine</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer7addLineERK11PxDebugLine" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer12reserveLinesEK5PxU32">
+<span id="_CPPv3N14PxRenderBuffer12reserveLinesEK5PxU32"></span><span id="_CPPv2N14PxRenderBuffer12reserveLinesEK5PxU32"></span><span id="PxRenderBuffer::reserveLines__PxU32C"></span><span class="target" id="class_px_render_buffer_1ac3c361e30c2608a495986741ffebff94"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_line.html#_CPPv411PxDebugLine" title="PxDebugLine"><span class="n"><span class="pre">PxDebugLine</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">reserveLines</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbLines</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer12reserveLinesEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer13reservePointsEK5PxU32">
+<span id="_CPPv3N14PxRenderBuffer13reservePointsEK5PxU32"></span><span id="_CPPv2N14PxRenderBuffer13reservePointsEK5PxU32"></span><span id="PxRenderBuffer::reservePoints__PxU32C"></span><span class="target" id="class_px_render_buffer_1a63fd9b46fb75f44122b376b01f665ff7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_point.html#_CPPv412PxDebugPoint" title="PxDebugPoint"><span class="n"><span class="pre">PxDebugPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">reservePoints</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbLines</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer13reservePointsEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer14getNbTrianglesEv">
+<span id="_CPPv3NK14PxRenderBuffer14getNbTrianglesEv"></span><span id="_CPPv2NK14PxRenderBuffer14getNbTrianglesEv"></span><span id="PxRenderBuffer::getNbTrianglesC"></span><span class="target" id="class_px_render_buffer_1a703357934fbff3f31837a60ccfabb513"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer14getNbTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer12getTrianglesEv">
+<span id="_CPPv3NK14PxRenderBuffer12getTrianglesEv"></span><span id="_CPPv2NK14PxRenderBuffer12getTrianglesEv"></span><span id="PxRenderBuffer::getTrianglesC"></span><span class="target" id="class_px_render_buffer_1a5e9aa32a4544fcfcb96aa71702e1aad2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_triangle.html#_CPPv415PxDebugTriangle" title="PxDebugTriangle"><span class="n"><span class="pre">PxDebugTriangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer12getTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer11addTriangleERK15PxDebugTriangle">
+<span id="_CPPv3N14PxRenderBuffer11addTriangleERK15PxDebugTriangle"></span><span id="_CPPv2N14PxRenderBuffer11addTriangleERK15PxDebugTriangle"></span><span id="PxRenderBuffer::addTriangle__PxDebugTriangleCR"></span><span class="target" id="class_px_render_buffer_1a5aadb06f6bb28168c96ead3247e57995"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addTriangle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_triangle.html#_CPPv415PxDebugTriangle" title="PxDebugTriangle"><span class="n"><span class="pre">PxDebugTriangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">triangle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer11addTriangleERK15PxDebugTriangle" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer6appendERK14PxRenderBuffer">
+<span id="_CPPv3N14PxRenderBuffer6appendERK14PxRenderBuffer"></span><span id="_CPPv2N14PxRenderBuffer6appendERK14PxRenderBuffer"></span><span id="PxRenderBuffer::append__PxRenderBufferCR"></span><span class="target" id="class_px_render_buffer_1a5d32a6ca069e64929d6b254b23ffde9d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">append</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderBuffer" title="PxRenderBuffer"><span class="n"><span class="pre">PxRenderBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer6appendERK14PxRenderBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer5clearEv">
+<span id="_CPPv3N14PxRenderBuffer5clearEv"></span><span id="_CPPv2N14PxRenderBuffer5clearEv"></span><span id="PxRenderBuffer::clear"></span><span class="target" id="class_px_render_buffer_1ab679f728aac1cabda529052520790d57"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer5clearEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderBuffer5shiftERK6PxVec3">
+<span id="_CPPv3N14PxRenderBuffer5shiftERK6PxVec3"></span><span id="_CPPv2N14PxRenderBuffer5shiftERK6PxVec3"></span><span id="PxRenderBuffer::shift__PxVec3CR"></span><span class="target" id="class_px_render_buffer_1a739920dee57f44d2062a82394e28c75b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shift</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">delta</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxRenderBuffer5shiftERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxRenderBuffer5emptyEv">
+<span id="_CPPv3NK14PxRenderBuffer5emptyEv"></span><span id="_CPPv2NK14PxRenderBuffer5emptyEv"></span><span id="PxRenderBuffer::emptyC"></span><span class="target" id="class_px_render_buffer_1a3a9eb1cfca7ff984fbe74785a685acf6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxRenderBuffer5emptyEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

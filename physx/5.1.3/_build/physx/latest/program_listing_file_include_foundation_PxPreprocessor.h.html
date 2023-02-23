@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Listing for include/foundation/PxPreprocessor.h &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Program Listing for include/foundation/PxPreprocessor.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="program-listing-for-include-foundation-pxpreprocessor-h">
+<span id="program-listing-file-include-foundation-pxpreprocessor-h"></span><h1>Program Listing for include/foundation/PxPreprocessor.h<a class="headerlink" href="#program-listing-for-include-foundation-pxpreprocessor-h" title="Permalink to this headline"></a></h1>
+<p>↰ Return to documentation for <a class="reference internal" href="file_include_foundation_PxPreprocessor.h.html#file-include-foundation-pxpreprocessor-h"><span class="std std-ref">include/foundation/PxPreprocessor.h</span></a></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_PREPROCESSOR_H</span>
+<span class="cp">#define PX_PREPROCESSOR_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stddef.h&gt;</span><span class="cp"></span>
+<span class="cp">#if !defined(PX_GENERATE_META_DATA)</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ciso646&gt;</span><span class="cp"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_ENABLE_FEATURES_UNDER_CONSTRUCTION</span>
+<span class="cp">#define PX_ENABLE_FEATURES_UNDER_CONSTRUCTION 0</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#define PX_STRINGIZE_HELPER(X) #X</span>
+<span class="cp">#define PX_STRINGIZE(X) PX_STRINGIZE_HELPER(X)</span>
+
+<span class="cp">#define PX_CONCAT_HELPER(X, Y) X##Y</span>
+<span class="cp">#define PX_CONCAT(X, Y) PX_CONCAT_HELPER(X, Y)</span>
+
+<span class="cm">/*</span>
+<span class="cm">The following preprocessor identifiers specify compiler, OS, and architecture.</span>
+<span class="cm">All definitions have a value of 1 or 0, use &#39;#if&#39; instead of &#39;#ifdef&#39;.</span>
+<span class="cm">*/</span><span class="w"></span>
+
+<span class="cp">#if defined(_MSC_VER)</span>
+<span class="cp">#if _MSC_VER &gt;= 1920</span>
+<span class="w">    </span><span class="cp">#define PX_VC 16</span>
+<span class="cp">#elif _MSC_VER &gt;= 1910</span>
+<span class="w">    </span><span class="cp">#define PX_VC 15</span>
+<span class="cp">#elif _MSC_VER &gt;= 1900</span>
+<span class="w">    </span><span class="cp">#define PX_VC 14</span>
+<span class="cp">#elif _MSC_VER &gt;= 1800</span>
+<span class="w">    </span><span class="cp">#define PX_VC 12</span>
+<span class="cp">#elif _MSC_VER &gt;= 1700</span>
+<span class="w">    </span><span class="cp">#define PX_VC 11</span>
+<span class="cp">#elif _MSC_VER &gt;= 1600</span>
+<span class="w">    </span><span class="cp">#define PX_VC 10</span>
+<span class="cp">#elif _MSC_VER &gt;= 1500</span>
+<span class="w">    </span><span class="cp">#define PX_VC 9</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#error &quot;Unknown VC version&quot;</span>
+<span class="cp">#endif</span>
+<span class="cp">#elif defined(__clang__)</span>
+<span class="cp">#define PX_CLANG 1</span>
+<span class="w">    </span><span class="cp">#if defined (__clang_major__)</span>
+<span class="w">        </span><span class="cp">#define PX_CLANG_MAJOR __clang_major__</span>
+<span class="w">    </span><span class="cp">#elif defined (_clang_major)</span>
+<span class="w">        </span><span class="cp">#define PX_CLANG_MAJOR _clang_major</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#define PX_CLANG_MAJOR 0</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#elif defined(__GNUC__) </span><span class="c1">// note: __clang__ implies __GNUC__</span>
+<span class="w">    </span><span class="cp">#define PX_GCC 1</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#error &quot;Unknown compiler&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined(_WIN64)</span>
+<span class="w">    </span><span class="cp">#define PX_WIN64 1</span>
+<span class="cp">#elif defined(_WIN32) </span><span class="c1">// note: _M_PPC implies _WIN32</span>
+<span class="w">    </span><span class="cp">#define PX_WIN32 1</span>
+<span class="cp">#elif defined(__linux__) || defined (__EMSCRIPTEN__)</span>
+<span class="w">    </span><span class="cp">#define PX_LINUX 1</span>
+<span class="cp">#elif defined(__APPLE__)</span>
+<span class="w">    </span><span class="cp">#define PX_OSX 1</span>
+<span class="cp">#elif defined(__NX__)</span>
+<span class="w">    </span><span class="cp">#define PX_SWITCH 1</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#error &quot;Unknown operating system&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined(__x86_64__) || defined(_M_X64)</span>
+<span class="w">    </span><span class="cp">#define PX_X64 1</span>
+<span class="cp">#elif defined(__i386__) || defined(_M_IX86) || defined (__EMSCRIPTEN__)</span>
+<span class="w">    </span><span class="cp">#define PX_X86 1</span>
+<span class="cp">#elif defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM64)</span>
+<span class="w">    </span><span class="cp">#define PX_A64 1</span>
+<span class="cp">#elif defined(__arm__) || defined(_M_ARM)</span>
+<span class="w">    </span><span class="cp">#define PX_ARM 1</span>
+<span class="cp">#elif defined(__ppc__) || defined(_M_PPC) || defined(__CELLOS_LV2__)</span>
+<span class="w">    </span><span class="cp">#define PX_PPC 1</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#error &quot;Unknown architecture&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !defined(PX_SIMD_DISABLED)</span>
+<span class="w">    </span><span class="cp">#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || (defined (__EMSCRIPTEN__) &amp;&amp; defined(__SSE2__))</span>
+<span class="w">        </span><span class="cp">#define PX_SSE2 1</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="w">    </span><span class="cp">#if defined(_M_ARM) || defined(__ARM_NEON__) || defined(__ARM_NEON)</span>
+<span class="w">        </span><span class="cp">#define PX_NEON 1</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="w">    </span><span class="cp">#if defined(_M_PPC) || defined(__CELLOS_LV2__)</span>
+<span class="w">        </span><span class="cp">#define PX_VMX 1</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_VC</span>
+<span class="w">    </span><span class="cp">#define PX_VC 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_CLANG</span>
+<span class="w">    </span><span class="cp">#define PX_CLANG 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_GCC</span>
+<span class="w">    </span><span class="cp">#define PX_GCC 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_WIN64</span>
+<span class="w">    </span><span class="cp">#define PX_WIN64 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_WIN32</span>
+<span class="w">    </span><span class="cp">#define PX_WIN32 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_LINUX</span>
+<span class="w">    </span><span class="cp">#define PX_LINUX 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_OSX</span>
+<span class="w">    </span><span class="cp">#define PX_OSX 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_SWITCH</span>
+<span class="w">    </span><span class="cp">#define PX_SWITCH 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_X64</span>
+<span class="w">    </span><span class="cp">#define PX_X64 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_X86</span>
+<span class="w">    </span><span class="cp">#define PX_X86 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_A64</span>
+<span class="w">    </span><span class="cp">#define PX_A64 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_ARM</span>
+<span class="w">    </span><span class="cp">#define PX_ARM 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_PPC</span>
+<span class="w">    </span><span class="cp">#define PX_PPC 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_SSE2</span>
+<span class="w">    </span><span class="cp">#define PX_SSE2 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_NEON</span>
+<span class="w">    </span><span class="cp">#define PX_NEON 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_VMX</span>
+<span class="w">    </span><span class="cp">#define PX_VMX 0</span>
+<span class="cp">#endif</span>
+
+<span class="cm">/*</span>
+<span class="cm">define anything not defined through the command line to 0</span>
+<span class="cm">*/</span><span class="w"></span>
+<span class="cp">#ifndef PX_DEBUG</span>
+<span class="w">    </span><span class="cp">#define PX_DEBUG 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_CHECKED</span>
+<span class="w">    </span><span class="cp">#define PX_CHECKED 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_PROFILE</span>
+<span class="w">    </span><span class="cp">#define PX_PROFILE 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_DEBUG_CRT</span>
+<span class="w">    </span><span class="cp">#define PX_DEBUG_CRT 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_NVTX</span>
+<span class="w">    </span><span class="cp">#define PX_NVTX 0</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef PX_DOXYGEN</span>
+<span class="w">    </span><span class="cp">#define PX_DOXYGEN 0</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// compiler</span>
+<span class="cp">#define PX_GCC_FAMILY (PX_CLANG || PX_GCC)</span>
+<span class="c1">// os</span>
+<span class="cp">#define PX_WINDOWS_FAMILY (PX_WIN32 || PX_WIN64)</span>
+<span class="cp">#define PX_LINUX_FAMILY PX_LINUX</span>
+<span class="cp">#define PX_APPLE_FAMILY PX_OSX                              </span><span class="c1">// equivalent to #if __APPLE__</span>
+<span class="cp">#define PX_UNIX_FAMILY (PX_LINUX_FAMILY || PX_APPLE_FAMILY) </span><span class="c1">// shortcut for unix/posix platforms</span>
+<span class="cp">#if defined(__EMSCRIPTEN__)</span>
+<span class="w">    </span><span class="cp">#define PX_EMSCRIPTEN 1</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_EMSCRIPTEN 0</span>
+<span class="cp">#endif</span>
+<span class="c1">// architecture</span>
+<span class="cp">#define PX_INTEL_FAMILY (PX_X64 || PX_X86)</span>
+<span class="cp">#define PX_ARM_FAMILY (PX_ARM || PX_A64)</span>
+<span class="cp">#define PX_P64_FAMILY (PX_X64 || PX_A64) </span><span class="c1">// shortcut for 64-bit architectures</span>
+
+<span class="cp">#if defined(_LIBCPP_VERSION) || PX_WIN64 || PX_WIN32 || PX_EMSCRIPTEN</span>
+<span class="w">    </span><span class="cp">#define PX_LIBCPP 1</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_LIBCPP 0</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// legacy define for PhysX</span>
+<span class="cp">#define PX_WINDOWS (PX_WINDOWS_FAMILY &amp;&amp; !PX_ARM_FAMILY)</span>
+
+<span class="cp">#ifndef PX_ENABLE_ASSERTS</span>
+<span class="w">    </span><span class="cp">#if PX_DEBUG &amp;&amp; !defined(__CUDACC__)</span>
+<span class="w">        </span><span class="cp">#define PX_ENABLE_ASSERTS 1</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#define PX_ENABLE_ASSERTS 0</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_C_EXPORT</span>
+<span class="w">    </span><span class="cp">#if PX_WINDOWS_FAMILY || PX_LINUX</span>
+<span class="w">        </span><span class="cp">#define PX_C_EXPORT extern &quot;C&quot;</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#define PX_C_EXPORT</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_UNIX_FAMILY&amp;&amp; __GNUC__ &gt;= 4</span>
+<span class="w">    </span><span class="cp">#define PX_UNIX_EXPORT __attribute__((visibility(&quot;default&quot;)))</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_UNIX_EXPORT</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_DLL_EXPORT __declspec(dllexport)</span>
+<span class="w">    </span><span class="cp">#define PX_DLL_IMPORT __declspec(dllimport)</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_DLL_EXPORT PX_UNIX_EXPORT</span>
+<span class="w">    </span><span class="cp">#define PX_DLL_IMPORT</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_CALL_CONV</span>
+<span class="w">    </span><span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">        </span><span class="cp">#define PX_CALL_CONV __cdecl</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#define PX_CALL_CONV</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_VC</span>
+<span class="w">    </span><span class="cp">#define PX_PUSH_PACK_DEFAULT __pragma(pack(push, 8))</span>
+<span class="w">    </span><span class="cp">#define PX_POP_PACK __pragma(pack(pop))</span>
+<span class="cp">#elif PX_GCC_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_PUSH_PACK_DEFAULT _Pragma(&quot;pack(push, 8)&quot;)</span>
+<span class="w">    </span><span class="cp">#define PX_POP_PACK _Pragma(&quot;pack(pop)&quot;)</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_PUSH_PACK_DEFAULT</span>
+<span class="w">    </span><span class="cp">#define PX_POP_PACK</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#define PX_INLINE inline</span>
+<span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">    </span><span class="cp">#pragma inline_depth(255)</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_VC</span>
+<span class="w">    </span><span class="cp">#define PX_FORCE_INLINE __forceinline</span>
+<span class="cp">#elif PX_LINUX </span><span class="c1">// Workaround; Fedora Core 3 do not agree with force inline and PxcPool</span>
+<span class="w">    </span><span class="cp">#define PX_FORCE_INLINE inline</span>
+<span class="cp">#elif PX_GCC_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_FORCE_INLINE inline __attribute__((always_inline))</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_FORCE_INLINE inline</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_NOINLINE __declspec(noinline)</span>
+<span class="cp">#elif PX_GCC_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_NOINLINE __attribute__((noinline))</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_NOINLINE</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined(__CUDACC__)</span>
+<span class="w">    </span><span class="cp">#define PX_RESTRICT __restrict__</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_RESTRICT __restrict</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_NOALIAS __declspec(noalias)</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_NOALIAS</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_OVERRIDE override</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="c1">// PT: we don&#39;t really need to support it on all platforms, as long as</span>
+<span class="w">    </span><span class="c1">// we compile the code on at least one platform that supports it.</span>
+<span class="w">    </span><span class="cp">#define PX_OVERRIDE</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_ALIGN</span>
+<span class="w">    </span><span class="cp">#if PX_WINDOWS_FAMILY</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN(alignment, decl) __declspec(align(alignment)) decl</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_PREFIX(alignment) __declspec(align(alignment))</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_SUFFIX(alignment)</span>
+<span class="w">    </span><span class="cp">#elif PX_GCC_FAMILY</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN(alignment, decl) decl __attribute__((aligned(alignment)))</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_PREFIX(alignment)</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_SUFFIX(alignment) __attribute__((aligned(alignment)))</span>
+<span class="w">    </span><span class="cp">#elif defined __CUDACC__</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN(alignment, decl) __align__(alignment) decl</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_PREFIX(alignment)</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_SUFFIX(alignment) __align__(alignment))</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN(alignment, decl)</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_PREFIX(alignment)</span>
+<span class="w">        </span><span class="cp">#define PX_ALIGN_SUFFIX(alignment)</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#define PX_DEPRECATED</span>
+
+<span class="c1">// static assert</span>
+<span class="cp">#if(defined(__GNUC__) &amp;&amp; (__GNUC__ &gt; 4 || (__GNUC__ == 4 &amp;&amp; __GNUC_MINOR__ &gt;= 7))) || (PX_APPLE_FAMILY) || (PX_SWITCH) || (PX_CLANG &amp;&amp; PX_ARM) || (PX_CLANG &amp;&amp; PX_A64)</span>
+<span class="w">    </span><span class="cp">#define PX_COMPILE_TIME_ASSERT(exp) typedef char PX_CONCAT(PxCompileTimeAssert_Dummy, __COUNTER__)[(exp) ? 1 : -1] __attribute__((unused))</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_COMPILE_TIME_ASSERT(exp) typedef char PxCompileTimeAssert_Dummy[(exp) ? 1 : -1]</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_GCC_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_OFFSET_OF(X, Y) __builtin_offsetof(X, Y)</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_OFFSET_OF(X, Y) offsetof(X, Y)</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#define PX_OFFSETOF_BASE 0x100 </span><span class="c1">// casting the null ptr takes a special-case code path, which we don&#39;t want</span>
+<span class="cp">#define PX_OFFSET_OF_RT(Class, Member)  (reinterpret_cast&lt;size_t&gt;(&amp;reinterpret_cast&lt;Class*&gt;(PX_OFFSETOF_BASE)-&gt;Member) - size_t(PX_OFFSETOF_BASE))</span>
+
+<span class="c1">// check that exactly one of NDEBUG and _DEBUG is defined</span>
+<span class="cp">#if !defined(NDEBUG) ^ defined(_DEBUG)</span>
+<span class="w">    </span><span class="cp">#error Exactly one of NDEBUG and _DEBUG needs to be defined!</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// make sure PX_CHECKED is defined in all _DEBUG configurations as well</span>
+<span class="cp">#if !PX_CHECKED &amp;&amp; PX_DEBUG</span>
+<span class="w">    </span><span class="cp">#error PX_CHECKED must be defined when PX_DEBUG is defined</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifdef __CUDACC__</span>
+<span class="w">    </span><span class="cp">#define PX_CUDA_CALLABLE __host__ __device__</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_CUDA_CALLABLE</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// avoid unreferenced parameter warning</span>
+<span class="c1">// preferred solution: omit the parameter&#39;s name from the declaration</span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PX_UNUSED</span><span class="p">(</span><span class="n">T</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Ensure that the application hasn&#39;t tweaked the pack value to less than 8, which would break</span>
+<span class="c1">// matching between the API headers and the binaries</span>
+<span class="c1">// This assert works on win32/win64, but may need further specialization on other platforms.</span>
+<span class="c1">// Some GCC compilers need the compiler flag -malign-double to be set.</span>
+<span class="c1">// Apparently the apple-clang-llvm compiler doesn&#39;t support malign-double.</span>
+<span class="cp">#if PX_APPLE_FAMILY || (PX_CLANG &amp;&amp; !PX_ARM)</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxPackValidation</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">_</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">long</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="cp">#elif PX_CLANG &amp;&amp; PX_ARM</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxPackValidation</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">_</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxPackValidation</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">_</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="cp">#endif</span>
+<span class="c1">// clang (as of version 3.9) cannot align doubles on 8 byte boundary  when compiling for Intel 32 bit target</span>
+<span class="cp">#if !PX_APPLE_FAMILY &amp;&amp; !PX_EMSCRIPTEN &amp;&amp; !(PX_CLANG &amp;&amp; PX_X86)</span>
+<span class="w">    </span><span class="n">PX_COMPILE_TIME_ASSERT</span><span class="p">(</span><span class="n">PX_OFFSET_OF</span><span class="p">(</span><span class="n">PxPackValidation</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="c1">// use in a cpp file to suppress LNK4221</span>
+<span class="cp">#if PX_VC</span>
+<span class="w">    </span><span class="cp">#define PX_DUMMY_SYMBOL \</span>
+<span class="cp">        namespace           \</span>
+<span class="cp">        {                   \</span>
+<span class="cp">        char PxDummySymbol; \</span>
+<span class="cp">        }</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_DUMMY_SYMBOL</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_GCC_FAMILY</span>
+<span class="w">    </span><span class="cp">#define PX_WEAK_SYMBOL __attribute__((weak)) </span><span class="c1">// this is to support SIMD constant merging in template specialization</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_WEAK_SYMBOL</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// Macro for avoiding default assignment and copy, because doing this by inheritance can increase class size on some</span>
+<span class="c1">// platforms.</span>
+<span class="cp">#define PX_NOCOPY(Class)    \</span>
+<span class="cp">protected:                  \</span>
+<span class="cp">    Class(const Class&amp;);    \</span>
+<span class="cp">    Class&amp; operator=(const Class&amp;);</span>
+
+<span class="c1">//#define DISABLE_CUDA_PHYSX</span>
+<span class="cp">#ifndef DISABLE_CUDA_PHYSX</span>
+<span class="w">    </span><span class="c1">//CUDA is currently supported on x86_64 windows and linux, and ARM_64 linux</span>
+<span class="w">    </span><span class="cp">#define PX_SUPPORT_GPU_PHYSX ((PX_X64 &amp;&amp; (PX_WINDOWS_FAMILY || PX_LINUX)) || (PX_A64 &amp;&amp; PX_LINUX))</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_SUPPORT_GPU_PHYSX 0</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifndef PX_SUPPORT_EXTERN_TEMPLATE</span>
+<span class="w">    </span><span class="cp">#define PX_SUPPORT_EXTERN_TEMPLATE (PX_VC != 11)</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#define PX_SUPPORT_EXTERN_TEMPLATE 0</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#define PX_FL   __FILE__, __LINE__</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSimulationEventCallback &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSimulationEventCallback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsimulationeventcallback">
+<span id="exhale-class-class-px-simulation-event-callback"></span><h1>PxSimulationEventCallback<a class="headerlink" href="#pxsimulationeventcallback" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#file-include-pxsimulationeventcallback-h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv425PxSimulationEventCallback">
+<span id="_CPPv325PxSimulationEventCallback"></span><span id="_CPPv225PxSimulationEventCallback"></span><span id="PxSimulationEventCallback"></span><span class="target" id="class_px_simulation_event_callback"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationEventCallback</span></span></span><a class="headerlink" href="#_CPPv425PxSimulationEventCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>An interface class that the user can implement in order to receive simulation events. </p>
+<p>With the exception of <a class="reference internal" href="#class_px_simulation_event_callback_1a86cd9bd80e504054d075fda24498756b"><span class="std std-ref">onAdvance()</span></a>, the events get sent during the call to either <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab34e054ccf428a1cdbd81bf1e2b87fae"><span class="std std-ref">PxScene::fetchResults()</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab557fc677e9549c71d36979dfd3ec8c5"><span class="std std-ref">PxScene::flushSimulation()</span></a> with sendPendingReports=true. <a class="reference internal" href="#class_px_simulation_event_callback_1a86cd9bd80e504054d075fda24498756b"><span class="std std-ref">onAdvance()</span></a> gets called while the simulation is running (that is between <a class="reference internal" href="class_px_scene.html#class_px_scene_1a2d154a207b905e73d7771a6c1160d8aa"><span class="std std-ref">PxScene::simulate()</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3a077c45dc9508f908373bb0f1a9df54"><span class="std std-ref">PxScene::advance()</span></a> and <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab34e054ccf428a1cdbd81bf1e2b87fae"><span class="std std-ref">PxScene::fetchResults()</span></a>).</p>
+<p><strong>Threading:</strong> With the exception of <a class="reference internal" href="#class_px_simulation_event_callback_1a86cd9bd80e504054d075fda24498756b"><span class="std std-ref">onAdvance()</span></a>, it is not necessary to make these callbacks thread safe as they will only be called in the context of the user thread.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a8951e43f8e23c320c1c90dd552135171"><span class="std std-ref">PxScene.getSimulationEventCallback()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SDK state should not be modified from within the callbacks. In particular objects should not be created or destroyed. If state modification is needed then the changes should be stored to a buffer and performed after the simulation step.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback17onConstraintBreakEP16PxConstraintInfo5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback17onConstraintBreakEP16PxConstraintInfo5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback17onConstraintBreakEP16PxConstraintInfo5PxU32"></span><span id="PxSimulationEventCallback::onConstraintBreak__PxConstraintInfoP.PxU32"></span><span class="target" id="class_px_simulation_event_callback_1a67c6553ee9090481ece8b041502eb948"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onConstraintBreak</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_info.html#_CPPv416PxConstraintInfo" title="PxConstraintInfo"><span class="n"><span class="pre">PxConstraintInfo</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraints</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback17onConstraintBreakEP16PxConstraintInfo5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is called when a breakable constraint breaks. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_constraint.html#class_px_constraint"><span class="std std-ref">PxConstraint</span></a> PxConstraintDesc.linearBreakForce PxConstraintDesc.angularBreakForce </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The user should not release the constraint shader inside this call!</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>No event will get reported if the constraint breaks but gets deleted while the time step is still being simulated.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>constraints</strong> – <strong>[in]</strong> - The constraints which have been broken. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> - The number of constraints</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback6onWakeEPP7PxActor5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback6onWakeEPP7PxActor5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback6onWakeEPP7PxActor5PxU32"></span><span id="PxSimulationEventCallback::onWake__PxActorPP.PxU32"></span><span class="target" id="class_px_simulation_event_callback_1a37e6f45b530cfb8536bc2ff14f38e2fe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onWake</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actors</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback6onWakeEPP7PxActor5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is called with the actors which have just been woken up. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"><span class="std std-ref">PxSceneDesc.simulationEventCallback</span></a> <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ae24ff3f3ed0cb2a138b382fd0720b94f"><span class="std std-ref">PxActor.setActorFlag()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only supported by rigid bodies yet. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only called on actors for which the <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> eSEND_SLEEP_NOTIFIES has been set. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only the latest sleep state transition happening between fetchResults() of the previous frame and fetchResults() of the current frame will get reported. For example, let us assume actor A is awake, then A-&gt;putToSleep() gets called, then later A-&gt;wakeUp() gets called. At the next simulate/fetchResults() step only an <a class="reference internal" href="#class_px_simulation_event_callback_1a37e6f45b530cfb8536bc2ff14f38e2fe"><span class="std std-ref">onWake()</span></a> event will get triggered because that was the last transition. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If an actor gets newly added to a scene with properties such that it is awake and the sleep state does not get changed by the user or simulation, then an <a class="reference internal" href="#class_px_simulation_event_callback_1a37e6f45b530cfb8536bc2ff14f38e2fe"><span class="std std-ref">onWake()</span></a> event will get sent at the next simulate/fetchResults() step.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actors</strong> – <strong>[in]</strong> - The actors which just woke up. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> - The number of actors</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback7onSleepEPP7PxActor5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback7onSleepEPP7PxActor5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback7onSleepEPP7PxActor5PxU32"></span><span id="PxSimulationEventCallback::onSleep__PxActorPP.PxU32"></span><span class="target" id="class_px_simulation_event_callback_1a614256e6c2570e24cf45e974d6087d38"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onSleep</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actors</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback7onSleepEPP7PxActor5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is called with the actors which have just been put to sleep. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"><span class="std std-ref">PxSceneDesc.simulationEventCallback</span></a> <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ae24ff3f3ed0cb2a138b382fd0720b94f"><span class="std std-ref">PxActor.setActorFlag()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only supported by rigid bodies yet. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only called on actors for which the <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> eSEND_SLEEP_NOTIFIES has been set. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only the latest sleep state transition happening between fetchResults() of the previous frame and fetchResults() of the current frame will get reported. For example, let us assume actor A is asleep, then A-&gt;wakeUp() gets called, then later A-&gt;putToSleep() gets called. At the next simulate/fetchResults() step only an <a class="reference internal" href="#class_px_simulation_event_callback_1a614256e6c2570e24cf45e974d6087d38"><span class="std std-ref">onSleep()</span></a> event will get triggered because that was the last transition (assuming the simulation does not wake the actor up). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If an actor gets newly added to a scene with properties such that it is asleep and the sleep state does not get changed by the user or simulation, then an <a class="reference internal" href="#class_px_simulation_event_callback_1a614256e6c2570e24cf45e974d6087d38"><span class="std std-ref">onSleep()</span></a> event will get sent at the next simulate/fetchResults() step.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actors</strong> – <strong>[in]</strong> - The actors which have just been put to sleep. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> - The number of actors</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32"></span><span id="PxSimulationEventCallback::onContact__PxContactPairHeaderCR.PxContactPairCP.PxU32"></span><span class="target" id="class_px_simulation_event_callback_1a4dc1da28643ccf9f77c8432b5eb2fd32"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onContact</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair_header.html#_CPPv419PxContactPairHeader" title="PxContactPairHeader"><span class="n"><span class="pre">PxContactPairHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairHeader</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair.html#_CPPv413PxContactPair" title="PxContactPair"><span class="n"><span class="pre">PxContactPair</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pairs</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPairs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is called when certain contact events occur. </p>
+<p>The method will be called for a pair of actors if one of the colliding shape pairs requested contact notification. You request which events are reported using the filter shader/callback mechanism (see <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a>, <a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a>, <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a>).</p>
+<p>Do not keep references to the passed objects, as they will be invalid after this function returns.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"><span class="std std-ref">PxSceneDesc.simulationEventCallback</span></a> <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairHeader</strong> – <strong>[in]</strong> Information on the two actors whose shapes triggered a contact report. </p></li>
+<li><p><strong>pairs</strong> – <strong>[in]</strong> The contact pairs of two actors for which contact reports have been requested. See <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a>. </p></li>
+<li><p><strong>nbPairs</strong> – <strong>[in]</strong> The number of provided contact pairs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32"></span><span id="PxSimulationEventCallback::onTrigger__PxTriggerPairP.PxU32"></span><span class="target" id="class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onTrigger</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_trigger_pair.html#_CPPv413PxTriggerPair" title="PxTriggerPair"><span class="n"><span class="pre">PxTriggerPair</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pairs</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback9onTriggerEP13PxTriggerPair5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is called with the current trigger pair events. </p>
+<p>Shapes which have been marked as triggers using <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a> will send events according to the pair flag specification in the filter shader (see <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a>, <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"><span class="std std-ref">PxSceneDesc.simulationEventCallback</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"><span class="std std-ref">PxShape.setFlag()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Trigger shapes will no longer send notification events for interactions with other trigger shapes.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairs</strong> – <strong>[in]</strong> - The trigger pair events. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> - The number of trigger pair events.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32">
+<span id="_CPPv3N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32"></span><span id="_CPPv2N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32"></span><span id="PxSimulationEventCallback::onAdvance__PxRigidBodyCPCP.PxTransformCP.PxU32C"></span><span class="target" id="class_px_simulation_event_callback_1a86cd9bd80e504054d075fda24498756b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onAdvance</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bodyBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">poseBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallback9onAdvanceEPPCK11PxRigidBodyPK11PxTransformK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Provides early access to the new pose of moving rigid bodies. </p>
+<p>When this call occurs, rigid bodies having the <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag_1a5fd4878ae66a98c030a9d976e8ba8596ac89b33b0290d667f6f2ae69298631d01"><span class="std std-ref">PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW</span></a> flag set, were moved by the simulation and their new poses can be accessed through the provided buffers.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a0cfa2d3835ea936ecd6ff94fbcefd689"><span class="std std-ref">PxScene.setSimulationEventCallback()</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a71a00536a56d40fe031de2ced1834941"><span class="std std-ref">PxSceneDesc.simulationEventCallback</span></a> <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag_1a5fd4878ae66a98c030a9d976e8ba8596ac89b33b0290d667f6f2ae69298631d01"><span class="std std-ref">PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The provided buffers are valid and can be read until the next call to <a class="reference internal" href="class_px_scene.html#class_px_scene_1a2d154a207b905e73d7771a6c1160d8aa"><span class="std std-ref">PxScene::simulate()</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene_1a698947ec5653ac7a2c466122f393e477"><span class="std std-ref">PxScene::collide()</span></a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This callback gets triggered while the simulation is running. If the provided rigid body references are used to read properties of the object, then the callback has to guarantee no other thread is writing to the same body at the same time.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The code in this callback should be lightweight as it can block the simulation, that is, the <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab34e054ccf428a1cdbd81bf1e2b87fae"><span class="std std-ref">PxScene::fetchResults()</span></a> call.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bodyBuffer</strong> – <strong>[in]</strong> The rigid bodies that moved and requested early pose reporting. </p></li>
+<li><p><strong>poseBuffer</strong> – <strong>[in]</strong> The integrated rigid body poses of the bodies listed in bodyBuffer. </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> The number of entries in the provided buffers.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N25PxSimulationEventCallbackD0Ev">
+<span id="_CPPv3N25PxSimulationEventCallbackD0Ev"></span><span id="_CPPv2N25PxSimulationEventCallbackD0Ev"></span><span id="PxSimulationEventCallback::~PxSimulationEventCallback"></span><span class="target" id="class_px_simulation_event_callback_1ae97f7e6f3dbccaeef1e3fa1578862e88"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSimulationEventCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N25PxSimulationEventCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

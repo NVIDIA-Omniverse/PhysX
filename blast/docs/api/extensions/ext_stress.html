@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Stress Solver (NvBlastExtStress) &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Stress Solver (NvBlastExtStress) &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -192,10 +192,18 @@
             
   <div class="section" id="stress-solver-nvblastextstress">
 <span id="pageextstress"></span><h1>Stress Solver (NvBlastExtStress)<a class="headerlink" href="#stress-solver-nvblastextstress" title="Permalink to this headline">¶</a></h1>
-<p>The Blast stress solver extension provides an implementation of a quite fast and easy to use stress solver which works directly with the bond graph. It simulates more
-complex damage model on support graph by allowing to apply forces on nodes of the support graph (on chunks). The most common usage is just applying gravity force on a static construction
-so that it will fall apart at some point when the carcass cannot hold anymore. Dynamic actors are also supported, you could for example add centrifugal force so that rotating an object fast enough will break bonds.</p>
-<p>It also can be used as another way to apply impact damage, which can give the visually pleasant result of an actor breaking in a weak place instead of the place of contact.</p>
+<p>The Blast stress solver extension provides an implementation of a fast and easy to use stress solver which works directly with the bond graph.
+It simulates iteratively spreading forces across bonds that connect nodes of the support graph (where nodes typically represent chunks)
+and allows bond limits to be specified for tension, compression, and shear independently.</p>
+<p>The most common usage is applying gravity force on a static structure so that it will fall apart at some point when it cannot hold anymore.  For gravity to work correctly
+there must be at least one node in the graph with 0 mass.  That causes the system to treat the node as being fixed and having infinite mass so it can’t move to reach a converged state.
+You can use part of the destructible itself, or add a dummy node and bonds connecting it to the nodes that should support the structure.  The other option is to add a supporting force to all
+nodes at the “base” of the graph (where the graph connects to the thing supporting it, normally the bottom, but could be the top for a hanging structure).
+Without this, the algorithm will stabilize with no internal force due to gravity, effectively treating it like the entire structure is in freefall.</p>
+<p>It also can be used as another way to apply impact damage, which can give the visually pleasant result of an actor breaking in a weak place instead of the place of contact.  This is accomplished
+by adding the impulse of collisions to the nearest node in the graph.</p>
+<p>Dynamic actors are also supported, you could for example add centrifugal force so that rotating an object fast enough will break bonds.  Keep in mind that for gravity to work with dynamic actors,
+an opposing force or static node(s) must be added to the system to provide resistance to the force.</p>
 <div class="section" id="features">
 <span id="stresssolverfeatures"></span><h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -209,8 +217,8 @@ so that it will fall apart at some point when the carcass cannot hold anymore. D
 </div>
 <div class="section" id="settings-tuning">
 <span id="stresssolvertuning"></span><h2>Settings Tuning<a class="headerlink" href="#settings-tuning" title="Permalink to this headline">¶</a></h2>
-<p>Computation time is linearly proportional to the a bondIterationsPerFrame setting. To fine tune, look for balance between a bondIterationsPerFrame and a graphReductionLevel . The more bond iterations
-are set, the more precise the computation will be. The smaller graph allows to make higher fidelity computations within the same bond iterations per frame (same time spent), but actual cracks (damaged bonds) will be more sparse as the result.</p>
+<p>Computation time is linearly proportional to the a maxSolverIterationsPerFrame setting. Higher values will converge to a solution sooner, but at processing cost.
+a graphReductionLevel should be considered experimental at this point, it has not been heavily tested.</p>
 <p>Debug render can help a lot for tuning, consider using a stressSolver-&gt;fillDebugRender(…) for that.</p>
 </div>
 <div class="section" id="usage">
@@ -222,16 +230,21 @@ are set, the more precise the computation will be. The smaller graph allows to m
 <p>a ExtStressSolverSettings are passed in create function, but also can be changed at any time with a stressSolver-&gt;setSettings(…).</p>
 <p>It fully utilizes the fact that it knows the initial support graph structure and does a maximum of processing
 in the a create(…) method call. After that, all actor split calls are synchronized internally and efficiently so only the actual stress propagation takes most of computational time.</p>
-<p>You need to provide physics specific information (mass, volume, position, static) for every node in support graph since Blast itself is physics agnostic. There are two ways to do it. One way is to call a stressSolver-&gt;setNodeInfo(…) for every graph node. The other way is to call stressSolver-&gt;setAllNodesInfoFromLL() once: all the data will be populated using NvBlastAsset chunk’s data, in particular a volume and a centroid. All nodes connected to ‘world’ chunk are marked as static.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>stressSolver-&gt;setAllNodesInfoFromLL();
+<p>You need to provide physics specific information (mass, volume, position) for every node in support graph since Blast itself is physics agnostic.
+There are two ways to do it.  One way is to call a stressSolver-&gt;setNodeInfo(…) for every graph node.  The other way is to call stressSolver-&gt;setAllNodesInfoFromLL() once:
+all the data will be populated using NvBlastAsset chunk’s data, in particular a volume and a centroid.  All ‘world’ nodes are considered static.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>stressSolver-&gt;setAllNodesInfoFromLL(density);
 </pre></div>
 </div>
-<p>Stress solver needs to keep track for actor create/destroy events in order to update its internal stress graph accordingly. So you need to call a stressSolver-&gt;notifyActorCreated(actor) and a stressSolver-&gt;notifyActorDestroyed(actor) every time an actor is created or destroyed, including the initial actor the family had when the stress solver was created. There is no need to track actors which contain only one or less graph nodes. In that case a notifyActorCreated(actor) returns ‘false’ as a hint. It means that the stress solver will ignore them, as for those actors applying forces does not make any sense.</p>
+<p>The stress solver needs to keep track for actor create/destroy events in order to update its internal stress graph accordingly.
+So you need to call a stressSolver-&gt;notifyActorCreated(actor) and a stressSolver-&gt;notifyActorDestroyed(actor) every time an actor is created or destroyed,
+including the initial actor the family had when the stress solver was created.  There is no need to track actors which contain only one or less graph nodes.
+In that case a notifyActorCreated(actor) returns ‘false’ as a hint.  It means that the stress solver will ignore them, as for those actors applying forces does not make any sense.</p>
 <p>A typical update loop looks like this:</p>
-<p>-# If split happened, call relevant stressSolver-&gt;notifyActorCreated(actor) and stressSolver-&gt;notifyActorDestroyed(actor)
--# Apply all forces, use a stressSolver-&gt;addForce(…), stressSolver-&gt;addGravity(…), a stressSolver-&gt;addCentrifugalAcceleration(…)
+<p>-# Apply all forces, use a stressSolver-&gt;addForce(…), stressSolver-&gt;addGravity(…), a stressSolver-&gt;addCentrifugalAcceleration(…)
 -# Call a stressSolver-&gt;update(). This is where all expensive computation takes place.
--# If a stressSolver-&gt;getOverstressedBondCount() &gt; 0, use one of a stressSolver-&gt;generateFractureCommands() methods to get bond fracture commands and apply them on actors.</p>
+-# If a stressSolver-&gt;getOverstressedBondCount() &gt; 0, use one of a stressSolver-&gt;generateFractureCommands() methods to get bond fracture commands and apply them on actors.
+-# If split happened, call relevant stressSolver-&gt;notifyActorCreated(actor) and stressSolver-&gt;notifyActorDestroyed(actor)</p>
 </div>
 </div>
 
@@ -247,7 +260,7 @@ in the a create(…) method call. After that, all actor split calls are synchron
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehiclePhysXRigidActorShapeParams &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehiclePhysXRigidActorShapeParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclephysxrigidactorshapeparams">
+<span id="exhale-class-class-px-vehicle-phys-x-rigid-actor-shape-params"></span><h1>PxVehiclePhysXRigidActorShapeParams<a class="headerlink" href="#pxvehiclephysxrigidactorshapeparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_physxActor_PxVehiclePhysXActorHelpers.h.html#file-include-vehicle2-physxactor-pxvehiclephysxactorhelpers-h"><span class="std std-ref">include/vehicle2/physxActor/PxVehiclePhysXActorHelpers.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv435PxVehiclePhysXRigidActorShapeParams">
+<span id="_CPPv335PxVehiclePhysXRigidActorShapeParams"></span><span id="_CPPv235PxVehiclePhysXRigidActorShapeParams"></span><span id="PxVehiclePhysXRigidActorShapeParams"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePhysXRigidActorShapeParams</span></span></span><a class="headerlink" href="#_CPPv435PxVehiclePhysXRigidActorShapeParams" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams35PxVehiclePhysXRigidActorShapeParamsERK10PxGeometryRK11PxTransformRK10PxMaterialK12PxShapeFlagsRK12PxFilterDataRK12PxFilterData">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams35PxVehiclePhysXRigidActorShapeParamsERK10PxGeometryRK11PxTransformRK10PxMaterialK12PxShapeFlagsRK12PxFilterDataRK12PxFilterData"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams35PxVehiclePhysXRigidActorShapeParamsERK10PxGeometryRK11PxTransformRK10PxMaterialK12PxShapeFlagsRK12PxFilterDataRK12PxFilterData"></span><span id="PxVehiclePhysXRigidActorShapeParams::PxVehiclePhysXRigidActorShapeParams__PxGeometryCR.PxTransformCR.PxMaterialCR.PxShapeFlagsC.PxFilterDataCR.PxFilterDataCR"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1a0aa8955f4c4aefca5936a0f210b287f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePhysXRigidActorShapeParams</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">_geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">_localPose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><span class="n"><span class="pre">PxMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">_material</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d.html#_CPPv412PxShapeFlags" title="PxShapeFlags"><span class="n"><span class="pre">PxShapeFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">_flags</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">_simulationFilterData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">_queryFilterData</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams35PxVehiclePhysXRigidActorShapeParamsERK10PxGeometryRK11PxTransformRK10PxMaterialK12PxShapeFlagsRK12PxFilterDataRK12PxFilterData" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams8geometryE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams8geometryE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams8geometryE"></span><span id="PxVehiclePhysXRigidActorShapeParams::geometry__PxGeometryCR"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1a822b7a3faa0bbc70a13b7ccca1fddc14"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">geometry</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams8geometryE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams9localPoseE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams9localPoseE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams9localPoseE"></span><span id="PxVehiclePhysXRigidActorShapeParams::localPose__PxTransformCR"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1a16d00dc79c66b36c0a8deab4375931f3"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">localPose</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams9localPoseE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams8materialE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams8materialE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams8materialE"></span><span id="PxVehiclePhysXRigidActorShapeParams::material__PxMaterialCR"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1aca181e3e83e96b2953c236f7870b6f45"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><span class="n"><span class="pre">PxMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">material</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams8materialE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams5flagsE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams5flagsE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams5flagsE"></span><span id="PxVehiclePhysXRigidActorShapeParams::flags__PxShapeFlags"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1ae214df6f44cb2b79dc3c3d941a970473"></span><a class="reference internal" href="typedef_group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d.html#_CPPv412PxShapeFlags" title="PxShapeFlags"><span class="n"><span class="pre">PxShapeFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams20simulationFilterDataE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams20simulationFilterDataE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams20simulationFilterDataE"></span><span id="PxVehiclePhysXRigidActorShapeParams::simulationFilterData__PxFilterData"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1a5e61a3d1f7fd1b0ce18fb4706e71324a"></span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">simulationFilterData</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams20simulationFilterDataE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N35PxVehiclePhysXRigidActorShapeParams15queryFilterDataE">
+<span id="_CPPv3N35PxVehiclePhysXRigidActorShapeParams15queryFilterDataE"></span><span id="_CPPv2N35PxVehiclePhysXRigidActorShapeParams15queryFilterDataE"></span><span id="PxVehiclePhysXRigidActorShapeParams::queryFilterData__PxFilterData"></span><span class="target" id="class_px_vehicle_phys_x_rigid_actor_shape_params_1a0dc9cf3e36d981263b3ef5095ab62e95"></span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">queryFilterData</span></span></span><a class="headerlink" href="#_CPPv4N35PxVehiclePhysXRigidActorShapeParams15queryFilterDataE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

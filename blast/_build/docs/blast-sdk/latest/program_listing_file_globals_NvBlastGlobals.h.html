@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Program Listing for globals/NvBlastGlobals.h &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Program Listing for globals/NvBlastGlobals.h &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -200,7 +200,7 @@
 <span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 <span class="c1">//</span>
-<span class="c1">// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.</span>
 
 
 <span class="cp">#ifndef NVBLASTGLOBALS_H</span>
@@ -208,77 +208,24 @@
 
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;new&gt;</span><span class="cp"></span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;NvBlastTypes.h&quot;</span><span class="cp"></span>
-
-
-<span class="k">namespace</span><span class="w"> </span><span class="nn">Nv</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">namespace</span><span class="w"> </span><span class="nn">Blast</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">AllocatorCallback</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">AllocatorCallback</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">allocate</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">typeName</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">deallocate</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">ptr</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
-
-
-<span class="k">struct</span><span class="w"> </span><span class="nc">ErrorCode</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">eNO_ERROR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eDEBUG_INFO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eDEBUG_WARNING</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eINVALID_PARAMETER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eINVALID_OPERATION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eOUT_OF_MEMORY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eINTERNAL_ERROR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eABORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">ePERF_WARNING</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">        </span><span class="n">eMASK_ALL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="w"></span>
-<span class="w">    </span><span class="p">};</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">ErrorCallback</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ErrorCallback</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">reportError</span><span class="p">(</span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
-
-
-<span class="p">}</span><span class="w"> </span><span class="c1">// namespace Blast</span>
-<span class="p">}</span><span class="w"> </span><span class="c1">// namespace Nv</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;NvAllocatorCallback.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;NvErrorCallback.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;NvProfiler.h&quot;</span><span class="cp"></span>
 
 
 
-<span class="n">NVBLAST_API</span><span class="w"> </span><span class="n">Nv</span><span class="o">::</span><span class="n">Blast</span><span class="o">::</span><span class="n">AllocatorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">NvBlastGlobalGetAllocatorCallback</span><span class="p">();</span><span class="w"></span>
 
-<span class="n">NVBLAST_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">NvBlastGlobalSetAllocatorCallback</span><span class="p">(</span><span class="n">Nv</span><span class="o">::</span><span class="n">Blast</span><span class="o">::</span><span class="n">AllocatorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">allocatorCallback</span><span class="p">);</span><span class="w"></span>
+<span class="n">NV_C_API</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvAllocatorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">NvBlastGlobalGetAllocatorCallback</span><span class="p">();</span><span class="w"></span>
 
-<span class="n">NVBLAST_API</span><span class="w"> </span><span class="n">Nv</span><span class="o">::</span><span class="n">Blast</span><span class="o">::</span><span class="n">ErrorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">NvBlastGlobalGetErrorCallback</span><span class="p">();</span><span class="w"></span>
+<span class="n">NV_C_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">NvBlastGlobalSetAllocatorCallback</span><span class="p">(</span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvAllocatorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">allocatorCallback</span><span class="p">);</span><span class="w"></span>
 
-<span class="n">NVBLAST_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">NvBlastGlobalSetErrorCallback</span><span class="p">(</span><span class="n">Nv</span><span class="o">::</span><span class="n">Blast</span><span class="o">::</span><span class="n">ErrorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">errorCallback</span><span class="p">);</span><span class="w"></span>
+<span class="n">NV_C_API</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">NvBlastGlobalGetErrorCallback</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">NV_C_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">NvBlastGlobalSetErrorCallback</span><span class="p">(</span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCallback</span><span class="o">*</span><span class="w"> </span><span class="n">errorCallback</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">NV_C_API</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvProfilerCallback</span><span class="o">*</span><span class="w"> </span><span class="n">NvBlastGlobalGetProfilerCallback</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">NV_C_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">NvBlastGlobalSetProfilerCallback</span><span class="p">(</span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvProfilerCallback</span><span class="o">*</span><span class="w"> </span><span class="n">profilerCallback</span><span class="p">);</span><span class="w"></span>
 
 
 
@@ -286,17 +233,16 @@
 <span class="p">{</span><span class="w"></span>
 <span class="k">namespace</span><span class="w"> </span><span class="nn">Blast</span><span class="w"></span>
 <span class="p">{</span><span class="w"></span>
-
 
 <span class="n">NV_INLINE</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">logLL</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">line</span><span class="p">)</span><span class="w"></span>
 <span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">eNO_ERROR</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">eNO_ERROR</span><span class="p">;</span><span class="w"></span>
 <span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">type</span><span class="p">)</span><span class="w"></span>
 <span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Error</span><span class="p">:</span><span class="w">     </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">eINVALID_OPERATION</span><span class="p">;</span><span class="w">  </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Warning</span><span class="p">:</span><span class="w">   </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">eDEBUG_WARNING</span><span class="p">;</span><span class="w">      </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Info</span><span class="p">:</span><span class="w">      </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">eDEBUG_INFO</span><span class="p">;</span><span class="w">         </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Debug</span><span class="p">:</span><span class="w">     </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ErrorCode</span><span class="o">::</span><span class="n">eNO_ERROR</span><span class="p">;</span><span class="w">           </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Error</span><span class="p">:</span><span class="w">     </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">eINVALID_OPERATION</span><span class="p">;</span><span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Warning</span><span class="p">:</span><span class="w">   </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">eDEBUG_WARNING</span><span class="p">;</span><span class="w">        </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Info</span><span class="p">:</span><span class="w">      </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">eDEBUG_INFO</span><span class="p">;</span><span class="w">           </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">NvBlastMessage</span><span class="o">::</span><span class="no">Debug</span><span class="p">:</span><span class="w">     </span><span class="n">errorCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvErrorCode</span><span class="o">::</span><span class="n">eNO_ERROR</span><span class="p">;</span><span class="w">             </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
 <span class="w">    </span><span class="p">}</span><span class="w"></span>
 
 <span class="w">    </span><span class="n">NvBlastGlobalGetErrorCallback</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">reportError</span><span class="p">(</span><span class="n">errorCode</span><span class="p">,</span><span class="w"> </span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="p">);</span><span class="w"></span>
@@ -329,10 +275,10 @@
 
 
 <span class="cp">#define NVBLAST_LOG(_code, _msg)    NvBlastGlobalGetErrorCallback()-&gt;reportError(_code, _msg, __FILE__, __LINE__)</span>
-<span class="cp">#define NVBLAST_LOG_ERROR(_msg)     NVBLAST_LOG(Nv::Blast::ErrorCode::eINVALID_OPERATION, _msg)</span>
-<span class="cp">#define NVBLAST_LOG_WARNING(_msg)   NVBLAST_LOG(Nv::Blast::ErrorCode::eDEBUG_WARNING, _msg)</span>
-<span class="cp">#define NVBLAST_LOG_INFO(_msg)      NVBLAST_LOG(Nv::Blast::ErrorCode::eDEBUG_INFO, _msg)</span>
-<span class="cp">#define NVBLAST_LOG_DEBUG(_msg)     NVBLAST_LOG(Nv::Blast::ErrorCode::eNO_ERROR, _msg)</span>
+<span class="cp">#define NVBLAST_LOG_ERROR(_msg)     NVBLAST_LOG(nvidia::NvErrorCode::eINVALID_OPERATION, _msg)</span>
+<span class="cp">#define NVBLAST_LOG_WARNING(_msg)   NVBLAST_LOG(nvidia::NvErrorCode::eDEBUG_WARNING, _msg)</span>
+<span class="cp">#define NVBLAST_LOG_INFO(_msg)      NVBLAST_LOG(nvidia::NvErrorCode::eDEBUG_INFO, _msg)</span>
+<span class="cp">#define NVBLAST_LOG_DEBUG(_msg)     NVBLAST_LOG(nvidia::NvErrorCode::eNO_ERROR, _msg)</span>
 
 <span class="cp">#define NVBLAST_CHECK(_code, _expr, _msg, _onFail)                                                                      \</span>
 <span class="cp">    {                                                                                                                   \</span>
@@ -343,10 +289,10 @@
 <span class="cp">        }                                                                                                               \</span>
 <span class="cp">    }</span>
 
-<span class="cp">#define NVBLAST_CHECK_ERROR(_expr, _msg, _onFail)   NVBLAST_CHECK(Nv::Blast::ErrorCode::eINVALID_OPERATION, _expr, _msg, _onFail)</span>
-<span class="cp">#define NVBLAST_CHECK_WARNING(_expr, _msg, _onFail) NVBLAST_CHECK(Nv::Blast::ErrorCode::eDEBUG_WARNING, _expr, _msg, _onFail)</span>
-<span class="cp">#define NVBLAST_CHECK_INFO(_expr, _msg, _onFail)    NVBLAST_CHECK(Nv::Blast::ErrorCode::eDEBUG_INFO, _expr, _msg, _onFail)</span>
-<span class="cp">#define NVBLAST_CHECK_DEBUG(_expr, _msg, _onFail)   NVBLAST_CHECK(Nv::Blast::ErrorCode::eNO_ERROR, _expr, _msg, _onFail)</span>
+<span class="cp">#define NVBLAST_CHECK_ERROR(_expr, _msg, _onFail)   NVBLAST_CHECK(nvidia::NvErrorCode::eINVALID_OPERATION, _expr, _msg, _onFail)</span>
+<span class="cp">#define NVBLAST_CHECK_WARNING(_expr, _msg, _onFail) NVBLAST_CHECK(nvidia::NvErrorCode::eDEBUG_WARNING, _expr, _msg, _onFail)</span>
+<span class="cp">#define NVBLAST_CHECK_INFO(_expr, _msg, _onFail)    NVBLAST_CHECK(nvidia::NvErrorCode::eDEBUG_INFO, _expr, _msg, _onFail)</span>
+<span class="cp">#define NVBLAST_CHECK_DEBUG(_expr, _msg, _onFail)   NVBLAST_CHECK(nvidia::NvErrorCode::eNO_ERROR, _expr, _msg, _onFail)</span>
 
 
 
@@ -372,7 +318,7 @@
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

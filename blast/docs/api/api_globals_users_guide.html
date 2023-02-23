@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Globals API (NvBlastGlobals) &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Globals API (NvBlastGlobals) &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -188,7 +188,7 @@
 <span id="globalsallocator"></span><h2>Allocator<a class="headerlink" href="#allocator" title="Permalink to this headline">¶</a></h2>
 <p><strong>Include NvBlastGlobals.h</strong></p>
 <p>A global allocator with interface</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Nv::Blast::AllocatorCallback
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nvidia::NvAllocatorCallback
 </pre></div>
 </div>
 <p>may be set by the user with the function</p>
@@ -207,7 +207,7 @@
 <span id="globalserror"></span><h2>Error Callback<a class="headerlink" href="#error-callback" title="Permalink to this headline">¶</a></h2>
 <p><strong>Include NvBlastGlobals.h</strong></p>
 <p>A global error message callback with interface</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Nv::Blast::ErrorCallback
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nvidia::NvErrorCallback
 </pre></div>
 </div>
 <p>may be set by the user with the function</p>
@@ -229,21 +229,21 @@
 </div>
 <div class="section" id="profiler-api">
 <span id="globalsprofiler"></span><h2>Profiler API<a class="headerlink" href="#profiler-api" title="Permalink to this headline">¶</a></h2>
-<p><strong>Include NvBlastProfiler.h</strong></p>
+<p><strong>Include NvBlastGlobals.h</strong></p>
 <p>BlastTk contains many profiling zones which use the global profiler which can be accessed in this library.  The user may implement
 the interface</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Nv::Blast::ProfilerCallback
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nvidia::NvProfilerCallback
 </pre></div>
 </div>
 <p>and pass it to the globals library using</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastProfilerSetCallback
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastGlobalSetProfilerCallback
 </pre></div>
 </div>
-<p>A NULL pointer may be passed in, disabling profiling.  Profiler features are only active in checked, debug and profile builds.</p>
-<p>The granularity of events reported can be selected with</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastProfilerSetDetail
+<p>The profiler callback may be retrieved with</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastGlobalGetProfilerCallback
 </pre></div>
 </div>
+<p>A NULL pointer may be passed in, disabling profiling.</p>
 </div>
 </div>
 
@@ -259,7 +259,7 @@ the interface</p>
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Blast SDK Documentation &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Blast SDK Documentation &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -214,8 +214,7 @@ and joints.  The source code for this extension, like all Blast extensions, is i
 <li><p>ExtAssetUtils - NvBlastAsset utility functions. Add external bonds, merge assets, and transform geometric data.</p></li>
 <li><p>ExtAuthoring - a set of geometric tools which can split a mesh hierarchically and create a Blast asset, along with collision geometry and chunk graphics meshes in a separate files.</p></li>
 <li><p>ExtExporter - standard mesh and collision writer tools in fbx, obj, and json formats.</p></li>
-<li><p>ExtPhysX - a physics manager using PhysX which keeps PxActors and PxJoints updated in a user-supplied PxScene.  It handles impact damage (through the contact callback), includes a stress solver wrapper, and provides a listener that enables multiple clients to keep their state synchronized.</p></li>
-<li><p>ExtSerialization, ExtTkSerialization, ExtPxSerialization - serialization extensions for low-level, Tk and Px layers. Uses Cap’n Proto to provide robust serialization across different platforms.</p></li>
+<li><p>ExtSerialization and ExtTkSerialization - serialization extensions for low-level and Tk layers. Uses Cap’n Proto to provide robust serialization across different platforms.</p></li>
 <li><p>ExtShaders - sample damage shaders to pass to both the low-level and Tk actor damage functions.</p></li>
 <li><p>ExtStress - a toolkit for performing stress calculations on low-level Blast actors, using a minimal API to assign masses and apply forces. Does not use any external physics library.</p></li>
 </ul>
@@ -359,6 +358,10 @@ and joints.  The source code for this extension, like all Blast extensions, is i
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="docs/CHANGELOG.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#jan-2023">[5.0.0] - 23-Jan-2023</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#changes">Changes</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#aug-2022">[4.0.2] - 31-Aug-2022</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#bugfixes">Bugfixes</a></li>
 </ul>
@@ -372,158 +375,158 @@ and joints.  The source code for this extension, like all Blast extensions, is i
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#feb-2022">[3.1.3] - 28-Feb-2022</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#changes">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id3">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id3">[3.1.2] - 24-Feb-2022</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id4">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id4">[3.1.2] - 24-Feb-2022</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id5">Changes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#bug-fixes">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id5">[3.1.1] - 2022-01-12</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id6">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id6">[3.1.1] - 2022-01-12</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id7">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id7">[3.1.0] - 2022-01-10</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id8">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id8">[3.1.0] - 2022-01-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id9">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id9">[3.0.0] - 2021-10-13</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id10">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id10">[3.0.0] - 2021-10-13</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id11">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id11">[2.1.7] - 2021-07-18</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id12">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id12">[2.1.7] - 2021-07-18</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id13">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id13">[2.1.6] - 2021-06-24</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id14">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id14">[2.1.6] - 2021-06-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id15">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id15">[2.1.5] - 2021-05-10</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id16">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id16">[2.1.5] - 2021-05-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id17">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id17">[2.1.4] - 2021-04-08</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id18">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id18">[2.1.4] - 2021-04-08</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id19">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id19">[2.1.3] - 2021-04-05</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id20">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id20">[2.1.3] - 2021-04-05</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id21">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id21">[2.1.2] - 2021-03-15</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id22">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id22">[2.1.2] - 2021-03-15</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id23">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id23">[2.1.1] - 2021-03-02</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id24">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id24">[2.1.1] - 2021-03-02</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id25">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id25">[2.0.1] - 2021-03-01</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id26">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id26">[2.0.1] - 2021-03-01</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id27">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id27">[2.0.0] - 2021-02-19</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id28">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id28">[2.0.0] - 2021-02-19</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id29">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id29">[1.4.7] - 2020-10-20</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id30">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id31">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id30">[1.4.7] - 2020-10-20</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id31">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id32">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id32">[1.4.6] - 2020-10-08</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id33">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id34">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id33">[1.4.6] - 2020-10-08</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id34">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id35">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id35">[1.4.5] - 2020-09-30</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id36">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id36">[1.4.5] - 2020-09-30</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id37">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id37">[1.4.4] - 2020-09-29</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id38">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id38">[1.4.4] - 2020-09-29</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id39">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id39">[1.4.3] - 2020-09-26</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id40">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id41">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id40">[1.4.3] - 2020-09-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id41">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id42">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id42">[1.4.2] - 2020-08-28</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id43">Bug Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id43">[1.4.2] - 2020-08-28</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id44">Bug Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id44">[1.4.1] - 2020-06-26</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id45">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id45">[1.4.1] - 2020-06-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id46">Changes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id46">[1.2.0] - 2020-01-23</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id47">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id48">New Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id47">[1.2.0] - 2020-01-23</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id48">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id49">New Features</a></li>
 <li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#known-issues">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id49">[1.1.5] - 2019-09-16</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id50">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id51">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id52">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id53">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id50">[1.1.5] - 2019-09-16</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id51">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id52">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id53">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id54">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id54">[1.1.4] - 2018-10-24</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id55">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id56">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id57">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id58">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id55">[1.1.4] - 2018-10-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id56">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id57">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id58">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id59">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id59">[1.1.3] - 2018-05-30</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id60">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id61">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id62">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id63">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id60">[1.1.3] - 2018-05-30</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id61">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id62">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id63">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id64">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id64">[1.1.2] - 2018-01-26</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id65">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id66">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id67">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id68">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id65">[1.1.2] - 2018-01-26</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id66">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id67">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id68">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id69">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id69">[1.1.1] - 2017-10-10</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id70">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id71">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id72">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id73">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id70">[1.1.1] - 2017-10-10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id71">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id72">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id73">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id74">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id74">[1.1.0] - 2017-08-28</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id75">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id76">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id77">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id78">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id75">[1.1.0] - 2017-08-28</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id76">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id77">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id78">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id79">Known Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id79">[1.0.0] - 2017-02-24</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id80">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id81">New Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id82">Bug Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id83">Known Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#id80">[1.0.0] - 2017-02-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id81">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id82">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id83">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id84">Known Issues</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#beta-2017-01-24">[1.0.0-beta] - 2017-01-24</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id84">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id85">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id85">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id86">New Features</a></li>
 <li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#removed-features">Removed Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id86">Known Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id87">Known Issues</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="docs/CHANGELOG.html#alpha-2016-10-21">[1.0.0-alpha] - 2016-10-21</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#features">Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id87">Known Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/CHANGELOG.html#id88">Known Issues</a></li>
 </ul>
 </li>
 </ul>
@@ -564,7 +567,7 @@ and joints.  The source code for this extension, like all Blast extensions, is i
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

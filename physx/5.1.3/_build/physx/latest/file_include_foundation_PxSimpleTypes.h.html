@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/foundation/PxSimpleTypes.h &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/foundation/PxSimpleTypes.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-foundation-pxsimpletypes-h">
+<span id="file-include-foundation-pxsimpletypes-h"></span><h1>include/foundation/PxSimpleTypes.h<a class="headerlink" href="#include-foundation-pxsimpletypes-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_foundation.html#dir-include-foundation"><span class="std std-ref">include/foundation/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_foundation_PxSimpleTypes.h.html#program-listing-file-include-foundation-pxsimpletypes-h"><span class="std std-ref">include/foundation/PxSimpleTypes.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_collision_PxCollisionDefs.h.html#file-include-collision-pxcollisiondefs-h"><span class="std std-ref">include/collision/PxCollisionDefs.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cooking_PxBVH33MidphaseDesc.h.html#file-include-cooking-pxbvh33midphasedesc-h"><span class="std std-ref">include/cooking/PxBVH33MidphaseDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cooking_PxBVH34MidphaseDesc.h.html#file-include-cooking-pxbvh34midphasedesc-h"><span class="std std-ref">include/cooking/PxBVH34MidphaseDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cudamanager_PxCudaTypes.h.html#file-include-cudamanager-pxcudatypes-h"><span class="std std-ref">include/cudamanager/PxCudaTypes.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_cudamanager_PxCudaContextManager.h.html#file-include-cudamanager-pxcudacontextmanager-h"><span class="std std-ref">include/cudamanager/PxCudaContextManager.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxParticleClothCooker.h.html#file-include-extensions-pxparticleclothcooker-h"><span class="std std-ref">include/extensions/PxParticleClothCooker.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxRepXSimpleType.h.html#file-include-extensions-pxrepxsimpletype-h"><span class="std std-ref">include/extensions/PxRepXSimpleType.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_extensions_PxTetMakerExt.h.html#file-include-extensions-pxtetmakerext-h"><span class="std std-ref">include/extensions/PxTetMakerExt.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_filebuf_PxFileBuf.h.html#file-include-filebuf-pxfilebuf-h"><span class="std std-ref">include/filebuf/PxFileBuf.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_Px.h.html#file-include-foundation-px-h"><span class="std std-ref">include/foundation/Px.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxAtomic.h.html#file-include-foundation-pxatomic-h"><span class="std std-ref">include/foundation/PxAtomic.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxBroadcast.h.html#file-include-foundation-pxbroadcast-h"><span class="std std-ref">include/foundation/PxBroadcast.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxIO.h.html#file-include-foundation-pxio-h"><span class="std std-ref">include/foundation/PxIO.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxMemory.h.html#file-include-foundation-pxmemory-h"><span class="std std-ref">include/foundation/PxMemory.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxString.h.html#file-include-foundation-pxstring-h"><span class="std std-ref">include/foundation/PxString.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_foundation_PxTime.h.html#file-include-foundation-pxtime-h"><span class="std std-ref">include/foundation/PxTime.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxNodeIndex.h.html#file-include-pxnodeindex-h"><span class="std std-ref">include/PxNodeIndex.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxArticulationTendonData.h.html#file-include-pxarticulationtendondata-h"><span class="std std-ref">include/PxArticulationTendonData.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxCustomParticleSystemSolverCallback.h.html#file-include-pxcustomparticlesystemsolvercallback-h"><span class="std std-ref">include/PxCustomParticleSystemSolverCallback.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxFEMClothFlags.h.html#file-include-pxfemclothflags-h"><span class="std std-ref">include/PxFEMClothFlags.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxFEMParameter.h.html#file-include-pxfemparameter-h"><span class="std std-ref">include/PxFEMParameter.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleMaterial.h.html#file-include-pxparticlematerial-h"><span class="std std-ref">include/PxParticleMaterial.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleBuffer.h.html#file-include-pxparticlebuffer-h"><span class="std std-ref">include/PxParticleBuffer.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleGpu.h.html#file-include-pxparticlegpu-h"><span class="std std-ref">include/PxParticleGpu.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxParticleSystem.h.html#file-include-pxparticlesystem-h"><span class="std std-ref">include/PxParticleSystem.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPBDParticleSystem.h.html#file-include-pxpbdparticlesystem-h"><span class="std std-ref">include/PxPBDParticleSystem.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxPhysicsAPI.h.html#file-include-pxphysicsapi-h"><span class="std std-ref">include/PxPhysicsAPI.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html#file-include-pxscenequerysystem-h"><span class="std std-ref">include/PxSceneQuerySystem.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_PxSparseGridParams.h.html#file-include-pxsparsegridparams-h"><span class="std std-ref">include/PxSparseGridParams.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_task_PxCpuDispatcher.h.html#file-include-task-pxcpudispatcher-h"><span class="std std-ref">include/task/PxCpuDispatcher.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_task_PxTaskManager.h.html#file-include-task-pxtaskmanager-h"><span class="std std-ref">include/task/PxTaskManager.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_commands_PxVehicleCommandStates.h.html#file-include-vehicle2-commands-pxvehiclecommandstates-h"><span class="std std-ref">include/vehicle2/commands/PxVehicleCommandStates.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainFunctions.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainfunctions-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxActor_PxVehiclePhysXActorFunctions.h.html#file-include-vehicle2-physxactor-pxvehiclephysxactorfunctions-h"><span class="std std-ref">include/vehicle2/physxActor/PxVehiclePhysXActorFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_physxRoadGeometry_PxVehiclePhysXRoadGeometryFunctions.h.html#file-include-vehicle2-physxroadgeometry-pxvehiclephysxroadgeometryfunctions-h"><span class="std std-ref">include/vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_pvd_PxVehiclePvdHelpers.h.html#file-include-vehicle2-pvd-pxvehiclepvdhelpers-h"><span class="std std-ref">include/vehicle2/pvd/PxVehiclePvdHelpers.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleComponent.h.html#file-include-vehicle2-pxvehiclecomponent-h"><span class="std std-ref">include/vehicle2/PxVehicleComponent.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleFunctions.h.html#file-include-vehicle2-pxvehiclefunctions-h"><span class="std std-ref">include/vehicle2/PxVehicleFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleMaths.h.html#file-include-vehicle2-pxvehiclemaths-h"><span class="std std-ref">include/vehicle2/PxVehicleMaths.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_rigidBody_PxVehicleRigidBodyFunctions.h.html#file-include-vehicle2-rigidbody-pxvehiclerigidbodyfunctions-h"><span class="std std-ref">include/vehicle2/rigidBody/PxVehicleRigidBodyFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_steering_PxVehicleSteeringFunctions.h.html#file-include-vehicle2-steering-pxvehiclesteeringfunctions-h"><span class="std std-ref">include/vehicle2/steering/PxVehicleSteeringFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_suspension_PxVehicleSuspensionStates.h.html#file-include-vehicle2-suspension-pxvehiclesuspensionstates-h"><span class="std std-ref">include/vehicle2/suspension/PxVehicleSuspensionStates.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_suspension_PxVehicleSuspensionFunctions.h.html#file-include-vehicle2-suspension-pxvehiclesuspensionfunctions-h"><span class="std std-ref">include/vehicle2/suspension/PxVehicleSuspensionFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_tire_PxVehicleTireFunctions.h.html#file-include-vehicle2-tire-pxvehicletirefunctions-h"><span class="std std-ref">include/vehicle2/tire/PxVehicleTireFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_wheel_PxVehicleWheelFunctions.h.html#file-include-vehicle2-wheel-pxvehiclewheelfunctions-h"><span class="std std-ref">include/vehicle2/wheel/PxVehicleWheelFunctions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_wheel_PxVehicleWheelStates.h.html#file-include-vehicle2-wheel-pxvehiclewheelstates-h"><span class="std std-ref">include/vehicle2/wheel/PxVehicleWheelStates.h</span></a></p></li>
+</ul>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__foundation_1gaacbb9e1f38be71e22df1584a37c56693.html#exhale-define-group-foundation-1gaacbb9e1f38be71e22df1584a37c56693"><span class="std std-ref">__STDC_FORMAT_MACROS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae8aa7aabc2f4d376cdac2931bea8014b.html#exhale-define-group-foundation-1gae8aa7aabc2f4d376cdac2931bea8014b"><span class="std std-ref">PX_EPS_F32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0f79a2074a05144416be06f4c45a324c.html#exhale-define-group-foundation-1ga0f79a2074a05144416be06f4c45a324c"><span class="std std-ref">PX_EPS_F64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2440789bba543f4ab246a7dea35d7d95.html#exhale-define-group-foundation-1ga2440789bba543f4ab246a7dea35d7d95"><span class="std std-ref">PX_EPS_REAL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7539e08056ea09ff1c341b866b7103f4.html#exhale-define-group-foundation-1ga7539e08056ea09ff1c341b866b7103f4"><span class="std std-ref">PX_MAX_F32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0e6a6baa9078ed0b45a03fb4404c9bf5.html#exhale-define-group-foundation-1ga0e6a6baa9078ed0b45a03fb4404c9bf5"><span class="std std-ref">PX_MAX_F64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga226013a71f304c8c670ef781aa62b145.html#exhale-define-group-foundation-1ga226013a71f304c8c670ef781aa62b145"><span class="std std-ref">PX_MAX_I16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaca8cf9822157157ba95923e39999da82.html#exhale-define-group-foundation-1gaca8cf9822157157ba95923e39999da82"><span class="std std-ref">PX_MAX_I32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafd3aefa9b2e2bc6856ddff8bc1ff3770.html#exhale-define-group-foundation-1gafd3aefa9b2e2bc6856ddff8bc1ff3770"><span class="std std-ref">PX_MAX_I8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga1afd8c76d275a787af09ebfceaf7fc30.html#exhale-define-group-foundation-1ga1afd8c76d275a787af09ebfceaf7fc30"><span class="std std-ref">PX_MAX_REAL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5875f14ce7524d2a21d3bb23a039d1ec.html#exhale-define-group-foundation-1ga5875f14ce7524d2a21d3bb23a039d1ec"><span class="std std-ref">PX_MAX_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga86fdc6216f1e58e9fa63a2c0108261a7.html#exhale-define-group-foundation-1ga86fdc6216f1e58e9fa63a2c0108261a7"><span class="std std-ref">PX_MAX_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga317798739f43b557779c6d40806038b6.html#exhale-define-group-foundation-1ga317798739f43b557779c6d40806038b6"><span class="std std-ref">PX_MAX_U8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3fc2611ba27e5701f2a1cf14afd1dd7b.html#exhale-define-group-foundation-1ga3fc2611ba27e5701f2a1cf14afd1dd7b"><span class="std std-ref">PX_MIN_I16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga005bc6fc1fd839ee0896828600dd17bb.html#exhale-define-group-foundation-1ga005bc6fc1fd839ee0896828600dd17bb"><span class="std std-ref">PX_MIN_I32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0180682969fce22cc7d01b100e1da755.html#exhale-define-group-foundation-1ga0180682969fce22cc7d01b100e1da755"><span class="std std-ref">PX_MIN_I8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5bd19e27244d543c2e0a4d9c04338406.html#exhale-define-group-foundation-1ga5bd19e27244d543c2e0a4d9c04338406"><span class="std std-ref">PX_MIN_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4c63f0632cd5766a4233686020a33159.html#exhale-define-group-foundation-1ga4c63f0632cd5766a4233686020a33159"><span class="std std-ref">PX_MIN_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7bd33cbf0ea64aee9a79758f70050cdf.html#exhale-define-group-foundation-1ga7bd33cbf0ea64aee9a79758f70050cdf"><span class="std std-ref">PX_MIN_U8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8901e378c5ba8f305e8714d5758cd9dd.html#exhale-define-group-foundation-1ga8901e378c5ba8f305e8714d5758cd9dd"><span class="std std-ref">PX_NORMALIZATION_EPSILON</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac2271cd3b97db6a3e1ba0222d1b4d07e.html#exhale-define-group-foundation-1gac2271cd3b97db6a3e1ba0222d1b4d07e"><span class="std std-ref">PX_PRIu64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad51dd6dc9ad9045a55c42193192b2821.html#exhale-define-group-foundation-1gad51dd6dc9ad9045a55c42193192b2821"><span class="std std-ref">PX_SIGN_BITMASK</span></a></p></li>
+</ul>
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#exhale-typedef-group-foundation-1ga0e5a962f81b1f679072e2fdb67c3af39"><span class="std std-ref">PxF32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gaccbaaeabdac7f3574caadb25c783e96f.html#exhale-typedef-group-foundation-1gaccbaaeabdac7f3574caadb25c783e96f"><span class="std std-ref">PxF64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1ga7e7ee1e36fd2eee807d53763addb76cd.html#exhale-typedef-group-foundation-1ga7e7ee1e36fd2eee807d53763addb76cd"><span class="std std-ref">PxI16</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1ga315a2542f4ce1a1342e7c48cf038c26f.html#exhale-typedef-group-foundation-1ga315a2542f4ce1a1342e7c48cf038c26f"><span class="std std-ref">PxI32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1ga3e32e0264fae3ef69fc38c749ac1cc7b.html#exhale-typedef-group-foundation-1ga3e32e0264fae3ef69fc38c749ac1cc7b"><span class="std std-ref">PxI64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gad605a812a7fbaf12edd328c81a748e90.html#exhale-typedef-group-foundation-1gad605a812a7fbaf12edd328c81a748e90"><span class="std std-ref">PxI8</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gafe69b4e42388471a93aa2b4c8b2b3537.html#exhale-typedef-group-foundation-1gafe69b4e42388471a93aa2b4c8b2b3537"><span class="std std-ref">PxIntBool</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#exhale-typedef-group-foundation-1gaebdd95ca9e4baca8d6ad390b0902d352"><span class="std std-ref">PxReal</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#exhale-typedef-group-foundation-1ga7354283a14b2bf4bed64f9cb6ac36aa4"><span class="std std-ref">PxU16</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#exhale-typedef-group-foundation-1gacce5749db3dcfb916e98c253374264ed"><span class="std std-ref">PxU32</span></a>: files to always include</p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#exhale-typedef-group-foundation-1gafa6be92d904a227b2d07298034476b3a"><span class="std std-ref">PxU64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#exhale-typedef-group-foundation-1gacb0c5ec0d2eb9574f23f686dc0e0fa27"><span class="std std-ref">PxU8</span></a></p></li>
+</ul>
+</section>
+<section id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="variable_group__foundation_1ga8a66e8c26990fa178ab4bc3087a92e2e.html#exhale-variable-group-foundation-1ga8a66e8c26990fa178ab4bc3087a92e2e"><span class="std std-ref">PxIntFalse</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__foundation_1ga41acc28294b06630537ba3c7d69c3b80.html#exhale-variable-group-foundation-1ga41acc28294b06630537ba3c7d69c3b80"><span class="std std-ref">PxIntTrue</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

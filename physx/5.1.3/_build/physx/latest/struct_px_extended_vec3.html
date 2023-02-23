@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxExtendedVec3 &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxExtendedVec3</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxextendedvec3">
+<span id="exhale-struct-struct-px-extended-vec3"></span><h1>PxExtendedVec3<a class="headerlink" href="#pxextendedvec3" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxExtended.h.html#file-include-characterkinematic-pxextended-h"><span class="std std-ref">include/characterkinematic/PxExtended.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxExtendedVec3">
+<span id="_CPPv314PxExtendedVec3"></span><span id="_CPPv214PxExtendedVec3"></span><span id="PxExtendedVec3"></span><span class="target" id="struct_px_extended_vec3"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxExtendedVec3</span></span></span><a class="headerlink" href="#_CPPv414PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec314PxExtendedVec3Ev">
+<span id="_CPPv3N14PxExtendedVec314PxExtendedVec3Ev"></span><span id="_CPPv2N14PxExtendedVec314PxExtendedVec3Ev"></span><span id="PxExtendedVec3::PxExtendedVec3"></span><span class="target" id="struct_px_extended_vec3_1a70e394c78b212eb42b060ab9323d5258"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxExtendedVec3</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec314PxExtendedVec3Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec314PxExtendedVec3E10PxExtended10PxExtended10PxExtended">
+<span id="_CPPv3N14PxExtendedVec314PxExtendedVec3E10PxExtended10PxExtended10PxExtended"></span><span id="_CPPv2N14PxExtendedVec314PxExtendedVec3E10PxExtended10PxExtended10PxExtended"></span><span id="PxExtendedVec3::PxExtendedVec3__PxExtended.PxExtended.PxExtended"></span><span class="target" id="struct_px_extended_vec3_1a7967cc122d87370e69b6fb49ebe87ba2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxExtendedVec3</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">_x</span></span>, <a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">_y</span></span>, <a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">_z</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec314PxExtendedVec3E10PxExtended10PxExtended10PxExtended" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec36isZeroEv">
+<span id="_CPPv3NK14PxExtendedVec36isZeroEv"></span><span id="_CPPv2NK14PxExtendedVec36isZeroEv"></span><span id="PxExtendedVec3::isZeroC"></span><span class="target" id="struct_px_extended_vec3_1a032c43e548ec3ecf3d75b46553f1f8fa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec36isZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec33dotERK6PxVec3">
+<span id="_CPPv3NK14PxExtendedVec33dotERK6PxVec3"></span><span id="_CPPv2NK14PxExtendedVec33dotERK6PxVec3"></span><span id="PxExtendedVec3::dot__PxVec3CRC"></span><span class="target" id="struct_px_extended_vec3_1a2392729526c3ba9d54d39320dbb8e5f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dot</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec33dotERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec315distanceSquaredERK14PxExtendedVec3">
+<span id="_CPPv3NK14PxExtendedVec315distanceSquaredERK14PxExtendedVec3"></span><span id="_CPPv2NK14PxExtendedVec315distanceSquaredERK14PxExtendedVec3"></span><span id="PxExtendedVec3::distanceSquared__PxExtendedVec3CRC"></span><span class="target" id="struct_px_extended_vec3_1a6114f07e2bc6e457bee4e9e848ce78a9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distanceSquared</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec315distanceSquaredERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec316magnitudeSquaredEv">
+<span id="_CPPv3NK14PxExtendedVec316magnitudeSquaredEv"></span><span id="_CPPv2NK14PxExtendedVec316magnitudeSquaredEv"></span><span id="PxExtendedVec3::magnitudeSquaredC"></span><span class="target" id="struct_px_extended_vec3_1a415c9bfcd1b8ce93416e504e90fce24a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitudeSquared</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec316magnitudeSquaredEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec39magnitudeEv">
+<span id="_CPPv3NK14PxExtendedVec39magnitudeEv"></span><span id="_CPPv2NK14PxExtendedVec39magnitudeEv"></span><span id="PxExtendedVec3::magnitudeC"></span><span class="target" id="struct_px_extended_vec3_1a412db52e392ae3737be5b7e6d366cfb3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">magnitude</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec39magnitudeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec39normalizeEv">
+<span id="_CPPv3N14PxExtendedVec39normalizeEv"></span><span id="_CPPv2N14PxExtendedVec39normalizeEv"></span><span id="PxExtendedVec3::normalize"></span><span class="target" id="struct_px_extended_vec3_1adc438ca98854bce23a4e69b616608b34"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normalize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec39normalizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec38isFiniteEv">
+<span id="_CPPv3NK14PxExtendedVec38isFiniteEv"></span><span id="_CPPv2NK14PxExtendedVec38isFiniteEv"></span><span id="PxExtendedVec3::isFiniteC"></span><span class="target" id="struct_px_extended_vec3_1af4ce039629bfaf8cfe46332cd524bfdf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isFinite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec38isFiniteEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec37maximumERK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec37maximumERK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec37maximumERK14PxExtendedVec3"></span><span id="PxExtendedVec3::maximum__PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1ad749dcdf7561e11f2cacc3e9ec27b2a4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maximum</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec37maximumERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec37minimumERK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec37minimumERK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec37minimumERK14PxExtendedVec3"></span><span id="PxExtendedVec3::minimum__PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1ab9ffbb918623bc0415382957301e390c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minimum</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec37minimumERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec33setE10PxExtended10PxExtended10PxExtended">
+<span id="_CPPv3N14PxExtendedVec33setE10PxExtended10PxExtended10PxExtended"></span><span id="_CPPv2N14PxExtendedVec33setE10PxExtended10PxExtended10PxExtended"></span><span id="PxExtendedVec3::set__PxExtended.PxExtended.PxExtended"></span><span class="target" id="struct_px_extended_vec3_1a185ec9272da36eb7fd51e319174f7461"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">x_</span></span>, <a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">y_</span></span>, <a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">z_</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec33setE10PxExtended10PxExtended10PxExtended" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec315setPlusInfinityEv">
+<span id="_CPPv3N14PxExtendedVec315setPlusInfinityEv"></span><span id="_CPPv2N14PxExtendedVec315setPlusInfinityEv"></span><span id="PxExtendedVec3::setPlusInfinity"></span><span class="target" id="struct_px_extended_vec3_1a672da97ee7d8be70e7e844f4ada15f27"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPlusInfinity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec315setPlusInfinityEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec316setMinusInfinityEv">
+<span id="_CPPv3N14PxExtendedVec316setMinusInfinityEv"></span><span id="_CPPv2N14PxExtendedVec316setMinusInfinityEv"></span><span id="PxExtendedVec3::setMinusInfinity"></span><span class="target" id="struct_px_extended_vec3_1ad9071134a8f8d218b3fbe9fb4796355d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMinusInfinity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec316setMinusInfinityEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec35crossERK14PxExtendedVec3RK6PxVec3">
+<span id="_CPPv3N14PxExtendedVec35crossERK14PxExtendedVec3RK6PxVec3"></span><span id="_CPPv2N14PxExtendedVec35crossERK14PxExtendedVec3RK6PxVec3"></span><span id="PxExtendedVec3::cross__PxExtendedVec3CR.PxVec3CR"></span><span class="target" id="struct_px_extended_vec3_1a9b5ec1ae229e5db3f19398ae194ff94f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cross</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">left</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec35crossERK14PxExtendedVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec35crossERK14PxExtendedVec3RK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec35crossERK14PxExtendedVec3RK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec35crossERK14PxExtendedVec3RK14PxExtendedVec3"></span><span id="PxExtendedVec3::cross__PxExtendedVec3CR.PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1abde1494c54a44c9e5490315bbdda4146"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cross</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">left</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec35crossERK14PxExtendedVec3RK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec35crossERK14PxExtendedVec3">
+<span id="_CPPv3NK14PxExtendedVec35crossERK14PxExtendedVec3"></span><span id="_CPPv2NK14PxExtendedVec35crossERK14PxExtendedVec3"></span><span id="PxExtendedVec3::cross__PxExtendedVec3CRC"></span><span class="target" id="struct_px_extended_vec3_1aaf8419a7f97ff87cf99573ab5ca06b3f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cross</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec35crossERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec35crossERK6PxVec3RK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec35crossERK6PxVec3RK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec35crossERK6PxVec3RK14PxExtendedVec3"></span><span id="PxExtendedVec3::cross__PxVec3CR.PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1a0d170195ccc10c54944405ea52174c8a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cross</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">left</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec35crossERK6PxVec3RK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec3miEv">
+<span id="_CPPv3NK14PxExtendedVec3miEv"></span><span id="_CPPv2NK14PxExtendedVec3miEv"></span><span id="PxExtendedVec3::sub-operatorC"></span><span class="target" id="struct_px_extended_vec3_1a446423c0b6b62c3ebda13a6f938c0cb0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec3miEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3pLERK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec3pLERK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec3pLERK14PxExtendedVec3"></span><span id="PxExtendedVec3::add-assign-operator__PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1ab7e0222523aabeb1e38c968c1633d5ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3pLERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3mIERK14PxExtendedVec3">
+<span id="_CPPv3N14PxExtendedVec3mIERK14PxExtendedVec3"></span><span id="_CPPv2N14PxExtendedVec3mIERK14PxExtendedVec3"></span><span id="PxExtendedVec3::sub-assign-operator__PxExtendedVec3CR"></span><span class="target" id="struct_px_extended_vec3_1afb781a201a45457bb327ca44d860a3d3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3mIERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3pLERK6PxVec3">
+<span id="_CPPv3N14PxExtendedVec3pLERK6PxVec3"></span><span id="_CPPv2N14PxExtendedVec3pLERK6PxVec3"></span><span id="PxExtendedVec3::add-assign-operator__PxVec3CR"></span><span class="target" id="struct_px_extended_vec3_1a799a797115621a049c04745f8fa969c1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3pLERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3mIERK6PxVec3">
+<span id="_CPPv3N14PxExtendedVec3mIERK6PxVec3"></span><span id="_CPPv2N14PxExtendedVec3mIERK6PxVec3"></span><span id="PxExtendedVec3::sub-assign-operator__PxVec3CR"></span><span class="target" id="struct_px_extended_vec3_1a1c11e73abff4671559d50e6b438b3679"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3mIERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3mLERK6PxReal">
+<span id="_CPPv3N14PxExtendedVec3mLERK6PxReal"></span><span id="_CPPv2N14PxExtendedVec3mLERK6PxReal"></span><span id="PxExtendedVec3::mul-assign-operator__PxRealCR"></span><span class="target" id="struct_px_extended_vec3_1a06c1f0ab1a4af1f74ac48b627519f400"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">s</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3mLERK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec3plERK14PxExtendedVec3">
+<span id="_CPPv3NK14PxExtendedVec3plERK14PxExtendedVec3"></span><span id="_CPPv2NK14PxExtendedVec3plERK14PxExtendedVec3"></span><span id="PxExtendedVec3::add-operator__PxExtendedVec3CRC"></span><span class="target" id="struct_px_extended_vec3_1a9f999e99bb460fffc822901ff58583ef"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec3plERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec3miERK14PxExtendedVec3">
+<span id="_CPPv3NK14PxExtendedVec3miERK14PxExtendedVec3"></span><span id="_CPPv2NK14PxExtendedVec3miERK14PxExtendedVec3"></span><span id="PxExtendedVec3::sub-operator__PxExtendedVec3CRC"></span><span class="target" id="struct_px_extended_vec3_1a835a1e94f5b15771fee00d790a700405"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec3miERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec3ixEi">
+<span id="_CPPv3N14PxExtendedVec3ixEi"></span><span id="_CPPv2N14PxExtendedVec3ixEi"></span><span id="PxExtendedVec3::subscript-operator__i"></span><span class="target" id="struct_px_extended_vec3_1a98722deb35acb749fc89a78fa9142a0c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxExtendedVec3ixEi" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxExtendedVec3ixEi">
+<span id="_CPPv3NK14PxExtendedVec3ixEi"></span><span id="_CPPv2NK14PxExtendedVec3ixEi"></span><span id="PxExtendedVec3::subscript-operator__iC"></span><span class="target" id="struct_px_extended_vec3_1a2af2a32f54e58b82a7b6f8e91a5cb16d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK14PxExtendedVec3ixEi" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec31xE">
+<span id="_CPPv3N14PxExtendedVec31xE"></span><span id="_CPPv2N14PxExtendedVec31xE"></span><span id="PxExtendedVec3::x__PxExtended"></span><span class="target" id="struct_px_extended_vec3_1af467c20427874ad2a922b2092f551923"></span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x</span></span></span><a class="headerlink" href="#_CPPv4N14PxExtendedVec31xE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec31yE">
+<span id="_CPPv3N14PxExtendedVec31yE"></span><span id="_CPPv2N14PxExtendedVec31yE"></span><span id="PxExtendedVec3::y__PxExtended"></span><span class="target" id="struct_px_extended_vec3_1a121a719eeda5db48ec97dacd0a7ca006"></span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">y</span></span></span><a class="headerlink" href="#_CPPv4N14PxExtendedVec31yE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxExtendedVec31zE">
+<span id="_CPPv3N14PxExtendedVec31zE"></span><span id="_CPPv2N14PxExtendedVec31zE"></span><span id="PxExtendedVec3::z__PxExtended"></span><span class="target" id="struct_px_extended_vec3_1acd8eee43103488e5873d778b25cdd12b"></span><a class="reference internal" href="typedef_group__character_1gafbd2fb84a13cdeb156b671e895d165b9.html#_CPPv410PxExtended" title="PxExtended"><span class="n"><span class="pre">PxExtended</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">z</span></span></span><a class="headerlink" href="#_CPPv4N14PxExtendedVec31zE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

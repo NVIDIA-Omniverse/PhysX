@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBoxGeometry &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBoxGeometry</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxboxgeometry">
+<span id="exhale-class-class-px-box-geometry"></span><h1>PxBoxGeometry<a class="headerlink" href="#pxboxgeometry" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxBoxGeometry.h.html#file-include-geometry-pxboxgeometry-h"><span class="std std-ref">include/geometry/PxBoxGeometry.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxGeometry</span></code> (<a class="reference internal" href="class_px_geometry.html#exhale-class-class-px-geometry"><span class="std std-ref">PxGeometry</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxBoxGeometry">
+<span id="_CPPv313PxBoxGeometry"></span><span id="_CPPv213PxBoxGeometry"></span><span id="PxBoxGeometry"></span><span class="target" id="class_px_box_geometry"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxGeometry</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><a class="headerlink" href="#_CPPv413PxBoxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Class representing the geometry of a box. </p>
+<p>The geometry of a box can be fully specified by its half extents. This is the half of its width, height, and depth. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The scaling of the box is expected to be baked into these values, there is no additional scaling parameter. </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry13PxBoxGeometryE6PxReal6PxReal6PxReal">
+<span id="_CPPv3N13PxBoxGeometry13PxBoxGeometryE6PxReal6PxReal6PxReal"></span><span id="_CPPv2N13PxBoxGeometry13PxBoxGeometryE6PxReal6PxReal6PxReal"></span><span id="PxBoxGeometry::PxBoxGeometry__PxReal.PxReal.PxReal"></span><span class="target" id="class_px_box_geometry_1aa2b0e0e6d9846a009667b558916c2736"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hx</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hy</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hz</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry13PxBoxGeometryE6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to initialize half extents from scalar parameters. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hx</strong> – Initial half extents’ x component. </p></li>
+<li><p><strong>hy</strong> – Initial half extents’ y component. </p></li>
+<li><p><strong>hz</strong> – Initial half extents’ z component. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry13PxBoxGeometryE6PxVec3">
+<span id="_CPPv3N13PxBoxGeometry13PxBoxGeometryE6PxVec3"></span><span id="_CPPv2N13PxBoxGeometry13PxBoxGeometryE6PxVec3"></span><span id="PxBoxGeometry::PxBoxGeometry__PxVec3"></span><span class="target" id="class_px_box_geometry_1a45c1eacd0c1101d703da8f644dec30d0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfExtents_</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry13PxBoxGeometryE6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor to initialize half extents from vector parameter. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfExtents_</strong> – Initial half extents. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry13PxBoxGeometryERK13PxBoxGeometry">
+<span id="_CPPv3N13PxBoxGeometry13PxBoxGeometryERK13PxBoxGeometry"></span><span id="_CPPv2N13PxBoxGeometry13PxBoxGeometryERK13PxBoxGeometry"></span><span id="PxBoxGeometry::PxBoxGeometry__PxBoxGeometryCR"></span><span class="target" id="class_px_box_geometry_1a8590e0e7e2171a5dff1ca2a70a77e7f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxGeometry</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N13PxBoxGeometry13PxBoxGeometryERK13PxBoxGeometry" title="PxBoxGeometry::PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry13PxBoxGeometryERK13PxBoxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy constructor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>that</strong> – <strong>[in]</strong> Other object </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometryaSERK13PxBoxGeometry">
+<span id="_CPPv3N13PxBoxGeometryaSERK13PxBoxGeometry"></span><span id="_CPPv2N13PxBoxGeometryaSERK13PxBoxGeometry"></span><span id="PxBoxGeometry::assign-operator__PxBoxGeometryCR"></span><span class="target" id="class_px_box_geometry_1ae39083bfa7edf3d095b9e67addd79731"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxBoxGeometryaSERK13PxBoxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxBoxGeometry7isValidEv">
+<span id="_CPPv3NK13PxBoxGeometry7isValidEv"></span><span id="_CPPv2NK13PxBoxGeometry7isValidEv"></span><span id="PxBoxGeometry::isValidC"></span><span class="target" id="group__geomutils_1ga55019fe1b042171369e0eb53eac130a0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxBoxGeometry7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the geometry is valid. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidActor::createShape, <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A valid box has a positive extent in each direction (halfExtents.x &gt; 0, halfExtents.y &gt; 0, halfExtents.z &gt; 0). It is illegal to call PxRigidActor::createShape and <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> with a box that has zero extent in any direction.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the current settings are valid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxBoxGeometry7getTypeEv">
+<span id="_CPPv3NK13PxBoxGeometry7getTypeEv"></span><span id="_CPPv2NK13PxBoxGeometry7getTypeEv"></span><span id="PxBoxGeometry::getTypeC"></span><span class="target" id="class_px_geometry_1ad2b00176e41b024361b83ff030639b60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxBoxGeometry7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the type of the geometry. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The type of the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry11halfExtentsE">
+<span id="_CPPv3N13PxBoxGeometry11halfExtentsE"></span><span id="_CPPv2N13PxBoxGeometry11halfExtentsE"></span><span id="PxBoxGeometry::halfExtents__PxVec3"></span><span class="target" id="class_px_box_geometry_1a8fe8be4ca1467353956634d550dc8561"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">halfExtents</span></span></span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry11halfExtentsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Half of the width, height, and depth of the box. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry12mTypePaddingE">
+<span id="_CPPv3N13PxBoxGeometry12mTypePaddingE"></span><span id="_CPPv2N13PxBoxGeometry12mTypePaddingE"></span><span id="PxBoxGeometry::mTypePadding__float"></span><span class="target" id="class_px_geometry_1a5284d479017acbf4c06147715f42a47c"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mTypePadding</span></span></span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry12mTypePaddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxBoxGeometry5mTypeE">
+<span id="_CPPv3N13PxBoxGeometry5mTypeE"></span><span id="_CPPv2N13PxBoxGeometry5mTypeE"></span><span id="PxBoxGeometry::mType__PxGeometryType::Enum"></span><span class="target" id="class_px_geometry_1af24eeb8078fbd12e17206029b52a45b6"></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mType</span></span></span><a class="headerlink" href="#_CPPv4N13PxBoxGeometry5mTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

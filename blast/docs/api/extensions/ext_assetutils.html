@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Asset Utilities (NvBlastExtAssetUtils) &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Asset Utilities (NvBlastExtAssetUtils) &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -199,7 +199,7 @@
 support chunks to the world.  (See the documentation for NvBlastBondDesc.)</p>
 <p>For example, given an asset called <em>oldAsset</em>,</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const uint32_t worldBoundChunks[3] = { 1, 2, 3 };   // Chunks to bind to the world.  These must be support chunks.
-const NvcVec3 bondDirections[3] = { { -1, 0, 1 }, { 0, 0, -1}, { 1, 0, 0 } };       // Normal directions for the new bonds.
+const NvcVec3 bondDirections[3] = { { -1, 0, 1 }, { 0, 0, -1}, { 1, 0, 0 } };   // Normal directions for the new bonds.
 
 // Create a new asset
 NvBlastAsset* newAsset = NvBlastExtAssetUtilsAddWorldBonds(oldAsset, worldBoundChunks, 3, bondDirections, NULL);
@@ -218,8 +218,8 @@ is done in order to allow the user to make adjustments to the descriptor before 
 bonds, in order to join support chunks of two different assets and create a larger support graph which spans the entire combined asset.  The reference frame for
 the new bonds’ geometric data is that of the new asset.</p>
 <p>For example, if one wants to merge two wall assets together, with a relative translation between them of 10 units in the x-direction, the code might look something like this:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const NvBlastAsset* components[2] = { asset0, asset1 };     // asset0 and asset1 are already created
-const NvcVec3 translations[2] = { { -5, 0, 0 }, { 5, 0, 0 } };      // Translate asset0 -5 in x, and asset1 +5 in x
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const NvBlastAsset* components[2] = { asset0, asset1 }; // asset0 and asset1 are already created
+const NvcVec3 translations[2] = { { -5, 0, 0 }, { 5, 0, 0 } };  // Translate asset0 -5 in x, and asset1 +5 in x
 
 // New bonds:
 const uint32_t newBondCount = ...   // Some number of new bonds
@@ -230,12 +230,12 @@ newBondDesc[0].bond.normal.z = 0;
 newBondDesc[0].bond.area = 1;
 newBondDesc[0].bond.centroid.x = 0;
 newBondDesc[0].bond.centroid.y = 0;
-newBondDesc[0].bond.centroid.z = 2.5;       // Position is in the middle, off the ground
+newBondDesc[0].bond.centroid.z = 2.5;   // Position is in the middle, off the ground
 newBondDesc[0].bond.userData = 0;
-newBondDesc[0].chunkIndices[0] = 5;         // Connect from chunk[5] in components[componentIndices[0]]
-newBondDesc[0].chunkIndices[1] = 13;        // .. to chunk[13] in  components[componentIndices[1]]
-newBondDesc[0].componentIndices[0] = 0;     // Connect asset in components[0]
-newBondDesc[0].componentIndices[1] = 1;     // .. to the asset in components[1]
+newBondDesc[0].chunkIndices[0] = 5;     // Connect from chunk[5] in components[componentIndices[0]]
+newBondDesc[0].chunkIndices[1] = 13;    // .. to chunk[13] in  components[componentIndices[1]]
+newBondDesc[0].componentIndices[0] = 0; // Connect asset in components[0]
+newBondDesc[0].componentIndices[1] = 1; // .. to the asset in components[1]
 
 // Create merged asset descriptor
 NvBlastAssetDesc mergedDesc = NvBlastExtAssetUtilsMergeAssets(components, NULL, translations, 2, newBondDescs, newBondCount);
@@ -280,7 +280,7 @@ represent translation.  Any of these pointers may be NULL, in which case that tr
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

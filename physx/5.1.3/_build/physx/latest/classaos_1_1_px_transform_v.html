@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aos::PxTransformV &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>aos::PxTransformV</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aos-pxtransformv">
+<span id="exhale-class-classaos-1-1-px-transform-v"></span><h1>aos::PxTransformV<a class="headerlink" href="#aos-pxtransformv" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxVecTransform.h.html#file-include-foundation-pxvectransform-h"><span class="std std-ref">include/foundation/PxVecTransform.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformVE">
+<span id="_CPPv3N3aos12PxTransformVE"></span><span id="_CPPv2N3aos12PxTransformVE"></span><span id="aos::PxTransformV"></span><span class="target" id="classaos_1_1_px_transform_v"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformV</span></span></span><a class="headerlink" href="#_CPPv4N3aos12PxTransformVE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV12PxTransformVERK11PxTransform">
+<span id="_CPPv3N3aos12PxTransformV12PxTransformVERK11PxTransform"></span><span id="_CPPv2N3aos12PxTransformV12PxTransformVERK11PxTransform"></span><span id="aos::PxTransformV::PxTransformV__PxTransformCR"></span><span class="target" id="classaos_1_1_px_transform_v_1a9f01008ad9b2741fe9ca0f5d350f64ad"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformV</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">orientation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV12PxTransformVERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV12PxTransformVEK8Vec3VArgK8QuatVArg">
+<span id="_CPPv3N3aos12PxTransformV12PxTransformVEK8Vec3VArgK8QuatVArg"></span><span id="_CPPv2N3aos12PxTransformV12PxTransformVEK8Vec3VArgK8QuatVArg"></span><span id="aos::PxTransformV::PxTransformV__Vec3VArgC.QuatVArgC"></span><span class="target" id="classaos_1_1_px_transform_v_1a57779f0a986abf4ad4dcd6bb5170d56b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformV</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Vec3VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">p0</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="function__px_vec_math_8h_1ad9997d452f2f724dd59bf03a0c4d91ad.html#_CPPv4N3aos6V3ZeroEv" title="aos::V3Zero"><span class="n"><span class="pre">V3Zero</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">QuatVArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">q0</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="function__px_vec_math_8h_1a4535df39b9b2c274760a94b0f01fc9ad.html#_CPPv4N3aos12QuatIdentityEv" title="aos::QuatIdentity"><span class="n"><span class="pre">QuatIdentity</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV12PxTransformVEK8Vec3VArgK8QuatVArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformVmlERK12PxTransformV">
+<span id="_CPPv3NK3aos12PxTransformVmlERK12PxTransformV"></span><span id="_CPPv2NK3aos12PxTransformVmlERK12PxTransformV"></span><span id="aos::PxTransformV::mul-operator__PxTransformVCRC"></span><span class="target" id="classaos_1_1_px_transform_v_1a9b17e0a0919529e7496c249e55fd0c02"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformVmlERK12PxTransformV" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV10getInverseEv">
+<span id="_CPPv3NK3aos12PxTransformV10getInverseEv"></span><span id="_CPPv2NK3aos12PxTransformV10getInverseEv"></span><span id="aos::PxTransformV::getInverseC"></span><span class="target" id="classaos_1_1_px_transform_v_1af1c11d86f781df758c70bfbcec485ef1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInverse</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV10getInverseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV9normalizeEv">
+<span id="_CPPv3N3aos12PxTransformV9normalizeEv"></span><span id="_CPPv2N3aos12PxTransformV9normalizeEv"></span><span id="aos::PxTransformV::normalize"></span><span class="target" id="classaos_1_1_px_transform_v_1a73469a7b99da8d7a527d44d8e212a2fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normalize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV9normalizeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV10InvalidateEv">
+<span id="_CPPv3N3aos12PxTransformV10InvalidateEv"></span><span id="_CPPv2N3aos12PxTransformV10InvalidateEv"></span><span id="aos::PxTransformV::Invalidate"></span><span class="target" id="classaos_1_1_px_transform_v_1aec8e5114e3ae0f0429861977e72c34f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Invalidate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV10InvalidateEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV9transformEK8Vec3VArg">
+<span id="_CPPv3NK3aos12PxTransformV9transformEK8Vec3VArg"></span><span id="_CPPv2NK3aos12PxTransformV9transformEK8Vec3VArg"></span><span id="aos::PxTransformV::transform__Vec3VArgCC"></span><span class="target" id="classaos_1_1_px_transform_v_1a49f68fe0dae9d70977b777d8944bace1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_vec3_v.html#_CPPv4N3aos5Vec3VE" title="aos::Vec3V"><span class="n"><span class="pre">Vec3V</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Vec3VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV9transformEK8Vec3VArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV12transformInvEK8Vec3VArg">
+<span id="_CPPv3NK3aos12PxTransformV12transformInvEK8Vec3VArg"></span><span id="_CPPv2NK3aos12PxTransformV12transformInvEK8Vec3VArg"></span><span id="aos::PxTransformV::transformInv__Vec3VArgCC"></span><span class="target" id="classaos_1_1_px_transform_v_1aeb449612b090590adb65b036c3ff0563"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_vec3_v.html#_CPPv4N3aos5Vec3VE" title="aos::Vec3V"><span class="n"><span class="pre">Vec3V</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Vec3VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV12transformInvEK8Vec3VArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV6rotateEK8Vec3VArg">
+<span id="_CPPv3NK3aos12PxTransformV6rotateEK8Vec3VArg"></span><span id="_CPPv2NK3aos12PxTransformV6rotateEK8Vec3VArg"></span><span id="aos::PxTransformV::rotate__Vec3VArgCC"></span><span class="target" id="classaos_1_1_px_transform_v_1af267dc8e0d433120dee7a740b886740d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_vec3_v.html#_CPPv4N3aos5Vec3VE" title="aos::Vec3V"><span class="n"><span class="pre">Vec3V</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Vec3VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV6rotateEK8Vec3VArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV9rotateInvEK8Vec3VArg">
+<span id="_CPPv3NK3aos12PxTransformV9rotateInvEK8Vec3VArg"></span><span id="_CPPv2NK3aos12PxTransformV9rotateInvEK8Vec3VArg"></span><span id="aos::PxTransformV::rotateInv__Vec3VArgCC"></span><span class="target" id="classaos_1_1_px_transform_v_1a4249b673dfda8e8e3efba677b19dafef"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_vec3_v.html#_CPPv4N3aos5Vec3VE" title="aos::Vec3V"><span class="n"><span class="pre">Vec3V</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotateInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Vec3VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV9rotateInvEK8Vec3VArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV9transformERK12PxTransformV">
+<span id="_CPPv3NK3aos12PxTransformV9transformERK12PxTransformV"></span><span id="_CPPv2NK3aos12PxTransformV9transformERK12PxTransformV"></span><span id="aos::PxTransformV::transform__PxTransformVCRC"></span><span class="target" id="classaos_1_1_px_transform_v_1a11e30336bddb5a43bf702a611a845e23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV9transformERK12PxTransformV" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform transform to parent (returns compound transform: first src, then *this) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV7isValidEv">
+<span id="_CPPv3NK3aos12PxTransformV7isValidEv"></span><span id="_CPPv2NK3aos12PxTransformV7isValidEv"></span><span id="aos::PxTransformV::isValidC"></span><span class="target" id="classaos_1_1_px_transform_v_1a9e7082050f31b0cecfff9900d9e568da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and q is a unit quaternion </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV6isSaneEv">
+<span id="_CPPv3NK3aos12PxTransformV6isSaneEv"></span><span id="_CPPv2NK3aos12PxTransformV6isSaneEv"></span><span id="aos::PxTransformV::isSaneC"></span><span class="target" id="classaos_1_1_px_transform_v_1aab31f39f2c7747874416d0f62b7e730c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSane</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV6isSaneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and quat magnitude is reasonably close to unit to allow for some accumulation of error vs isValid </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV8isFiniteEv">
+<span id="_CPPv3NK3aos12PxTransformV8isFiniteEv"></span><span id="_CPPv2NK3aos12PxTransformV8isFiniteEv"></span><span id="aos::PxTransformV::isFiniteC"></span><span class="target" id="classaos_1_1_px_transform_v_1aa6419fb33a682a6b773b8a3ad2e2a699"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isFinite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV8isFiniteEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if all elems are finite (not NAN or INF, etc.) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3aos12PxTransformV12transformInvERK12PxTransformV">
+<span id="_CPPv3NK3aos12PxTransformV12transformInvERK12PxTransformV"></span><span id="_CPPv2NK3aos12PxTransformV12transformInvERK12PxTransformV"></span><span id="aos::PxTransformV::transformInv__PxTransformVCRC"></span><span class="target" id="classaos_1_1_px_transform_v_1a19b8aa8faf79314f6179506aa9035243"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK3aos12PxTransformV12transformInvERK12PxTransformV" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform transform from parent (returns compound transform: first src, then this-&gt;inverse) </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV1qE">
+<span id="_CPPv3N3aos12PxTransformV1qE"></span><span id="_CPPv2N3aos12PxTransformV1qE"></span><span id="aos::PxTransformV::q__QuatV"></span><span class="target" id="classaos_1_1_px_transform_v_1a274599b4d434e133980e92f743fca137"></span><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9.html#_CPPv4N3aos5QuatVE" title="aos::QuatV"><span class="n"><span class="pre">QuatV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">q</span></span></span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV1qE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV1pE">
+<span id="_CPPv3N3aos12PxTransformV1pE"></span><span id="_CPPv2N3aos12PxTransformV1pE"></span><span id="aos::PxTransformV::p__Vec3V"></span><span class="target" id="classaos_1_1_px_transform_v_1af5775fb2a49f7a144e502a93005e34f8"></span><a class="reference internal" href="structaos_1_1_vec3_v.html#_CPPv4N3aos5Vec3VE" title="aos::Vec3V"><span class="n"><span class="pre">Vec3V</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">p</span></span></span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV1pE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos12PxTransformV14createIdentityEv">
+<span id="_CPPv3N3aos12PxTransformV14createIdentityEv"></span><span id="_CPPv2N3aos12PxTransformV14createIdentityEv"></span><span id="aos::PxTransformV::createIdentity"></span><span class="target" id="classaos_1_1_px_transform_v_1a352ad43fb4d08be0fb0ebb91e0469988"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N3aos12PxTransformVE" title="aos::PxTransformV"><span class="n"><span class="pre">PxTransformV</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">createIdentity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos12PxTransformV14createIdentityEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/geometry/ &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/geometry/</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-geometry">
+<span id="dir-include-geometry"></span><h1>include/geometry/<a class="headerlink" href="#include-geometry" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include.html#dir-include"><span class="std std-ref">include/</span></a></p>
+<section id="files">
+<h2>Files<a class="headerlink" href="#files" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_geometry_PxBoxGeometry.h.html#file-include-geometry-pxboxgeometry-h"><span class="std std-ref">include/geometry/PxBoxGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxBVH.h.html#file-include-geometry-pxbvh-h"><span class="std std-ref">include/geometry/PxBVH.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxBVHBuildStrategy.h.html#file-include-geometry-pxbvhbuildstrategy-h"><span class="std std-ref">include/geometry/PxBVHBuildStrategy.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxCapsuleGeometry.h.html#file-include-geometry-pxcapsulegeometry-h"><span class="std std-ref">include/geometry/PxCapsuleGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxConvexMesh.h.html#file-include-geometry-pxconvexmesh-h"><span class="std std-ref">include/geometry/PxConvexMesh.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxConvexMeshGeometry.h.html#file-include-geometry-pxconvexmeshgeometry-h"><span class="std std-ref">include/geometry/PxConvexMeshGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxCustomGeometry.h.html#file-include-geometry-pxcustomgeometry-h"><span class="std std-ref">include/geometry/PxCustomGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometry.h.html#file-include-geometry-pxgeometry-h"><span class="std std-ref">include/geometry/PxGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryHelpers.h.html#file-include-geometry-pxgeometryhelpers-h"><span class="std std-ref">include/geometry/PxGeometryHelpers.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryHit.h.html#file-include-geometry-pxgeometryhit-h"><span class="std std-ref">include/geometry/PxGeometryHit.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryInternal.h.html#file-include-geometry-pxgeometryinternal-h"><span class="std std-ref">include/geometry/PxGeometryInternal.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryQuery.h.html#file-include-geometry-pxgeometryquery-h"><span class="std std-ref">include/geometry/PxGeometryQuery.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryQueryContext.h.html#file-include-geometry-pxgeometryquerycontext-h"><span class="std std-ref">include/geometry/PxGeometryQueryContext.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGeometryQueryFlags.h.html#file-include-geometry-pxgeometryqueryflags-h"><span class="std std-ref">include/geometry/PxGeometryQueryFlags.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxGjkQuery.h.html#file-include-geometry-pxgjkquery-h"><span class="std std-ref">include/geometry/PxGjkQuery.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHairSystemDesc.h.html#file-include-geometry-pxhairsystemdesc-h"><span class="std std-ref">include/geometry/PxHairSystemDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHairSystemGeometry.h.html#file-include-geometry-pxhairsystemgeometry-h"><span class="std std-ref">include/geometry/PxHairSystemGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHeightField.h.html#file-include-geometry-pxheightfield-h"><span class="std std-ref">include/geometry/PxHeightField.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHeightFieldDesc.h.html#file-include-geometry-pxheightfielddesc-h"><span class="std std-ref">include/geometry/PxHeightFieldDesc.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHeightFieldFlag.h.html#file-include-geometry-pxheightfieldflag-h"><span class="std std-ref">include/geometry/PxHeightFieldFlag.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHeightFieldGeometry.h.html#file-include-geometry-pxheightfieldgeometry-h"><span class="std std-ref">include/geometry/PxHeightFieldGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxHeightFieldSample.h.html#file-include-geometry-pxheightfieldsample-h"><span class="std std-ref">include/geometry/PxHeightFieldSample.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxMeshQuery.h.html#file-include-geometry-pxmeshquery-h"><span class="std std-ref">include/geometry/PxMeshQuery.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxMeshScale.h.html#file-include-geometry-pxmeshscale-h"><span class="std std-ref">include/geometry/PxMeshScale.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxParticleSystemGeometry.h.html#file-include-geometry-pxparticlesystemgeometry-h"><span class="std std-ref">include/geometry/PxParticleSystemGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxPlaneGeometry.h.html#file-include-geometry-pxplanegeometry-h"><span class="std std-ref">include/geometry/PxPlaneGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxReportCallback.h.html#file-include-geometry-pxreportcallback-h"><span class="std std-ref">include/geometry/PxReportCallback.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxSimpleTriangleMesh.h.html#file-include-geometry-pxsimpletrianglemesh-h"><span class="std std-ref">include/geometry/PxSimpleTriangleMesh.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxSphereGeometry.h.html#file-include-geometry-pxspheregeometry-h"><span class="std std-ref">include/geometry/PxSphereGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTetrahedron.h.html#file-include-geometry-pxtetrahedron-h"><span class="std std-ref">include/geometry/PxTetrahedron.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTetrahedronMesh.h.html#file-include-geometry-pxtetrahedronmesh-h"><span class="std std-ref">include/geometry/PxTetrahedronMesh.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTetrahedronMeshGeometry.h.html#file-include-geometry-pxtetrahedronmeshgeometry-h"><span class="std std-ref">include/geometry/PxTetrahedronMeshGeometry.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTriangle.h.html#file-include-geometry-pxtriangle-h"><span class="std std-ref">include/geometry/PxTriangle.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTriangleMesh.h.html#file-include-geometry-pxtrianglemesh-h"><span class="std std-ref">include/geometry/PxTriangleMesh.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_geometry_PxTriangleMeshGeometry.h.html#file-include-geometry-pxtrianglemeshgeometry-h"><span class="std std-ref">include/geometry/PxTriangleMeshGeometry.h</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

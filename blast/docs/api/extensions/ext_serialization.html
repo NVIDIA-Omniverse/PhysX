@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Serialization (NvBlastExtSerialization) &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Serialization (NvBlastExtSerialization) &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -268,15 +268,15 @@ public:
 
     virtual void*   requestBuffer(size_t size) override
     {
-            if (m_growableBuffer.size() &lt; size)
-            {
-                    m_growableBuffer.resize(size);
-            }
-            return m_growableBuffer.data();
+        if (m_growableBuffer.size() &lt; size)
+        {
+            m_growableBuffer.resize(size);
+        }
+        return m_growableBuffer.data();
     }
 
 private:
-    std::vector&lt;char&gt;&amp;      m_growableBuffer;
+    std::vector&lt;char&gt;&amp;  m_growableBuffer;
 } myBufferProvider(growableBuffer);
 
 ser-&gt;setBufferProvider(&amp;myBufferProvider);
@@ -333,15 +333,15 @@ uint64_t size = ... // The input buffer size
 while (size)
 {
     uint64_t objTypeID;
-    if (!ser-&gt;peekHeader(&amp;objTypeID, NULL, NULL, buffer, size))     // Only reading the object type ID; may pass in NULL for the other header value pointers
+    if (!ser-&gt;peekHeader(&amp;objTypeID, NULL, NULL, buffer, size)) // Only reading the object type ID; may pass in NULL for the other header value pointers
     {
-            break;  // Read error, stop
+        break;  // Read error, stop
     }
 
     if (objectShouldBeLoaded(objTypeID))    // Some function to determine whether or not we want this object
     {
-            void* obj = ser-&gt;deserializeFromBuffer(buffer, size);
-            // Handle loaded object ...
+        void* obj = ser-&gt;deserializeFromBuffer(buffer, size);
+        // Handle loaded object ...
     }
 
     // Jump to next object:
@@ -372,7 +372,7 @@ while (size)
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

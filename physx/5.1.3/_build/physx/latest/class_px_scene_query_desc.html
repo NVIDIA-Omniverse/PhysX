@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneQueryDesc &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSceneQueryDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenequerydesc">
+<span id="exhale-class-class-px-scene-query-desc"></span><h1>PxSceneQueryDesc<a class="headerlink" href="#pxscenequerydesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneQueryDesc.h.html#file-include-pxscenequerydesc-h"><span class="std std-ref">include/PxSceneQueryDesc.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxSceneDesc</span></code> (<a class="reference internal" href="class_px_scene_desc.html#exhale-class-class-px-scene-desc"><span class="std std-ref">PxSceneDesc</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxSceneQueryDesc">
+<span id="_CPPv316PxSceneQueryDesc"></span><span id="_CPPv216PxSceneQueryDesc"></span><span id="PxSceneQueryDesc"></span><span class="target" id="class_px_scene_query_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQueryDesc</span></span></span><a class="headerlink" href="#_CPPv416PxSceneQueryDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for scene query system. </p>
+<p>See <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a>. </p>
+<p>Subclassed by <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc"><span class="std std-ref">PxSceneDesc</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc16PxSceneQueryDescEv">
+<span id="_CPPv3N16PxSceneQueryDesc16PxSceneQueryDescEv"></span><span id="_CPPv2N16PxSceneQueryDesc16PxSceneQueryDescEv"></span><span id="PxSceneQueryDesc::PxSceneQueryDesc"></span><span class="target" id="group__physics_1gaf0dfb63031ccaac4a8bf99f566c22b8a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQueryDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc16PxSceneQueryDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constructor sets to default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc12setToDefaultEv">
+<span id="_CPPv3N16PxSceneQueryDesc12setToDefaultEv"></span><span id="_CPPv2N16PxSceneQueryDesc12setToDefaultEv"></span><span id="PxSceneQueryDesc::setToDefault"></span><span class="target" id="group__physics_1ga0f1cfbf194a7af09b29f0ecb4e095553"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16PxSceneQueryDesc7isValidEv">
+<span id="_CPPv3NK16PxSceneQueryDesc7isValidEv"></span><span id="_CPPv2NK16PxSceneQueryDesc7isValidEv"></span><span id="PxSceneQueryDesc::isValidC"></span><span class="target" id="group__physics_1ga9dc00999b4e841a56ce12e1d635af6ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16PxSceneQueryDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the current settings are valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc15staticStructureE">
+<span id="_CPPv3N16PxSceneQueryDesc15staticStructureE"></span><span id="_CPPv2N16PxSceneQueryDesc15staticStructureE"></span><span id="PxSceneQueryDesc::staticStructure__PxPruningStructureType::Enum"></span><span class="target" id="class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><span class="n"><span class="pre">PxPruningStructureType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv4N22PxPruningStructureType4EnumE" title="PxPruningStructureType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticStructure</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc15staticStructureE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the structure used to store static objects (<a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a> actors). </p>
+<p>There are usually a lot more static actors than dynamic actors in a scene, so they are stored in a separate structure. The idea is that when dynamic actors move each frame, the static structure remains untouched and does not need updating.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type"><span class="std std-ref">PxPruningStructureType</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1ac3a35443cd8eea94bb409ae7054bd5d0"><span class="std std-ref">PxSceneSQSystem.getStaticStructure()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> are allowed here.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc16dynamicStructureE">
+<span id="_CPPv3N16PxSceneQueryDesc16dynamicStructureE"></span><span id="_CPPv2N16PxSceneQueryDesc16dynamicStructureE"></span><span id="PxSceneQueryDesc::dynamicStructure__PxPruningStructureType::Enum"></span><span class="target" id="class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><span class="n"><span class="pre">PxPruningStructureType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pruning_structure_type.html#_CPPv4N22PxPruningStructureType4EnumE" title="PxPruningStructureType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicStructure</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc16dynamicStructureE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the structure used to store dynamic objects (non-PxRigidStatic actors). </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type"><span class="std std-ref">PxPruningStructureType</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1ac303c58627edc223f87b58e7bead675b"><span class="std std-ref">PxSceneSQSystem.getDynamicStructure()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc26dynamicTreeRebuildRateHintE">
+<span id="_CPPv3N16PxSceneQueryDesc26dynamicTreeRebuildRateHintE"></span><span id="_CPPv2N16PxSceneQueryDesc26dynamicTreeRebuildRateHintE"></span><span id="PxSceneQueryDesc::dynamicTreeRebuildRateHint__PxU32"></span><span class="target" id="class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicTreeRebuildRateHint</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc26dynamicTreeRebuildRateHintE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Hint for how much work should be done per simulation frame to rebuild the pruning structures. </p>
+<p>This parameter gives a hint on the distribution of the workload for rebuilding the dynamic AABB tree pruning structure <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>. It specifies the desired number of simulation frames the rebuild process should take. Higher values will decrease the workload per frame but the pruning structure will get more and more outdated the longer the rebuild takes (which can make scene queries less efficient).</p>
+<p><strong>Range:</strong> [4, PX_MAX_U32)<strong>Default:</strong> 100</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">PxSceneQuerySystemBase.setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">PxSceneQuerySystemBase.getDynamicTreeRebuildRateHint()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only used for <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> pruning structures.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both staticStructure &amp; dynamicStructure can use a <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>, in which case this parameter is used for both.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter gives only a hint. The rebuild process might still take more or less time depending on the number of objects involved.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc26dynamicTreeSecondaryPrunerE">
+<span id="_CPPv3N16PxSceneQueryDesc26dynamicTreeSecondaryPrunerE"></span><span id="_CPPv2N16PxSceneQueryDesc26dynamicTreeSecondaryPrunerE"></span><span id="PxSceneQueryDesc::dynamicTreeSecondaryPruner__PxDynamicTreeSecondaryPruner::Enum"></span><span class="target" id="class_px_scene_query_desc_1a3a4cce055a1dfcef121e5cbfa32c994a"></span><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#_CPPv428PxDynamicTreeSecondaryPruner" title="PxDynamicTreeSecondaryPruner"><span class="n"><span class="pre">PxDynamicTreeSecondaryPruner</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4EnumE" title="PxDynamicTreeSecondaryPruner::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicTreeSecondaryPruner</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc26dynamicTreeSecondaryPrunerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Secondary pruner for dynamic tree. </p>
+<p>This is used for <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> structures, to control how objects added to the system at runtime are managed.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#struct_px_dynamic_tree_secondary_pruner_1a59044cb326526cadb6aee4f6f43651b9a392c31147721a69b07ae5d95a4f43626"><span class="std std-ref">PxDynamicTreeSecondaryPruner::eINCREMENTAL</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#struct_px_dynamic_tree_secondary_pruner"><span class="std std-ref">PxDynamicTreeSecondaryPruner</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both staticStructure &amp; dynamicStructure can use a <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a>, in which case this parameter is used for both.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc22staticBVHBuildStrategyE">
+<span id="_CPPv3N16PxSceneQueryDesc22staticBVHBuildStrategyE"></span><span id="_CPPv2N16PxSceneQueryDesc22staticBVHBuildStrategyE"></span><span id="PxSceneQueryDesc::staticBVHBuildStrategy__PxBVHBuildStrategy::Enum"></span><span class="target" id="class_px_scene_query_desc_1aad1db6725ecbfa670a2e2ae4c962094c"></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv418PxBVHBuildStrategy" title="PxBVHBuildStrategy"><span class="n"><span class="pre">PxBVHBuildStrategy</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv4N18PxBVHBuildStrategy4EnumE" title="PxBVHBuildStrategy::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticBVHBuildStrategy</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc22staticBVHBuildStrategyE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Build strategy for <a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. </p>
+<p>This parameter is used to refine / control the build strategy of <a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy_1a76258a5d936088c608f7fa8604c1f257a4e832172e80308327843b9fe1ea686ba"><span class="std std-ref">PxBVHBuildStrategy::eFAST</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy"><span class="std std-ref">PxBVHBuildStrategy</span></a> <a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc23dynamicBVHBuildStrategyE">
+<span id="_CPPv3N16PxSceneQueryDesc23dynamicBVHBuildStrategyE"></span><span id="_CPPv2N16PxSceneQueryDesc23dynamicBVHBuildStrategyE"></span><span id="PxSceneQueryDesc::dynamicBVHBuildStrategy__PxBVHBuildStrategy::Enum"></span><span class="target" id="class_px_scene_query_desc_1ab8839b0985dacf362b578c4fb56a04e9"></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv418PxBVHBuildStrategy" title="PxBVHBuildStrategy"><span class="n"><span class="pre">PxBVHBuildStrategy</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#_CPPv4N18PxBVHBuildStrategy4EnumE" title="PxBVHBuildStrategy::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicBVHBuildStrategy</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc23dynamicBVHBuildStrategyE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Build strategy for <a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. </p>
+<p>This parameter is used to refine / control the build strategy of <a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy_1a76258a5d936088c608f7fa8604c1f257a4e832172e80308327843b9fe1ea686ba"><span class="std std-ref">PxBVHBuildStrategy::eFAST</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_b_v_h_build_strategy.html#struct_px_b_v_h_build_strategy"><span class="std std-ref">PxBVHBuildStrategy</span></a> <a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc22staticNbObjectsPerNodeE">
+<span id="_CPPv3N16PxSceneQueryDesc22staticNbObjectsPerNodeE"></span><span id="_CPPv2N16PxSceneQueryDesc22staticNbObjectsPerNodeE"></span><span id="PxSceneQueryDesc::staticNbObjectsPerNode__PxU32"></span><span class="target" id="class_px_scene_query_desc_1a36f5bd70b61785be6e5d5f3925810a92"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticNbObjectsPerNode</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc22staticNbObjectsPerNodeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of objects per node for <a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. </p>
+<p>This parameter is used to refine / control the number of objects per node for <a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p>This parameter has an impact on how quickly the structure gets built, and on the per-frame cost of maintaining the structure. Increasing this value gives smaller AABB-trees that use less memory, are faster to build and update, but it can lead to slower queries.</p>
+<p><strong>Default:</strong> 4</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_scene_query_desc_1ab5e8ad3a8e664c5ea663bea6b82c5aab"><span class="std std-ref">PxSceneQueryDesc::staticStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc23dynamicNbObjectsPerNodeE">
+<span id="_CPPv3N16PxSceneQueryDesc23dynamicNbObjectsPerNodeE"></span><span id="_CPPv2N16PxSceneQueryDesc23dynamicNbObjectsPerNodeE"></span><span id="PxSceneQueryDesc::dynamicNbObjectsPerNode__PxU32"></span><span class="target" id="class_px_scene_query_desc_1a0d87ef7a15face2d81bd7706c501db4d"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicNbObjectsPerNode</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc23dynamicNbObjectsPerNodeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of objects per node for <a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. </p>
+<p>This parameter is used to refine / control the number of objects per node for <a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a>. This is only used with <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a374d304bffaa55f53556e2b40a592e54"><span class="std std-ref">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></a> and <a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type_1a058454782f6ed1cc953b8d6561b636d9a9001cb07511fa509eae16a4a933a77f6"><span class="std std-ref">PxPruningStructureType::eSTATIC_AABB_TREE</span></a>.</p>
+<p>This parameter has an impact on how quickly the structure gets built, and on the per-frame cost of maintaining the structure. Increasing this value gives smaller AABB-trees that use less memory, are faster to build and update, but it can lead to slower queries.</p>
+<p><strong>Default:</strong> 4</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_scene_query_desc_1acb6e01e32b6bc62a6516839208bed66d"><span class="std std-ref">PxSceneQueryDesc::dynamicStructure</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxSceneQueryDesc20sceneQueryUpdateModeE">
+<span id="_CPPv3N16PxSceneQueryDesc20sceneQueryUpdateModeE"></span><span id="_CPPv2N16PxSceneQueryDesc20sceneQueryUpdateModeE"></span><span id="PxSceneQueryDesc::sceneQueryUpdateMode__PxSceneQueryUpdateMode::Enum"></span><span class="target" id="class_px_scene_query_desc_1a54b9676f564ae717785955e88a60ebd2"></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sceneQueryUpdateMode</span></span></span><a class="headerlink" href="#_CPPv4N16PxSceneQueryDesc20sceneQueryUpdateModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Defines the scene query update mode. </p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4aa9f1900ad863b24a136a6bf7061718e5"><span class="std std-ref">PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_ENABLED</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af0c895a275b63c869e019adb1d898757"><span class="std std-ref">PxSceneQuerySystemBase.setUpdateMode()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ae385445780b7feb60422b7beddd13750"><span class="std std-ref">PxSceneQuerySystemBase.getUpdateMode()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

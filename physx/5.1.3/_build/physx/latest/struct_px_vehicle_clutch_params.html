@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleClutchParams &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleClutchParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicleclutchparams">
+<span id="exhale-struct-struct-px-vehicle-clutch-params"></span><h1>PxVehicleClutchParams<a class="headerlink" href="#pxvehicleclutchparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainParams.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainparams-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv421PxVehicleClutchParams">
+<span id="_CPPv321PxVehicleClutchParams"></span><span id="_CPPv221PxVehicleClutchParams"></span><span id="PxVehicleClutchParams"></span><span class="target" id="struct_px_vehicle_clutch_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleClutchParams</span></span></span><a class="headerlink" href="#_CPPv421PxVehicleClutchParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The clutch connects two plates together. </p>
+<p>One plate rotates with the speed of the engine. The second plate rotates with a weighted average of all wheels connected to the differential after accounting for the gear ratio. The difference in rotation speeds generates a restoring torque applied to engine and wheels that aims to reduce the difference in rotational speed. The restoring torque is proportional to the clutch strength and the clutch pedal position. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxVehicleClutchParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK21PxVehicleClutchParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK21PxVehicleClutchParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleClutchParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_clutch_params_1a11041717278e46bd44fd73f8b7ca7180"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv421PxVehicleClutchParams" title="PxVehicleClutchParams"><span class="n"><span class="pre">PxVehicleClutchParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK21PxVehicleClutchParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxVehicleClutchParams7isValidEv">
+<span id="_CPPv3NK21PxVehicleClutchParams7isValidEv"></span><span id="_CPPv2NK21PxVehicleClutchParams7isValidEv"></span><span id="PxVehicleClutchParams::isValidC"></span><span class="target" id="struct_px_vehicle_clutch_params_1ac5dd4cdb00615ec56920a892cc54467f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK21PxVehicleClutchParams7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxVehicleClutchParams12accuracyModeE">
+<span id="_CPPv3N21PxVehicleClutchParams12accuracyModeE"></span><span id="_CPPv2N21PxVehicleClutchParams12accuracyModeE"></span><span id="PxVehicleClutchParams::accuracyMode__PxVehicleClutchAccuracyMode::Enum"></span><span class="target" id="struct_px_vehicle_clutch_params_1a6a4891d57340c1a9166dd6e1d3310e7a"></span><a class="reference internal" href="struct_px_vehicle_clutch_accuracy_mode.html#_CPPv427PxVehicleClutchAccuracyMode" title="PxVehicleClutchAccuracyMode"><span class="n"><span class="pre">PxVehicleClutchAccuracyMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_clutch_accuracy_mode.html#_CPPv4N27PxVehicleClutchAccuracyMode4EnumE" title="PxVehicleClutchAccuracyMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">accuracyMode</span></span></span><a class="headerlink" href="#_CPPv4N21PxVehicleClutchParams12accuracyModeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The engine and wheel rotation speeds that are coupled through the clutch can be updated by choosing one of two modes: eESTIMATE and eBEST_POSSIBLE. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If eESTIMATE is chosen the vehicle sdk will update the wheel and engine rotation speeds with estimated values to the implemented clutch model.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If eBEST_POSSIBLE is chosen the vehicle sdk will compute the best possible solution (within floating point tolerance) to the implemented clutch model. This is the recommended mode.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The clutch model remains the same if either eESTIMATE or eBEST_POSSIBLE is chosen but the accuracy and computational cost of the solution to the model can be tuned as required. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxVehicleClutchParams18estimateIterationsE">
+<span id="_CPPv3N21PxVehicleClutchParams18estimateIterationsE"></span><span id="_CPPv2N21PxVehicleClutchParams18estimateIterationsE"></span><span id="PxVehicleClutchParams::estimateIterations__PxU32"></span><span class="target" id="struct_px_vehicle_clutch_params_1aa69431b4ac7cba3ad65f5d097d6d9220"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">estimateIterations</span></span></span><a class="headerlink" href="#_CPPv4N21PxVehicleClutchParams18estimateIterationsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tune the mathematical accuracy and computational cost of the computed estimate to the wheel and engine rotation speeds if eESTIMATE is chosen. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As estimateIterations increases the computational cost of the clutch also increases and the solution approaches the solution that would be computed if eBEST_POSSIBLE was chosen instead.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This has no effect if eBEST_POSSIBLE is chosen as the accuracy mode.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of zero is not allowed if eESTIMATE is chosen as the accuracy mode. </p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

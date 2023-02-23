@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehiclePhysXSuspensionLimitConstraintParams &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehiclePhysXSuspensionLimitConstraintParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclephysxsuspensionlimitconstraintparams">
+<span id="exhale-struct-struct-px-vehicle-phys-x-suspension-limit-constraint-params"></span><h1>PxVehiclePhysXSuspensionLimitConstraintParams<a class="headerlink" href="#pxvehiclephysxsuspensionlimitconstraintparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_physxConstraints_PxVehiclePhysXConstraintParams.h.html#file-include-vehicle2-physxconstraints-pxvehiclephysxconstraintparams-h"><span class="std std-ref">include/vehicle2/physxConstraints/PxVehiclePhysXConstraintParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv445PxVehiclePhysXSuspensionLimitConstraintParams">
+<span id="_CPPv345PxVehiclePhysXSuspensionLimitConstraintParams"></span><span id="_CPPv245PxVehiclePhysXSuspensionLimitConstraintParams"></span><span id="PxVehiclePhysXSuspensionLimitConstraintParams"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehiclePhysXSuspensionLimitConstraintParams</span></span></span><a class="headerlink" href="#_CPPv445PxVehiclePhysXSuspensionLimitConstraintParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A description of the PhysX models employed to resolve suspension limit constraints. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_vehicle_phys_x_constraint_state.html#struct_px_vehicle_phys_x_constraint_state"><span class="std std-ref">PxVehiclePhysXConstraintState</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifierE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifierE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifierE"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a06a026f5ac1d4e94e2a24727a21a7a48"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">DirectionSpecifier</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifierE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the direction to apply a constraint impulse when the suspension cannot place the wheel on the ground and simultaneously respect the limits of suspension travel. </p>
+<p><p>The choices are to push along the ground normal to resolve the geometric error or to push along the suspension direction. The former choice can be thought of as mimicing a force applied by the tire’s contact with the ground, while the latter can be thought of as mimicing a force arising from a suspension limit spring. When the ground normal and the suspension direction are approximately aligned, both do an equivalent job of maintaining the wheel above the ground. When the vehicle is on its side, eSUSPENSION does a better job of keeping the wheels above the ground but comes at the cost of an unnaturally strong torque that can lead to unwanted self-righting behaviour. eROAD_GEOMETRY_NORMAL is a good choice to avoid self-righting behaviour and still do a reasonable job at maintaining the wheel above the ground in the event that the vehicle is tending towards a roll onto its side.</p>
+<p>eNONE should be chosen if it is desired that no extra impulse is applied when the suspension alone cannot keep the wheels above the ground plane.</p>
+</p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier11eSUSPENSIONE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier11eSUSPENSIONE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier11eSUSPENSIONE"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a06a026f5ac1d4e94e2a24727a21a7a48ab84e3bc3bef66c234f6a4e368eb822e0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSUSPENSION</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier11eSUSPENSIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier21eROAD_GEOMETRY_NORMALE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier21eROAD_GEOMETRY_NORMALE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier21eROAD_GEOMETRY_NORMALE"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a06a026f5ac1d4e94e2a24727a21a7a48aeff523126d29552e1b33b6c4c634089f"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eROAD_GEOMETRY_NORMAL</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier21eROAD_GEOMETRY_NORMALE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier5eNONEE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier5eNONEE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier5eNONEE"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a06a026f5ac1d4e94e2a24727a21a7a48ab07c20572558bdabcce0453748e70157"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNONE</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifier5eNONEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK45PxVehiclePhysXSuspensionLimitConstraintParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK45PxVehiclePhysXSuspensionLimitConstraintParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK45PxVehiclePhysXSuspensionLimitConstraintParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehiclePhysXSuspensionLimitConstraintParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1ae6dc90ac30cdbf914501d6f21330f0c1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv445PxVehiclePhysXSuspensionLimitConstraintParams" title="PxVehiclePhysXSuspensionLimitConstraintParams"><span class="n"><span class="pre">PxVehiclePhysXSuspensionLimitConstraintParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK45PxVehiclePhysXSuspensionLimitConstraintParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK45PxVehiclePhysXSuspensionLimitConstraintParams7isValidEv">
+<span id="_CPPv3NK45PxVehiclePhysXSuspensionLimitConstraintParams7isValidEv"></span><span id="_CPPv2NK45PxVehiclePhysXSuspensionLimitConstraintParams7isValidEv"></span><span id="PxVehiclePhysXSuspensionLimitConstraintParams::isValidC"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a886d04c7bda290863bbbb543a8872edb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK45PxVehiclePhysXSuspensionLimitConstraintParams7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams11restitutionE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams11restitutionE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams11restitutionE"></span><span id="PxVehiclePhysXSuspensionLimitConstraintParams::restitution__PxReal"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1ad57ca50ef9a9a0d4cde66592848b8b09"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>restitution is used by the restitution model used to generate a target velocity when resolving suspension limit constraints. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px1_d_constraint_flag.html#struct_px1_d_constraint_flag_1a0d9f59379f0d8eba3bace01f8bb88b76a4584044b6824a4cb54860d7b0f2b52ad"><span class="std std-ref">Px1DConstraintFlag::eRESTITUTION</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Px1DConstraint::RestitutionModifiers::restitution </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A value of 0.0 means that the restitution model is not employed. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Restitution has no effect if directionForSuspensionLimitConstraint has value Enum::eNONE. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams37directionForSuspensionLimitConstraintE">
+<span id="_CPPv3N45PxVehiclePhysXSuspensionLimitConstraintParams37directionForSuspensionLimitConstraintE"></span><span id="_CPPv2N45PxVehiclePhysXSuspensionLimitConstraintParams37directionForSuspensionLimitConstraintE"></span><span id="PxVehiclePhysXSuspensionLimitConstraintParams::directionForSuspensionLimitConstraint__DirectionSpecifier"></span><span class="target" id="struct_px_vehicle_phys_x_suspension_limit_constraint_params_1a90fdb17002eca059a8bbd3746928b7eb"></span><a class="reference internal" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams18DirectionSpecifierE" title="PxVehiclePhysXSuspensionLimitConstraintParams::DirectionSpecifier"><span class="n"><span class="pre">DirectionSpecifier</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">directionForSuspensionLimitConstraint</span></span></span><a class="headerlink" href="#_CPPv4N45PxVehiclePhysXSuspensionLimitConstraintParams37directionForSuspensionLimitConstraintE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

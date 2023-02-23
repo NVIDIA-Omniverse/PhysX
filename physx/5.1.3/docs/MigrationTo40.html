@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating From PhysX SDK 3.4 to 4.0 &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Migrating From PhysX SDK 4.0 to 5.1" href="MigrationTo51.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 3.3 to 3.4" href="MigrationTo34.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating From PhysX SDK 3.4 to 4.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deprecated-apis">Deprecated APIs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-particles">PhysX particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-clothing">PhysX clothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-distribution">PhysX distribution</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cmake-build">CMake build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxshared">PxShared</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-physx">Core PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-extensions">PhysX Extensions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/physx/latest/physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Migrating From PhysX SDK 3.4 to 4.0</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-from-physx-sdk-3-4-to-4-0">
+<span id="migrationto40"></span><h1>Migrating From PhysX SDK 3.4 to 4.0<a class="headerlink" href="#migrating-from-physx-sdk-3-4-to-4-0" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last dot release.  An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+</ul>
+<section id="deprecated-apis">
+<h2>Deprecated APIs<a class="headerlink" href="#deprecated-apis" title="Permalink to this headline"></a></h2>
+<p>Newly deprecated APIs are:</p>
+<ul class="simple">
+<li><p>The PxD6Joint::getTwist() function has been deprecated. Please use PxD6Joint::getTwistAngle() now.</p></li>
+<li><p>The PxD6Joint::setLinearLimit() and PxD6Joint::getLinearLimit() functions have been deprecated. Please use PxD6Joint::setDistanceLimit() and PxD6Joint::getDistanceLimit() now.</p></li>
+</ul>
+</section>
+<section id="physx-particles">
+<h2>PhysX particles<a class="headerlink" href="#physx-particles" title="Permalink to this headline"></a></h2>
+<p>The PhysX particle feature has been removed from PhysX version 4. The standalone library PhysX FleX is an alternative with a richer feature set.</p>
+</section>
+<section id="physx-clothing">
+<h2>PhysX clothing<a class="headerlink" href="#physx-clothing" title="Permalink to this headline"></a></h2>
+<p>The PhysX clothing feature has been removed from PhysX version 4. Please use the standalone library NvCloth instead.</p>
+</section>
+<section id="physx-distribution">
+<h2>PhysX distribution<a class="headerlink" href="#physx-distribution" title="Permalink to this headline"></a></h2>
+<section id="cmake-build">
+<h3>CMake build<a class="headerlink" href="#cmake-build" title="Permalink to this headline"></a></h3>
+<p>PhysX is now distributed without pre-built build configuration files (e.g. Microsoft Visual Studio project and solutions or makefiles). The build configuration files are now exclusively generated with CMake, which needs to be pre-installed along with Python.</p>
+<ul class="simple">
+<li><p>CMake minimum version 3.12</p></li>
+<li><p>Python minimum version 2.7.6</p></li>
+</ul>
+<p>In order to build the PhysX SDK, Snippets and Samples (Windows only) the <strong>generate_projects</strong> script in the <em>physx/</em> directory of the PhysX distribution needs to be run. The script accepts a [tool/platform] <strong>preset</strong> either from prompt or as a command line parameter and generates the corresponding build configuration files in <em>physx/compiler/</em>.</p>
+<p>The new PhysX SDK 4.0 build produces libs and binaries with different output paths and names compared to PhysX SDK 3.4. For example:</p>
+<ul class="simple">
+<li><p>Lib/vc14win64/PhysX3CHECKED_x64.lib → bin/win.x86_64.vc140.mt/checked/PhysX_64.lib</p></li>
+<li><p>Bin/vc14win64/PhysX3CHECKED_x64.dll → bin/win.x86_64.vc140.mt/checked/PhysX_64.dll</p></li>
+</ul>
+<p>If the application needs to use the old naming scheme, please refer to the documentation of PxDelayLoadHook and PxGpuLoadHook.</p>
+<p>The Linux build has been changed to produce static opposed to shared libraries. The compiler was switched from GCC to Clang.</p>
+<p>The naming convention for directories has changed in the PhysX SDK 4.0. Instead of camel-casing, source and include directories are now named in all-lower-case.</p>
+</section>
+<section id="pxshared">
+<h3>PxShared<a class="headerlink" href="#pxshared" title="Permalink to this headline"></a></h3>
+<p>The PxShared library contains functionality shared beyond the PhysX SDK. For PhysX 4.0 it has been streamlined to a minimal set of headers.</p>
+<ul class="simple">
+<li><p>The PxFoundation singleton has been moved back to the PhysX SDK. PxFoundationVersion.h and PX_FOUNDATION_VERSION has been removed. PxCreateFoundation takes now PX_PHYSICS_VERSION as a parameter. Foundation dependent profiling macros (PX_PROFILE_ZONE, PX_PROFILE_START_CROSSTHREAD, PX_PROFILE_STOP_CROSSTHREAD) have been moved to physx/include/common/PxProfileZone.h. The foundation library binary has been renamed from PxFoundation[config]_[x64|x86] to [config]/PhysXFoundation_[64|32].</p></li>
+<li><p>The PxTask library has been moved back to the PhysX SDK.</p></li>
+<li><p>The PxCudaContextManager interface has been moved to physx/include/cudamanager.</p></li>
+<li><p>The PxPvdSDK library has been moved to the PhysX SDK. On Windows and Linux it has been changed from a dynamic to a static linked library.</p></li>
+</ul>
+</section>
+</section>
+<section id="core-physx">
+<h2>Core PhysX<a class="headerlink" href="#core-physx" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The active transforms feature (PxActiveTransform, PxScene::getActiveTransforms, PxSceneFlag::eENABLE_ACTIVETRANSFORMS) has been removed from PhysX version 4. Please use the active actors feature instead.</p></li>
+<li><p>The PxRigidActor::createShape() function has been removed. Please use PxRigidActorExt::createExclusiveShape() instead.</p></li>
+<li><p>The PxVisualizationParameter::eDEPRECATED_BODY_JOINT_GROUPS parameter has been removed. It was not implemented and had no effect.</p></li>
+<li><p>The PxSceneDesc::maxNbObjectsPerRegion has been removed. It was not implemented and had no effect.</p></li>
+<li><p>The PxHitFlag::eDISTANCE flag has been removed. The distance was always computed with or without the flag.</p></li>
+<li><p>Switching a kinematic object to dynamic does not automatically wake up the object anymore. Explicit calls to <em>PxRigidDynamic::wakeUp()</em> are now needed.</p></li>
+<li><p>Switching a kinematic object to dynamic re-inserts the object into the broadphase, producing PxPairFlag::eNOTIFY_TOUCH_FOUND events instead of PxPairFlag::eNOTIFY_TOUCH_PERSISTS events.</p></li>
+<li><p>The PxSceneFlag::eSUPPRESS_EAGER_SCENE_QUERY_REFIT has been replaced by PxSceneQueryUpdateMode::enum. Please use PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED instead.</p></li>
+<li><p>PxGetGaussMapVertexLimitForPlatform has been replaced with PxCookingParams::gaussMapLimit.</p></li>
+<li><p>PxBroadPhaseType::eABP is now the default broadphase, which might affect the performance of your application when upgrading. To select the previous default broadphase, use PxBroadPhaseType::eSAP explicitly in PxSceneDesc.</p></li>
+<li><p>PxTolerancesScale::mass got removed because it was not used anymore internally. Simply remove the corresponding setup code from your application.</p></li>
+<li><p>The multi-client feature has changed, in particular the client behavior flags are gone. Users must now implement the desired behaviors in their application. The PxClient values are still supported and stored in PhysX actors. The desired behavior and filtering can then be implemented by users directly in their callbacks, based on client IDs retrieved from provided actors.</p></li>
+<li><p>The legacy heightfields have been removed. What was previously called “unified heightfields” is now the only available implementation. Heightfields are handled as triangle meshes, so fast moving objects can now tunnel through the heightfield surface if continuous collision detection (CCD) is not used. Use CCD to solve this issue.</p></li>
+<li><p>PxCookingParams::meshCookingHint and PxCookingParams::meshSizePerformanceTradeOff have been moved to the PxBVH33MidphaseDesc structure. These parameters only affect the BVH33 structures.</p></li>
+<li><p>PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS has been removed. It is recommended to use a trigger and a non-trigger shape, both with the same geometry and local pose, to emulate getting notifications for overlaps between trigger shapes.</p></li>
+<li><p>PxConvexMeshCookingType::eINFLATION_INCREMENTAL_HULL and PxCookingParams::skinWidth have been removed. Please use the regular PxShape::setRestOffset.</p></li>
+<li><p>PxBVH34MidphaseDesc::numTrisPerLeaf has been renamed to PxBVH34MidphaseDesc::numPrimsPerLeaf</p></li>
+<li><p>PxFoundationDelayLoadHook has been merged into PxDelayLoadHook. The per build configuration callbacks for PxDelayLoadHook and PxGpuLoadHook have been removed. The application provided implementations of PxDelayLoadHook::getPhysXFoundationDllName, PxDelayLoadHook::getPhysXCommonDllName and PxGpuLoadHook::getPhysXGpuDllName now need to provide the correct DLL paths/names based on the application build configurations.</p></li>
+<li><p>A common base class for PxArticulation and PxArticulationReducedCoordinate was introduced: PxArticulationBase. This class encapsulates common functionality between both articulation implementations. API interfaces previously taking/returning a PxArticulation will now take/return PxArticulationBase. The user must statically up-cast to the correct type if non-common functionality is required.</p></li>
+<li><p>A common base class for PxArticulationJoint and PxArticulationJointReducedCoordinate was introduced: PxArticulationJointBase. This class encapsulates common functionality between both reduced and legacy articulations. API interfaces previously taking/return a PxArticulationJoint will now take/return PxArticulationJointBase. The user must statically up-cast to the correct type if implementation-specific functionality is required.</p></li>
+<li><p>Getting/setting linear damping, angular damping and max angular velocity has been migrated from PxRigidDynamic to PxRigidBody to permit usage of these methods with the new reduced coordinate articulations.</p></li>
+</ul>
+</section>
+<section id="physx-extensions">
+<h2>PhysX Extensions<a class="headerlink" href="#physx-extensions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The PxD6Joint::getTwist() function has been deprecated. Please use PxD6Joint::getTwistAngle() now.</p></li>
+<li><p>The PxD6Joint::setLinearLimit() and PxD6Joint::getLinearLimit() functions have been deprecated. Please use PxD6Joint::setDistanceLimit() and PxD6Joint::getDistanceLimit() now.</p></li>
+<li><p>PxComputeHeightFieldPenetration has a new signature.</p></li>
+<li><p>PxComputeMeshPenetration has been removed. Use PxComputeTriangleMeshPenetration instead.</p></li>
+</ul>
+<span class="target" id="migration-4-0-core-phsx"></span></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

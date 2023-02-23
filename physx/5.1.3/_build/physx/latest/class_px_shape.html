@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxShape &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxShape</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxshape">
+<span id="exhale-class-class-px-shape"></span><h1>PxShape<a class="headerlink" href="#pxshape" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxShape.h.html#file-include-pxshape-h"><span class="std std-ref">include/PxShape.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxRefCounted</span></code> (<a class="reference internal" href="class_px_ref_counted.html#exhale-class-class-px-ref-counted"><span class="std std-ref">PxRefCounted</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv47PxShape">
+<span id="_CPPv37PxShape"></span><span id="_CPPv27PxShape"></span><span id="PxShape"></span><span class="target" id="class_px_shape"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShape</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_ref_counted.html#_CPPv412PxRefCounted" title="PxRefCounted"><span class="n"><span class="pre">PxRefCounted</span></span></a><a class="headerlink" href="#_CPPv47PxShape" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Abstract class for collision shapes. </p>
+<p>Shapes are shared, reference counted objects.</p>
+<p>An instance can be created by calling the createShape() method of the <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> class, or the createShape() method of the <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> class.</p>
+<p><em>Visualizations</em></p>
+<p><ul class="simple">
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a714f24bab39d1bbe8b131bd10ef5552b"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AABBS</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a515f4c3c72ee88d7507b52d6ccd14eab"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_SHAPES</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0ad9dcb10f5f3d6ded3baecfc1e387d3"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AXES</span></a></p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics.createShape()</span></a> PxRigidActor.createShape() <a class="reference internal" href="class_px_box_geometry.html#class_px_box_geometry"><span class="std std-ref">PxBoxGeometry</span></a> <a class="reference internal" href="class_px_sphere_geometry.html#class_px_sphere_geometry"><span class="std std-ref">PxSphereGeometry</span></a> <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a> <a class="reference internal" href="class_px_plane_geometry.html#class_px_plane_geometry"><span class="std std-ref">PxPlaneGeometry</span></a> <a class="reference internal" href="class_px_convex_mesh_geometry.html#class_px_convex_mesh_geometry"><span class="std std-ref">PxConvexMeshGeometry</span></a> <a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> <a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-pose-manipulation">Pose Manipulation</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape12setLocalPoseERK11PxTransform">
+<span id="_CPPv3N7PxShape12setLocalPoseERK11PxTransform"></span><span id="_CPPv2N7PxShape12setLocalPoseERK11PxTransform"></span><span id="PxShape::setLocalPose__PxTransformCR"></span><span class="target" id="class_px_shape_1a9f32c7cea3b5701de3f815cd64c978df"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLocalPose</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape12setLocalPoseERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the pose of the shape in actor space, i.e. </p>
+<p>relative to the actors to which they are attached.</p>
+<p>This transformation is identity by default.</p>
+<p>The local pose is an attribute of the shape, and so will apply to all actors to which the shape is attached.</p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><em>Note:</em> Does not automatically update the inertia properties of the owning actor (if applicable); use the PhysX extensions method <a class="reference internal" href="class_px_rigid_body_ext.html#class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"><span class="std std-ref">PxRigidBodyExt::updateMassAndInertia()</span></a> to do this.</p>
+<p><strong>Default:</strong> the identity transform</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1af455638230d515adbfb561f1064e70a1"><span class="std std-ref">getLocalPose()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pose</strong> – <strong>[in]</strong> The new transform from the actor frame to the shape frame. <strong>Range:</strong> rigid body transform</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape12getLocalPoseEv">
+<span id="_CPPv3NK7PxShape12getLocalPoseEv"></span><span id="_CPPv2NK7PxShape12getLocalPoseEv"></span><span id="PxShape::getLocalPoseC"></span><span class="target" id="class_px_shape_1af455638230d515adbfb561f1064e70a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalPose</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape12getLocalPoseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the pose of the shape in actor space, i.e. </p>
+<p>relative to the actor they are owned by.</p>
+<p>This transformation is identity by default.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a9f32c7cea3b5701de3f815cd64c978df"><span class="std std-ref">setLocalPose()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Pose of shape relative to the actor’s frame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-collision-filtering">Collision Filtering</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape8userDataE">
+<span id="_CPPv3N7PxShape8userDataE"></span><span id="_CPPv2N7PxShape8userDataE"></span><span id="PxShape::userData__voidP"></span><span class="target" id="class_px_shape_1a557b80df942f039122b0ee750d29c552"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N7PxShape8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape23setSimulationFilterDataERK12PxFilterData">
+<span id="_CPPv3N7PxShape23setSimulationFilterDataERK12PxFilterData"></span><span id="_CPPv2N7PxShape23setSimulationFilterDataERK12PxFilterData"></span><span id="PxShape::setSimulationFilterData__PxFilterDataCR"></span><span class="target" id="class_px_shape_1aa0c62176ed01c9fb14c26ad7c393963c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSimulationFilterData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape23setSimulationFilterDataERK12PxFilterData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the user definable collision filter data. </p>
+<p><strong>Sleeping:</strong> Does wake up the actor if the filter data change causes a formerly suppressed collision pair to be enabled.</p>
+<p><strong>Default:</strong> (0,0,0,0)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1abfa95e009f300060ba648637fb685686"><span class="std std-ref">getSimulationFilterData()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape23getSimulationFilterDataEv">
+<span id="_CPPv3NK7PxShape23getSimulationFilterDataEv"></span><span id="_CPPv2NK7PxShape23getSimulationFilterDataEv"></span><span id="PxShape::getSimulationFilterDataC"></span><span class="target" id="class_px_shape_1abfa95e009f300060ba648637fb685686"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSimulationFilterData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape23getSimulationFilterDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the shape’s collision filter data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1aa0c62176ed01c9fb14c26ad7c393963c"><span class="std std-ref">setSimulationFilterData()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape18setQueryFilterDataERK12PxFilterData">
+<span id="_CPPv3N7PxShape18setQueryFilterDataERK12PxFilterData"></span><span id="_CPPv2N7PxShape18setQueryFilterDataERK12PxFilterData"></span><span id="PxShape::setQueryFilterData__PxFilterDataCR"></span><span class="target" id="class_px_shape_1ac98191c26e55ecebfd9eb4553c969fab"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setQueryFilterData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape18setQueryFilterDataERK12PxFilterData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the user definable query filter data. </p>
+<p><strong>Default:</strong> (0,0,0,0)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1ab6cbdfa3d01aa384f4d0109a591d1f12"><span class="std std-ref">getQueryFilterData()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape18getQueryFilterDataEv">
+<span id="_CPPv3NK7PxShape18getQueryFilterDataEv"></span><span id="_CPPv2NK7PxShape18getQueryFilterDataEv"></span><span id="PxShape::getQueryFilterDataC"></span><span class="target" id="class_px_shape_1ab6cbdfa3d01aa384f4d0109a591d1f12"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getQueryFilterData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape18getQueryFilterDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the shape’s Query filter data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1ac98191c26e55ecebfd9eb4553c969fab"><span class="std std-ref">setQueryFilterData()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape12setMaterialsEPPC10PxMaterial5PxU16">
+<span id="_CPPv3N7PxShape12setMaterialsEPPC10PxMaterial5PxU16"></span><span id="_CPPv2N7PxShape12setMaterialsEPPC10PxMaterial5PxU16"></span><span id="PxShape::setMaterials__PxMaterialPCP.PxU16"></span><span class="target" id="class_px_shape_1a14fbf4de00134d17b85194487d68ff30"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><span class="n"><span class="pre">PxMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">materials</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">materialCount</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape12setMaterialsEPPC10PxMaterial5PxU16" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assigns material(s) to the shape. </p>
+<p>Will remove existing materials from the shape.</p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a35c1965ae47b24e119c6a2d8ce25477e"><span class="std std-ref">PxPhysics.createMaterial()</span></a> <a class="reference internal" href="#class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"><span class="std std-ref">getMaterials()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materials</strong> – <strong>[in]</strong> List of material pointers to assign to the shape. See <a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> </p></li>
+<li><p><strong>materialCount</strong> – <strong>[in]</strong> The number of materials provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape20setSoftBodyMaterialsEPPC21PxFEMSoftBodyMaterial5PxU16">
+<span id="_CPPv3N7PxShape20setSoftBodyMaterialsEPPC21PxFEMSoftBodyMaterial5PxU16"></span><span id="_CPPv2N7PxShape20setSoftBodyMaterialsEPPC21PxFEMSoftBodyMaterial5PxU16"></span><span id="PxShape::setSoftBodyMaterials__PxFEMSoftBodyMaterialPCP.PxU16"></span><span class="target" id="class_px_shape_1a85f59f9ade94478848bb2b0bedc9d9ac"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSoftBodyMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#_CPPv421PxFEMSoftBodyMaterial" title="PxFEMSoftBodyMaterial"><span class="n"><span class="pre">PxFEMSoftBodyMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">materials</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">materialCount</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape20setSoftBodyMaterialsEPPC21PxFEMSoftBodyMaterial5PxU16" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assigns FEM soft body material(s) to the shape. </p>
+<p>Will remove existing materials from the shape.</p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1ad3b8078510ef31d9fcb321e970da0ee2"><span class="std std-ref">PxPhysics.createFEMSoftBodyMaterial()</span></a> <a class="reference internal" href="#class_px_shape_1a9bc04a1605380db592257d7d571763d7"><span class="std std-ref">getSoftBodyMaterials()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materials</strong> – <strong>[in]</strong> List of material pointers to assign to the shape. See <a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_soft_body_material"><span class="std std-ref">PxFEMSoftBodyMaterial</span></a> </p></li>
+<li><p><strong>materialCount</strong> – <strong>[in]</strong> The number of materials provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape17setClothMaterialsEPPC18PxFEMClothMaterial5PxU16">
+<span id="_CPPv3N7PxShape17setClothMaterialsEPPC18PxFEMClothMaterial5PxU16"></span><span id="_CPPv2N7PxShape17setClothMaterialsEPPC18PxFEMClothMaterial5PxU16"></span><span id="PxShape::setClothMaterials__PxFEMClothMaterialPCP.PxU16"></span><span class="target" id="class_px_shape_1a7ac5cc61a5465543e131b9ac05730736"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setClothMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_f_e_m_cloth_material.html#_CPPv418PxFEMClothMaterial" title="PxFEMClothMaterial"><span class="n"><span class="pre">PxFEMClothMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">materials</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">materialCount</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape17setClothMaterialsEPPC18PxFEMClothMaterial5PxU16" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assigns FEM cloth material(s) to the shape. </p>
+<p>Will remove existing materials from the shape. <strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a032681c21425d986392fba7fa6af4454"><span class="std std-ref">PxPhysics.createFEMClothMaterial()</span></a> <a class="reference internal" href="#class_px_shape_1a927b7aa0d9188aaff055d104f68944a6"><span class="std std-ref">getClothMaterials()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Feature under development, only for internal usage.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materials</strong> – <strong>[in]</strong> List of material pointers to assign to the shape. See <a class="reference internal" href="class_px_f_e_m_cloth_material.html#class_px_f_e_m_cloth_material"><span class="std std-ref">PxFEMClothMaterial</span></a> </p></li>
+<li><p><strong>materialCount</strong> – <strong>[in]</strong> The number of materials provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape14getNbMaterialsEv">
+<span id="_CPPv3NK7PxShape14getNbMaterialsEv"></span><span id="_CPPv2NK7PxShape14getNbMaterialsEv"></span><span id="PxShape::getNbMaterialsC"></span><span class="target" id="class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbMaterials</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape14getNbMaterialsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of materials assigned to the shape. </p>
+<p>You can use <a class="reference internal" href="#class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"><span class="std std-ref">getMaterials()</span></a> to retrieve the material pointers.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> <a class="reference internal" href="#class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"><span class="std std-ref">getMaterials()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of materials associated with this shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape12getMaterialsEPP10PxMaterial5PxU325PxU32">
+<span id="_CPPv3NK7PxShape12getMaterialsEPP10PxMaterial5PxU325PxU32"></span><span id="_CPPv2NK7PxShape12getMaterialsEPP10PxMaterial5PxU325PxU32"></span><span id="PxShape::getMaterials__PxMaterialPP.PxU32.PxU32C"></span><span class="target" id="class_px_shape_1adbaf4b32d62babcbab918fc64d4fcae9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_material.html#_CPPv410PxMaterial" title="PxMaterial"><span class="n"><span class="pre">PxMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape12getMaterialsEPP10PxMaterial5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve all the material pointers associated with the shape. </p>
+<p>You can retrieve the number of material pointers by calling <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a></p>
+<p>Note: The returned data may contain invalid pointers if you release materials using <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a> <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> The buffer to store the material pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of provided user buffer. </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first material pointer to be retrieved </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of material pointers written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape20getSoftBodyMaterialsEPP21PxFEMSoftBodyMaterial5PxU325PxU32">
+<span id="_CPPv3NK7PxShape20getSoftBodyMaterialsEPP21PxFEMSoftBodyMaterial5PxU325PxU32"></span><span id="_CPPv2NK7PxShape20getSoftBodyMaterialsEPP21PxFEMSoftBodyMaterial5PxU325PxU32"></span><span id="PxShape::getSoftBodyMaterials__PxFEMSoftBodyMaterialPP.PxU32.PxU32C"></span><span class="target" id="class_px_shape_1a9bc04a1605380db592257d7d571763d7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSoftBodyMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#_CPPv421PxFEMSoftBodyMaterial" title="PxFEMSoftBodyMaterial"><span class="n"><span class="pre">PxFEMSoftBodyMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape20getSoftBodyMaterialsEPP21PxFEMSoftBodyMaterial5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve all the FEM soft body material pointers associated with the shape. </p>
+<p>You can retrieve the number of material pointers by calling <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a></p>
+<p>Note: The returned data may contain invalid pointers if you release materials using <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_soft_body_material"><span class="std std-ref">PxFEMSoftBodyMaterial</span></a> <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a> <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> The buffer to store the material pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of provided user buffer. </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first material pointer to be retrieved </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of material pointers written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape17getClothMaterialsEPP18PxFEMClothMaterial5PxU325PxU32">
+<span id="_CPPv3NK7PxShape17getClothMaterialsEPP18PxFEMClothMaterial5PxU325PxU32"></span><span id="_CPPv2NK7PxShape17getClothMaterialsEPP18PxFEMClothMaterial5PxU325PxU32"></span><span id="PxShape::getClothMaterials__PxFEMClothMaterialPP.PxU32.PxU32C"></span><span class="target" id="class_px_shape_1a927b7aa0d9188aaff055d104f68944a6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClothMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_f_e_m_cloth_material.html#_CPPv418PxFEMClothMaterial" title="PxFEMClothMaterial"><span class="n"><span class="pre">PxFEMClothMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape17getClothMaterialsEPP18PxFEMClothMaterial5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve all the FEM cloth material pointers associated with the shape. </p>
+<p>
+You can retrieve the number of material pointers by calling <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a></p>
+<p>Note: The returned data may contain invalid pointers if you release materials using <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_f_e_m_cloth_material.html#class_px_f_e_m_cloth_material"><span class="std std-ref">PxFEMClothMaterial</span></a> <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a> <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Feature under development, only for internal usage.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> The buffer to store the material pointers. </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of provided user buffer. </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first material pointer to be retrieved </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of material pointers written to the buffer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape32getMaterialFromInternalFaceIndexE5PxU32">
+<span id="_CPPv3NK7PxShape32getMaterialFromInternalFaceIndexE5PxU32"></span><span id="_CPPv2NK7PxShape32getMaterialFromInternalFaceIndexE5PxU32"></span><span id="PxShape::getMaterialFromInternalFaceIndex__PxU32C"></span><span class="target" id="class_px_shape_1a8a7e43b318e1fbad23c21a2a024db42b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_base_material.html#_CPPv414PxBaseMaterial" title="PxBaseMaterial"><span class="n"><span class="pre">PxBaseMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getMaterialFromInternalFaceIndex</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">faceIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape32getMaterialFromInternalFaceIndexE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve material from given triangle index. </p>
+<p>The input index is the internal triangle index as used inside the SDK. This is the index returned to users by various SDK functions such as raycasts.</p>
+<p>This function is only useful for triangle meshes or heightfields, which have per-triangle materials. For other shapes or SDF triangle meshes, the function returns the single material associated with the shape, regardless of the index.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a> <a class="reference internal" href="#class_px_shape_1a0166cefbe1d120da68db5f68ddd6ebbc"><span class="std std-ref">getNbMaterials()</span></a> <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">PxMaterial::release()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If faceIndex value of 0xFFFFffff is passed as an input for mesh and heightfield shapes, this function will issue a warning and return NULL. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Scene queries set the value of <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_query_hit_1ae3462529024eafa98ed2abe1b3b9146c"><span class="std std-ref">PxQueryHit::faceIndex</span></a> to 0xFFFFffff whenever it is undefined or does not apply.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>faceIndex</strong> – <strong>[in]</strong> The internal triangle index whose material you want to retrieve. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Material from input triangle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape16setContactOffsetE6PxReal">
+<span id="_CPPv3N7PxShape16setContactOffsetE6PxReal"></span><span id="_CPPv2N7PxShape16setContactOffsetE6PxReal"></span><span id="PxShape::setContactOffset__PxReal"></span><span class="target" id="class_px_shape_1a07c638b68e14de5e284a03dbcc128d27"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape16setContactOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the contact offset. </p>
+<p>Shapes whose distance is less than the sum of their contactOffset values will generate contacts. The contact offset must be positive and greater than the rest offset. Having a contactOffset greater than than the restOffset allows the collision detection system to predictively enforce the contact constraint even when the objects are slightly separated. This prevents jitter that would occur if the constraint were enforced only when shapes were within the rest distance.</p>
+<p><strong>Default:</strong> 0.02f * <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale_1a7d93bf20de0e5b54783eda5bb64effeb"><span class="std std-ref">PxTolerancesScale::length</span></a></p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a3f0686821f3f8fe92103e31c293f118b"><span class="std std-ref">getContactOffset</span></a> <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a> <a class="reference internal" href="#class_px_shape_1a413afb25b39a7a0cf0981aa01c6d7f8b"><span class="std std-ref">setRestOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>contactOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> [maximum(0,restOffset), PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape16getContactOffsetEv">
+<span id="_CPPv3NK7PxShape16getContactOffsetEv"></span><span id="_CPPv2NK7PxShape16getContactOffsetEv"></span><span id="PxShape::getContactOffsetC"></span><span class="target" id="class_px_shape_1a3f0686821f3f8fe92103e31c293f118b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape16getContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a07c638b68e14de5e284a03dbcc128d27"><span class="std std-ref">setContactOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The contact offset of the shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape13setRestOffsetE6PxReal">
+<span id="_CPPv3N7PxShape13setRestOffsetE6PxReal"></span><span id="_CPPv2N7PxShape13setRestOffsetE6PxReal"></span><span id="PxShape::setRestOffset__PxReal"></span><span class="target" id="class_px_shape_1a413afb25b39a7a0cf0981aa01c6d7f8b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRestOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">restOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape13setRestOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the rest offset. </p>
+<p>Two shapes will come to rest at a distance equal to the sum of their restOffset values. If the restOffset is 0, they should converge to touching exactly. Having a restOffset greater than zero is useful to have objects slide smoothly, so that they do not get hung up on irregularities of each others’ surfaces.</p>
+<p><strong>Default:</strong> 0.0f</p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a060ff01d827d559fc8b11385a161eca0"><span class="std std-ref">getRestOffset</span></a> <a class="reference internal" href="#class_px_shape_1a07c638b68e14de5e284a03dbcc128d27"><span class="std std-ref">setContactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>restOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (-PX_MAX_F32, contactOffset)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape13getRestOffsetEv">
+<span id="_CPPv3NK7PxShape13getRestOffsetEv"></span><span id="_CPPv2NK7PxShape13getRestOffsetEv"></span><span id="PxShape::getRestOffsetC"></span><span class="target" id="class_px_shape_1a060ff01d827d559fc8b11385a161eca0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRestOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape13getRestOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the rest offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a413afb25b39a7a0cf0981aa01c6d7f8b"><span class="std std-ref">setRestOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The rest offset of the shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape18setDensityForFluidE6PxReal">
+<span id="_CPPv3N7PxShape18setDensityForFluidE6PxReal"></span><span id="_CPPv2N7PxShape18setDensityForFluidE6PxReal"></span><span id="PxShape::setDensityForFluid__PxReal"></span><span class="target" id="class_px_shape_1a1be828520b836315fa353d2cb807f5ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDensityForFluid</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">densityForFluid</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape18setDensityForFluidE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the density used to interact with fluids. </p>
+<p>To be physically accurate, the density of a rigid body should be computed as its mass divided by its volume. To simplify tuning the interaction of fluid and rigid bodies, the density for fluid can differ from the real density. This allows to create floating bodies, even if they are supposed to sink with their mass and volume.</p>
+<p><strong>Default:</strong> 800.0f</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a459973fea228452955be52f32f29593c"><span class="std std-ref">getDensityForFluid</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>densityForFluid</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, PX_MAX_F32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape18getDensityForFluidEv">
+<span id="_CPPv3NK7PxShape18getDensityForFluidEv"></span><span id="_CPPv2NK7PxShape18getDensityForFluidEv"></span><span id="PxShape::getDensityForFluidC"></span><span class="target" id="class_px_shape_1a459973fea228452955be52f32f29593c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDensityForFluid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape18getDensityForFluidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the density used to interact with fluids. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a1be828520b836315fa353d2cb807f5ad"><span class="std std-ref">setDensityForFluid()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The density of the body when interacting with fluid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape23setTorsionalPatchRadiusE6PxReal">
+<span id="_CPPv3N7PxShape23setTorsionalPatchRadiusE6PxReal"></span><span id="_CPPv2N7PxShape23setTorsionalPatchRadiusE6PxReal"></span><span id="PxShape::setTorsionalPatchRadius__PxReal"></span><span class="target" id="class_px_shape_1a21faab5134bd944a5056c51158e6c60c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTorsionalPatchRadius</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape23setTorsionalPatchRadiusE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets torsional patch radius. </p>
+<p>This defines the radius of the contact patch used to apply torsional friction. If the radius is 0, no torsional friction will be applied. If the radius is &gt; 0, some torsional friction will be applied. This is proportional to the penetration depth so, if the shapes are separated or penetration is zero, no torsional friction will be applied. It is used to approximate rotational friction introduced by the compression of contacting surfaces.</p>
+<p><strong>Default:</strong> 0.0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>radius</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, PX_MAX_F32) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape23getTorsionalPatchRadiusEv">
+<span id="_CPPv3NK7PxShape23getTorsionalPatchRadiusEv"></span><span id="_CPPv2NK7PxShape23getTorsionalPatchRadiusEv"></span><span id="PxShape::getTorsionalPatchRadiusC"></span><span class="target" id="class_px_shape_1ac3b7dd28df7cad842e33a96775f6a351"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTorsionalPatchRadius</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape23getTorsionalPatchRadiusEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets torsional patch radius. </p>
+<p>This defines the radius of the contact patch used to apply torsional friction. If the radius is 0, no torsional friction will be applied. If the radius is &gt; 0, some torsional friction will be applied. This is proportional to the penetration depth so, if the shapes are separated or penetration is zero, no torsional friction will be applied. It is used to approximate rotational friction introduced by the compression of contacting surfaces.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The torsional patch radius of the shape. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape26setMinTorsionalPatchRadiusE6PxReal">
+<span id="_CPPv3N7PxShape26setMinTorsionalPatchRadiusE6PxReal"></span><span id="_CPPv2N7PxShape26setMinTorsionalPatchRadiusE6PxReal"></span><span id="PxShape::setMinTorsionalPatchRadius__PxReal"></span><span class="target" id="class_px_shape_1a034f5e45e01796a60c77382bc4db3627"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMinTorsionalPatchRadius</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape26setMinTorsionalPatchRadiusE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets minimum torsional patch radius. </p>
+<p>This defines the minimum radius of the contact patch used to apply torsional friction. If the radius is 0, the amount of torsional friction that will be applied will be entirely dependent on the value of torsionalPatchRadius.</p>
+<p>If the radius is &gt; 0, some torsional friction will be applied regardless of the value of torsionalPatchRadius or the amount of penetration.</p>
+<p><strong>Default:</strong> 0.0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>radius</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, PX_MAX_F32) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape26getMinTorsionalPatchRadiusEv">
+<span id="_CPPv3NK7PxShape26getMinTorsionalPatchRadiusEv"></span><span id="_CPPv2NK7PxShape26getMinTorsionalPatchRadiusEv"></span><span id="PxShape::getMinTorsionalPatchRadiusC"></span><span class="target" id="class_px_shape_1a6ab51c8e6ac18603a668d8135d6a3cfb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMinTorsionalPatchRadius</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape26getMinTorsionalPatchRadiusEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets minimum torsional patch radius. </p>
+<p>This defines the minimum radius of the contact patch used to apply torsional friction. If the radius is 0, the amount of torsional friction that will be applied will be entirely dependent on the value of torsionalPatchRadius.</p>
+<p>If the radius is &gt; 0, some torsional friction will be applied regardless of the value of torsionalPatchRadius or the amount of penetration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The minimum torsional patch radius of the shape. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape7setFlagEN11PxShapeFlag4EnumEb">
+<span id="_CPPv3N7PxShape7setFlagEN11PxShapeFlag4EnumEb"></span><span id="_CPPv2N7PxShape7setFlagEN11PxShapeFlag4EnumEb"></span><span id="PxShape::setFlag__PxShapeFlag::Enum.b"></span><span class="target" id="class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_shape_flag.html#_CPPv411PxShapeFlag" title="PxShapeFlag"><span class="n"><span class="pre">PxShapeFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4EnumE" title="PxShapeFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape7setFlagEN11PxShapeFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets shape flags. </p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the associated actor up automatically.</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa1b3a6f33eb84ee2dc74eac63aa86f2a4"><span class="std std-ref">PxShapeFlag::eVISUALIZATION</span></a> | <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> | <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> <a class="reference internal" href="#class_px_shape_1acd44b1c761c14e6319475797ec4f9715"><span class="std std-ref">getFlags()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The shape flag to enable/disable. See <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a>. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> True to set the flag. False to clear the flag specified in flag.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape8setFlagsE12PxShapeFlags">
+<span id="_CPPv3N7PxShape8setFlagsE12PxShapeFlags"></span><span id="_CPPv2N7PxShape8setFlagsE12PxShapeFlags"></span><span id="PxShape::setFlags__PxShapeFlags"></span><span class="target" id="class_px_shape_1afc179cb4b2146af98c76623d2fc0db6e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d.html#_CPPv412PxShapeFlags" title="PxShapeFlags"><span class="n"><span class="pre">PxShapeFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape8setFlagsE12PxShapeFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets shape flags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> <a class="reference internal" href="#class_px_shape_1acd44b1c761c14e6319475797ec4f9715"><span class="std std-ref">getFlags()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape8getFlagsEv">
+<span id="_CPPv3NK7PxShape8getFlagsEv"></span><span id="_CPPv2NK7PxShape8getFlagsEv"></span><span id="PxShape::getFlagsC"></span><span class="target" id="class_px_shape_1acd44b1c761c14e6319475797ec4f9715"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d.html#_CPPv412PxShapeFlags" title="PxShapeFlags"><span class="n"><span class="pre">PxShapeFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape8getFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves shape flags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> <a class="reference internal" href="#class_px_shape_1a3c879df184ef40514589c5aa3d1f2a33"><span class="std std-ref">setFlag()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The values of the shape flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape11isExclusiveEv">
+<span id="_CPPv3NK7PxShape11isExclusiveEv"></span><span id="_CPPv2NK7PxShape11isExclusiveEv"></span><span id="PxShape::isExclusiveC"></span><span class="target" id="class_px_shape_1a9797f4bf85e72881b3cb90d303a22b91"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isExclusive</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape11isExclusiveEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the shape is exclusive to an actor. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape7setNameEPKc">
+<span id="_CPPv3N7PxShape7setNameEPKc"></span><span id="_CPPv2N7PxShape7setNameEPKc"></span><span id="PxShape::setName__cCP"></span><span class="target" id="class_px_shape_1a51a289ac174c48ccc8d0b09d3fd90508"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape7setNameEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a name string for the object that can be retrieved with <a class="reference internal" href="#class_px_shape_1a800c362a0a6c6c120525876f56378959"><span class="std std-ref">getName()</span></a>. </p>
+<p>This is for debugging and is not used by the SDK. The string is not copied by the SDK, only the pointer is stored.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a800c362a0a6c6c120525876f56378959"><span class="std std-ref">getName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – <strong>[in]</strong> The name string to set the objects name to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape7getNameEv">
+<span id="_CPPv3NK7PxShape7getNameEv"></span><span id="_CPPv2NK7PxShape7getNameEv"></span><span id="PxShape::getNameC"></span><span class="target" id="class_px_shape_1a800c362a0a6c6c120525876f56378959"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape7getNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>retrieves the name string set with <a class="reference internal" href="#class_px_shape_1a51a289ac174c48ccc8d0b09d3fd90508"><span class="std std-ref">setName()</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_shape_1a51a289ac174c48ccc8d0b09d3fd90508"><span class="std std-ref">setName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The name associated with the shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape19getConcreteTypeNameEv">
+<span id="_CPPv3NK7PxShape19getConcreteTypeNameEv"></span><span id="_CPPv2NK7PxShape19getConcreteTypeNameEv"></span><span id="PxShape::getConcreteTypeNameC"></span><span class="target" id="class_px_shape_1aee685c949f0bd884717dabead384ac6c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape7PxShapeE11PxBaseFlags">
+<span id="_CPPv3N7PxShape7PxShapeE11PxBaseFlags"></span><span id="_CPPv2N7PxShape7PxShapeE11PxBaseFlags"></span><span id="PxShape::PxShape__PxBaseFlags"></span><span class="target" id="class_px_shape_1ae2df9c612c9095e8d6ef6d5ace5bff6a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShape</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShape7PxShapeE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape7PxShapeE6PxType11PxBaseFlags">
+<span id="_CPPv3N7PxShape7PxShapeE6PxType11PxBaseFlags"></span><span id="_CPPv2N7PxShape7PxShapeE6PxType11PxBaseFlags"></span><span id="PxShape::PxShape__PxType.PxBaseFlags"></span><span class="target" id="class_px_shape_1a89a93e84a570596a6e23ccd087b79757"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShape</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShape7PxShapeE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShapeD0Ev">
+<span id="_CPPv3N7PxShapeD0Ev"></span><span id="_CPPv2N7PxShapeD0Ev"></span><span id="PxShape::~PxShape"></span><span class="target" id="class_px_shape_1a7d037f8803d4dff457564e9903452e94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxShape</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShapeD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape8isKindOfEPKc">
+<span id="_CPPv3NK7PxShape8isKindOfEPKc"></span><span id="_CPPv2NK7PxShape8isKindOfEPKc"></span><span id="PxShape::isKindOf__cCPC"></span><span class="target" id="class_px_shape_1a6794af0658d89f3774fd00af259637b9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK7PxShape12getGeometryTEbN14PxGeometryType4EnumER1T">
+<span id="_CPPv3I0ENK7PxShape12getGeometryTEN14PxGeometryType4EnumER1T"></span><span id="_CPPv2I0ENK7PxShape12getGeometryTEN14PxGeometryType4EnumER1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_shape_1a319762d60053cbafc0bec38f0399be64"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGeometryT</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span>, <a class="reference internal" href="#_CPPv4I0ENK7PxShape12getGeometryTEbN14PxGeometryType4EnumER1T" title="PxShape::getGeometryT::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK7PxShape12getGeometryTEbN14PxGeometryType4EnumER1T" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape7releaseEv">
+<span id="_CPPv3N7PxShape7releaseEv"></span><span id="_CPPv2N7PxShape7releaseEv"></span><span id="PxShape::release"></span><span class="target" id="class_px_shape_1a165dc6eaf5c58997b90b06176220be37"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of a shape and releases it if the new reference count is zero. </p>
+<p>Note that in releases prior to PhysX 3.3 this method did not have reference counting semantics and was used to destroy a shape created with PxActor::createShape(). In PhysX 3.3 and above, this usage is deprecated, instead, use <a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_actor_1a467f9dc1517978b8d517936a475d3c4c"><span class="std std-ref">PxRigidActor::detachShape()</span></a> to detach a shape from an actor. If the shape to be detached was created with PxActor::createShape(), the actor holds the only counted reference, and so when the shape is detached it will also be destroyed.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidActor::createShape() <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape()</span></a> <a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_actor_1a022e098ea67bc8ec87f93c2f18a4db6f"><span class="std std-ref">PxRigidActor::attachShape()</span></a> <a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_actor_1a467f9dc1517978b8d517936a475d3c4c"><span class="std std-ref">PxRigidActor::detachShape()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape11setGeometryERK10PxGeometry">
+<span id="_CPPv3N7PxShape11setGeometryERK10PxGeometry"></span><span id="_CPPv2N7PxShape11setGeometryERK10PxGeometry"></span><span id="PxShape::setGeometry__PxGeometryCR"></span><span class="target" id="class_px_shape_1ac6112e8c0ee9803eb3436bbaf673d98a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGeometry</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape11setGeometryERK10PxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adjust the geometry of the shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The type of the passed in geometry must match the geometry type of the shape. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is not allowed to change the geometry type of a shape. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> New geometry of the shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape11getGeometryEv">
+<span id="_CPPv3NK7PxShape11getGeometryEv"></span><span id="_CPPv2NK7PxShape11getGeometryEv"></span><span id="PxShape::getGeometryC"></span><span class="target" id="class_px_shape_1a4c37bfc8fd47f9cc60aca1f505461834"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getGeometry</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape11getGeometryEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve a reference to the shape’s geometry. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> <a class="reference internal" href="#class_px_shape_1ac6112e8c0ee9803eb3436bbaf673d98a"><span class="std std-ref">setGeometry()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The returned reference has the same lifetime as the <a class="reference internal" href="#class_px_shape"><span class="std std-ref">PxShape</span></a> it comes from.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Reference to internal <a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape15getGeometryTypeEv">
+<span id="_CPPv3NK7PxShape15getGeometryTypeEv"></span><span id="_CPPv2NK7PxShape15getGeometryTypeEv"></span><span id="PxShape::getGeometryTypeC"></span><span class="target" id="class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGeometryType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape15getGeometryTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the geometry type of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Type of shape geometry.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape14getBoxGeometryER13PxBoxGeometry">
+<span id="_CPPv3NK7PxShape14getBoxGeometryER13PxBoxGeometry"></span><span id="_CPPv2NK7PxShape14getBoxGeometryER13PxBoxGeometry"></span><span id="PxShape::getBoxGeometry__PxBoxGeometryRC"></span><span class="target" id="class_px_shape_1ab6c188e0750b1f38ad428e427663267a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBoxGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_box_geometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape14getBoxGeometryER13PxBoxGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape17getSphereGeometryER16PxSphereGeometry">
+<span id="_CPPv3NK7PxShape17getSphereGeometryER16PxSphereGeometry"></span><span id="_CPPv2NK7PxShape17getSphereGeometryER16PxSphereGeometry"></span><span id="PxShape::getSphereGeometry__PxSphereGeometryRC"></span><span class="target" id="class_px_shape_1afd654dcb809b1f5803ac914fc2abcc62"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSphereGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_sphere_geometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><span class="n"><span class="pre">PxSphereGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape17getSphereGeometryER16PxSphereGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape18getCapsuleGeometryER17PxCapsuleGeometry">
+<span id="_CPPv3NK7PxShape18getCapsuleGeometryER17PxCapsuleGeometry"></span><span id="_CPPv2NK7PxShape18getCapsuleGeometryER17PxCapsuleGeometry"></span><span id="PxShape::getCapsuleGeometry__PxCapsuleGeometryRC"></span><span class="target" id="class_px_shape_1ae1d915ad3d6712b36b32e33b8721f9da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCapsuleGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_capsule_geometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><span class="n"><span class="pre">PxCapsuleGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape18getCapsuleGeometryER17PxCapsuleGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape16getPlaneGeometryER15PxPlaneGeometry">
+<span id="_CPPv3NK7PxShape16getPlaneGeometryER15PxPlaneGeometry"></span><span id="_CPPv2NK7PxShape16getPlaneGeometryER15PxPlaneGeometry"></span><span id="PxShape::getPlaneGeometry__PxPlaneGeometryRC"></span><span class="target" id="class_px_shape_1a87f0b19de0190ab4803fb5c52a88ba4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPlaneGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><span class="n"><span class="pre">PxPlaneGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape16getPlaneGeometryER15PxPlaneGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape21getConvexMeshGeometryER20PxConvexMeshGeometry">
+<span id="_CPPv3NK7PxShape21getConvexMeshGeometryER20PxConvexMeshGeometry"></span><span id="_CPPv2NK7PxShape21getConvexMeshGeometryER20PxConvexMeshGeometry"></span><span id="PxShape::getConvexMeshGeometry__PxConvexMeshGeometryRC"></span><span class="target" id="class_px_shape_1a2f8adb81980ad40dccdbcb53c17fe2c3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConvexMeshGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape21getConvexMeshGeometryER20PxConvexMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape23getTriangleMeshGeometryER22PxTriangleMeshGeometry">
+<span id="_CPPv3NK7PxShape23getTriangleMeshGeometryER22PxTriangleMeshGeometry"></span><span id="_CPPv2NK7PxShape23getTriangleMeshGeometryER22PxTriangleMeshGeometry"></span><span id="PxShape::getTriangleMeshGeometry__PxTriangleMeshGeometryRC"></span><span class="target" id="class_px_shape_1acd0e01cce975145861378f6a2d9d9070"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMeshGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape23getTriangleMeshGeometryER22PxTriangleMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape26getTetrahedronMeshGeometryER25PxTetrahedronMeshGeometry">
+<span id="_CPPv3NK7PxShape26getTetrahedronMeshGeometryER25PxTetrahedronMeshGeometry"></span><span id="_CPPv2NK7PxShape26getTetrahedronMeshGeometryER25PxTetrahedronMeshGeometry"></span><span id="PxShape::getTetrahedronMeshGeometry__PxTetrahedronMeshGeometryRC"></span><span class="target" id="class_px_shape_1a99a990f02554ab362fb8ccd096cbfcaf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTetrahedronMeshGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><span class="n"><span class="pre">PxTetrahedronMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape26getTetrahedronMeshGeometryER25PxTetrahedronMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape25getParticleSystemGeometryER24PxParticleSystemGeometry">
+<span id="_CPPv3NK7PxShape25getParticleSystemGeometryER24PxParticleSystemGeometry"></span><span id="_CPPv2NK7PxShape25getParticleSystemGeometryER24PxParticleSystemGeometry"></span><span id="PxShape::getParticleSystemGeometry__PxParticleSystemGeometryRC"></span><span class="target" id="class_px_shape_1a90234872cd653527dba1ee9c493b2f32"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleSystemGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><span class="n"><span class="pre">PxParticleSystemGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape25getParticleSystemGeometryER24PxParticleSystemGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape22getHeightFieldGeometryER21PxHeightFieldGeometry">
+<span id="_CPPv3NK7PxShape22getHeightFieldGeometryER21PxHeightFieldGeometry"></span><span id="_CPPv2NK7PxShape22getHeightFieldGeometryER21PxHeightFieldGeometry"></span><span id="PxShape::getHeightFieldGeometry__PxHeightFieldGeometryRC"></span><span class="target" id="class_px_shape_1a7c38b53482ef095bbd565d80b850e058"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHeightFieldGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><span class="n"><span class="pre">PxHeightFieldGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape22getHeightFieldGeometryER21PxHeightFieldGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape17getCustomGeometryER16PxCustomGeometry">
+<span id="_CPPv3NK7PxShape17getCustomGeometryER16PxCustomGeometry"></span><span id="_CPPv2NK7PxShape17getCustomGeometryER16PxCustomGeometry"></span><span id="PxShape::getCustomGeometry__PxCustomGeometryRC"></span><span class="target" id="class_px_shape_1a7489af95e478cfa9771d4916612b5da6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getCustomGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><span class="n"><span class="pre">PxCustomGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape17getCustomGeometryER16PxCustomGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Fetch the geometry of the shape. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> <a class="reference internal" href="struct_px_geometry_type.html#struct_px_geometry_type"><span class="std std-ref">PxGeometryType</span></a> <a class="reference internal" href="#class_px_shape_1a59baf1ff1e8d5777136fd0fce3b657e6"><span class="std std-ref">getGeometryType()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the type of geometry to extract does not match the geometry type of the shape then the method will return false and the passed in geometry descriptor is not modified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – <strong>[in]</strong> The descriptor to save the shape’s geometry data to. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True on success else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape8getActorEv">
+<span id="_CPPv3NK7PxShape8getActorEv"></span><span id="_CPPv2NK7PxShape8getActorEv"></span><span id="PxShape::getActorC"></span><span class="target" id="class_px_shape_1a4b66c8a3e1de304cc0a98df14ac2cdb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getActor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape8getActorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the actor which this shape is associated with. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a>, <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a>, <a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref">PxArticulationLink</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The actor this shape is associated with, if it is an exclusive shape, else NULL</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape17getReferenceCountEv">
+<span id="_CPPv3NK7PxShape17getReferenceCountEv"></span><span id="_CPPv2NK7PxShape17getReferenceCountEv"></span><span id="PxShape::getReferenceCountC"></span><span class="target" id="class_px_ref_counted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK7PxShape17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape16acquireReferenceEv">
+<span id="_CPPv3N7PxShape16acquireReferenceEv"></span><span id="_CPPv2N7PxShape16acquireReferenceEv"></span><span id="PxShape::acquireReference"></span><span class="target" id="class_px_ref_counted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N7PxShape16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN7PxShape2isEP1Tv">
+<span id="_CPPv3I0EN7PxShape2isEv"></span><span id="_CPPv2I0EN7PxShape2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN7PxShape2isEP1Tv" title="PxShape::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN7PxShape2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK7PxShape2isEPK1Tv">
+<span id="_CPPv3I0ENK7PxShape2isEv"></span><span id="_CPPv2I0ENK7PxShape2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK7PxShape2isEPK1Tv" title="PxShape::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK7PxShape2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape15getConcreteTypeEv">
+<span id="_CPPv3NK7PxShape15getConcreteTypeEv"></span><span id="_CPPv2NK7PxShape15getConcreteTypeEv"></span><span id="PxShape::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N7PxShape11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N7PxShape11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxShape::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShape11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N7PxShape12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N7PxShape12setBaseFlagsE11PxBaseFlags"></span><span id="PxShape::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShape12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape12getBaseFlagsEv">
+<span id="_CPPv3NK7PxShape12getBaseFlagsEv"></span><span id="_CPPv2NK7PxShape12getBaseFlagsEv"></span><span id="PxShape::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxShape12isReleasableEv">
+<span id="_CPPv3NK7PxShape12isReleasableEv"></span><span id="_CPPv2NK7PxShape12isReleasableEv"></span><span id="PxShape::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxShape12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape14onRefCountZeroEv">
+<span id="_CPPv3N7PxShape14onRefCountZeroEv"></span><span id="_CPPv2N7PxShape14onRefCountZeroEv"></span><span id="PxShape::onRefCountZero"></span><span class="target" id="class_px_ref_counted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxShape14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK7PxShape9typeMatchEbv">
+<span id="_CPPv3I0ENK7PxShape9typeMatchEv"></span><span id="_CPPv2I0ENK7PxShape9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK7PxShape9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape13mConcreteTypeE">
+<span id="_CPPv3N7PxShape13mConcreteTypeE"></span><span id="_CPPv2N7PxShape13mConcreteTypeE"></span><span id="PxShape::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N7PxShape13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape10mBaseFlagsE">
+<span id="_CPPv3N7PxShape10mBaseFlagsE"></span><span id="_CPPv2N7PxShape10mBaseFlagsE"></span><span id="PxShape::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N7PxShape10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxShape16mBuiltInRefCountE">
+<span id="_CPPv3N7PxShape16mBuiltInRefCountE"></span><span id="_CPPv2N7PxShape16mBuiltInRefCountE"></span><span id="PxShape::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N7PxShape16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

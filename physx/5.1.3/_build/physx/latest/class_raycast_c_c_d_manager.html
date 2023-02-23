@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RaycastCCDManager &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>RaycastCCDManager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="raycastccdmanager">
+<span id="exhale-class-class-raycast-c-c-d-manager"></span><h1>RaycastCCDManager<a class="headerlink" href="#raycastccdmanager" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxRaycastCCD.h.html#file-include-extensions-pxraycastccd-h"><span class="std std-ref">include/extensions/PxRaycastCCD.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv417RaycastCCDManager">
+<span id="_CPPv317RaycastCCDManager"></span><span id="_CPPv217RaycastCCDManager"></span><span id="RaycastCCDManager"></span><span class="target" id="class_raycast_c_c_d_manager"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RaycastCCDManager</span></span></span><a class="headerlink" href="#_CPPv417RaycastCCDManager" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast-CCD manager. </p>
+<p>Raycast-CCD is a simple and potentially cheaper alternative to the SDK’s built-in continuous collision detection algorithm.</p>
+<p>This implementation has some limitations:<ul class="simple">
+<li><p>it is only implemented for <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a> objects (not for <a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref">PxArticulationLink</span></a>)</p></li>
+<li><p>it is only implemented for simple actors with 1 shape (not for “compounds”)</p></li>
+</ul>
+</p>
+<p>Also, since it is raycast-based, the solution is not perfect. In particular:<ul class="simple">
+<li><p>small dynamic objects can still go through the static world if the ray goes through a crack between edges, or a small hole in the world (like the keyhole from a door).</p></li>
+<li><p>dynamic-vs-dynamic CCD is very approximate. It only works well for fast-moving dynamic objects colliding against slow-moving dynamic objects.</p></li>
+</ul>
+</p>
+<p>Finally, since it is using the SDK’s scene queries under the hood, it only works provided the simulation shapes also have scene-query shapes associated with them. That is, if the objects in the scene only use <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> (and no <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a>), then the raycast-CCD system will not work. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17RaycastCCDManager17RaycastCCDManagerEP7PxScene">
+<span id="_CPPv3N17RaycastCCDManager17RaycastCCDManagerEP7PxScene"></span><span id="_CPPv2N17RaycastCCDManager17RaycastCCDManagerEP7PxScene"></span><span id="RaycastCCDManager::RaycastCCDManager__PxSceneP"></span><span class="target" id="class_raycast_c_c_d_manager_1a7b0ca803dd4186218095216e92fd0c3f"></span><span class="sig-name descname"><span class="n"><span class="pre">RaycastCCDManager</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">scene</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17RaycastCCDManager17RaycastCCDManagerEP7PxScene" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17RaycastCCDManagerD0Ev">
+<span id="_CPPv3N17RaycastCCDManagerD0Ev"></span><span id="_CPPv2N17RaycastCCDManagerD0Ev"></span><span id="RaycastCCDManager::~RaycastCCDManager"></span><span class="target" id="class_raycast_c_c_d_manager_1a3c40ad39e6542dc894c029e5926d8d38"></span><span class="sig-name descname"><span class="n"><span class="pre">~RaycastCCDManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17RaycastCCDManagerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17RaycastCCDManager24registerRaycastCCDObjectEP14PxRigidDynamicP7PxShape">
+<span id="_CPPv3N17RaycastCCDManager24registerRaycastCCDObjectEP14PxRigidDynamicP7PxShape"></span><span id="_CPPv2N17RaycastCCDManager24registerRaycastCCDObjectEP14PxRigidDynamicP7PxShape"></span><span id="RaycastCCDManager::registerRaycastCCDObject__PxRigidDynamicP.PxShapeP"></span><span class="target" id="class_raycast_c_c_d_manager_1a9625c0fc846b6729770fc7271b9520d3"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">registerRaycastCCDObject</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><span class="n"><span class="pre">PxRigidDynamic</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shape</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17RaycastCCDManager24registerRaycastCCDObjectEP14PxRigidDynamicP7PxShape" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Register dynamic object for raycast CCD. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> object’s actor </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> object’s shape</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17RaycastCCDManager26unregisterRaycastCCDObjectEP14PxRigidDynamicP7PxShape">
+<span id="_CPPv3N17RaycastCCDManager26unregisterRaycastCCDObjectEP14PxRigidDynamicP7PxShape"></span><span id="_CPPv2N17RaycastCCDManager26unregisterRaycastCCDObjectEP14PxRigidDynamicP7PxShape"></span><span id="RaycastCCDManager::unregisterRaycastCCDObject__PxRigidDynamicP.PxShapeP"></span><span class="target" id="class_raycast_c_c_d_manager_1acb2367c55ef05c643517e92986e14486"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unregisterRaycastCCDObject</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><span class="n"><span class="pre">PxRigidDynamic</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shape</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17RaycastCCDManager26unregisterRaycastCCDObjectEP14PxRigidDynamicP7PxShape" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Unregister dynamic object for raycast CCD. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> object’s actor </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> object’s shape</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17RaycastCCDManager12doRaycastCCDEb">
+<span id="_CPPv3N17RaycastCCDManager12doRaycastCCDEb"></span><span id="_CPPv2N17RaycastCCDManager12doRaycastCCDEb"></span><span id="RaycastCCDManager::doRaycastCCD__b"></span><span class="target" id="class_raycast_c_c_d_manager_1a6023b5afa45982aa31f9310ca649bab2"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">doRaycastCCD</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">doDynamicDynamicCCD</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17RaycastCCDManager12doRaycastCCDEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Perform raycast CCD. </p>
+<p>Call this after your simulate/fetchResults calls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doDynamicDynamicCCD</strong> – <strong>[in]</strong> True to enable dynamic-vs-dynamic CCD (more expensive, not always needed) </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

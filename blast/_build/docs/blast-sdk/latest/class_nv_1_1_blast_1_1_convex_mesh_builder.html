@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Nv::Blast::ConvexMeshBuilder &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>Nv::Blast::ConvexMeshBuilder &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -180,7 +180,7 @@
 <dt id="_CPPv4N2Nv5Blast17ConvexMeshBuilderE">
 <span id="_CPPv3N2Nv5Blast17ConvexMeshBuilderE"></span><span id="_CPPv2N2Nv5Blast17ConvexMeshBuilderE"></span><span id="Nv::Blast::ConvexMeshBuilder"></span><span class="target" id="class_nv_1_1_blast_1_1_convex_mesh_builder"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">ConvexMeshBuilder</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast17ConvexMeshBuilderE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_convex_mesh_builder"><span class="std std-ref">ConvexMeshBuilder</span></a> provides routine to build collision hulls from array of vertices. </p>
-<p>Collision hull is built as convex hull of provided point set. If due to some reason building of convex hull is failed, collision hull is built as bounding box of vertex set. PhysX implementation can be found in NvBlastExtPx. </p>
+<p>Collision hull is built as convex hull of provided point set. If due to some reason building of convex hull is failed, collision hull is built as bounding box of vertex set. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
@@ -191,7 +191,7 @@
 
 <dl class="cpp function">
 <dt id="_CPPv4N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3">
-<span id="_CPPv3N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3"></span><span id="_CPPv2N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3"></span><span id="Nv::Blast::ConvexMeshBuilder::buildCollisionGeometry__uint32_t.NvcVec3CP"></span><span class="target" id="class_nv_1_1_blast_1_1_convex_mesh_builder_1ae9a13bf25c13b682eeb9d1865898706f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#_CPPv4N2Nv5Blast13CollisionHullE" title="Nv::Blast::CollisionHull"><span class="pre">CollisionHull</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">buildCollisionGeometry</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">verticesCount</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nvc_vec3.html#_CPPv47NvcVec3" title="NvcVec3"><span class="pre">NvcVec3</span></a> <span class="pre">*</span><em><span class="pre">vertexData</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
+<span id="_CPPv3N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3"></span><span id="_CPPv2N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3"></span><span id="Nv::Blast::ConvexMeshBuilder::buildCollisionGeometry__uint32_t.NvcVec3CP"></span><span class="target" id="class_nv_1_1_blast_1_1_convex_mesh_builder_1ae9a13bf25c13b682eeb9d1865898706f"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#_CPPv4N2Nv5Blast13CollisionHullE" title="Nv::Blast::CollisionHull"><span class="pre">CollisionHull</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">buildCollisionGeometry</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">verticesCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">*</span><em><span class="pre">vertexData</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast17ConvexMeshBuilder22buildCollisionGeometryE8uint32_tPK7NvcVec3" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Method creates <a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html#struct_nv_1_1_blast_1_1_collision_hull"><span class="std std-ref">CollisionHull</span></a> from provided array of vertices. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -227,7 +227,7 @@
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

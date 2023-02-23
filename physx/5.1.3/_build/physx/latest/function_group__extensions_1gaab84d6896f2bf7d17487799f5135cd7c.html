@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxD6JointCreate_GenericCone &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxD6JointCreate_GenericCone</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxd6jointcreate-genericcone">
+<span id="exhale-function-group-extensions-1gaab84d6896f2bf7d17487799f5135cd7c"></span><h1>PxD6JointCreate_GenericCone<a class="headerlink" href="#pxd6jointcreate-genericcone" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxD6JointCreate.h.html#file-include-extensions-pxd6jointcreate-h"><span class="std std-ref">include/extensions/PxD6JointCreate.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427PxD6JointCreate_GenericConeRfRfR9PxPhysicsP12PxRigidActorRK6PxVec3P12PxRigidActorRK6PxVec3ffffb">
+<span id="_CPPv327PxD6JointCreate_GenericConeRfRfR9PxPhysicsP12PxRigidActorRK6PxVec3P12PxRigidActorRK6PxVec3ffffb"></span><span id="_CPPv227PxD6JointCreate_GenericConeRfRfR9PxPhysicsP12PxRigidActorRK6PxVec3P12PxRigidActorRK6PxVec3ffffb"></span><span id="PxD6JointCreate_GenericCone__floatR.floatR.PxPhysicsR.PxRigidActorP.PxVec3CR.PxRigidActorP.PxVec3CR.float.float.float.float.b"></span><span class="target" id="group__extensions_1gaab84d6896f2bf7d17487799f5135cd7c"></span><a class="reference internal" href="class_px_joint.html#_CPPv47PxJoint" title="PxJoint"><span class="n"><span class="pre">PxJoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxD6JointCreate_GenericCone</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">apiroty</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">apirotz</span></span>, <a class="reference internal" href="class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><span class="n"><span class="pre">PxPhysics</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">physics</span></span>, <a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPos0</span></span>, <a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPos1</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">minLimit1</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxLimit1</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">minLimit2</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxLimit2</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">useD6</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427PxD6JointCreate_GenericConeRfRfR9PxPhysicsP12PxRigidActorRK6PxVec3P12PxRigidActorRK6PxVec3ffffb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Helper function to create a spherical joint, using either a <a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint"><span class="std std-ref">PxD6Joint</span></a> or <a class="reference internal" href="class_px_spherical_joint.html#class_px_spherical_joint"><span class="std std-ref">PxSphericalJoint</span></a>. </p>
+<p>This function supports a cone limit shape, defined by two pairs of angular limit values. This can be used to create an asymmetric cone. If the angular limit values are symmetric (i.e. minLimit1=-maxLimit1 and minLimit2=-maxLimit2) then the cone axis is the X axis in actor0’s space. If the limits are not symmetric, the function rotates the cone axis accordingly so that limits remain symmetric for PhysX. If this happens, the initial joint frames will be different for both actors. By default minLimit1/maxLimit1 are limits around the joint’s Y axis, and minLimit2/maxLimit2 are limits around the joint’s Z axis.</p>
+<p>The function creates hard limits, and uses PhysX’s default contact distance parameter.</p>
+<p>Limits are expressed in radians. Allowed range is ]-PI;PI[.</p>
+<p>The cone axis is equivalent to the twist axis for the D6 joint. The twist motion is not limited.</p>
+<p>The returned apiroty and apirotz values can later be added to retrieved Y and Z swing angle values (from the joint), to remap angle values to the given input range.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint"><span class="std std-ref">PxD6Joint</span></a> <a class="reference internal" href="class_px_spherical_joint.html#class_px_spherical_joint"><span class="std std-ref">PxSphericalJoint</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apiroty</strong> – <strong>[out]</strong> Amount of rotation around Y used to setup actor0’s joint frame </p></li>
+<li><p><strong>apirotz</strong> – <strong>[out]</strong> Amount of rotation around Z used to setup actor0’s joint frame </p></li>
+<li><p><strong>physics</strong> – <strong>[in]</strong> The physics SDK </p></li>
+<li><p><strong>actor0</strong> – <strong>[in]</strong> An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame </p></li>
+<li><p><strong>localPos0</strong> – <strong>[in]</strong> The position of the joint relative to actor0 </p></li>
+<li><p><strong>actor1</strong> – <strong>[in]</strong> An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame </p></li>
+<li><p><strong>localPos1</strong> – <strong>[in]</strong> The position of the joint relative to actor1 </p></li>
+<li><p><strong>minLimit1</strong> – <strong>[in]</strong> Min angular limit along the joint frame’s second axis (first axis = cone axis) </p></li>
+<li><p><strong>maxLimit1</strong> – <strong>[in]</strong> Max angular limit along the joint frame’s second axis (first axis = cone axis) </p></li>
+<li><p><strong>minLimit2</strong> – <strong>[in]</strong> Min angular limit along the joint frame’s third axis (first axis = cone axis) </p></li>
+<li><p><strong>maxLimit2</strong> – <strong>[in]</strong> Max angular limit along the joint frame’s third axis (first axis = cone axis) </p></li>
+<li><p><strong>useD6</strong> – <strong>[in]</strong> True to use a <a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint"><span class="std std-ref">PxD6Joint</span></a>, false to use a <a class="reference internal" href="class_px_spherical_joint.html#class_px_spherical_joint"><span class="std std-ref">PxSphericalJoint</span></a>;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The created joint.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

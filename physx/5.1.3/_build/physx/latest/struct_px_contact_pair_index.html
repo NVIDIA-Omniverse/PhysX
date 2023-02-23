@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxContactPairIndex &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxContactPairIndex</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontactpairindex">
+<span id="exhale-struct-struct-px-contact-pair-index"></span><h1>PxContactPairIndex<a class="headerlink" href="#pxcontactpairindex" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#file-include-pxsimulationeventcallback-h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxContactPairExtraDataItem</span></code> (<a class="reference internal" href="struct_px_contact_pair_extra_data_item.html#exhale-struct-struct-px-contact-pair-extra-data-item"><span class="std std-ref">PxContactPairExtraDataItem</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv418PxContactPairIndex">
+<span id="_CPPv318PxContactPairIndex"></span><span id="_CPPv218PxContactPairIndex"></span><span id="PxContactPairIndex"></span><span class="target" id="struct_px_contact_pair_index"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairIndex</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_contact_pair_extra_data_item.html#_CPPv426PxContactPairExtraDataItem" title="PxContactPairExtraDataItem"><span class="n"><span class="pre">PxContactPairExtraDataItem</span></span></a><a class="headerlink" href="#_CPPv418PxContactPairIndex" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Marker for the beginning of a new item set in the extra data stream. </p>
+<p>If CCD with multiple passes is enabled, then a fast moving object might bounce on and off the same object multiple times. Also, different shapes of the same actor might gain and lose contact with an other object over multiple passes. This marker allows to separate the extra data items for each collision case, as well as distinguish the shape pair reports of different CCD passes.</p>
+<p>Example: Let us assume that an actor a0 with shapes s0_0 and s0_1 hits another actor a1 with shape s1. First s0_0 will hit s1, then a0 will slightly rotate and s0_1 will hit s1 while s0_0 will lose contact with s1. Furthermore, let us say that contact event pose information is requested as extra data. The extra data stream will look like this:</p>
+<p>PxContactPairIndexA | PxContactPairPoseA | PxContactPairIndexB | PxContactPairPoseB</p>
+<p>The corresponding array of <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a> events (see <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a4dc1da28643ccf9f77c8432b5eb2fd32"><span class="std std-ref">PxSimulationEventCallback.onContact()</span></a>) will look like this:</p>
+<p><a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair(touch_found: s0_0, s1)</span></a> | <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair(touch_lost: s0_0, s1)</span></a> | <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair(touch_found: s0_1, s1)</span></a></p>
+<p>The <a class="reference internal" href="#struct_px_contact_pair_index_1ab9ca1f887cd9a26b50eadd4297c4d19e"><span class="std std-ref">index</span></a> of PxContactPairIndexA will point to the first entry in the <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a> array, for PxContactPairIndexB, <a class="reference internal" href="#struct_px_contact_pair_index_1ab9ca1f887cd9a26b50eadd4297c4d19e"><span class="std std-ref">index</span></a> will point to the third entry.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_header.html#struct_px_contact_pair_header_1a2a9619192f15e1a60104c90b83f67e33"><span class="std std-ref">PxContactPairHeader.extraDataStream</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxContactPairIndex18PxContactPairIndexEv">
+<span id="_CPPv3N18PxContactPairIndex18PxContactPairIndexEv"></span><span id="_CPPv2N18PxContactPairIndex18PxContactPairIndexEv"></span><span id="PxContactPairIndex::PxContactPairIndex"></span><span class="target" id="struct_px_contact_pair_index_1a3376d89333a4a5bf14e24908fbf74b79"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairIndex</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxContactPairIndex18PxContactPairIndexEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxContactPairIndex5indexE">
+<span id="_CPPv3N18PxContactPairIndex5indexE"></span><span id="_CPPv2N18PxContactPairIndex5indexE"></span><span id="PxContactPairIndex::index__PxU16"></span><span class="target" id="struct_px_contact_pair_index_1ab9ca1f887cd9a26b50eadd4297c4d19e"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">index</span></span></span><a class="headerlink" href="#_CPPv4N18PxContactPairIndex5indexE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The next item set in the extra data stream refers to the contact pairs starting at <a class="reference internal" href="#struct_px_contact_pair_index_1ab9ca1f887cd9a26b50eadd4297c4d19e"><span class="std std-ref">index</span></a> in the reported <a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a> array. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxContactPairIndex4typeE">
+<span id="_CPPv3N18PxContactPairIndex4typeE"></span><span id="_CPPv2N18PxContactPairIndex4typeE"></span><span id="PxContactPairIndex::type__PxU8"></span><span class="target" id="struct_px_contact_pair_extra_data_item_1a18e83c33b02a0a57f0daf818379e06d6"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N18PxContactPairIndex4typeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The type of the extra data stream item. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxParticleBufferFlag &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxParticleBufferFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxparticlebufferflag">
+<span id="exhale-struct-struct-px-particle-buffer-flag"></span><h1>PxParticleBufferFlag<a class="headerlink" href="#pxparticlebufferflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxParticleSystemFlag.h.html#file-include-pxparticlesystemflag-h"><span class="std std-ref">include/PxParticleSystemFlag.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv420PxParticleBufferFlag">
+<span id="_CPPv320PxParticleBufferFlag"></span><span id="_CPPv220PxParticleBufferFlag"></span><span id="PxParticleBufferFlag"></span><span class="target" id="struct_px_particle_buffer_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleBufferFlag</span></span></span><a class="headerlink" href="#_CPPv420PxParticleBufferFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Identifies dirty particle buffers that need to be updated in the particle system. </p>
+<p>This flag can be used mark the device user buffers that are dirty and need to be written to the particle system. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4EnumE">
+<span id="_CPPv3N20PxParticleBufferFlag4EnumE"></span><span id="_CPPv2N20PxParticleBufferFlag4EnumE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum5eNONEE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum5eNONEE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum5eNONEE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a81aa2f68d4ca7eab5217de34d8ab408c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNONE</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum5eNONEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>No data specified. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum16eUPDATE_POSITIONE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum16eUPDATE_POSITIONE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum16eUPDATE_POSITIONE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a0c7ebfb354a818385dd038bc77c7e89d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_POSITION</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum16eUPDATE_POSITIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the position (first 3 floats) and inverse mass (last float) data (array of PxVec4 * number of particles) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum16eUPDATE_VELOCITYE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum16eUPDATE_VELOCITYE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum16eUPDATE_VELOCITYE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a05f16fa3901e0ca9999b83c60d74d163"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_VELOCITY</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum16eUPDATE_VELOCITYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the velocity (first 3 floats) data (array of PxVec4 * number of particles) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_PHASEE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum13eUPDATE_PHASEE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum13eUPDATE_PHASEE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935aba18e51ebfa122d98c2bd3293da71cb3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_PHASE</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_PHASEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the per-particle phase flag data (array of PxU32 * number of particles) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum20eUPDATE_RESTPOSITIONE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum20eUPDATE_RESTPOSITIONE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum20eUPDATE_RESTPOSITIONE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a26c43263ce59c0f4aada42ac3a6145bb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_RESTPOSITION</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum20eUPDATE_RESTPOSITIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the rest position (first 3 floats) data for cloth buffers. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_CLOTHE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum13eUPDATE_CLOTHE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum13eUPDATE_CLOTHE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a9d75682fa20cff4641ca56ad4958c92e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_CLOTH</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_CLOTHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the cloth buffer (see <a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_RIGIDE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum13eUPDATE_RIGIDE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum13eUPDATE_RIGIDE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a7372206aec6cf5407f296eaf7bb2ad4c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_RIGID</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum13eUPDATE_RIGIDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the rigid buffer (see <a class="reference internal" href="class_px_particle_rigid_buffer.html#class_px_particle_rigid_buffer"><span class="std std-ref">PxParticleRigidBuffer</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum21eUPDATE_DIFFUSE_PARAME">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum21eUPDATE_DIFFUSE_PARAME"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum21eUPDATE_DIFFUSE_PARAME"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a72e13cef2fdd29b3a66b497ccac2e2fc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_DIFFUSE_PARAM</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum21eUPDATE_DIFFUSE_PARAME" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the diffuse particle parameter buffer (see <a class="reference internal" href="class_px_diffuse_particle_params.html#class_px_diffuse_particle_params"><span class="std std-ref">PxDiffuseParticleParams</span></a>) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum19eUPDATE_ATTACHMENTSE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum19eUPDATE_ATTACHMENTSE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum19eUPDATE_ATTACHMENTSE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935a5e0a91b3e5d5ff5d21b6738ea4051a30"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUPDATE_ATTACHMENTS</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum19eUPDATE_ATTACHMENTSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies the attachments. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxParticleBufferFlag4Enum4eALLE">
+<span id="_CPPv3N20PxParticleBufferFlag4Enum4eALLE"></span><span id="_CPPv2N20PxParticleBufferFlag4Enum4eALLE"></span><span class="target" id="struct_px_particle_buffer_flag_1acda616334f44c783877828debd1b5935aec49e1686691bbba15b7d2be63be32a1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eALL</span></span></span><a class="headerlink" href="#_CPPv4N20PxParticleBufferFlag4Enum4eALLE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

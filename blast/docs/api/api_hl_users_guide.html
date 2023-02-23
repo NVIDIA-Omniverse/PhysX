@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>High Level (Toolkit) API (NvBlastTk) &mdash; blast-sdk 4.0.2 documentation</title>
+  <title>High Level (Toolkit) API (NvBlastTk) &mdash; blast-sdk 5.0.0 documentation</title>
   
 
   
@@ -288,7 +288,7 @@ the base descriptor.  Currently the only flag is “BondJointed,” and if set w
 See (<a class="reference internal" href="#tkjoints"><span class="std std-ref">Joints</span></a>) for more on joints in BlastTk.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TkAssetDesc desc;
 
-myFunctionToFillInLowLevelAssetFields(desc);        // Fill in the low-level (NvBlastAssetDesc) fields as usual
+myFunctionToFillInLowLevelAssetFields(desc);    // Fill in the low-level (NvBlastAssetDesc) fields as usual
 
 std::vector&lt;uint8_t*&gt; bondFlags(desc.bondCount, 0); // Clear all flags
 
@@ -297,11 +297,11 @@ for (uint32_t i = 0; i &lt; desc.bondCount; ++i)
 {
     if (myBondIsJointedFunction(i)) // User-authored
     {
-            bondFlags[i] |= TkAssetDesc::BondJointed;
+        bondFlags[i] |= TkAssetDesc::BondJointed;
     }
 }
 
-TkAsset* asset = framework-&gt;createAsset(desc);      // Create a new TkAsset
+TkAsset* asset = framework-&gt;createAsset(desc);  // Create a new TkAsset
 </pre></div>
 </div>
 <p>The createAsset function used above creates a low-level NvBlastAsset from the base fields of the descriptor, and then adds internal joint descriptors based
@@ -322,11 +322,11 @@ the memory for the llAsset must be allocated using the allocator accessed throug
 TkAssetJointDesc.  Each joint descriptor takes two positions and two node indices.  The positions are the joint’s attachment positions in asset space, and
 the nodes indices are those of the graph nodes that correspond to support chunks.  These indices are not, in general, the same as the chunk indices.
 An example of initialization of the joint descriptors is given below.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>std::vector&lt;TkAssetJointDesc&gt; jointDescs(jointCount);       // Assume jointCount = the number of joints to add
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>std::vector&lt;TkAssetJointDesc&gt; jointDescs(jointCount);   // Assume jointCount = the number of joints to add
 jointDescs[0].nodeIndices[0] = 0;   // Attach node 0 to node 1
 jointDescs[0].nodeIndices[1] = 1;
-jointDescs[0].attachPoistions[0] = physx::PxVec3( 1.0f, 2.0f, 3.0f );       // Attachment positions are often the same within an asset, but they don&#39;t have to be
-jointDescs[0].attachPoistions[1] = physx::PxVec3( 1.0f, 2.0f, 3.0f );
+jointDescs[0].attachPoistions[0] = nvidia::NvVec3( 1.0f, 2.0f, 3.0f );  // Attachment positions are often the same within an asset, but they don&#39;t have to be
+jointDescs[0].attachPoistions[1] = nvidia::NvVec3( 1.0f, 2.0f, 3.0f );
 // ... etc.
 
 TkAsset* asset = framework-&gt;createAsset(llAsset, jointDescs.data(), jointDescs.size());
@@ -394,7 +394,7 @@ of jobs which the user may assign to workers as they like, each worker potential
 by the group’s actors.  After all jobs have been run, the user must call TkGroup::endProcess().  This will result in all events being fired off to listeners associated
 with families with actors in the group.</p>
 <p>A convenience function, TkGroup::process(), is provided which uses one worker to perform all jobs sequentially on the calling thread.  This is useful shortcut to
-get BlastTk up and running quickly.  A multithreaded group processing implementation is given by Nv::Blast::ExtGroupTaskManager (in NvBlastExtPxTask.h).</p>
+get BlastTk up and running quickly.  A multithreaded group processing implementation is given by TkGroupTaskManager (in NvBlastTkGroupTaskManager.h).</p>
 <p>Actors resulting from the split of a “parent” actor will be placed automatically into the group that the parent belonged to.  This is similar to the assigment of
 families from a split, except that unlike families, the user then has the option to move the new actors to other groups, or no group at all.</p>
 <p>Also similar to families, groups are not automatically released when the last actor is removed from it.  Unlike families, when a group is released, the actors which
@@ -402,7 +402,7 @@ belong to the group are <em>not</em> released.  They will, however, be removed f
 <p>A typical usage is outlined below.  See <a class="reference internal" href="#damage-in-tk"><span class="std std-ref">Applying Damage to Actors and Families</span></a> for methods of applying damage to actors.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>// Create actors from descriptors desc1, desc2, ... etc., and attach a listener to each new family created
 TkActor* actor1 = framework-&gt;createActor(desc1);
-actor1-&gt;getFamily().addListener(gMyReceiver);               // gMyReceiver is a TkEventListener-derived object.  More on events in a subsequent section.
+actor1-&gt;getFamily().addListener(gMyReceiver);       // gMyReceiver is a TkEventListener-derived object.  More on events in a subsequent section.
 TkActor* actor2 = framework-&gt;createActor(desc2);
 actor2-&gt;getFamily().addListener(gMyReceiver);
 TkActor* actor3 = framework-&gt;createActor(desc3);
@@ -466,8 +466,8 @@ for this default are compatible with the program being used to damage the family
 least until the TkGroup::endProcess call for the actor.</strong></p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastDamageProgram program =
 {
-    myGraphShaderFunction,          // A function with the NvBlastGraphShaderFunction signature
-    mySubgraphShaderFunction        // A function with the NvBlastSubgraphShaderFunction signature
+    myGraphShaderFunction,      // A function with the NvBlastGraphShaderFunction signature
+    mySubgraphShaderFunction    // A function with the NvBlastSubgraphShaderFunction signature
 };
 
 // The example struct &quot;RadialDamageDesc&quot; is modeled after NvBlastExtRadialDamageDesc in the NvBlastExtShaders extension
@@ -522,8 +522,8 @@ actor-&gt;getFamily().setMaterial(&amp;material);
 <p>Then to apply damage, use:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastDamageProgram program =
 {
-    myGraphShaderFunction,          // A function with the NvBlastGraphShaderFunction signature
-    mySubgraphShaderFunction        // A function with the NvBlastSubgraphShaderFunction signature
+    myGraphShaderFunction,      // A function with the NvBlastGraphShaderFunction signature
+    mySubgraphShaderFunction    // A function with the NvBlastSubgraphShaderFunction signature
 };
 
 // The example struct &quot;RadialDamageDesc&quot; is modeled after NvBlastExtRadialDamageDesc in the NvBlastExtShaders extension
@@ -571,10 +571,10 @@ given below.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TkJointDesc desc;
 desc.families[0] = &amp;actor0-&gt;getFamily();    // Assume we have a valid actor0 pointer
 desc.chunkIndices[0] = 1;   // This chunk *must* be a support chunk in the asset that created desc.families[0]
-desc.attachPositions[0] = physx::PxVec3(1.0f, 2.0f; 3.0f);  // The attach position is in asset space
+desc.attachPositions[0] = nvidia::NvVec3(1.0f, 2.0f; 3.0f); // The attach position is in asset space
 desc.families[1] = &amp;actor1-&gt;getFamily();    // Assume we have a valid actor1 pointer... note, actor0 and actor1 could have the same family
 desc.chunkIndices[1] = 10;  // This chunk *must* be a support chunk in the asset that created desc.families[1]
-desc.attachPositions[1] = physx::PxVec3(4.0f, 5.0f; 6.0f);  // The attach position is in asset space
+desc.attachPositions[1] = nvidia::NvVec3(4.0f, 5.0f; 6.0f); // The attach position is in asset space
 
 // Create the external joint from the descriptor, which joins actor0 and actor1
 TkJoint* joint = framework-&gt;createJoint(desc);
@@ -582,10 +582,10 @@ TkJoint* joint = framework-&gt;createJoint(desc);
 // Now join actor0 to the NRF
 // desc.families[0] already contains actor0&#39;s family
 desc.chunkIndices[0] = 2;   // Again, this chunk must be a support chunk in the asset that created desc.families[0]
-desc.attachPositions[0] = physx::PxVec3(0.0f, 0.0f; 0.0f);  // The attach position is in asset space
+desc.attachPositions[0] = nvidia::NvVec3(0.0f, 0.0f; 0.0f); // The attach position is in asset space
 desc.families[1] = nullptr; // Setting the family to NULL designates the world (NRF)
 // The value of desc.chunkIndices[1] is not used, since desc.families[1] is NULL
-desc.attachPositions[1] = physx::PxVec3(0.0f, 0.0f, 10.0f); // Attach position in the world
+desc.attachPositions[1] = nvidia::NvVec3(0.0f, 0.0f, 10.0f);    // Attach position in the world
 
 // Create the external joint which joins actor0 to the world
 TkJoint* jointNRF = framework-&gt;createJoint(desc);
@@ -627,57 +627,57 @@ in the group.</p>
     // TkEventListener interface
     void receive(const TkEvent* events, uint32_t eventCount) override
     {
-            // Events are batched into an event buffer.  Loop over all events:
-            for (uint32_t i = 0; i &lt; eventCount; ++i)
+        // Events are batched into an event buffer.  Loop over all events:
+        for (uint32_t i = 0; i &lt; eventCount; ++i)
+        {
+            const TkEvent&amp; event = events[i];
+
+            // See TkEvent documentation for event types
+            switch (event.type)
             {
-                    const TkEvent&amp; event = events[i];
+            case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
+            {
+                const TkSplitEvent* splitEvent = event.getPayload&lt;TkSplitEvent&gt;();  // Split event payload
 
-                    // See TkEvent documentation for event types
-                    switch (event.type)
-                    {
-                    case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
-                    {
-                            const TkSplitEvent* splitEvent = event.getPayload&lt;TkSplitEvent&gt;();      // Split event payload
+                // The parent actor may no longer be valid.  Instead, we receive the information it held
+                // which we need to update our app&#39;s representation (e.g. removal of the corresponding physics actor)
+                myRemoveActorFunction(splitEvent-&gt;parentData.family, splitEvent-&gt;parentData.index, splitEvent-&gt;parentData.userData);
 
-                            // The parent actor may no longer be valid.  Instead, we receive the information it held
-                            // which we need to update our app&#39;s representation (e.g. removal of the corresponding physics actor)
-                            myRemoveActorFunction(splitEvent-&gt;parentData.family, splitEvent-&gt;parentData.index, splitEvent-&gt;parentData.userData);
-
-                            // The split event contains an array of &quot;child&quot; actors that came from the parent.  These are valid
-                            // TkActor pointers and may be used to create physics and graphics representations in our application
-                            for (uint32_t j = 0; j &lt; splitEvent-&gt;numChildren; ++j)
-                            {
-                                    myCreateActorFunction(splitEvent-&gt;children[j]);
-                            }
-                    }
-                    break;
-
-                    case TkJointUpdateEvent::EVENT_TYPE:
-                    {
-                            const TkJointUpdateEvent* jointEvent = event.getPayload&lt;TkJointUpdateEvent&gt;();  // Joint update event payload
-
-                            // Joint events have three subtypes, see which one we have
-                            switch (jointEvent-&gt;subtype)
-                            {
-                            case TkJointUpdateEvent::External:
-                                    myCreateJointFunction(jointEvent-&gt;joint);       // An internal joint has been &quot;exposed&quot; (now joins two different actors).  Create a physics joint.
-                                    break;
-                            case TkJointUpdateEvent::Changed:
-                                    myUpdatejointFunction(jointEvent-&gt;joint);       // A joint&#39;s actors have changed, so we need to update its corresponding physics joint.
-                                    break;
-                            case TkJointUpdateEvent::Unreferenced:
-                                    myDestroyJointFunction(jointEvent-&gt;joint);      // This joint is no longer referenced, so we may delete the corresponding physics joint.
-                                    break;
-                            }
-                    }
-
-                    // Unhandled:
-                    case TkFractureCommands::EVENT_TYPE:
-                    case TkFractureEvents::EVENT_TYPE:
-                    default:
-                    break;
-                    }
+                // The split event contains an array of &quot;child&quot; actors that came from the parent.  These are valid
+                // TkActor pointers and may be used to create physics and graphics representations in our application
+                for (uint32_t j = 0; j &lt; splitEvent-&gt;numChildren; ++j)
+                {
+                    myCreateActorFunction(splitEvent-&gt;children[j]);
+                }
             }
+            break;
+
+            case TkJointUpdateEvent::EVENT_TYPE:
+            {
+                const TkJointUpdateEvent* jointEvent = event.getPayload&lt;TkJointUpdateEvent&gt;();  // Joint update event payload
+
+                // Joint events have three subtypes, see which one we have
+                switch (jointEvent-&gt;subtype)
+                {
+                case TkJointUpdateEvent::External:
+                    myCreateJointFunction(jointEvent-&gt;joint);   // An internal joint has been &quot;exposed&quot; (now joins two different actors).  Create a physics joint.
+                    break;
+                case TkJointUpdateEvent::Changed:
+                    myUpdatejointFunction(jointEvent-&gt;joint);   // A joint&#39;s actors have changed, so we need to update its corresponding physics joint.
+                    break;
+                case TkJointUpdateEvent::Unreferenced:
+                    myDestroyJointFunction(jointEvent-&gt;joint);  // This joint is no longer referenced, so we may delete the corresponding physics joint.
+                    break;
+                }
+            }
+
+            // Unhandled:
+            case TkFractureCommands::EVENT_TYPE:
+            case TkFractureEvents::EVENT_TYPE:
+            default:
+            break;
+            }
+        }
     }
 };
 </pre></div>
@@ -686,7 +686,7 @@ in the group.</p>
 be given whatever listeners the user wishes to attach.  For example,</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TkActor* actor = framework-&gt;createActor(actorDesc);
 
-actor-&gt;getFamily().addListener(myListener); //      myListener is an object which implements TkEventListener (see MyActorAndJointListener above, for example)
+actor-&gt;getFamily().addListener(myListener); //  myListener is an object which implements TkEventListener (see MyActorAndJointListener above, for example)
 </pre></div>
 </div>
 <p>Listeners may also be removed from families at any time.</p>
@@ -698,7 +698,7 @@ is a 128-bit identifier.  TkIdentifiable objects are tracked by the TkFramework,
 <p>Upon creation, TkIdentifiable objects are given a GUID, a unique NvBlastID.  The user is welcome to change the object’s guid at any time, with
 the restriction that the GUID cannot be all zero bytes.</p>
 <p>With an object’s GUID, one may look up the object using the TkFramework function findObjectByID:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TkIdentifiable* object = framework-&gt;findObjectByID(id);     // id = an NvBlastID GUID
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TkIdentifiable* object = framework-&gt;findObjectByID(id); // id = an NvBlastID GUID
 </pre></div>
 </div>
 <p>If the object is found, a non-NULL pointer will be returned.</p>
@@ -785,7 +785,7 @@ This function returns a const char pointer to a string.</p>
     <p>
         &#169; Copyright 2017-2023, NVIDIA.
       <span class="lastupdated">
-        Last updated on Jan 03, 2023.
+        Last updated on Feb 21, 2023.
       </span>
 
     </p>

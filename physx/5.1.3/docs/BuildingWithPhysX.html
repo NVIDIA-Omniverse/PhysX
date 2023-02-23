@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building with PhysX &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Snippets" href="Snippets.html" />
+    <link rel="prev" title="PhysX License" href="License.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building with PhysX</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#generating-projects-with-cmake">Generating projects with CMake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-configurations">Build Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#header-files">Header Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#redistribution">Redistribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#customize-cmake-presets">Customize CMake presets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/physx/latest/physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Building with PhysX</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-with-physx">
+<span id="id1"></span><h1>Building with PhysX<a class="headerlink" href="#building-with-physx" title="Permalink to this headline"></a></h1>
+<section id="generating-projects-with-cmake">
+<h2>Generating projects with CMake<a class="headerlink" href="#generating-projects-with-cmake" title="Permalink to this headline"></a></h2>
+<p>PhysX uses CMake to generate build configuration files (e.g. Microsoft Visual Studio Solutions) for all supported platforms. The PhysX distribution comes with default CMake parameter sets called <strong>presets</strong>.
+The build configuration files can be generated with the script <strong>generate_projects</strong> in the distributions “physx/” directory. This script either prompts for a preset or accepts a preset as a command line parameter. The resulting build configuration files are generated under “physx/compiler/”.</p>
+<p>PhysX binaries (including static libraries) are placed into “bin/&lt;platform&gt;.&lt;target&gt;.&lt;compiler&gt;.&lt;runtime&gt;/&lt;configuration&gt;/” directories, for example the vc16win64 checked build puts binaries into “bin/win.x86_64.vc142.mt/checked/”.</p>
+</section>
+<section id="build-configurations">
+<h2>Build Configurations<a class="headerlink" href="#build-configurations" title="Permalink to this headline"></a></h2>
+<p>The SDK has four build configurations available, designed for different stages of development and deployment.</p>
+<ul class="simple">
+<li><p>the <em>debug</em> build can be useful for error analysis, but contains asserts used for SDK development which some customers may find too intrusive for daily use. Optimizations are turned off for this configuration.</p></li>
+<li><p>the <em>checked</em> build contains code to detect invalid parameters, API race conditions, and other incorrect uses of the API which might otherwise cause mysterious crashes or failures in simulation.</p></li>
+<li><p>the <em>profile</em> build omits the checks, but still has PVD and memory instrumentation.</p></li>
+<li><p>the <em>release</em> build is built for minimal footprint and maximum speed. It omits most checks and instrumentation.</p></li>
+</ul>
+<p>Simulation works the same way in all of them, and all are compiled with high optimization levels (except debug configuration).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We strongly recommend that you use the checked build as the primary configuration for day-to-day development and QA.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX libraries of different build configurations (e.g. the DEBUG version of PhysXVehicle and the CHECKED version of PhysXVisualDebuggerSDK) should never be mixed in an application because this will result a CRT conflict.</p>
+</div>
+</section>
+<section id="header-files">
+<span id="id2"></span><h2>Header Files<a class="headerlink" href="#header-files" title="Permalink to this headline"></a></h2>
+<p>To build your own PhysX app, you will need to add some include paths and libraries to your project makefile or IDE.</p>
+<p>Users should specify the root “include/” and corresponding “bin/” folders in the additional include, and library directories of their build configuration respectively. There is a combined include header available as:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysicsAPI.h&quot;</span><span class="cp"></span>
+</pre></div>
+</div>
+<p>This will include the entire PhysX API including core, extensions, vehicles, etc. It is also possible to include subsets of the SDK if preferred, for example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;vehicle/PxVehicleSDK.h&quot;</span><span class="cp"></span>
+</pre></div>
+</div>
+</section>
+<section id="redistribution">
+<span id="id3"></span><h2>Redistribution<a class="headerlink" href="#redistribution" title="Permalink to this headline"></a></h2>
+<p>On the Windows platform, you need to redistribute some of our DLLs to end users as part of your application:</p>
+<ul class="simple">
+<li><p>PhysXCommon_*.dll               - will always be needed.</p></li>
+<li><p>PhysX_*.dll                     - will always be needed.</p></li>
+<li><p>PhysXFoundation_*.dll           - will always be needed.</p></li>
+<li><p>PhysXCooking_*.dll              - you only need to bundle if your application cooks geometry data on the fly.</p></li>
+<li><p>PhysXGPU_*.dll                  - is only needed if your application runs some simulation on the GPU.</p></li>
+</ul>
+<p>Where * is a platform specific suffix, e.g. 32 or 64.  You will need one or the other depending on whether your application is built in 64 bit mode.</p>
+</section>
+<section id="customize-cmake-presets">
+<h2>Customize CMake presets<a class="headerlink" href="#customize-cmake-presets" title="Permalink to this headline"></a></h2>
+<p>It is possible to customize the CMake presets, which are stored in “physx/buildtools/presets/public/”. Each XML file represents one preset, depending on the platform some CMake switches can be toggled.</p>
+<p>General switches:</p>
+<ul class="simple">
+<li><p>PX_BUILDSNIPPETS - specify whether the PhysX Snippets should be added to the build configuration - default True</p></li>
+</ul>
+<p>Windows switches:</p>
+<ul class="simple">
+<li><p>PX_GENERATE_STATIC_LIBRARIES - it is possible to switch the PhysX build to output static libs instead of DLLs - default False</p></li>
+<li><p>NV_USE_STATIC_WINCRT - sets static or dynamic runtime usage - default True</p></li>
+<li><p>NV_USE_DEBUG_WINCRT - specify whether debug CRT should be used - default True</p></li>
+<li><p>PX_FLOAT_POINT_PRECISE_MATH - it is possible to switch to precise math rather than fast math, this is beneficial especially for robotics projects, which do require higher precision - default False</p></li>
+</ul>
+<p>Some switches like PX_GENERATE_STATIC_LIBRARIES may result in a need for additional defines to be set within your application. In this case you can include in your application PxConfig.h header, which is generated during generate projects.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

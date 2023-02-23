@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSoftBodyCollisionData &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSoftBodyCollisionData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsoftbodycollisiondata">
+<span id="exhale-class-class-px-soft-body-collision-data"></span><h1>PxSoftBodyCollisionData<a class="headerlink" href="#pxsoftbodycollisiondata" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxTetrahedronMesh.h.html#file-include-geometry-pxtetrahedronmesh-h"><span class="std std-ref">include/geometry/PxTetrahedronMesh.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxUserAllocated</span></code> (<a class="reference internal" href="class_px_user_allocated.html#exhale-class-class-px-user-allocated"><span class="std std-ref">PxUserAllocated</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv423PxSoftBodyCollisionData">
+<span id="_CPPv323PxSoftBodyCollisionData"></span><span id="_CPPv223PxSoftBodyCollisionData"></span><span id="PxSoftBodyCollisionData"></span><span class="target" id="class_px_soft_body_collision_data"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSoftBodyCollisionData</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_user_allocated.html#_CPPv415PxUserAllocated" title="PxUserAllocated"><span class="n"><span class="pre">PxUserAllocated</span></span></a><a class="headerlink" href="#_CPPv423PxSoftBodyCollisionData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Stores data to accelerate collision detection of a tetrahedral mesh. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_tetrahedron_mesh_data.html#class_px_tetrahedron_mesh_data"><span class="std std-ref">PxTetrahedronMeshData</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxSoftBodyCollisionDatanwE6size_tPv">
+<span id="_CPPv3N23PxSoftBodyCollisionDatanwE6size_tPv"></span><span id="_CPPv2N23PxSoftBodyCollisionDatanwE6size_tPv"></span><span id="PxSoftBodyCollisionData::new-operator__s.voidP"></span><span class="target" id="class_px_user_allocated_1a043559a17027a1d32204be66e9b1d3f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxSoftBodyCollisionDatanwE6size_tPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatanwE6size_t5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatanwE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1af3309032413ea5ee85c18785a6ad56a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t5AllocPKci" title="PxSoftBodyCollisionData::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatanwE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatanwE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1ade2b81f765dc68139ce8ae091b54796f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t6size_t5AllocPKci" title="PxSoftBodyCollisionData::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanwEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxSoftBodyCollisionDatadlEPvPv">
+<span id="_CPPv3N23PxSoftBodyCollisionDatadlEPvPv"></span><span id="_CPPv2N23PxSoftBodyCollisionDatadlEPvPv"></span><span id="PxSoftBodyCollisionData::delete-operator__voidP.voidP"></span><span class="target" id="class_px_user_allocated_1a04c7cb45584c4f0ce7a8347ca740896b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span>, <span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxSoftBodyCollisionDatadlEPvPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatadlEvPv5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatadlEPv5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatadlEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a3cf613200747f3cefb86a365c74aa162"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatadlEvPv5AllocPKci" title="PxSoftBodyCollisionData::operator delete::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatadlEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxSoftBodyCollisionDatadlEPv">
+<span id="_CPPv3N23PxSoftBodyCollisionDatadlEPv"></span><span id="_CPPv2N23PxSoftBodyCollisionDatadlEPv"></span><span id="PxSoftBodyCollisionData::delete-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2c4e502fe3d2248c358dd77dd3057238"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxSoftBodyCollisionDatadlEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatanaE6size_t5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatanaE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a20c94aa14dae1e05c23b2c9d2a6a0362"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t5AllocPKci" title="PxSoftBodyCollisionData::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatanaE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatanaE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a71597b7a868015bda81c507955cc580d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t6size_t5AllocPKci" title="PxSoftBodyCollisionData::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatanaEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN23PxSoftBodyCollisionDatadaEvPv5AllocPKci">
+<span id="_CPPv3I0EN23PxSoftBodyCollisionDatadaEPv5AllocPKci"></span><span id="_CPPv2I0EN23PxSoftBodyCollisionDatadaEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_user_allocated_1a27bba9023c672c7294bf98666139f482"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN23PxSoftBodyCollisionDatadaEvPv5AllocPKci" title="PxSoftBodyCollisionData::operator delete[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN23PxSoftBodyCollisionDatadaEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N23PxSoftBodyCollisionDatadaEPv">
+<span id="_CPPv3N23PxSoftBodyCollisionDatadaEPv"></span><span id="_CPPv2N23PxSoftBodyCollisionDatadaEPv"></span><span id="PxSoftBodyCollisionData::delete-array-operator__voidP"></span><span class="target" id="class_px_user_allocated_1a2b6969f7ac154e808f41a906a25a4a05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N23PxSoftBodyCollisionDatadaEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

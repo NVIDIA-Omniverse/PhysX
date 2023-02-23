@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxQueryHitType &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxQueryHitType</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxqueryhittype">
+<span id="exhale-struct-struct-px-query-hit-type"></span><h1>PxQueryHitType<a class="headerlink" href="#pxqueryhittype" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxQueryFiltering.h.html#file-include-pxqueryfiltering-h"><span class="std std-ref">include/PxQueryFiltering.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxQueryHitType">
+<span id="_CPPv314PxQueryHitType"></span><span id="_CPPv214PxQueryHitType"></span><span id="PxQueryHitType"></span><span class="target" id="struct_px_query_hit_type"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQueryHitType</span></span></span><a class="headerlink" href="#_CPPv414PxQueryHitType" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Classification of scene query hits (intersections). </p>
+<p><ul class="simple">
+<li><p>eNONE: Returning this hit type means that the hit should not be reported.</p></li>
+<li><p>eBLOCK: For all raycast, sweep and overlap queries the nearest eBLOCK type hit will always be returned in <a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_hit_callback_1a63b2851eaf99b190fc468e00e8d1e55d"><span class="std std-ref">PxHitCallback::block</span></a> member.</p></li>
+<li><p>eTOUCH: Whenever a raycast, sweep or overlap query was called with non-zero <a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_hit_callback_1a549f6828e98c9aeaee9012defa100f74"><span class="std std-ref">PxHitCallback::nbTouches</span></a> and <a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_hit_callback_1aa3fa478af9db3e043a540fca72a2f468"><span class="std std-ref">PxHitCallback::touches</span></a> parameters, eTOUCH type hits that are closer or same distance (touchDistance &lt;= blockDistance condition) as the globally nearest eBLOCK type hit, will be reported.</p></li>
+<li><p>For example, to record all hits from a raycast query, always return eTOUCH.</p></li>
+</ul>
+</p>
+<p>All hits in overlap() queries are treated as if the intersection distance were zero. This means the hits are unsorted and all eTOUCH hits are recorded by the callback even if an eBLOCK overlap hit was encountered. Even though all overlap() blocking hits have zero length, only one (arbitrary) eBLOCK overlap hit is recorded in <a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_hit_callback_1a63b2851eaf99b190fc468e00e8d1e55d"><span class="std std-ref">PxHitCallback::block</span></a>. All overlap() eTOUCH type hits are reported (zero touchDistance &lt;= zero blockDistance condition).</p>
+<p>For raycast/sweep/overlap calls with zero touch buffer or <a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_hit_callback_1a549f6828e98c9aeaee9012defa100f74"><span class="std std-ref">PxHitCallback::nbTouches</span></a> member, only the closest hit of type eBLOCK is returned. All eTOUCH hits are discarded.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback_1a227beae6749182b04ae18728c1aecd26"><span class="std std-ref">PxQueryFilterCallback.preFilter</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback_1abd6809d1dbe8d0f8bc55136a37f42b29"><span class="std std-ref">PxQueryFilterCallback.postFilter</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"><span class="std std-ref">PxScene.raycast</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a9384aae12d3ef33f4db300cfe0c91c6a"><span class="std std-ref">PxScene.sweep</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene.overlap</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxQueryHitType4EnumE">
+<span id="_CPPv3N14PxQueryHitType4EnumE"></span><span id="_CPPv2N14PxQueryHitType4EnumE"></span><span class="target" id="struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N14PxQueryHitType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxQueryHitType4Enum5eNONEE">
+<span id="_CPPv3N14PxQueryHitType4Enum5eNONEE"></span><span id="_CPPv2N14PxQueryHitType4Enum5eNONEE"></span><span class="target" id="struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3a7e26b51ca324ac45d44d4b70203a2996"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNONE</span></span></span><a class="headerlink" href="#_CPPv4N14PxQueryHitType4Enum5eNONEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>the query should ignore this shape </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxQueryHitType4Enum6eTOUCHE">
+<span id="_CPPv3N14PxQueryHitType4Enum6eTOUCHE"></span><span id="_CPPv2N14PxQueryHitType4Enum6eTOUCHE"></span><span class="target" id="struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3aac7ebce08c20ff88ea4328035daa2498"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTOUCH</span></span></span><a class="headerlink" href="#_CPPv4N14PxQueryHitType4Enum6eTOUCHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a hit on the shape touches the intersection geometry of the query but does not block it </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxQueryHitType4Enum6eBLOCKE">
+<span id="_CPPv3N14PxQueryHitType4Enum6eBLOCKE"></span><span id="_CPPv2N14PxQueryHitType4Enum6eBLOCKE"></span><span class="target" id="struct_px_query_hit_type_1acab1ef408184995d169330ed689b79e3a60dc59a348d85c101747ed45d9b20750"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBLOCK</span></span></span><a class="headerlink" href="#_CPPv4N14PxQueryHitType4Enum6eBLOCKE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>a hit on the shape blocks the query (does not block overlap queries) </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

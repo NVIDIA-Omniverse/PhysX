@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMat33Padded &mdash; physx 5.1.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMat33Padded</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmat33padded">
+<span id="exhale-class-class-px-mat33-padded"></span><h1>PxMat33Padded<a class="headerlink" href="#pxmat33padded" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxSIMDHelpers.h.html#file-include-foundation-pxsimdhelpers-h"><span class="std std-ref">include/foundation/PxSIMDHelpers.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxMat33T&lt;</span> <span class="pre">float</span> <span class="pre">&gt;</span></code> (<a class="reference internal" href="class_px_mat33_t.html#exhale-class-class-px-mat33-t"><span class="std std-ref">PxMat33T</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxMat33Padded">
+<span id="_CPPv313PxMat33Padded"></span><span id="_CPPv213PxMat33Padded"></span><span id="PxMat33Padded"></span><span class="target" id="class_px_mat33_padded"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMat33Padded</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv413PxMat33Padded" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A padded version of PxMat33, to safely load its data using SIMD. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded13PxMat33PaddedERK6PxQuat">
+<span id="_CPPv3N13PxMat33Padded13PxMat33PaddedERK6PxQuat"></span><span id="_CPPv2N13PxMat33Padded13PxMat33PaddedERK6PxQuat"></span><span id="PxMat33Padded::PxMat33Padded__PxQuatCR"></span><span class="target" id="class_px_mat33_padded_1a868950892f803f951eaee5b348f85075"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMat33Padded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33Padded13PxMat33PaddedERK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedD0Ev">
+<span id="_CPPv3N13PxMat33PaddedD0Ev"></span><span id="_CPPv2N13PxMat33PaddedD0Ev"></span><span id="PxMat33Padded::~PxMat33Padded"></span><span class="target" id="class_px_mat33_padded_1a8fcd352a939ec16d1278ea6cedc3d652"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxMat33Padded</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedaSERK7PxMat33">
+<span id="_CPPv3N13PxMat33PaddedaSERK7PxMat33"></span><span id="_CPPv2N13PxMat33PaddedaSERK7PxMat33"></span><span id="PxMat33Padded::assign-operator__PxMat33CR"></span><span class="target" id="class_px_mat33_padded_1ad36654dcbc44a67058ba0c6abf279576"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedaSERK7PxMat33" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedeqERK8PxMat33T">
+<span id="_CPPv3NK13PxMat33PaddedeqERK8PxMat33T"></span><span id="_CPPv2NK13PxMat33PaddedeqERK8PxMat33T"></span><span id="PxMat33Padded::eq-operator__PxMat33TCRC"></span><span class="target" id="class_px_mat33_t_1a9c77f942b53194c5bc754651c7515c9c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">m</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedeqERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the two matrices are exactly equal </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded12getTransposeEv">
+<span id="_CPPv3NK13PxMat33Padded12getTransposeEv"></span><span id="_CPPv2NK13PxMat33Padded12getTransposeEv"></span><span id="PxMat33Padded::getTransposeC"></span><span class="target" id="class_px_mat33_t_1a7eb04a3048f91585825ee9438744819b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTranspose</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded12getTransposeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get transposed matrix. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded10getInverseEv">
+<span id="_CPPv3NK13PxMat33Padded10getInverseEv"></span><span id="_CPPv2NK13PxMat33Padded10getInverseEv"></span><span id="PxMat33Padded::getInverseC"></span><span class="target" id="class_px_mat33_t_1a6375d55cd9e43a884bf58fae9d06fac6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInverse</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded10getInverseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the real inverse. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded14getDeterminantEv">
+<span id="_CPPv3NK13PxMat33Padded14getDeterminantEv"></span><span id="_CPPv2NK13PxMat33Padded14getDeterminantEv"></span><span id="PxMat33Padded::getDeterminantC"></span><span class="target" id="class_px_mat33_t_1a81a48234446bcb7340bd9d31ba79bac4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDeterminant</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded14getDeterminantEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get determinant. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedmiEv">
+<span id="_CPPv3NK13PxMat33PaddedmiEv"></span><span id="_CPPv2NK13PxMat33PaddedmiEv"></span><span id="PxMat33Padded::sub-operatorC"></span><span class="target" id="class_px_mat33_t_1a24a3bc6b2de8f3f9ef0bf1c9d10d8625"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedmiEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Unary minus. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedmiERK8PxMat33T">
+<span id="_CPPv3NK13PxMat33PaddedmiERK8PxMat33T"></span><span id="_CPPv2NK13PxMat33PaddedmiERK8PxMat33T"></span><span id="PxMat33Padded::sub-operator__PxMat33TCRC"></span><span class="target" id="class_px_mat33_t_1afb5e9af388706dd75b847ad4bab982cc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedmiERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Subtract. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedplERK8PxMat33T">
+<span id="_CPPv3NK13PxMat33PaddedplERK8PxMat33T"></span><span id="_CPPv2NK13PxMat33PaddedplERK8PxMat33T"></span><span id="PxMat33Padded::add-operator__PxMat33TCRC"></span><span class="target" id="class_px_mat33_t_1a4e7572001d809abeba95bbcb2567a7ff"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedplERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedmlEf">
+<span id="_CPPv3NK13PxMat33PaddedmlEf"></span><span id="_CPPv2NK13PxMat33PaddedmlEf"></span><span id="PxMat33Padded::mul-operator__floatC"></span><span class="target" id="class_px_mat33_t_1a082c59cbecdf47bcc87749b32503efd2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">scalar</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedmlEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scalar multiplication. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedmlERK7PxVec3TIfE">
+<span id="_CPPv3NK13PxMat33PaddedmlERK7PxVec3TIfE"></span><span id="_CPPv2NK13PxMat33PaddedmlERK7PxVec3TIfE"></span><span id="PxMat33Padded::mul-operator__PxVec3T:float:CRC"></span><span class="target" id="class_px_mat33_t_1afc947032306b2545512290b04d46695e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedmlERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Matrix vector multiplication (returns ‘this-&gt;transform(vec)’) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedmlERK8PxMat33T">
+<span id="_CPPv3NK13PxMat33PaddedmlERK8PxMat33T"></span><span id="_CPPv2NK13PxMat33PaddedmlERK8PxMat33T"></span><span id="PxMat33Padded::mul-operator__PxMat33TCRC"></span><span class="target" id="class_px_mat33_t_1a3b1792bf047f712703c0ebf4420b1aa3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedmlERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Matrix multiplication. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedpLERK8PxMat33T">
+<span id="_CPPv3N13PxMat33PaddedpLERK8PxMat33T"></span><span id="_CPPv2N13PxMat33PaddedpLERK8PxMat33T"></span><span id="PxMat33Padded::add-assign-operator__PxMat33TCR"></span><span class="target" id="class_px_mat33_t_1a7fc3911693321ae6ef52e8d37e9cc768"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedpLERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Equals-add. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedmIERK8PxMat33T">
+<span id="_CPPv3N13PxMat33PaddedmIERK8PxMat33T"></span><span id="_CPPv2N13PxMat33PaddedmIERK8PxMat33T"></span><span id="PxMat33Padded::sub-assign-operator__PxMat33TCR"></span><span class="target" id="class_px_mat33_t_1ac742614f49e15150516a4ada47257546"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">-=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedmIERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Equals-sub. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedmLEf">
+<span id="_CPPv3N13PxMat33PaddedmLEf"></span><span id="_CPPv2N13PxMat33PaddedmLEf"></span><span id="PxMat33Padded::mul-assign-operator__float"></span><span class="target" id="class_px_mat33_t_1a0179dc0babc4e590fc13e735b34d1a2c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">scalar</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedmLEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Equals scalar multiplication. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedmLERK8PxMat33T">
+<span id="_CPPv3N13PxMat33PaddedmLERK8PxMat33T"></span><span id="_CPPv2N13PxMat33PaddedmLERK8PxMat33T"></span><span id="PxMat33Padded::mul-assign-operator__PxMat33TCR"></span><span class="target" id="class_px_mat33_t_1af15496fcc7fb723ebd325627d277f1c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedmLERK8PxMat33T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Equals matrix multiplication. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedclE5PxU325PxU32">
+<span id="_CPPv3NK13PxMat33PaddedclE5PxU325PxU32"></span><span id="_CPPv2NK13PxMat33PaddedclE5PxU325PxU32"></span><span id="PxMat33Padded::call-operator__PxU32.PxU32C"></span><span class="target" id="class_px_mat33_t_1a645c331e4ab80ffaee20222b6f76c2ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">row</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">col</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedclE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Element access, mathematical way! </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedclE5PxU325PxU32">
+<span id="_CPPv3N13PxMat33PaddedclE5PxU325PxU32"></span><span id="_CPPv2N13PxMat33PaddedclE5PxU325PxU32"></span><span id="PxMat33Padded::call-operator__PxU32.PxU32"></span><span class="target" id="class_px_mat33_t_1a783b765019f2aa0ec78e206e1bcf23e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">row</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">col</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedclE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Element access, mathematical way! </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded9transformERK7PxVec3TIfE">
+<span id="_CPPv3NK13PxMat33Padded9transformERK7PxVec3TIfE"></span><span id="_CPPv2NK13PxMat33Padded9transformERK7PxVec3TIfE"></span><span id="PxMat33Padded::transform__PxVec3T:float:CRC"></span><span class="target" id="class_px_mat33_t_1a4eb896eaaf9597a06d270170f67b41c8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded9transformERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform vector by matrix, equal to v’ = M*v. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded18transformTransposeERK7PxVec3TIfE">
+<span id="_CPPv3NK13PxMat33Padded18transformTransposeERK7PxVec3TIfE"></span><span id="_CPPv2NK13PxMat33Padded18transformTransposeERK7PxVec3TIfE"></span><span id="PxMat33Padded::transformTranspose__PxVec3T:float:CRC"></span><span class="target" id="class_px_mat33_t_1ad69fc22b265dca66a694022aca69ab2f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformTranspose</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded18transformTransposeERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform vector by matrix transpose, v’ = M^t*v. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33Padded5frontEv">
+<span id="_CPPv3NK13PxMat33Padded5frontEv"></span><span id="_CPPv2NK13PxMat33Padded5frontEv"></span><span id="PxMat33Padded::frontC"></span><span class="target" id="class_px_mat33_t_1af1db398e329a2189107b9d1408b897b3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33Padded5frontEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33PaddedixE5PxU32">
+<span id="_CPPv3N13PxMat33PaddedixE5PxU32"></span><span id="_CPPv2N13PxMat33PaddedixE5PxU32"></span><span id="PxMat33Padded::subscript-operator__PxU32"></span><span class="target" id="class_px_mat33_t_1aaf9ad0b28603451f4788d0a261c15e60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">num</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33PaddedixE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxMat33PaddedixE5PxU32">
+<span id="_CPPv3NK13PxMat33PaddedixE5PxU32"></span><span id="_CPPv2NK13PxMat33PaddedixE5PxU32"></span><span id="PxMat33Padded::subscript-operator__PxU32C"></span><span class="target" id="class_px_mat33_t_1a7b04dba6ea9e4f9385d1a6a9466d2588"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">num</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxMat33PaddedixE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded7paddingE">
+<span id="_CPPv3N13PxMat33Padded7paddingE"></span><span id="_CPPv2N13PxMat33Padded7paddingE"></span><span id="PxMat33Padded::padding__PxU32"></span><span class="target" id="class_px_mat33_padded_1addf704c2999e346ab61dc4a5184b3150"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">padding</span></span></span><a class="headerlink" href="#_CPPv4N13PxMat33Padded7paddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded7column0E">
+<span id="_CPPv3N13PxMat33Padded7column0E"></span><span id="_CPPv2N13PxMat33Padded7column0E"></span><span id="PxMat33Padded::column0__PxVec3T:float:"></span><span class="target" id="class_px_mat33_t_1a3f1ecbcedcb887ffc8845ee6f73b1f50"></span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">column0</span></span></span><a class="headerlink" href="#_CPPv4N13PxMat33Padded7column0E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded7column1E">
+<span id="_CPPv3N13PxMat33Padded7column1E"></span><span id="_CPPv2N13PxMat33Padded7column1E"></span><span id="PxMat33Padded::column1__PxVec3T:float:"></span><span class="target" id="class_px_mat33_t_1afa35d1e8d1f47f5af83edd78743fdd9a"></span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">column1</span></span></span><a class="headerlink" href="#_CPPv4N13PxMat33Padded7column1E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded7column2E">
+<span id="_CPPv3N13PxMat33Padded7column2E"></span><span id="_CPPv2N13PxMat33Padded7column2E"></span><span id="PxMat33Padded::column2__PxVec3T:float:"></span><span class="target" id="class_px_mat33_t_1a239f94df0c39857243a02b7de8e4b744"></span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">column2</span></span></span><a class="headerlink" href="#_CPPv4N13PxMat33Padded7column2E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded14createDiagonalERK7PxVec3TIfE">
+<span id="_CPPv3N13PxMat33Padded14createDiagonalERK7PxVec3TIfE"></span><span id="_CPPv2N13PxMat33Padded14createDiagonalERK7PxVec3TIfE"></span><span id="PxMat33Padded::createDiagonal__PxVec3T:float:CR"></span><span class="target" id="class_px_mat33_t_1a0543b633d1eaf4fdef86bf24c155e874"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">createDiagonal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">d</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33Padded14createDiagonalERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Construct from diagonal, off-diagonals are zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxMat33Padded5outerERK7PxVec3TIfERK7PxVec3TIfE">
+<span id="_CPPv3N13PxMat33Padded5outerERK7PxVec3TIfERK7PxVec3TIfE"></span><span id="_CPPv2N13PxMat33Padded5outerERK7PxVec3TIfERK7PxVec3TIfE"></span><span id="PxMat33Padded::outer__PxVec3T:float:CR.PxVec3T:float:CR"></span><span class="target" id="class_px_mat33_t_1a7c1f5c3c7307181b8ed838c9deb53fbf"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mat33_t.html#_CPPv4I0E8PxMat33T" title="PxMat33T"><span class="n"><span class="pre">PxMat33T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">outer</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxMat33Padded5outerERK7PxVec3TIfERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the outer product of two vectors. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Feb 22, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
