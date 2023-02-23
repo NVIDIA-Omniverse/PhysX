@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvPreprocessor.h"
@@ -41,7 +41,7 @@
 #undef min
 #include <algorithm>
 
-using namespace physx;
+using namespace nvidia;
 
 
 namespace Nv

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -121,7 +121,7 @@ static void releaseVertexBuffer()
 
 static void renderSoftBodyGeometry(const PxTetrahedronMesh& mesh, const PxArray<PxVec4>& deformedPositionsInvMass)
 {
-	const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {1,3,2}, {1,2,3} };
+	const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {0,3,2}, {1,2,3} };
 
 	//Get the deformed vertices			
 	//const PxVec3* vertices = mesh.getVertices();
@@ -350,7 +350,7 @@ static void renderGeometry(const PxGeometry& geom)
 
 		case PxGeometryType::eTETRAHEDRONMESH: 
 		{
-			const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {1,3,2}, {1,2,3} };
+			const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {0,3,2}, {1,2,3} };
 
 			const PxTetrahedronMeshGeometry& tetGeom = static_cast<const PxTetrahedronMeshGeometry&>(geom);
 

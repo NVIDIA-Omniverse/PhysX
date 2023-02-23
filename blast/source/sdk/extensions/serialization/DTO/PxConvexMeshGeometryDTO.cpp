@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "PxConvexMeshGeometryDTO.h"
@@ -32,7 +32,7 @@
 #include "NvBlastExtKJPxOutputStream.h"
 #include "PxConvexMeshDesc.h"
 #include "NvBlastExtSerialization.h"
-#include "foundation/PxVec3.h"
+#include "PxVec3.h"
 #include <algorithm>
 #include <vector>
 #include "PxPhysics.h"

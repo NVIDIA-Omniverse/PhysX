@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -43,6 +43,12 @@
 #include <math.h>
 #if PX_VC
 #pragma warning(pop)
+#endif
+
+#if (PX_LINUX_FAMILY && !PX_ARM_FAMILY)
+// Force linking against nothing newer than glibc v2.17 to remain compatible with platforms with older glibc versions
+__asm__(".symver expf,expf@GLIBC_2.2.5");
+__asm__(".symver powf,powf@GLIBC_2.2.5");
 #endif
 
 #include <float.h>

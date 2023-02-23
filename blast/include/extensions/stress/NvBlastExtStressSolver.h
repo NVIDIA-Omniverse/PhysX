@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -121,7 +121,7 @@ public:
     /**
     Create a new ExtStressSolver.
 
-    \param[in]  family          The ExtPxFamily instance to calculate stress on.
+    \param[in]  family          The NvBlastFamily instance to calculate stress on.
     \param[in]  settings        The settings to be set on ExtStressSolver.
 
     \return the new ExtStressSolver if successful, NULL otherwise.

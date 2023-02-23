@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -49,7 +49,7 @@ Use this function when building an asset with NvBlastCreateAsset.
 
 \return the memory size (in bytes) required for the asset, or zero if desc is invalid.
 */
-NVBLAST_API size_t NvBlastGetAssetMemorySize(const NvBlastAssetDesc* desc, NvBlastLog logFn);
+NV_C_API size_t NvBlastGetAssetMemorySize(const NvBlastAssetDesc* desc, NvBlastLog logFn);
 
 /**
 Calculates the memory requirements for an asset based upon supplied sized data.
@@ -60,7 +60,7 @@ Used primarily with serialization.
 
 \return the memory size (in bytes) required for the asset, or zero if data is invalid.
 */
-NVBLAST_API size_t NvBlastGetAssetMemorySizeFromSizeData(const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
+NV_C_API size_t NvBlastGetAssetMemorySizeFromSizeData(const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
 
 /**
 Returns the number of bytes of scratch memory that the user must supply to NvBlastCreateAsset,
@@ -71,7 +71,7 @@ based upon the descriptor that will be passed into that function.
 
 \return the number of bytes of scratch memory required for a call to NvBlastCreateAsset with that descriptor.
 */
-NVBLAST_API size_t NvBlastGetRequiredScratchForCreateAsset(const NvBlastAssetDesc* desc, NvBlastLog logFn);
+NV_C_API size_t NvBlastGetRequiredScratchForCreateAsset(const NvBlastAssetDesc* desc, NvBlastLog logFn);
 
 
 /**
@@ -98,7 +98,7 @@ If chunks aren't arranged properly the function fails to create an asset.
 
 \return pointer to new NvBlastAsset (will be the same address as mem), or NULL if unsuccessful.
 */
-NVBLAST_API NvBlastAsset* NvBlastCreateAsset(void* mem, const NvBlastAssetDesc* desc, void* scratch, NvBlastLog logFn);
+NV_C_API NvBlastAsset* NvBlastCreateAsset(void* mem, const NvBlastAssetDesc* desc, void* scratch, NvBlastLog logFn);
 
 
 /**
@@ -110,7 +110,7 @@ Use this function when building a family with NvBlastAssetCreateFamily.
 
 \return the memory size (in bytes) required for the family, or zero if asset is invalid.
 */
-NVBLAST_API size_t NvBlastAssetGetFamilyMemorySize(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API size_t NvBlastAssetGetFamilyMemorySize(const NvBlastAsset* asset, NvBlastLog logFn);
 
 /**
 Calculates the memory requirements for a family based upon supplied sized data.
@@ -121,7 +121,7 @@ Used primarily with serialization.
 
 \return the memory size (in bytes) required for the family, or zero if data is invalid.
 */
-NVBLAST_API size_t NvBlastAssetGetFamilyMemorySizeFromSizeData(const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
+NV_C_API size_t NvBlastAssetGetFamilyMemorySizeFromSizeData(const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
 
 
 /**
@@ -131,7 +131,7 @@ Fill out the size data from the provided asset
 
 \return Filled out size data struct.
 */
-NVBLAST_API NvBlastAssetMemSizeData NvBlastAssetMemSizeDataFromAsset(const NvBlastAsset* asset);
+NV_C_API NvBlastAssetMemSizeData NvBlastAssetMemSizeDataFromAsset(const NvBlastAsset* asset);
 
 /**
 Family-building function.
@@ -145,7 +145,7 @@ of memory of at least the size given by NvBlastAssetGetFamilyMemorySize(asset, l
 
 \return the family.
 */
-NVBLAST_API NvBlastFamily* NvBlastAssetCreateFamily(void* mem, const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API NvBlastFamily* NvBlastAssetCreateFamily(void* mem, const NvBlastAsset* asset, NvBlastLog logFn);
 
 /**
 Family-building function.
@@ -159,7 +159,7 @@ of memory of at least the size given by NvBlastAssetGetFamilyMemorySize(sizeData
 
 \return the family.
 */
-NVBLAST_API NvBlastFamily* NvBlastAssetCreateFamilyFromSizeData(void* mem, const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
+NV_C_API NvBlastFamily* NvBlastAssetCreateFamilyFromSizeData(void* mem, const NvBlastAssetMemSizeData& sizeData, NvBlastLog logFn);
 
 
 /**
@@ -170,7 +170,7 @@ Retrieve the asset ID.
 
 \return the ID of the asset.
 */
-NVBLAST_API NvBlastID NvBlastAssetGetID(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API NvBlastID NvBlastAssetGetID(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -182,7 +182,7 @@ Set an asset's ID
 
 \return true iff the id is successfully set.
 */
-NVBLAST_API bool NvBlastAssetSetID(NvBlastAsset* asset, const NvBlastID* id, NvBlastLog logFn);
+NV_C_API bool NvBlastAssetSetID(NvBlastAsset* asset, const NvBlastID* id, NvBlastLog logFn);
 
 
 /**
@@ -193,7 +193,7 @@ Retrieve the data format version for the given asset
 
 \return the data format version (NvBlastAssetDataFormat).
 */
-NVBLAST_API uint32_t NvBlastAssetGetFormatVersion(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetFormatVersion(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -204,7 +204,7 @@ Retrieve the memory size (in bytes) of the given data asset
 
 \return the memory size of the asset (in bytes).
 */
-NVBLAST_API uint32_t NvBlastAssetGetSize(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetSize(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -215,7 +215,7 @@ Get the number of chunks in the given asset.
 
 \return the number of chunks in the asset.
 */
-NVBLAST_API uint32_t NvBlastAssetGetChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -229,7 +229,7 @@ and this function will return NvBlastSupportGraph::nodeCount - 1.
 
 \return the number of chunks in the asset.
 */
-NVBLAST_API uint32_t NvBlastAssetGetSupportChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetSupportChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -240,7 +240,7 @@ Get the number of leaf chunks in the given asset.
 
 \return the number of leaf chunks in the asset.
 */
-NVBLAST_API uint32_t NvBlastAssetGetLeafChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetLeafChunkCount(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -253,7 +253,7 @@ chunks.
 
 \return the first subsupport chunk index in the asset.
 */
-NVBLAST_API uint32_t NvBlastAssetGetFirstSubsupportChunkIndex(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetFirstSubsupportChunkIndex(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -264,7 +264,7 @@ Get the number of bonds in the given asset.
 
 \return the number of bonds in the asset.
 */
-NVBLAST_API uint32_t NvBlastAssetGetBondCount(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetBondCount(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -275,7 +275,7 @@ Access the support graph for the given asset.
 
 \return a struct of support graph for the given asset.
 */
-NVBLAST_API const NvBlastSupportGraph NvBlastAssetGetSupportGraph(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API const NvBlastSupportGraph NvBlastAssetGetSupportGraph(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -288,7 +288,7 @@ Non-support chunks are mapped to the invalid index 0xFFFFFFFF.
 
 \return an array of uint32_t values defining the map, of size NvBlastAssetGetChunkCount(asset, logFn).
 */
-NVBLAST_API const uint32_t* NvBlastAssetGetChunkToGraphNodeMap(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API const uint32_t* NvBlastAssetGetChunkToGraphNodeMap(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -299,7 +299,7 @@ Access an array of chunks of the given asset.
 
 \return a pointer to an array of chunks of the asset.
 */
-NVBLAST_API const NvBlastChunk* NvBlastAssetGetChunks(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API const NvBlastChunk* NvBlastAssetGetChunks(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -310,7 +310,7 @@ Access an array of bonds of the given asset.
 
 \return a pointer to an array of bonds of the asset.
 */
-NVBLAST_API const NvBlastBond* NvBlastAssetGetBonds(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API const NvBlastBond* NvBlastAssetGetBonds(const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -323,7 +323,7 @@ for actor serialization.
 
 \return the required buffer size in bytes.
 */
-NVBLAST_API uint32_t NvBlastAssetGetActorSerializationSizeUpperBound(const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastAssetGetActorSerializationSizeUpperBound(const NvBlastAsset* asset, NvBlastLog logFn);
 
 ///@} End NvBlastAsset functions
 
@@ -349,7 +349,7 @@ Chunk order depends on support coverage, so this function should be called befor
 
 \return true iff coverage was already exact.
 */
-NVBLAST_API bool NvBlastEnsureAssetExactSupportCoverage(NvBlastChunkDesc* chunkDescs, uint32_t chunkCount, void* scratch, NvBlastLog logFn);
+NV_C_API bool NvBlastEnsureAssetExactSupportCoverage(NvBlastChunkDesc* chunkDescs, uint32_t chunkCount, void* scratch, NvBlastLog logFn);
 
 
 /**
@@ -375,7 +375,7 @@ Iff chunks are already ordered correctly, function returns 'true' and identity c
 
 \return true iff the chunks did not require reordering (chunkReorderMap is the identity map).
 */
-NVBLAST_API bool NvBlastBuildAssetDescChunkReorderMap(uint32_t* chunkReorderMap, const NvBlastChunkDesc* chunkDescs, uint32_t chunkCount, void* scratch, NvBlastLog logFn);
+NV_C_API bool NvBlastBuildAssetDescChunkReorderMap(uint32_t* chunkReorderMap, const NvBlastChunkDesc* chunkDescs, uint32_t chunkCount, void* scratch, NvBlastLog logFn);
 
 
 /**
@@ -395,7 +395,7 @@ with new indices. Bonds are kept in the same order, but their 'chunkIndices' fie
 \param[in]  keepBondNormalChunkOrder    If true, bond normals will be flipped if their chunk index order was reveresed by the reorder map.
 \param[in]  logFn                       User-supplied message function (see NvBlastLog definition).  May be NULL.
 */
-NVBLAST_API void NvBlastApplyAssetDescChunkReorderMap
+NV_C_API void NvBlastApplyAssetDescChunkReorderMap
 (
     NvBlastChunkDesc* reorderedChunkDescs,
     const NvBlastChunkDesc* chunkDescs,
@@ -427,7 +427,7 @@ This overload of function reorders chunks in place.
 \param[in]  scratch                     User-supplied scratch storage, must point to chunkCount * sizeof(NvBlastChunkDesc) valid bytes of memory.
 \param[in]  logFn                       User-supplied message function (see NvBlastLog definition).  May be NULL.
 */
-NVBLAST_API void NvBlastApplyAssetDescChunkReorderMapInPlace
+NV_C_API void NvBlastApplyAssetDescChunkReorderMapInPlace
 (
     NvBlastChunkDesc* chunkDescs,
     uint32_t chunkCount,
@@ -456,7 +456,7 @@ Function basically calls NvBlastBuildAssetDescChunkReorderMap and NvBlastApplyAs
 
 \return true iff the chunks did not require reordering (chunkReorderMap is the identity map).
 */
-NVBLAST_API bool NvBlastReorderAssetDescChunks
+NV_C_API bool NvBlastReorderAssetDescChunks
 (
     NvBlastChunkDesc* chunkDescs,
     uint32_t chunkCount,
@@ -484,7 +484,7 @@ Retrieve the data format version for the given family.
 
 \return the family format version.
 */
-NVBLAST_API uint32_t NvBlastFamilyGetFormatVersion(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastFamilyGetFormatVersion(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -495,7 +495,7 @@ Retrieve the asset of the given family.
 
 \return pointer to the asset associated with the family.
 */
-NVBLAST_API const NvBlastAsset* NvBlastFamilyGetAsset(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API const NvBlastAsset* NvBlastFamilyGetAsset(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -505,7 +505,7 @@ Set asset to the family. It should be the same asset as the one family was creat
 \param[in] asset    Asset to instance.
 \param[in] logFn    User-supplied message function (see NvBlastLog definition).  May be NULL.
 */
-NVBLAST_API void NvBlastFamilySetAsset(NvBlastFamily* family, const NvBlastAsset* asset, NvBlastLog logFn);
+NV_C_API void NvBlastFamilySetAsset(NvBlastFamily* family, const NvBlastAsset* asset, NvBlastLog logFn);
 
 
 /**
@@ -516,7 +516,7 @@ Retrieve the size (in bytes) of the given family.
 
 \return the size of the family (in bytes).
 */
-NVBLAST_API uint32_t NvBlastFamilyGetSize(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastFamilyGetSize(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -527,7 +527,7 @@ Retrieve the asset ID of the given family.
 
 \return the ID of the asset associated with the family.
 */
-NVBLAST_API NvBlastID NvBlastFamilyGetAssetID(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API NvBlastID NvBlastFamilyGetAssetID(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -538,7 +538,7 @@ Returns the number of bytes of scratch memory that the user must supply to NvBla
 
 \return the number of bytes of scratch memory required for a call to NvBlastFamilyCreateFirstActor.
 */
-NVBLAST_API size_t NvBlastFamilyGetRequiredScratchForCreateFirstActor(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API size_t NvBlastFamilyGetRequiredScratchForCreateFirstActor(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -551,7 +551,7 @@ Instance the family's asset into a new, unfractured actor.
 
 \return pointer to new NvBlastActor if successful (the actor was successfully inserted into the family), or NULL if unsuccessful.
 */
-NVBLAST_API NvBlastActor* NvBlastFamilyCreateFirstActor(NvBlastFamily* family, const NvBlastActorDesc* desc, void* scratch, NvBlastLog logFn);
+NV_C_API NvBlastActor* NvBlastFamilyCreateFirstActor(NvBlastFamily* family, const NvBlastActorDesc* desc, void* scratch, NvBlastLog logFn);
 
 
 /**
@@ -562,7 +562,7 @@ Retrieve the number of active actors associated with the given family.
 
 \return the number of active actors in the family.
 */
-NVBLAST_API uint32_t NvBlastFamilyGetActorCount(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastFamilyGetActorCount(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -576,7 +576,7 @@ IDs with the actors already present in the family.
 
 \return the deserialized actor if successful, NULL otherwise.
 */
-NVBLAST_API NvBlastActor* NvBlastFamilyDeserializeActor(NvBlastFamily* family, const void* buffer, NvBlastLog logFn);
+NV_C_API NvBlastActor* NvBlastFamilyDeserializeActor(NvBlastFamily* family, const void* buffer, NvBlastLog logFn);
 
 
 /**
@@ -589,7 +589,7 @@ Retrieve the active actors associated with the given family.
 
 \return the number of actor pointers written to actors.  This will not exceed actorsSize.
 */
-NVBLAST_API uint32_t NvBlastFamilyGetActors(NvBlastActor** actors, uint32_t actorsSize, const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastFamilyGetActors(NvBlastActor** actors, uint32_t actorsSize, const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -601,7 +601,7 @@ Retrieve the actor associated with the given actor index.
 
 \return pointer to actor associated with given actor index.  NULL if there is no such actor or it is inactive.
 */
-NVBLAST_API NvBlastActor* NvBlastFamilyGetActorByIndex(const NvBlastFamily* family, uint32_t actorIndex, NvBlastLog logFn);
+NV_C_API NvBlastActor* NvBlastFamilyGetActorByIndex(const NvBlastFamily* family, uint32_t actorIndex, NvBlastLog logFn);
 
 /**
 Retrieve the actor associated with the given chunk.
@@ -612,7 +612,7 @@ Retrieve the actor associated with the given chunk.
 
 \return pointer to actor associated with given chunk.  NULL if there is no such actor.
 */
-NVBLAST_API NvBlastActor* NvBlastFamilyGetChunkActor(const NvBlastFamily* family, uint32_t chunkIndex, NvBlastLog logFn);
+NV_C_API NvBlastActor* NvBlastFamilyGetChunkActor(const NvBlastFamily* family, uint32_t chunkIndex, NvBlastLog logFn);
 
 
 /**
@@ -624,7 +624,7 @@ NOTE: the returned array size equals the number of support chunks in the asset.
 
 \return pointer to actor associated with given chunk.  NULL if there is no such actor.
 */
-NVBLAST_API uint32_t* NvBlastFamilyGetChunkActorIndices(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t* NvBlastFamilyGetChunkActorIndices(const NvBlastFamily* family, NvBlastLog logFn);
 
 
 /**
@@ -635,7 +635,7 @@ Retrieve the max active actor count family could have.
 
 \return the max number of active actors family could have.
 */
-NVBLAST_API uint32_t NvBlastFamilyGetMaxActorCount(const NvBlastFamily* family, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastFamilyGetMaxActorCount(const NvBlastFamily* family, NvBlastLog logFn);
 
 ///@} End NvBlastFamily functions
 
@@ -653,7 +653,7 @@ Get the number of visible chunks for this actor.  May be used in conjunction wit
 
 \return the number of visible chunk indices for the actor.
 */
-NVBLAST_API uint32_t NvBlastActorGetVisibleChunkCount(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetVisibleChunkCount(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -666,7 +666,7 @@ Retrieve a list of visible chunk indices for the actor into the given array.
 
 \return the number of indices written to visibleChunkIndices.  This will not exceed visibleChunkIndicesSize.
 */
-NVBLAST_API uint32_t NvBlastActorGetVisibleChunkIndices(uint32_t* visibleChunkIndices, uint32_t visibleChunkIndicesSize, const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetVisibleChunkIndices(uint32_t* visibleChunkIndices, uint32_t visibleChunkIndicesSize, const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -677,7 +677,7 @@ Get the number of graph nodes for this actor.  May be used in conjunction with N
 
 \return the number of graph node indices for the actor.
 */
-NVBLAST_API uint32_t NvBlastActorGetGraphNodeCount(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetGraphNodeCount(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -690,7 +690,7 @@ Retrieve a list of graph node indices for the actor into the given array.
 
 \return the number of indices written to graphNodeIndices.  This will not exceed graphNodeIndicesSize.
 */
-NVBLAST_API uint32_t NvBlastActorGetGraphNodeIndices(uint32_t* graphNodeIndices, uint32_t graphNodeIndicesSize, const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetGraphNodeIndices(uint32_t* graphNodeIndices, uint32_t graphNodeIndicesSize, const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -713,7 +713,7 @@ If the input actor is invalid, NULL will be returned.
 
 \return the array of bond healths for the actor's instance family, or NULL if the actor is invalid.
 */
-NVBLAST_API const float* NvBlastActorGetBondHealths(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API const float* NvBlastActorGetBondHealths(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -736,7 +736,7 @@ If the input actor is invalid, NULL will be returned.
 
 \return the array of bond healths for the actor's instance family, or NULL if the actor is invalid.
 */
-NVBLAST_API const float* NvBlastActorGetCachedBondHeaths(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API const float* NvBlastActorGetCachedBondHeaths(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -748,7 +748,7 @@ Tell the system to cache the bond health for the given bond index.
 
 \return true if value was cached, false otherwise
  */
-NVBLAST_API bool NvBlastActorCacheBondHeath(const NvBlastActor* actor, uint32_t bondIndex, NvBlastLog logFn);
+NV_C_API bool NvBlastActorCacheBondHeath(const NvBlastActor* actor, uint32_t bondIndex, NvBlastLog logFn);
 
 
 /**
@@ -760,7 +760,7 @@ on the buffer size needed for any actor instanced from an NvBlastAsset, use NvBl
 
 \return the required buffer size in bytes.
 */
-NVBLAST_API uint32_t NvBlastActorGetSerializationSize(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetSerializationSize(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -773,7 +773,7 @@ Serialize a single actor to a buffer.
 
 \return the number of bytes written to the buffer, or 0 if there is an error (such as an under-sized buffer).
 */
-NVBLAST_API uint32_t NvBlastActorSerialize(void* buffer, uint32_t bufferSize, const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorSerialize(void* buffer, uint32_t bufferSize, const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -784,7 +784,7 @@ Access to an actor's family.
 
 \return the family with which the actor is associated.
 */
-NVBLAST_API NvBlastFamily* NvBlastActorGetFamily(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API NvBlastFamily* NvBlastActorGetFamily(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -795,7 +795,7 @@ Access to an actor's internal index.
 
 \return actor's internal index in family.
 */
-NVBLAST_API uint32_t NvBlastActorGetIndex(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetIndex(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -806,7 +806,7 @@ Deactivate an actor within its family.  Conceptually this is "destroying" the ac
 
 \return true iff successful (actor was active).
 */
-NVBLAST_API bool NvBlastActorDeactivate(NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API bool NvBlastActorDeactivate(NvBlastActor* actor, NvBlastLog logFn);
 
 ///@} End NvBlastActor accessor, serialization, and deactivation functions
 
@@ -838,7 +838,7 @@ As output:
     Chunks and Bond userdata reflect the respective userdata set during asset initialization, where implemented by the material function.
     Health values denote how much damage is to be applied.
 */
-NVBLAST_API void NvBlastActorGenerateFracture
+NV_C_API void NvBlastActorGenerateFracture
 (
     NvBlastFractureBuffers* commandBuffers,
     const NvBlastActor* actor,
@@ -879,7 +879,7 @@ eventBuffers as output:
 
 commands and eventBuffers may point to the same memory.
 */
-NVBLAST_API void NvBlastActorApplyFracture
+NV_C_API void NvBlastActorApplyFracture
 (
     NvBlastFractureBuffers* eventBuffers,
     NvBlastActor* actor,
@@ -902,7 +902,7 @@ Releases the oldActor and creates its children newActors if necessary.
 \return 1..n:   new actors were created
 \return 0:      oldActor is unchanged
 */
-NVBLAST_API uint32_t NvBlastActorSplit
+NV_C_API uint32_t NvBlastActorSplit
 (
     NvBlastActorSplitEvent* result, 
     NvBlastActor* actor,
@@ -922,7 +922,7 @@ based upon the actor that will be passed into that function.
 
 \return the number of bytes of scratch memory required for a call to NvBlastActorSplit with that actor.
 */
-NVBLAST_API size_t NvBlastActorGetRequiredScratchForSplit(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API size_t NvBlastActorGetRequiredScratchForSplit(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -934,7 +934,7 @@ value can't exceed chunk count.
 
 \return the upper-bound number of actors which can be created by calling NvBlastActorSplit with that actor.
 */
-NVBLAST_API uint32_t NvBlastActorGetMaxActorCountForSplit(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API uint32_t NvBlastActorGetMaxActorCountForSplit(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -945,7 +945,7 @@ Determines if the actor can fracture further.
 
 \return true if any result can be expected from fracturing the actor. false if no further change to the actor is possible.
 */
-NVBLAST_API bool NvBlastActorCanFracture(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API bool NvBlastActorCanFracture(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
@@ -957,13 +957,13 @@ If actor is not damaged calling NvBlastActorSplit will make no effect.
 
 \return true iff split call is required for this actor.
 */
-NVBLAST_API bool NvBlastActorIsSplitRequired(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API bool NvBlastActorIsSplitRequired(const NvBlastActor* actor, NvBlastLog logFn);
 
 
 /**
 \return true iff this actor contains the "external" support graph node, created when a bond contains the UINT32_MAX value for one of their chunkIndices.
 */
-NVBLAST_API bool NvBlastActorHasExternalBonds(const NvBlastActor* actor, NvBlastLog logFn);
+NV_C_API bool NvBlastActorHasExternalBonds(const NvBlastActor* actor, NvBlastLog logFn);
 
 // DEPRICATED: remove on next major version bump
 #define NvBlastActorIsBoundToWorld NvBlastActorHasExternalBonds
@@ -981,7 +981,7 @@ Resets all values in the given NvBlastTimers struct to zero.
 
 \param[in]  timers  The NvBlastTimers to set to zero.
 */
-NVBLAST_API void NvBlastTimersReset(NvBlastTimers* timers);
+NV_C_API void NvBlastTimersReset(NvBlastTimers* timers);
 
 
 /**
@@ -991,7 +991,7 @@ Convert a tick value from NvBlastTimers to seconds.
 
 \return the seconds correposnding to the input tick value.
 */
-NVBLAST_API double NvBlastTicksToSeconds(int64_t ticks);
+NV_C_API double NvBlastTicksToSeconds(int64_t ticks);
 
 ///@} End NvBlastTimers functions and helpers
 

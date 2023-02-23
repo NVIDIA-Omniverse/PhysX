@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -119,7 +119,7 @@ namespace Nv
             virtual void release() = 0;
         };
 
-        NVBLAST_API void savePatternToObj(DamagePattern* pattern);
+        NV_C_API void savePatternToObj(DamagePattern* pattern);
         
     } // namespace Blast
 } // namespace Nv

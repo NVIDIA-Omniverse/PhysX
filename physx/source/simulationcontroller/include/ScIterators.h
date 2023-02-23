@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
       
@@ -41,6 +41,7 @@ namespace Sc
 {
 	class ShapeSimBase;
 	class Interaction;
+	class ActorSim;
 	
 	struct Contact
 	{
@@ -70,8 +71,10 @@ namespace Sc
 			{
 			public:
 				Pair() : mIter(NULL, NULL, NULL, 0, 0) {}
-				Pair(const void*& contactPatches, const void*& contactPoints, const PxU32 /*contactDataSize*/, const PxReal*& forces, PxU32 numContacts, PxU32 numPatches, ShapeSimBase& shape0, ShapeSimBase& shape1);
+				Pair(const void*& contactPatches, const void*& contactPoints, const PxU32 /*contactDataSize*/, const PxReal*& forces, PxU32 numContacts, PxU32 numPatches, ShapeSimBase& shape0, ShapeSimBase& shape1, ActorSim* actor0, ActorSim* actor1);
 				Contact* getNextContact();
+				PxActor* getActor0() { return mActor0; }
+				PxActor* getActor1() { return mActor1; }
 
 			private:
 				PxU32						mIndex;
@@ -79,13 +82,19 @@ namespace Sc
 				PxContactStreamIterator		mIter;
 				const PxReal*				mForces;
 				Contact						mCurrentContact;
+				PxActor*					mActor0;
+				PxActor*					mActor1;
 			};
 
 			ContactIterator() {}
-			explicit ContactIterator(Interaction** first, Interaction** last, PxsContactManagerOutputIterator& outputs): mCurrent(first), mLast(last), mOffset(0), mOutputs(&outputs) {}
-			Pair* getNextPair();
-			Interaction* getCurrentInteraction() { return *mCurrent; }
-			
+			explicit ContactIterator(Interaction** first, Interaction** last, PxsContactManagerOutputIterator& outputs): mCurrent(first), mLast(last), mOffset(0), mOutputs(&outputs)
+			{
+				if (!mCurrent)
+				{
+					mLast = NULL;
+				}
+			}
+			Pair* getNextPair();			
 		private:
 			Interaction**					mCurrent;
 			Interaction**					mLast;

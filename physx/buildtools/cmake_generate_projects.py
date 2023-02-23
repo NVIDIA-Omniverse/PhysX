@@ -131,6 +131,10 @@ class CMakePreset:
                     print('VS16CL:' + os.environ['VS160CLPATH'])
                     outString = outString + ' -DCUDA_HOST_COMPILER=' + \
                         os.environ['VS160CLPATH']
+                if self.compiler == 'vc17':
+                    print('VS17CL:' + os.environ['VS170CLPATH'])
+                    outString = outString + ' -DCUDA_HOST_COMPILER=' + \
+                        os.environ['VS170CLPATH']
 
         return outString
 
@@ -142,14 +146,12 @@ class CMakePreset:
 
     def getPlatformCMakeParams(self):
         outString = ' '
-        if self.compiler == 'vc12':
-            outString = outString + '-G \"Visual Studio 12 2013\"'
-        elif self.compiler == 'vc14':
-            outString = outString + '-G \"Visual Studio 14 2015\"'
-        elif self.compiler == 'vc15':
+        if self.compiler == 'vc15':
             outString = outString + '-G \"Visual Studio 15 2017\"'
         elif self.compiler == 'vc16':
             outString = outString + '-G \"Visual Studio 16 2019\"'
+        elif self.compiler == 'vc17':
+            outString = outString + '-G \"Visual Studio 17 2022\"'
         elif self.compiler == 'xcode':
             outString = outString + '-G Xcode'
         elif self.targetPlatform == 'linux':
@@ -157,22 +159,10 @@ class CMakePreset:
         elif self.targetPlatform == 'linuxAarch64':
             outString = outString + '-G \"Unix Makefiles\"'
 
-        if self.targetPlatform == 'win32':
-            outString = outString + ' -AWin32'
-            outString = outString + ' -DTARGET_BUILD_PLATFORM=windows'
-            outString = outString + ' -DPX_OUTPUT_ARCH=x86'
-            return outString
-        elif self.targetPlatform == 'win64':
+        if self.targetPlatform == 'win64':
             outString = outString + ' -Ax64'
             outString = outString + ' -DTARGET_BUILD_PLATFORM=windows'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
-            return outString
-        elif self.targetPlatform == 'switch32':
-            outString = outString + ' -DTARGET_BUILD_PLATFORM=switch'
-            outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
-                os.environ['PM_CMakeModules_PATH'] + \
-                '/switch/NX32Toolchain.txt'
-            outString = outString + ' -DCMAKE_GENERATOR_PLATFORM=NX32'
             return outString
         elif self.targetPlatform == 'switch64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=switch'

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 // This warning arises when using some stl containers with older versions of VC
@@ -37,7 +37,7 @@
 #include "NvPreprocessor.h"
 #include "NvBlastExtAuthoringBooleanToolImpl.h"
 #include <NvBlastAssert.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 
 #include <math.h>
 #include <algorithm>
@@ -46,8 +46,8 @@
 #include <set>
 #include <vector>
 
-using physx::PxVec2;
-using physx::PxVec3;
+using nvidia::NvVec2;
+using nvidia::NvVec3;
 
 namespace Nv
 {
@@ -72,24 +72,24 @@ NV_FORCE_INLINE bool compareTwoFloats(float a, float b)
 {
     return std::abs(b - a) <= FLT_EPSILON * std::abs(b + a);
 }
-NV_FORCE_INLINE bool compareTwoVertices(const PxVec3& a, const PxVec3& b)
+NV_FORCE_INLINE bool compareTwoVertices(const NvVec3& a, const NvVec3& b)
 {
     return compareTwoFloats(a.x, b.x) && compareTwoFloats(a.y, b.y) && compareTwoFloats(a.z, b.z);
 }
-NV_FORCE_INLINE bool compareTwoVertices(const PxVec2& a, const PxVec2& b)
+NV_FORCE_INLINE bool compareTwoVertices(const NvVec2& a, const NvVec2& b)
 {
     return compareTwoFloats(a.x, b.x) && compareTwoFloats(a.y, b.y);
 }
 
-NV_FORCE_INLINE float getRotation(const PxVec2& a, const PxVec2& b)
+NV_FORCE_INLINE float getRotation(const NvVec2& a, const NvVec2& b)
 {
     return a.x * b.y - a.y * b.x;
 }
 
 NV_FORCE_INLINE bool pointInside(
-    const PxVec2& ba, const PxVec2& cb, const PxVec2& ac,
-    const PxVec2& a, const PxVec2& b, const PxVec2& c,
-    const PxVec2& pnt
+    const NvVec2& ba, const NvVec2& cb, const NvVec2& ac,
+    const NvVec2& a, const NvVec2& b, const NvVec2& c,
+    const NvVec2& pnt
 ) {
     // Co-positional verts are not considered inside because that would break the exterior of the facet
     if (compareTwoVertices(a, pnt) || compareTwoVertices(b, pnt) || compareTwoVertices(c, pnt))
@@ -145,14 +145,14 @@ static void updatePotentialEar(
         const Vertex pV = vert[adjVertInfo.prev];
         const Vertex nV = vert[adjVertInfo.next];
 
-        const PxVec2 cVp = getProjectedPoint(cV.p, dir);
-        const PxVec2 pVp = getProjectedPoint(pV.p, dir);
-        const PxVec2 nVp = getProjectedPoint(nV.p, dir);
+        const NvVec2 cVp = getProjectedPoint(cV.p, dir);
+        const NvVec2 pVp = getProjectedPoint(pV.p, dir);
+        const NvVec2 nVp = getProjectedPoint(nV.p, dir);
 
         // if there are no other verts inside, then it is a potential ear
-        const PxVec2 ba = (nVp - cVp).getNormalized();
-        const PxVec2 cb = (pVp - nVp).getNormalized();
-        const PxVec2 ac = (cVp - pVp).getNormalized();
+        const NvVec2 ba = (nVp - cVp).getNormalized();
+        const NvVec2 cb = (pVp - nVp).getNormalized();
+        const NvVec2 ac = (cVp - pVp).getNormalized();
         for (uint32_t vrt : reflexVerts)
         {
             // ignore reflex verts that are part of the tri being tested
@@ -161,7 +161,7 @@ static void updatePotentialEar(
                 continue;
             }
 
-            const PxVec2 pnt = getProjectedPoint(vert[vrt].p, dir);
+            const NvVec2 pnt = getProjectedPoint(vert[vrt].p, dir);
             if (pointInside(ba, cb, ac, cVp, nVp, pVp, pnt))
             {
                 return;
@@ -199,12 +199,12 @@ static void updateVertData(
         const Vertex pV = vert[prev];
         const Vertex nV = vert[next];
 
-        const PxVec2 cVp = getProjectedPoint(cV.p, dir);
-        const PxVec2 pVp = getProjectedPoint(pV.p, dir);
-        const PxVec2 nVp = getProjectedPoint(nV.p, dir);
+        const NvVec2 cVp = getProjectedPoint(cV.p, dir);
+        const NvVec2 pVp = getProjectedPoint(pV.p, dir);
+        const NvVec2 nVp = getProjectedPoint(nV.p, dir);
 
-        const PxVec2 prevEdge = (cVp - pVp);
-        const PxVec2 nextEdge = (nVp - cVp);
+        const NvVec2 prevEdge = (cVp - pVp);
+        const NvVec2 nextEdge = (nVp - cVp);
 
         // use normalized vectors to get a better calc for the angle between them
         float rot = getRotation(prevEdge.getNormalized(), nextEdge.getNormalized());
@@ -313,7 +313,7 @@ struct LoopInfo
     {
         used = false;
     }
-    PxVec3 normal;
+    NvVec3 normal;
     float area;
     int32_t index;
     bool used;
@@ -353,18 +353,18 @@ int32_t unitePolygons(std::vector<uint32_t>& externalLoop, std::vector<uint32_t>
     float minX        = MAXIMUM_EXTENT;
     int32_t vrtIndex  = -1;
     bool isFromBuffer = 0;
-    PxVec2 holePoint  = getProjectedPoint(vrx[internalLoop[mIndex]].p, dir);
-    PxVec2 computedPoint;
+    NvVec2 holePoint  = getProjectedPoint(vrx[internalLoop[mIndex]].p, dir);
+    NvVec2 computedPoint;
     for (uint32_t i = 0; i < externalLoop.size(); ++i)
     {
         int32_t nx  = (i + 1) % externalLoop.size();
-        PxVec2 pnt1 = getProjectedPoint(vrx[externalLoop[i]].p, dir);
-        PxVec2 pnt2 = getProjectedPoint(vrx[externalLoop[nx]].p, dir);
+        NvVec2 pnt1 = getProjectedPoint(vrx[externalLoop[i]].p, dir);
+        NvVec2 pnt2 = getProjectedPoint(vrx[externalLoop[nx]].p, dir);
         if (pnt1.x < x_max && pnt2.x < x_max)
         {
             continue;
         }
-        PxVec2 vc = pnt2 - pnt1;
+        NvVec2 vc = pnt2 - pnt1;
         if (vc.y == 0 && pnt1.y == holePoint.y)
         {
             if (pnt1.x < minX && pnt1.x < pnt2.x && pnt1.x > x_max)
@@ -385,7 +385,7 @@ int32_t unitePolygons(std::vector<uint32_t>& externalLoop, std::vector<uint32_t>
             float t = (holePoint.y - pnt1.y) / vc.y;
             if (t <= 1 && t >= 0)
             {
-                PxVec2 tempPoint = vc * t + pnt1;
+                NvVec2 tempPoint = vc * t + pnt1;
                 if (tempPoint.x < minX && tempPoint.x > x_max)
                 {
                     minX          = tempPoint.x;
@@ -405,8 +405,8 @@ int32_t unitePolygons(std::vector<uint32_t>& externalLoop, std::vector<uint32_t>
     float bestAngle     = 100;
     if (!isFromBuffer)
     {
-        PxVec2 ex1 = getProjectedPoint(vrx[externalLoop[vrtIndex]].p, dir);
-        PxVec2 ex2 = getProjectedPoint(vrx[externalLoop[(vrtIndex + 1) % externalLoop.size()]].p, dir);
+        NvVec2 ex1 = getProjectedPoint(vrx[externalLoop[vrtIndex]].p, dir);
+        NvVec2 ex2 = getProjectedPoint(vrx[externalLoop[(vrtIndex + 1) % externalLoop.size()]].p, dir);
 
         if (ex1.x > ex2.x)
         {
@@ -415,25 +415,25 @@ int32_t unitePolygons(std::vector<uint32_t>& externalLoop, std::vector<uint32_t>
         }
         /* Check if some point is inside triangle */
         bool notFound = true;
-        const PxVec2 ba = (ex1 - holePoint).getNormalized();
-        const PxVec2 cb = (computedPoint - ex1).getNormalized();
-        const PxVec2 ac = (holePoint - computedPoint).getNormalized();
+        const NvVec2 ba = (ex1 - holePoint).getNormalized();
+        const NvVec2 cb = (computedPoint - ex1).getNormalized();
+        const NvVec2 ac = (holePoint - computedPoint).getNormalized();
         for (int32_t i = 0; i < (int32_t)externalLoop.size(); ++i)
         {
-            const PxVec2 tempPoint = getProjectedPoint(vrx[externalLoop[i]].p, dir);
+            const NvVec2 tempPoint = getProjectedPoint(vrx[externalLoop[i]].p, dir);
             if (pointInside(ba, cb, ac, holePoint, ex1, computedPoint, tempPoint))
             {
                 notFound   = false;
-                const PxVec2 cVp = getProjectedPoint(vrx[externalLoop[i]].p, dir);
-                const PxVec2 pVp =
+                const NvVec2 cVp = getProjectedPoint(vrx[externalLoop[i]].p, dir);
+                const NvVec2 pVp =
                     getProjectedPoint(vrx[externalLoop[(i - 1 + externalLoop.size()) % externalLoop.size()]].p, dir);
-                const PxVec2 nVp = getProjectedPoint(vrx[externalLoop[(i + 1) % externalLoop.size()]].p, dir);
+                const NvVec2 nVp = getProjectedPoint(vrx[externalLoop[(i + 1) % externalLoop.size()]].p, dir);
                 float rt = getRotation((cVp - pVp).getNormalized(), (nVp - pVp).getNormalized());
                 if (dir & OPPOSITE_WINDING)
                     rt = -rt;
                 if (rt < MIN_ANGLE)
                     continue;
-                const float tempAngle = PxVec2(1, 0).dot((tempPoint - holePoint).getNormalized());
+                const float tempAngle = NvVec2(1, 0).dot((tempPoint - holePoint).getNormalized());
                 if (bestAngle < tempAngle)
                 {
                     bestAngle   = tempAngle;
@@ -558,15 +558,15 @@ void Triangulator::buildPolygonAndTriangulate(std::vector<Edge>& edges, Vertex* 
 
     std::vector<LoopInfo> loopsInfo(serializedLoops.size());
     // Compute normal to whole polygon, and areas of loops
-    PxVec3 wholeFacetNormal(0, 0, 0);
+    NvVec3 wholeFacetNormal(0, 0, 0);
     for (uint32_t loop = 0; loop < serializedLoops.size(); ++loop)
     {
-        PxVec3 loopNormal(0, 0, 0);
+        NvVec3 loopNormal(0, 0, 0);
         const std::vector<uint32_t>& pos = serializedLoops[loop];
         for (uint32_t vrt = 1; vrt + 1 < serializedLoops[loop].size(); ++vrt)
         {
-            loopNormal += toPxShared(vertices[pos[vrt]].p - vertices[pos[0]].p)
-                              .cross(toPxShared(vertices[pos[vrt + 1]].p - vertices[pos[0]].p));
+            loopNormal += toNvShared(vertices[pos[vrt]].p - vertices[pos[0]].p)
+                              .cross(toNvShared(vertices[pos[vrt + 1]].p - vertices[pos[0]].p));
         }
         loopsInfo[loop].area   = loopNormal.magnitude();
         loopsInfo[loop].normal = loopNormal;
@@ -585,7 +585,7 @@ void Triangulator::buildPolygonAndTriangulate(std::vector<Edge>& edges, Vertex* 
     const ProjectionDirections dir = getProjectionDirection(wholeFacetNormal);
     std::sort(loopsInfo.begin(), loopsInfo.end());
 
-    std::vector<PxVec3> tempPositions;
+    std::vector<NvVec3> tempPositions;
     int32_t oldSize = static_cast<int32_t>(mBaseMeshTriangles.size());
     for (uint32_t extPoly = 0; extPoly < loopsInfo.size(); ++extPoly)
     {

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTARRAY_H
@@ -30,7 +30,7 @@
 
 
 #include "NvBlastAllocator.h"
-#include "PsInlineArray.h"
+#include "NsInlineArray.h"
 
 
 namespace Nv
@@ -39,24 +39,24 @@ namespace Blast
 {
 
 /**
-Wrapped PxShared Array that uses NvBlastGlobals AllocatorCalllback.
+Wrapped NvShared Array that uses NvBlastGlobals AllocatorCallback.
 */
 template <class T>
 struct Array
 {
-    typedef physx::shdfnd::Array<T, Allocator> type;
+    typedef nvidia::shdfnd::Array<T, Allocator> type;
 };
 
 
 /**
-Wrapped PxShared InlineArray that uses NvBlastGlobals AllocatorCalllback.
+Wrapped NvShared InlineArray that uses NvBlastGlobals AllocatorCallback.
 
 InlineArraya is array that pre-allocates for N elements.
 */
 template <class T, uint32_t N>
 struct InlineArray
 {
-    typedef physx::shdfnd::InlineArray<T, N, Allocator> type;
+    typedef nvidia::shdfnd::InlineArray<T, N, Allocator> type;
 };
 
 } // namespace Blast

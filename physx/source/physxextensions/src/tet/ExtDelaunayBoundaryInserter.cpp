@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 
 #include "ExtDelaunayBoundaryInserter.h"
 #include "ExtTetSplitting.h"
@@ -1179,8 +1179,6 @@ namespace Ext
 		//PX_ASSERT(!(result & PxTriangleMeshAnalysisResult::eMESH_IS_INVALID));
 
 		PxArray<PxI32> map;
-		map.reserve(points.size());
-		map.forceSize_Unsafe(points.size());
 		MeshAnalyzer::mapDuplicatePoints<Vec3, PxF64>(points, map);
 		for (PxI32 i = 0; i < PxI32(points.size()); ++i)
 		{
@@ -1901,6 +1899,9 @@ namespace Ext
 	void generateVoxelTetmesh(const PxBoundedData& inputPointsOrig, const PxBoundedData& inputTets, PxU32 numVoxelsX, PxU32 numVoxelsY, PxU32 numVoxelsZ,
 		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
 	{
+		if (inputTets.count == 0)
+			return; //No input, so there is no basis for creating an output
+
 		PxU32 xy = numVoxelsX * numVoxelsY;
 		
 		PxVec3 origMin, origMax;
@@ -2295,8 +2296,6 @@ namespace Ext
 
 
 		PxArray<PxI32> map;
-		map.reserve(normalizedPoints.size());
-		map.forceSize_Unsafe(normalizedPoints.size());
 		MeshAnalyzer::mapDuplicatePoints<PxVec3, PxF32>(normalizedPoints, map);
 		PxArray<Triangle> mappedTriangles;
 		mappedTriangles.reserve(triangles.count);

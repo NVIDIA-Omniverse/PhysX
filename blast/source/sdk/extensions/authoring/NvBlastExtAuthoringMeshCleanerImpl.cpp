@@ -22,11 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
-#include <foundation/PxVec3.h>
-#include <foundation/PxVec2.h>
-#include <foundation/PxBounds3.h>
+#include "NvVec3.h"
+#include "NvVec2.h"
+#include "NvBounds3.h"
 #include <vector>
 #include <queue>
 #include <map>
@@ -34,10 +34,10 @@
 #include <NvBlastExtAuthoringMeshCleanerImpl.h>
 #include <NvBlastExtAuthoringMeshImpl.h>
 #include <NvBlastExtAuthoringInternalCommon.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 #include <boost/multiprecision/cpp_int.hpp>
 
-using namespace physx;
+using namespace nvidia;
 
 using namespace Nv::Blast;
 using namespace boost::multiprecision;
@@ -68,7 +68,7 @@ struct RVec3
         y = cpp_rational(p.y);
         z = cpp_rational(p.z);
     }
-    PxVec3 toVec3()
+    NvVec3 toVec3()
     {
         return { x.convert_to<float>(), y.convert_to<float>(), z.convert_to<float>() };
     }
@@ -111,7 +111,7 @@ struct RVec2
         x = cpp_rational(p.x);
         y = cpp_rational(p.y);
     }
-    PxVec2 toVec2()
+    NvVec2 toVec2()
     {
         return { x.convert_to<float>(), y.convert_to<float>() };
     }
@@ -1227,12 +1227,12 @@ struct RVec3Comparer
     }
 };
 
-void getBarycentricCoords(PxVec2& a, PxVec2& b, PxVec2& c, PxVec2& p, float& u, float& v)
+void getBarycentricCoords(NvVec2& a, NvVec2& b, NvVec2& c, NvVec2& p, float& u, float& v)
 {
-    PxVec3 v1(b.x - a.x, c.x - a.x, a.x - p.x);
-    PxVec3 v2(b.y - a.y, c.y - a.y, a.y - p.y);
+    NvVec3 v1(b.x - a.x, c.x - a.x, a.x - p.x);
+    NvVec3 v2(b.y - a.y, c.y - a.y, a.y - p.y);
 
-    PxVec3 resl = v1.cross(v2);
+    NvVec3 resl = v1.cross(v2);
     u           = resl.x / resl.z;
     v           = resl.y / resl.z;
 }
@@ -1251,13 +1251,13 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
     edges.resize(mesh->getEdgesCount());
     facets.resize(mesh->getFacetCount());
 
-    physx::PxBounds3 bnd;
+    nvidia::NvBounds3 bnd;
     bnd.setEmpty();
 
     for (uint32_t i = 0; i < mesh->getVerticesCount(); ++i)
     {
         vertices[i] = mesh->getVertices()[i];
-        bnd.include(toPxShared(vertices[i].p));
+        bnd.include(toNvShared(vertices[i].p));
     }
     for (uint32_t i = 0; i < mesh->getEdgesCount(); ++i)
     {
@@ -1278,7 +1278,7 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
 
     for (uint32_t i = 0; i < mesh->getVerticesCount(); ++i)
     {
-        vertices[i].p   = (vertices[i].p - fromPxShared(bnd.minimum)) * scale;
+        vertices[i].p   = (vertices[i].p - fromNvShared(bnd.minimum)) * scale;
         vertices[i].p.x = std::floor(vertices[i].p.x * gridSize) / gridSize;
         vertices[i].p.y = std::floor(vertices[i].p.y * gridSize) / gridSize;
         vertices[i].p.z = std::floor(vertices[i].p.z * gridSize) / gridSize;
@@ -1286,8 +1286,8 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
 
     std::vector<std::vector<RVec3> > triangleStencil(facets.size());
 
-    std::vector<PxVec3> facetsNormals(facets.size());
-    std::vector<PxBounds3> facetBound(facets.size());
+    std::vector<NvVec3> facetsNormals(facets.size());
+    std::vector<NvBounds3> facetBound(facets.size());
 
 
     for (uint32_t tr1 = 0; tr1 < facets.size(); ++tr1)
@@ -1305,13 +1305,13 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
         triangleStencil[tr1].push_back(vertices[edges[fed + 2].e].p);
 
         facetBound[tr1].setEmpty();
-        facetBound[tr1].include(toPxShared(vertices[edges[fed].s].p));
-        facetBound[tr1].include(toPxShared(vertices[edges[fed].e].p));
-        facetBound[tr1].include(toPxShared(vertices[edges[fed + 2].s].p));
+        facetBound[tr1].include(toNvShared(vertices[edges[fed].s].p));
+        facetBound[tr1].include(toNvShared(vertices[edges[fed].e].p));
+        facetBound[tr1].include(toNvShared(vertices[edges[fed + 2].s].p));
         facetBound[tr1].fattenFast(0.001f);
 
-        facetsNormals[tr1] = toPxShared(vertices[edges[fed + 1].s].p - vertices[edges[fed].s].p)
-                                 .cross(toPxShared(vertices[edges[fed + 2].s].p - vertices[edges[fed].s].p));
+        facetsNormals[tr1] = toNvShared(vertices[edges[fed + 1].s].p - vertices[edges[fed].s].p)
+                                 .cross(toNvShared(vertices[edges[fed + 2].s].p - vertices[edges[fed].s].p));
     }
 
     /**
@@ -1636,7 +1636,7 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
     }
     /////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<PxVec3> newVertices;
+    std::vector<NvVec3> newVertices;
     newVertices.resize(finalPoints.size());
     for (uint32_t i = 0; i < finalPoints.size(); ++i)
     {
@@ -1653,13 +1653,13 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
     }
     for (uint32_t i = 0; i < vertices.size(); ++i)
     {
-        vertices[i].p = vertices[i].p * (1.0f / scale) + fromPxShared(bnd.minimum);
+        vertices[i].p = vertices[i].p * (1.0f / scale) + fromNvShared(bnd.minimum);
     }
 
     std::vector<Triangle> result;
     result.reserve(trs.size());
     {
-        std::vector<PxVec2> projectedTriangles(facets.size() * 3);
+        std::vector<NvVec2> projectedTriangles(facets.size() * 3);
         std::vector<Vertex> normalTriangles(facets.size() * 3);
 
         for (uint32_t i = 0; i < facets.size(); ++i)
@@ -1684,8 +1684,8 @@ Mesh* MeshCleanerImpl::cleanMesh(const Mesh* mesh)
             result.back().smoothingGroup = facets[parentTriangle].smoothingGroup;
             for (auto vert : { &result.back().a, &result.back().b, &result.back().c })
             {
-                toPxShared(vert->p)  = newVertices[trs[i].p[id]];
-                PxVec2 p = getProjectedPointWithWinding(vert->p, getProjectionDirection(facetsNormals[parentTriangle])).toVec2();
+                toNvShared(vert->p)  = newVertices[trs[i].p[id]];
+                NvVec2 p = getProjectedPointWithWinding(vert->p, getProjectionDirection(facetsNormals[parentTriangle])).toVec2();
                 getBarycentricCoords(projectedTriangles[parentTriangle * 3], projectedTriangles[parentTriangle * 3 + 1],
                                      projectedTriangles[parentTriangle * 3 + 2], p, u, v);
                 vert->uv[0] = (1 - u - v) * normalTriangles[parentTriangle * 3].uv[0] +

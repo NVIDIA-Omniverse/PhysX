@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -44,7 +44,6 @@ struct CollisionHull;
     ConvexMeshBuilder provides routine to build collision hulls from array of vertices.
     Collision hull is built as convex hull of provided point set.
     If due to some reason building of convex hull is failed, collision hull is built as bounding box of vertex set.
-    PhysX implementation can be found in NvBlastExtPx.
 */
 class ConvexMeshBuilder
 {

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef TKBASETEST_H
@@ -31,22 +31,19 @@
 
 #include "NvBlastTk.h"
 #include "NvBlastTkActor.h"
-#include "NvBlastPxCallbacks.h"
+#include "NvTaskManager.h"
+#include "NvBlastTkGroupTaskManager.h"
+#include "NvCpuDispatcher.h"
+#include "NsGlobals.h"
 
 #include "BlastBaseTest.h"
 
 #include "NvBlastExtDamageShaders.h"
 
 #include "NvBlastIndexFns.h"
-#include "NvBlastPxCustomProfiler.h"
 #include "TestProfiler.h"
-#include "NvBlastExtPxTask.h"
 
-#include "task/PxCpuDispatcher.h"
-#include "task/PxTask.h"
-#include "PxFoundation.h"
-
-#include <PxPhysicsVersion.h>
+#include "NvTask.h"
 
 #include <thread>
 #include <algorithm>
@@ -56,15 +53,9 @@
 #include <atomic>
 
 
-#define USE_PHYSX_DISPATCHER 0
-
-#if USE_PHYSX_DISPATCHER
-#include "PxDefaultCpuDispatcher.h"
-#endif
-
-
 using namespace Nv::Blast;
-using namespace physx;
+using namespace nvidia;
+using namespace nvidia::task;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                  Helpers
@@ -78,17 +69,17 @@ NV_INLINE void ExpectArrayMatch(TkObject** arr0, size_t size0, TkObject** arr1, 
     EXPECT_TRUE(set0 == set1);
 }
 
-class TestCpuDispatcher : public physx::PxCpuDispatcher
+class TestCpuDispatcher : public NvCpuDispatcher
 {
     struct SharedContext
     {
-        std::queue<PxBaseTask*> workQueue;
+        std::queue<NvBaseTask*> workQueue;
         std::condition_variable cv;
         std::mutex mutex;
         std::atomic<bool> quit;
     };
 
-    void submitTask(PxBaseTask& task) override
+    void submitTask(NvBaseTask& task) override
     {
         if (m_threads.size() > 0)
         {
@@ -115,7 +106,7 @@ class TestCpuDispatcher : public physx::PxCpuDispatcher
             std::unique_lock<std::mutex> lk(context.mutex);
             if (!context.workQueue.empty())
             {
-                PxBaseTask& task = *context.workQueue.front();
+                NvBaseTask& task = *context.workQueue.front();
                 context.workQueue.pop();
                 lk.unlock();
                 TEST_ZONE_BEGIN(task.getName());
@@ -210,28 +201,19 @@ template<int FailLevel, int Verbosity>
 class TkBaseTest : public BlastBaseTest<FailLevel, Verbosity>
 {
 public:
-    TkBaseTest() : m_cpuDispatcher(), m_taskman(nullptr), m_foundation(nullptr)
+    TkBaseTest() : m_cpuDispatcher(), m_taskman(nullptr)
     {
     }
 
     virtual void SetUp() override
     {
-        m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, NvBlastGetPxAllocatorCallback(), NvBlastGetPxErrorCallback());
+        NvBlastInternalProfilerSetDetail(Nv::Blast::InternalProfilerDetail::LOW);
+        NvBlastInternalProfilerSetPlatformEnabled(true);
 
-        NvBlastProfilerSetCallback(&m_profiler);
-        NvBlastProfilerSetDetail(Nv::Blast::ProfilerDetail::LOW);
-        m_profiler.setPlatformEnabled(true);
-
-#if USE_PHYSX_DISPATCHER
-        PxU32 affinity[] = { 1, 2, 4, 8 };
-        m_cpuDispatcher = PxDefaultCpuDispatcherCreate(4, affinity);
-        m_cpuDispatcher->setRunProfiled(false);
-#else
         m_cpuDispatcher = new TestCpuDispatcher(4);
-#endif
 
-        m_taskman = PxTaskManager::createTaskManager(NvBlastGetPxErrorCallback(), m_cpuDispatcher);
-        m_groupTM = ExtGroupTaskManager::create(*m_taskman);
+        m_taskman = NvTaskManager::createTaskManager(*NvBlastGlobalGetErrorCallback(), m_cpuDispatcher);
+        m_groupTM = TkGroupTaskManager::create(*m_taskman);
     }
 
     virtual void TearDown() override
@@ -239,7 +221,6 @@ public:
         m_groupTM->release();
         m_cpuDispatcher->release();
         if (m_taskman) m_taskman->release();
-        if (m_foundation) m_foundation->release();
     }
     
     void createFramework()
@@ -371,22 +352,16 @@ public:
 
     std::vector<TkAsset*> testAssets;
 
-#if USE_PHYSX_DISPATCHER
-    PxDefaultCpuDispatcher* m_cpuDispatcher;
-#else
-    TestCpuDispatcher*      m_cpuDispatcher;
-#endif
+    TestCpuDispatcher*  m_cpuDispatcher;
 
-    PxTaskManager*          m_taskman;
-    PxFoundation*           m_foundation;
+    NvTaskManager*      m_taskman;
 
-    ExtGroupTaskManager*    m_groupTM;
-    ExtCustomProfiler       m_profiler;
+    TkGroupTaskManager* m_groupTM;
 };
 
 
-#define TkPxErrorMask   (PxErrorCode::eINVALID_PARAMETER | PxErrorCode::eINVALID_OPERATION | PxErrorCode::eOUT_OF_MEMORY | PxErrorCode::eINTERNAL_ERROR | PxErrorCode::eABORT)
-#define TkPxWarningMask (PxErrorCode::eDEBUG_WARNING | PxErrorCode::ePERF_WARNING)
+#define TkNvErrorMask   (NvErrorCode::eINVALID_PARAMETER | NvErrorCode::eINVALID_OPERATION | NvErrorCode::eOUT_OF_MEMORY | NvErrorCode::eINTERNAL_ERROR | NvErrorCode::eABORT)
+#define TkNvWarningMask (NvErrorCode::eDEBUG_WARNING | NvErrorCode::ePERF_WARNING)
 
 typedef TkBaseTest<NvBlastMessage::Error, 1> TkTestAllowWarnings;
 typedef TkBaseTest<NvBlastMessage::Warning, 1> TkTestStrict;

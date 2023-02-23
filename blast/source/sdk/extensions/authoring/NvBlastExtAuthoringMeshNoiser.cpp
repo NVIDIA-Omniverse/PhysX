@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 // This warning arises when using some stl containers with older versions of VC
@@ -37,7 +37,7 @@
 #include <set>
 #include <queue>
 #include <NvBlastAssert.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 
 using namespace Nv::Blast;
 using namespace std;
@@ -114,8 +114,8 @@ bool edgeOverlapTest(NvcVec3& as, NvcVec3& ae, NvcVec3& bs, NvcVec3& be)
     if (std::max(std::min(as.z, ae.z), std::min(bs.z, be.z)) > std::min(std::max(as.z, ae.z), std::max(bs.z, be.z)))
         return false;
 
-    return (toPxShared(bs - as).cross(toPxShared(ae - as))).magnitudeSquared() < 1e-6f &&
-           (toPxShared(be - as).cross(toPxShared(ae - as))).magnitudeSquared() < 1e-6f;
+    return (toNvShared(bs - as).cross(toNvShared(ae - as))).magnitudeSquared() < 1e-6f &&
+           (toNvShared(be - as).cross(toNvShared(ae - as))).magnitudeSquared() < 1e-6f;
 }
 
 void MeshNoiser::computePositionedMapping()
@@ -143,8 +143,8 @@ void MeshNoiser::computePositionedMapping()
 
 void MeshNoiser::relax(int32_t iteration, float factor, std::vector<Vertex>& vertices)
 {
-    std::vector<PxVec3> verticesTemp(vertices.size());
-    std::vector<PxVec3> normalsTemp(vertices.size());
+    std::vector<NvVec3> verticesTemp(vertices.size());
+    std::vector<NvVec3> normalsTemp(vertices.size());
     for (int32_t iter = 0; iter < iteration; ++iter)
     {
         for (uint32_t i = 0; i < vertices.size(); ++i)
@@ -153,15 +153,15 @@ void MeshNoiser::relax(int32_t iteration, float factor, std::vector<Vertex>& ver
             {
                 continue;
             }
-            PxVec3 cps = toPxShared(vertices[i].p);
-            PxVec3 cns = mVerticesNormalsSmoothed[i];
-            PxVec3 averaged(0, 0, 0);
-            PxVec3 averagedNormal(0, 0, 0);
+            NvVec3 cps = toNvShared(vertices[i].p);
+            NvVec3 cns = mVerticesNormalsSmoothed[i];
+            NvVec3 averaged(0, 0, 0);
+            NvVec3 averagedNormal(0, 0, 0);
 
             for (uint32_t p = 0; p < mGeometryGraph[mPositionMappedVrt[i]].size(); ++p)
             {
                 int32_t to = mGeometryGraph[mPositionMappedVrt[i]][p];
-                averaged += toPxShared(vertices[to].p);
+                averaged += toNvShared(vertices[to].p);
                 averagedNormal += mVerticesNormalsSmoothed[to];
             }
             averaged *= (1.0f / mGeometryGraph[mPositionMappedVrt[i]].size());
@@ -175,7 +175,7 @@ void MeshNoiser::relax(int32_t iteration, float factor, std::vector<Vertex>& ver
             {
                 continue;
             }
-            vertices[i].p               = fromPxShared(verticesTemp[i]);
+            vertices[i].p               = fromNvShared(verticesTemp[i]);
             mVerticesNormalsSmoothed[i] = normalsTemp[i].getNormalized();
         }
     }
@@ -391,7 +391,7 @@ NV_FORCE_INLINE int32_t MeshNoiser::findEdge(const Edge& e)
 void MeshNoiser::setMesh(const vector<Triangle>& mesh)
 {
     uint32_t a, b, c;
-    physx::PxBounds3 box;
+    nvidia::NvBounds3 box;
     box.setEmpty();
     for (uint32_t i = 0; i < mesh.size(); ++i)
     {
@@ -399,9 +399,9 @@ void MeshNoiser::setMesh(const vector<Triangle>& mesh)
         a                  = addVerticeIfNotExist(tr.a);
         b                  = addVerticeIfNotExist(tr.b);
         c                  = addVerticeIfNotExist(tr.c);
-        box.include(toPxShared(tr.a.p));
-        box.include(toPxShared(tr.b.p));
-        box.include(toPxShared(tr.c.p));
+        box.include(toNvShared(tr.a.p));
+        box.include(toNvShared(tr.b.p));
+        box.include(toNvShared(tr.c.p));
         addEdge({ a, b });
         addEdge({ b, c });
         addEdge({ a, c });
@@ -415,7 +415,7 @@ void MeshNoiser::setMesh(const vector<Triangle>& mesh)
     float invScale = 1.0f / mScale;
     for (uint32_t i = 0; i < mVertices.size(); ++i)
     {
-        mVertices[i].p = mVertices[i].p - fromPxShared(box.getCenter());
+        mVertices[i].p = mVertices[i].p - fromNvShared(box.getCenter());
         mVertices[i].p = mVertices[i].p * invScale;
     }
 }
@@ -456,7 +456,7 @@ void MeshNoiser::tesselateInternalSurface(float maxLenIn)
             {
                 continue;
             }
-            if (toPxShared(mVertices[mEdges[i].s].p - mVertices[mEdges[i].e].p).magnitudeSquared() < minD)
+            if (toNvShared(mVertices[mEdges[i].s].p - mVertices[mEdges[i].e].p).magnitudeSquared() < minD)
             {
                 collapseEdge(i);
             }
@@ -469,7 +469,7 @@ void MeshNoiser::tesselateInternalSurface(float maxLenIn)
             {
                 continue;
             }
-            if (toPxShared(mVertices[mEdges[i].s].p - mVertices[mEdges[i].e].p).magnitudeSquared() > mlSq)
+            if (toNvShared(mVertices[mEdges[i].s].p - mVertices[mEdges[i].e].p).magnitudeSquared() > mlSq)
             {
                 divideEdge(i);
             }
@@ -641,8 +641,8 @@ void MeshNoiser::collapseEdge(int32_t id)
             if (cntr == 2 && trWithEdge[1] == i)
                 continue;
             TriangleIndexed tr = mTriangles[i];
-            PxVec3 oldNormal =
-                toPxShared(mVertices[tr.eb].p - mVertices[tr.ea].p).cross(toPxShared(mVertices[tr.ec].p - mVertices[tr.ea].p));
+            NvVec3 oldNormal =
+                toNvShared(mVertices[tr.eb].p - mVertices[tr.ea].p).cross(toNvShared(mVertices[tr.ec].p - mVertices[tr.ea].p));
 
             if (tr.ea == from)
             {
@@ -656,8 +656,8 @@ void MeshNoiser::collapseEdge(int32_t id)
             {
                 tr.ec = to;
             }
-            PxVec3 newNormal =
-                toPxShared(mVertices[tr.eb].p - mVertices[tr.ea].p).cross(toPxShared(mVertices[tr.ec].p - mVertices[tr.ea].p));
+            NvVec3 newNormal =
+                toNvShared(mVertices[tr.eb].p - mVertices[tr.ea].p).cross(toNvShared(mVertices[tr.ec].p - mVertices[tr.ea].p));
             if (newNormal.magnitude() < 1e-8f)
             {
                 canBeCollapsed = false;
@@ -800,7 +800,7 @@ void MeshNoiser::recalcNoiseDirs()
     /**
         Compute normals direction to apply noise
     */
-    mVerticesNormalsSmoothed.resize(mVertices.size(), PxVec3(0, 0, 0));
+    mVerticesNormalsSmoothed.resize(mVertices.size(), NvVec3(0, 0, 0));
     for (uint32_t i = 0; i < mTriangles.size(); ++i)
     {
         if (mTriangles[i].ea == kNotValidVertexIndex)
@@ -812,19 +812,19 @@ void MeshNoiser::recalcNoiseDirs()
             continue;
 
         if (tr.userData < 0)
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]] += toPxShared(mVertices[tr.ea].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]] += toNvShared(mVertices[tr.ea].n).getNormalized();
         else
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]] -= toPxShared(mVertices[tr.ea].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]] -= toNvShared(mVertices[tr.ea].n).getNormalized();
 
         if (tr.userData < 0)
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]] += toPxShared(mVertices[tr.eb].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]] += toNvShared(mVertices[tr.eb].n).getNormalized();
         else
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]] -= toPxShared(mVertices[tr.eb].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]] -= toNvShared(mVertices[tr.eb].n).getNormalized();
 
         if (tr.userData < 0)
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]] += toPxShared(mVertices[tr.ec].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]] += toNvShared(mVertices[tr.ec].n).getNormalized();
         else
-            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]] -= toPxShared(mVertices[tr.ec].n).getNormalized();
+            mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]] -= toNvShared(mVertices[tr.ec].n).getNormalized();
     }
     for (uint32_t i = 0; i < mVerticesNormalsSmoothed.size(); ++i)
     {
@@ -872,15 +872,15 @@ void MeshNoiser::applyNoise(SimplexNoise& noise, float falloff, int32_t /*relaxI
         if (!mRestrictionFlag[i])
         {
 
-            float d = noise.sample(toPxShared(localVertices[i].p));
-            toPxShared(localVertices[i].p) +=
+            float d = noise.sample(toNvShared(localVertices[i].p));
+            toNvShared(localVertices[i].p) +=
                 (falloffFunction(mVerticesDistances[i], falloff)) * mVerticesNormalsSmoothed[i] * d;
         }
     }
 
 
     /* Recalculate smoothed normals*/
-    mVerticesNormalsSmoothed.assign(mVerticesNormalsSmoothed.size(), PxVec3(0, 0, 0));
+    mVerticesNormalsSmoothed.assign(mVerticesNormalsSmoothed.size(), NvVec3(0, 0, 0));
     for (uint32_t i = 0; i < mTriangles.size(); ++i)
     {
         if (mTriangles[i].ea == kNotValidVertexIndex)
@@ -892,7 +892,7 @@ void MeshNoiser::applyNoise(SimplexNoise& noise, float falloff, int32_t /*relaxI
             continue;
 
         Triangle pTr(localVertices[tr.ea], localVertices[tr.eb], localVertices[tr.ec]);
-        PxVec3 nrm   = toPxShared(pTr.b.p - pTr.a.p).cross(toPxShared(pTr.c.p - pTr.a.p)).getNormalized();
+        NvVec3 nrm   = toNvShared(pTr.b.p - pTr.a.p).cross(toNvShared(pTr.c.p - pTr.a.p)).getNormalized();
 
         mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]] += nrm;
         mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]] += nrm;
@@ -913,9 +913,9 @@ void MeshNoiser::applyNoise(SimplexNoise& noise, float falloff, int32_t /*relaxI
         if (tr.userData == 0)
             continue;
 
-        localVertices[tr.ea].n = fromPxShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]]);
-        localVertices[tr.eb].n = fromPxShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]]);
-        localVertices[tr.ec].n = fromPxShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]]);
+        localVertices[tr.ea].n = fromNvShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ea]]);
+        localVertices[tr.eb].n = fromNvShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.eb]]);
+        localVertices[tr.ec].n = fromNvShared(mVerticesNormalsSmoothed[mPositionMappedVrt[tr.ec]]);
     }
 
     mResultTriangles.clear();
@@ -938,7 +938,7 @@ void MeshNoiser::prebuildTesselatedTriangles()
 
     for (uint32_t i = 0; i < mVertices.size(); ++i)
     {
-        mVertices[i].p = mVertices[i].p * mScale + fromPxShared(mOffset);
+        mVertices[i].p = mVertices[i].p * mScale + fromNvShared(mOffset);
     }
 
     for (uint32_t i = 0; i < mTriangles.size(); ++i)
@@ -979,6 +979,6 @@ void MeshNoiser::reset()
     mGeometryGraph.clear();
 
     isTesselated = false;
-    mOffset      = PxVec3(0, 0, 0);
+    mOffset      = NvVec3(0, 0, 0);
     mScale       = 1.0f;
 }

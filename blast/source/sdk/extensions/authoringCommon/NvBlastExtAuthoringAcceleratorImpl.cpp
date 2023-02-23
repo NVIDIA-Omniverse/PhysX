@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtAuthoringAcceleratorImpl.h"
 #include "NvBlastExtAuthoringMesh.h"
 #include "NvBlastExtAuthoringInternalCommon.h"
 #include "NvBlastGlobals.h"
-#include "NvBlastPxSharedHelpers.h"
+#include "NvBlastNvSharedHelpers.h"
 #include "NvCMath.h"
 
 namespace Nv
@@ -93,10 +93,10 @@ void Grid::release()
 
 void Grid::setMesh(const Mesh* m)
 {
-    physx::PxBounds3 bd = toPxShared(m->getBoundingBox());
+    nvidia::NvBounds3 bd = toNvShared(m->getBoundingBox());
     m_mappedFacetCount  = m->getFacetCount();
     bd.fattenFast(0.001f);
-    m_spos = fromPxShared(bd.minimum);
+    m_spos = fromNvShared(bd.minimum);
     m_deltas = { m_resolution / bd.getDimensions().x, m_resolution / bd.getDimensions().y,
                  m_resolution / bd.getDimensions().z };
 
@@ -149,14 +149,14 @@ void GridAccelerator::release()
 void GridAccelerator::setState(const Vertex* pos, const Edge* ed, const Facet& fc)
 {
     
-    physx::PxBounds3 cfc(physx::PxBounds3::empty());
+    nvidia::NvBounds3 cfc(nvidia::NvBounds3::empty());
 
     for (uint32_t v = 0; v < fc.edgesCount; ++v)
     {
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].s].p));
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].e].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].s].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].e].p));
     }
-    setState(&fromPxShared(cfc));
+    setState(&fromNvShared(cfc));
 }
 
 void GridAccelerator::setState(const NvcBounds3* facetBounding)
@@ -329,7 +329,7 @@ void BBoxBasedAccelerator::release()
 BBoxBasedAccelerator::~BBoxBasedAccelerator()
 {
     m_resolution = 0;
-    toPxShared(m_bounds).setEmpty();
+    toNvShared(m_bounds).setEmpty();
     m_spatialMap.clear();
     m_cells.clear();
     m_cellList.clear();
@@ -376,14 +376,14 @@ int32_t BBoxBasedAccelerator::getNextFacet()
 void BBoxBasedAccelerator::setState(const Vertex* pos, const Edge* ed, const Facet& fc)
 {
 
-    physx::PxBounds3 cfc(physx::PxBounds3::empty());
+    nvidia::NvBounds3 cfc(nvidia::NvBounds3::empty());
 
     for (uint32_t v = 0; v < fc.edgesCount; ++v)
     {
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].s].p));
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].e].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].s].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].e].p));
     }
-    setState(&fromPxShared(cfc));
+    setState(&fromNvShared(cfc));
 }
 
 void BBoxBasedAccelerator::setState(const NvcBounds3* facetBox)
@@ -395,7 +395,7 @@ void BBoxBasedAccelerator::setState(const NvcBounds3* facetBox)
     
     for (uint32_t i = 0; i < m_cells.size(); ++i)
     {
-        if (weakBoundingBoxIntersection(toPxShared(m_cells[i]), *toPxShared(facetBox)))
+        if (weakBoundingBoxIntersection(toNvShared(m_cells[i]), *toNvShared(facetBox)))
         {
             if (!m_spatialMap[i].empty())
                 m_cellList[m_gotCells++] = i;
@@ -418,7 +418,7 @@ void BBoxBasedAccelerator::setState(const NvcVec3& p)
     int32_t perSlice = m_resolution * m_resolution;
     for (uint32_t i = 0; i < m_cells.size(); ++i)
     {
-        if (toPxShared(m_cells[i]).contains(toPxShared(p)))
+        if (toNvShared(m_cells[i]).contains(toNvShared(p)))
         {
             int32_t xyCellId = i % perSlice;
             for (int32_t zCell = 0; zCell < m_resolution; ++zCell)
@@ -441,20 +441,20 @@ void BBoxBasedAccelerator::buildAccelStructure(const Vertex* pos, const Edge* ed
 {
     for (int32_t facet = 0; facet < facetCount; ++facet)
     {
-        physx::PxBounds3 bBox;
+        nvidia::NvBounds3 bBox;
         bBox.setEmpty();
         const Edge* edge = &edges[0] + fc->firstEdgeNumber;
         int32_t count = fc->edgesCount;
         for (int32_t ec = 0; ec < count; ++ec)
         {
-            bBox.include(toPxShared(pos[edge->s].p));
-            bBox.include(toPxShared(pos[edge->e].p));
+            bBox.include(toNvShared(pos[edge->s].p));
+            bBox.include(toNvShared(pos[edge->e].p));
             edge++;
         }
 
         for (uint32_t i = 0; i < m_cells.size(); ++i)
         {
-            if (weakBoundingBoxIntersection(toPxShared(m_cells[i]), bBox))
+            if (weakBoundingBoxIntersection(toNvShared(m_cells[i]), bBox))
             {
                 m_spatialMap[i].push_back(facet);
             }
@@ -499,7 +499,7 @@ void buildIndex(std::vector<SegmentToIndex>& segm, float offset, float mlt, std:
 
 SweepingAccelerator::SweepingAccelerator(const Nv::Blast::Mesh* in)
 {
-    physx::PxBounds3 bnd;
+    nvidia::NvBounds3 bnd;
 
     const Vertex* verts = in->getVertices();
     const Edge* edges = in->getEdges();
@@ -521,7 +521,7 @@ SweepingAccelerator::SweepingAccelerator(const Nv::Blast::Mesh* in)
         bnd.setEmpty();
         for (uint32_t v = 0; v < fc->edgesCount; ++v)
         {
-            bnd.include(toPxShared(verts[edges[v + fc->firstEdgeNumber].s].p));
+            bnd.include(toNvShared(verts[edges[v + fc->firstEdgeNumber].s].p));
         }
         bnd.scaleFast(1.1f);
         xevs.push_back(SegmentToIndex(bnd.minimum.x, i, false));
@@ -579,7 +579,7 @@ void SweepingAccelerator::setState(const NvcBounds3* facetBounds)
     m_current = 0;
     m_indices.clear();
     
-    physx::PxBounds3 bnd = *toPxShared(facetBounds);
+    nvidia::NvBounds3 bnd = *toNvShared(facetBounds);
 
     bnd.scaleFast(1.1f);
     uint32_t start = (uint32_t)((std::max(0.0f, bnd.minimum.x - m_minimal.x)) * m_rescale.x);
@@ -621,14 +621,14 @@ void SweepingAccelerator::setState(const NvcBounds3* facetBounds)
 void SweepingAccelerator::setState(const Vertex* pos, const Edge* ed, const Facet& fc)
 {
 
-    physx::PxBounds3 cfc(physx::PxBounds3::empty());
+    nvidia::NvBounds3 cfc(nvidia::NvBounds3::empty());
 
     for (uint32_t v = 0; v < fc.edgesCount; ++v)
     {
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].s].p));
-        cfc.include(toPxShared(pos[ed[fc.firstEdgeNumber + v].e].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].s].p));
+        cfc.include(toNvShared(pos[ed[fc.firstEdgeNumber + v].e].p));
     }
-    setState(&fromPxShared(cfc));
+    setState(&fromNvShared(cfc));
 }
 
 void SweepingAccelerator::setState(const NvcVec3& point) {

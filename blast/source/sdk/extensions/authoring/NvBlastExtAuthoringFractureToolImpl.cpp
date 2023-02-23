@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #include "NvBlastExtAuthoringFractureToolImpl.h"
 #include "NvBlastExtAuthoringMeshImpl.h"
@@ -49,7 +49,7 @@
 #include "NvBlastGlobals.h"
 #include "NvBlastExtAuthoringPerlinNoise.h"
 #include <NvBlastAssert.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(p)                                                                                                 \
@@ -122,7 +122,7 @@ int32_t findCellBasePlanes(const std::vector<NvcVec3>& sites, std::vector<std::v
         for (uint32_t i = cellId + 1; i < sites.size(); ++i)
         {
             NvcVec3 midpoint     = 0.5 * (sites[i] + sites[cellId]);
-            NvcVec3 direction    = fromPxShared(toPxShared(sites[i] - sites[cellId]).getNormalized());
+            NvcVec3 direction    = fromNvShared(toNvShared(sites[i] - sites[cellId]).getNormalized());
             planes[collected].n  = direction;
             planes[collected].d  = -(direction | midpoint);
             midpoints[collected] = midpoint;
@@ -155,15 +155,15 @@ int32_t findCellBasePlanes(const std::vector<NvcVec3>& sites, std::vector<std::v
 Mesh* getCellMesh(BooleanEvaluator& eval, int32_t planeIndexerOffset, int32_t cellId, const std::vector<NvcVec3>& sites,
                   const std::vector<std::vector<std::pair<int32_t, int32_t>>>& neighbors, int32_t interiorMaterialId, NvcVec3 origin)
 {
-    Mesh* cell        = getBigBox(toPxShared(origin), SITE_BOX_SIZE, interiorMaterialId);
-    Mesh* cuttingMesh = getCuttingBox(PxVec3(0, 0, 0), PxVec3(1, 1, 1), CUTTING_BOX_SIZE, 0, interiorMaterialId);
+    Mesh* cell        = getBigBox(toNvShared(origin), SITE_BOX_SIZE, interiorMaterialId);
+    Mesh* cuttingMesh = getCuttingBox(NvVec3(0, 0, 0), NvVec3(1, 1, 1), CUTTING_BOX_SIZE, 0, interiorMaterialId);
 
     for (uint32_t i = 0; i < neighbors[cellId].size(); ++i)
     {
         std::pair<int32_t, int32_t> neighbor = neighbors[cellId][i];
         int32_t nCell    = neighbor.first;
-        PxVec3 midpoint  = 0.5 * toPxShared(sites[nCell] + sites[cellId]);
-        PxVec3 direction = toPxShared(sites[nCell] - sites[cellId]).getNormalized();
+        NvVec3 midpoint  = 0.5 * toNvShared(sites[nCell] + sites[cellId]);
+        NvVec3 direction = toNvShared(sites[nCell] - sites[cellId]).getNormalized();
         int32_t planeIndex = neighbor.second + planeIndexerOffset;
         if (nCell < cellId)
             planeIndex = -planeIndex;
@@ -291,7 +291,7 @@ void VoronoiSitesGeneratorImpl::clusteredSitesGeneration(const uint32_t numberOf
         while (generatedSites < unif)
         {
             NvcVec3 p =
-                tempPoints.back() + fromPxShared(PxVec3(mRnd->getRandomValue() * 2 - 1, mRnd->getRandomValue() * 2 - 1,
+                tempPoints.back() + fromNvShared(NvVec3(mRnd->getRandomValue() * 2 - 1, mRnd->getRandomValue() * 2 - 1,
                                                      mRnd->getRandomValue() * 2 - 1)
                                                   .getNormalized()) *
                                         (mRnd->getRandomValue() + 0.001f) * clusterRadius;
@@ -336,7 +336,7 @@ void VoronoiSitesGeneratorImpl::generateInSphere(const uint32_t count, const flo
         float rn2     = (mRnd->getRandomValue() - 0.5f) * 2.f * radius;
         float rn3     = (mRnd->getRandomValue() - 0.5f) * 2.f * radius;
         NvcVec3 point = { rn1, rn2, rn3 };
-        if (toPxShared(point).magnitudeSquared() < radiusSquared &&
+        if (toNvShared(point).magnitudeSquared() < radiusSquared &&
             voronoiMeshEval.isPointContainedInMesh(mMesh, point + center) &&
             (mStencil == nullptr || voronoiMeshEval.isPointContainedInMesh(mStencil, point + center)))
         {
@@ -359,7 +359,7 @@ void VoronoiSitesGeneratorImpl::deleteInSphere(const float radius, const NvcVec3
     float r2 = radius * radius;
     for (uint32_t i = 0; i < mGeneratedSites.size(); ++i)
     {
-        if (toPxShared(mGeneratedSites[i] - center).magnitudeSquared() < r2 && mRnd->getRandomValue() <= deleteProbability)
+        if (toNvShared(mGeneratedSites[i] - center).magnitudeSquared() < r2 && mRnd->getRandomValue() <= deleteProbability)
         {
             std::swap(mGeneratedSites[i], mGeneratedSites.back());
             mGeneratedSites.pop_back();
@@ -374,23 +374,23 @@ void VoronoiSitesGeneratorImpl::radialPattern(const NvcVec3& center, const NvcVe
                                               float variability)
 {
     //  mGeneratedSites.push_back(center);
-    PxVec3 t1, t2;
+    NvVec3 t1, t2;
     if (std::abs(normal.z) < 0.9)
     {
-        t1 = toPxShared(normal).cross(PxVec3(0, 0, 1));
+        t1 = toNvShared(normal).cross(NvVec3(0, 0, 1));
     }
     else
     {
-        t1 = toPxShared(normal).cross(PxVec3(1, 0, 0));
+        t1 = toNvShared(normal).cross(NvVec3(1, 0, 0));
     }
-    t2 = t1.cross(toPxShared(normal));
+    t2 = t1.cross(toNvShared(normal));
     t1.normalize();
     t2.normalize();
 
     float radStep = radius / radialSteps;
     int32_t cCr   = 0;
 
-    float angleStep = physx::PxPi * 2 / angularSteps;
+    float angleStep = nvidia::NvPi * 2 / angularSteps;
     for (float cRadius = radStep; cRadius < radius; cRadius += radStep)
     {
         float cAngle = angleOffset * cCr;
@@ -399,7 +399,7 @@ void VoronoiSitesGeneratorImpl::radialPattern(const NvcVec3& center, const NvcVe
             float angVars = mRnd->getRandomValue() * variability + (1.0f - 0.5f * variability);
             float radVars = mRnd->getRandomValue() * variability + (1.0f - 0.5f * variability);
 
-            NvcVec3 nPos = fromPxShared(std::cos(cAngle * angVars) * t1 + std::sin(cAngle * angVars) * t2) * cRadius * radVars + center;
+            NvcVec3 nPos = fromNvShared(std::cos(cAngle * angVars) * t1 + std::sin(cAngle * angVars) * t2) * cRadius * radVars + center;
             mGeneratedSites.push_back(nPos);
             cAngle += angleStep;
         }
@@ -582,7 +582,7 @@ Mesh* FractureToolImpl::createChunkMesh(int32_t chunkInfoIndex, bool splitUVs /*
     const auto facetsCount = sourceMesh->getFacetCount();
     Vertex* vertices    = reinterpret_cast<Vertex*>(_vertexBuffer.data());
     const auto numVerts = static_cast<uint32_t>(_vertexBuffer.size());
-    physx::PxBounds3 bnd;
+    nvidia::NvBounds3 bnd;
     bnd.setEmpty();
     std::set<int32_t> vertUVsToFix;
     for (uint32_t f = 0; f < facetsCount; f++) {
@@ -609,12 +609,12 @@ Mesh* FractureToolImpl::createChunkMesh(int32_t chunkInfoIndex, bool splitUVs /*
             for (uint32_t edge = 0; edge < facet.edgesCount; edge++) {
                 const int32_t v1 = edges[facet.firstEdgeNumber + edge].s;
                 if (vertUVsToFix.insert(v1).second) {
-                    bnd.include(PxVec3(vertices[v1].uv[0].x, vertices[v1].uv[0].y, 0.0f));
+                    bnd.include(NvVec3(vertices[v1].uv[0].x, vertices[v1].uv[0].y, 0.0f));
                 }
 
                 const int32_t v2 = edges[facet.firstEdgeNumber + edge].e;
                 if (vertUVsToFix.insert(v2).second) {
-                    bnd.include(PxVec3(vertices[v2].uv[0].x, vertices[v2].uv[0].y, 0.0f));
+                    bnd.include(NvVec3(vertices[v2].uv[0].x, vertices[v2].uv[0].y, 0.0f));
                 }
             }
         }
@@ -725,7 +725,7 @@ int32_t FractureToolImpl::voronoiFracturing(uint32_t chunkId, uint32_t cellCount
     {
         cellPoints[i] = tm.invTransformPos(cellPointsIn[i]);
 
-        toPxShared(cellPoints[i]) = toPxShared(rotation).rotateInv(toPxShared(cellPoints[i]));
+        toNvShared(cellPoints[i]) = toNvShared(rotation).rotateInv(toNvShared(cellPoints[i]));
 
         cellPoints[i].x *= (1.0f / scale.x);
         cellPoints[i].y *= (1.0f / scale.y);
@@ -764,7 +764,7 @@ int32_t FractureToolImpl::voronoiFracturing(uint32_t chunkId, uint32_t cellCount
             cell->getVerticesWritable()[v].p.x *= scale.x;
             cell->getVerticesWritable()[v].p.y *= scale.y;
             cell->getVerticesWritable()[v].p.z *= scale.z;
-            toPxShared(cell->getVerticesWritable()[v].p) = toPxShared(rotation).rotate(toPxShared(cell->getVerticesWritable()[v].p));
+            toNvShared(cell->getVerticesWritable()[v].p) = toNvShared(rotation).rotate(toNvShared(cell->getVerticesWritable()[v].p));
         }
         cell->recalculateBoundingBox();
         DummyAccelerator dmAccel(cell->getFacetCount());
@@ -831,9 +831,9 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
     int32_t y_slices = conf.y_slices;
     int32_t z_slices = conf.z_slices;
 
-    const physx::PxBounds3 sourceBBox = toPxShared(mesh->getBoundingBox());
+    const nvidia::NvBounds3 sourceBBox = toNvShared(mesh->getBoundingBox());
 
-    PxVec3 center = {mesh->getBoundingBox().minimum.x, 0, 0};
+    NvVec3 center = {mesh->getBoundingBox().minimum.x, 0, 0};
 
 
     float x_offset = (sourceBBox.maximum.x - sourceBBox.minimum.x) * (1.0f / (x_slices + 1));
@@ -842,7 +842,7 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
 
     center.x += x_offset;
 
-    PxVec3 dir = {1, 0, 0};
+    NvVec3 dir = {1, 0, 0};
 
     Mesh* slBox = getCuttingBox(center, dir, 20, 0, mInteriorMaterialId);
 
@@ -859,9 +859,9 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
     */
     for (int32_t slice = 0; slice < x_slices; ++slice)
     {
-        PxVec3 randVect =
-            PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-        PxVec3 lDir = dir + randVect * conf.angle_variations;
+        NvVec3 randVect =
+            NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+        NvVec3 lDir = dir + randVect * conf.angle_variations;
 
         setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
         bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_INTERSECTION());
@@ -892,16 +892,16 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
 
     for (uint32_t chunk = 0; chunk < xSlicedChunks.size(); ++chunk)
     {
-        center = PxVec3(0, sourceBBox.minimum.y, 0);
+        center = NvVec3(0, sourceBBox.minimum.y, 0);
         center.y += y_offset;
-        dir  = PxVec3(0, 1, 0);
+        dir  = NvVec3(0, 1, 0);
         mesh = xSlicedChunks[chunk].getMesh();
 
         for (int32_t slice = 0; slice < y_slices; ++slice)
         {
-            PxVec3 randVect =
-                PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-            PxVec3 lDir = dir + randVect * conf.angle_variations;
+            NvVec3 randVect =
+                NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+            NvVec3 lDir = dir + randVect * conf.angle_variations;
 
 
             setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
@@ -933,16 +933,16 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
 
     for (uint32_t chunk = 0; chunk < ySlicedChunks.size(); ++chunk)
     {
-        center = PxVec3(0, 0, sourceBBox.minimum.z);
+        center = NvVec3(0, 0, sourceBBox.minimum.z);
         center.z += z_offset;
-        dir  = PxVec3(0, 0, 1);
+        dir  = NvVec3(0, 0, 1);
         mesh = ySlicedChunks[chunk].getMesh();
 
         for (int32_t slice = 0; slice < z_slices; ++slice)
         {
-            PxVec3 randVect =
-                PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-            PxVec3 lDir = dir + randVect * conf.angle_variations;
+            NvVec3 randVect =
+                NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+            NvVec3 lDir = dir + randVect * conf.angle_variations;
             setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
             bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_INTERSECTION());
             setChunkInfoMesh(ch, bTool.createNewMesh());
@@ -1023,22 +1023,22 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
     int32_t y_slices = conf.y_slices;
     int32_t z_slices = conf.z_slices;
 
-    const physx::PxBounds3 sourceBBox = toPxShared(mesh->getBoundingBox());
+    const nvidia::NvBounds3 sourceBBox = toNvShared(mesh->getBoundingBox());
 
-    PxVec3 center = PxVec3(mesh->getBoundingBox().minimum.x, 0, 0);
+    NvVec3 center = NvVec3(mesh->getBoundingBox().minimum.x, 0, 0);
 
 
     float x_offset = (sourceBBox.maximum.x - sourceBBox.minimum.x) * (1.0f / (x_slices + 1));
     float y_offset = (sourceBBox.maximum.y - sourceBBox.minimum.y) * (1.0f / (y_slices + 1));
     float z_offset = (sourceBBox.maximum.z - sourceBBox.minimum.z) * (1.0f / (z_slices + 1));
 
-    PxVec3 resolution(tm.s / conf.noise.samplingInterval.x,
+    NvVec3 resolution(tm.s / conf.noise.samplingInterval.x,
                       tm.s / conf.noise.samplingInterval.y,
                       tm.s / conf.noise.samplingInterval.z);
 
     center.x += x_offset;
 
-    PxVec3 dir(1, 0, 0);
+    NvVec3 dir(1, 0, 0);
 
     Mesh* slBox = nullptr;
 
@@ -1057,9 +1057,9 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
     */
     for (int32_t slice = 0; slice < x_slices; ++slice)
     {
-        PxVec3 randVect =
-            PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-        PxVec3 lDir = dir + randVect * conf.angle_variations;
+        NvVec3 randVect =
+            NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+        NvVec3 lDir = dir + randVect * conf.angle_variations;
         slBox        = getNoisyCuttingBoxPair(center, lDir, 40, noisyPartSize, resolution,
                                        mPlaneIndexerOffset, conf.noise.amplitude,
                                        conf.noise.frequency, conf.noise.octaveNumber, rnd->getRandomValue(),
@@ -1095,16 +1095,16 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
     uint32_t slicedChunkSize = xSlicedChunks.size();
     for (uint32_t chunk = 0; chunk < slicedChunkSize; ++chunk)
     {
-        center = PxVec3(0, sourceBBox.minimum.y, 0);
+        center = NvVec3(0, sourceBBox.minimum.y, 0);
         center.y += y_offset;
-        dir  = PxVec3(0, 1, 0);
+        dir  = NvVec3(0, 1, 0);
         mesh = xSlicedChunks[chunk].getMesh();
 
         for (int32_t slice = 0; slice < y_slices; ++slice)
         {
-            PxVec3 randVect =
-                PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-            PxVec3 lDir = dir + randVect * conf.angle_variations;
+            NvVec3 randVect =
+                NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+            NvVec3 lDir = dir + randVect * conf.angle_variations;
 
             slBox = getNoisyCuttingBoxPair(center, lDir, 40, noisyPartSize, resolution,
                                            mPlaneIndexerOffset, conf.noise.amplitude,
@@ -1141,16 +1141,16 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
 
     for (uint32_t chunk = 0; chunk < ySlicedChunks.size(); ++chunk)
     {
-        center = PxVec3(0, 0, sourceBBox.minimum.z);
+        center = NvVec3(0, 0, sourceBBox.minimum.z);
         center.z += z_offset;
-        dir  = PxVec3(0, 0, 1);
+        dir  = NvVec3(0, 0, 1);
         mesh = ySlicedChunks[chunk].getMesh();
 
         for (int32_t slice = 0; slice < z_slices; ++slice)
         {
-            PxVec3 randVect =
-                PxVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
-            PxVec3 lDir = dir + randVect * conf.angle_variations;
+            NvVec3 randVect =
+                NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
+            NvVec3 lDir = dir + randVect * conf.angle_variations;
             slBox        = getNoisyCuttingBoxPair(center, lDir, 40, noisyPartSize, resolution,
                                            mPlaneIndexerOffset, conf.noise.amplitude,
                                            conf.noise.frequency, conf.noise.octaveNumber, rnd->getRandomValue(),
@@ -1238,13 +1238,13 @@ int32_t FractureToolImpl::cut(uint32_t chunkId, const NvcVec3& normal, const Nvc
     ch.parentChunkId    = replaceChunk ? mChunkData[chunkInfoIndex].parentChunkId : chunkId;
     float noisyPartSize = 1.2f;
 
-    PxVec3 resolution(tm.s / noise.samplingInterval.x,
+    NvVec3 resolution(tm.s / noise.samplingInterval.x,
                       tm.s / noise.samplingInterval.y,
                       tm.s / noise.samplingInterval.z);
 
     // Perform cut
-    Mesh* slBox = getNoisyCuttingBoxPair(toPxShared(tm.invTransformPos(point)),
-                                         toPxShared(normal),    // tm doesn't change normals (up to normalization)
+    Mesh* slBox = getNoisyCuttingBoxPair(toNvShared(tm.invTransformPos(point)),
+                                         toNvShared(normal),    // tm doesn't change normals (up to normalization)
                                          40, noisyPartSize, resolution,
                                          mPlaneIndexerOffset, noise.amplitude, noise.frequency,
                                          noise.octaveNumber, rnd->getRandomValue(), mInteriorMaterialId);
@@ -1304,7 +1304,7 @@ int32_t FractureToolImpl::cut(uint32_t chunkId, const NvcVec3& normal, const Nvc
 }
 
 
-bool CmpVec::operator()(const PxVec3& v1, const PxVec3& v2) const
+bool CmpVec::operator()(const NvVec3& v1, const NvVec3& v2) const
 {
     auto v = (v2 - v1).abs();
     if (v.x < 1e-5)
@@ -1341,8 +1341,8 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
     const TransformST& tm = mChunkData[chunkInfoIndex].getTmToWorld();
 
     Mesh* mesh            = new MeshImpl(*reinterpret_cast<MeshImpl*>(mChunkData[chunkInfoIndex].getMesh()));
-    float extrusionLength = toPxShared(mesh->getBoundingBox()).getDimensions().magnitude();
-    auto scale            = toPxShared(conf.scale);
+    float extrusionLength = toNvShared(mesh->getBoundingBox()).getDimensions().magnitude();
+    auto scale            = toNvShared(conf.scale);
     conf.transform.p      = tm.invTransformPos(conf.transform.p);
     if (scale.x < 0.f || scale.y < 0.f)
     {
@@ -1350,7 +1350,7 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
     }
     if (conf.isRelativeTransform)
     {
-        toPxShared(conf.transform.p) += toPxShared(mesh->getBoundingBox()).getCenter() / tm.s;
+        toNvShared(conf.transform.p) += toNvShared(mesh->getBoundingBox()).getCenter() / tm.s;
     }
     conf.noise.samplingInterval = conf.noise.samplingInterval / tm.s;
     float xDim = cutoutSet.getDimensions().x;
@@ -1371,7 +1371,7 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
     std::vector<uint32_t> newlyCreatedChunksIds;
 
     SharedFacesMap sharedFacesMap;
-    std::vector<std::vector<PxVec3> > verts;
+    std::vector<std::vector<NvVec3> > verts;
     std::vector<std::set<int32_t> > smoothingGroups;
     std::vector<uint32_t> cutoutStarts;
 
@@ -1381,14 +1381,14 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
         for (uint32_t l = 0; l < cutoutSet.getCutoutLoopCount(c); l++)
         {
             uint32_t vertCount = cutoutSet.getCutoutVertexCount(c, l);
-            verts.push_back(std::vector<PxVec3>(vertCount));
+            verts.push_back(std::vector<NvVec3>(vertCount));
             smoothingGroups.push_back(std::set<int32_t>());
             for (uint32_t v = 0; v < vertCount; v++)
             {
                 auto vert       = cutoutSet.getCutoutVertex(c, l, v);
                 vert.x          = (vert.x / xDim - 0.5f) * scale.x;
                 vert.y          = (vert.y / yDim - 0.5f) * scale.y;
-                verts.back()[v] = toPxShared(vert);
+                verts.back()[v] = toNvShared(vert);
 
                 if (cutoutSet.isCutoutVertexToggleSmoothingGroup(c, l, v))
                 {
@@ -1401,18 +1401,18 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
     float dimension = scale.magnitude();
     float conicityMultiplierBot =
         1.f + 2.f * extrusionLength / dimension *
-                  physx::PxTan(physx::PxClamp(conf.aperture, -179.f, 179.f) * physx::PxPi / 360.f);
+                  nvidia::NvTan(nvidia::NvClamp(conf.aperture, -179.f, 179.f) * nvidia::NvPi / 360.f);
     float conicityMultiplierTop = 2.f - conicityMultiplierBot;
     float heightBot = extrusionLength, heightTop = extrusionLength;
     if (conicityMultiplierBot < 0.f)
     {
         conicityMultiplierBot = 0.f;
-        heightBot             = 0.5f * dimension / std::abs(physx::PxTan(conf.aperture * physx::PxPi / 360.f));
+        heightBot             = 0.5f * dimension / std::abs(nvidia::NvTan(conf.aperture * nvidia::NvPi / 360.f));
     }
     if (conicityMultiplierTop < 0.f)
     {
         conicityMultiplierTop = 0.f;
-        heightTop             = 0.5f * dimension / std::abs(physx::PxTan(conf.aperture * physx::PxPi / 360.f));
+        heightTop             = 0.5f * dimension / std::abs(nvidia::NvTan(conf.aperture * nvidia::NvPi / 360.f));
     }
 
     uint32_t seed = rnd->getRandomValue();
@@ -1443,7 +1443,7 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
     while (!cellsStack.empty())
     {
         auto cell            = cellsStack.top();
-        auto transformedCell = toPxShared(conf.transform).rotate(PxVec3(cell.first * scale.x, cell.second * scale.y, 0));
+        auto transformedCell = toNvShared(conf.transform).rotate(NvVec3(cell.first * scale.x, cell.second * scale.y, 0));
         cellsStack.pop();
         if (visited.find(cell) != visited.end())
         {
@@ -1466,10 +1466,10 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
                 auto vertices = cutoutMesh->getVerticesWritable();
                 for (uint32_t v = 0; v < cutoutMesh->getVerticesCount(); v++)
                 {
-                    toPxShared(vertices[v].p) += transformedCell;
+                    toNvShared(vertices[v].p) += transformedCell;
                 }
-                toPxShared(cutoutMesh->getBoundingBoxWritable().minimum) += transformedCell;
-                toPxShared(cutoutMesh->getBoundingBoxWritable().maximum) += transformedCell;
+                toNvShared(cutoutMesh->getBoundingBoxWritable().minimum) += transformedCell;
+                toNvShared(cutoutMesh->getBoundingBoxWritable().maximum) += transformedCell;
                 if (l == 0)
                 {
                     SweepingAccelerator accel(mesh);
@@ -1489,10 +1489,10 @@ int32_t FractureToolImpl::cutout(uint32_t chunkId, CutoutConfiguration conf, boo
                 }
                 for (uint32_t v = 0; v < cutoutMesh->getVerticesCount(); v++)
                 {
-                    toPxShared(vertices[v].p) -= transformedCell;
+                    toNvShared(vertices[v].p) -= transformedCell;
                 }
-                toPxShared(cutoutMesh->getBoundingBoxWritable().minimum )-= transformedCell;
-                toPxShared(cutoutMesh->getBoundingBoxWritable().maximum) -= transformedCell;
+                toNvShared(cutoutMesh->getBoundingBoxWritable().minimum )-= transformedCell;
+                toNvShared(cutoutMesh->getBoundingBoxWritable().maximum) -= transformedCell;
             }
             if (ch.getMesh() != 0)
             {
@@ -2295,7 +2295,7 @@ void FractureToolImpl::fitUvToRect(float side, uint32_t chunk)
     {
         return;  // We dont have such chunk tringulated;
     }
-    physx::PxBounds3 bnd;
+    nvidia::NvBounds3 bnd;
     bnd.setEmpty();
 
     std::vector<Triangle>& ctrs   = mChunkPostprocessors[infoIndex]->getBaseMesh();
@@ -2305,9 +2305,9 @@ void FractureToolImpl::fitUvToRect(float side, uint32_t chunk)
     {
         if (ctrs[trn].userData == 0)
             continue;
-        bnd.include(PxVec3(ctrs[trn].a.uv[0].x, ctrs[trn].a.uv[0].y, 0.0f));
-        bnd.include(PxVec3(ctrs[trn].b.uv[0].x, ctrs[trn].b.uv[0].y, 0.0f));
-        bnd.include(PxVec3(ctrs[trn].c.uv[0].x, ctrs[trn].c.uv[0].y, 0.0f));
+        bnd.include(NvVec3(ctrs[trn].a.uv[0].x, ctrs[trn].a.uv[0].y, 0.0f));
+        bnd.include(NvVec3(ctrs[trn].b.uv[0].x, ctrs[trn].b.uv[0].y, 0.0f));
+        bnd.include(NvVec3(ctrs[trn].c.uv[0].x, ctrs[trn].c.uv[0].y, 0.0f));
     }
 
     float xscale = side / (bnd.maximum.x - bnd.minimum.x);
@@ -2344,7 +2344,7 @@ void FractureToolImpl::fitAllUvToRect(float side, std::set<uint32_t>& mask)
     {
         return;  // We dont have triangulated chunks.
     }
-    physx::PxBounds3 bnd;
+    nvidia::NvBounds3 bnd;
     bnd.setEmpty();
 
     for (uint32_t chunk = 0; chunk < mChunkData.size(); ++chunk)
@@ -2361,8 +2361,8 @@ void FractureToolImpl::fitAllUvToRect(float side, std::set<uint32_t>& mask)
             {
                 int32_t v1 = edges[m->getFacet(trn)->firstEdgeNumber + ei].s;
                 int32_t v2 = edges[m->getFacet(trn)->firstEdgeNumber + ei].e;
-                bnd.include(PxVec3(vertices[v1].uv[0].x, vertices[v1].uv[0].y, 0.0f));
-                bnd.include(PxVec3(vertices[v2].uv[0].x, vertices[v2].uv[0].y, 0.0f));
+                bnd.include(NvVec3(vertices[v1].uv[0].x, vertices[v1].uv[0].y, 0.0f));
+                bnd.include(NvVec3(vertices[v2].uv[0].x, vertices[v2].uv[0].y, 0.0f));
             }
         }
     }
@@ -2544,7 +2544,7 @@ void FractureToolImpl::rebuildAdjGraph(const std::vector<uint32_t>& chunks, cons
             if (!isSorted)
             {
                 NVBLAST_ASSERT(0);
-                NvBlastGlobalGetErrorCallback()->reportError(Nv::Blast::ErrorCode::eDEBUG_WARNING, "Adjacency array not sorted; subsequent code assumes it is.", __FILE__, __LINE__);
+                NvBlastGlobalGetErrorCallback()->reportError(nvidia::NvErrorCode::eDEBUG_WARNING, "Adjacency array not sorted; subsequent code assumes it is.", __FILE__, __LINE__);
             }
         }
 #endif
@@ -2670,7 +2670,7 @@ void FractureToolImpl::uniteChunks(uint32_t threshold, uint32_t targetClusterSiz
             if (depth[ch] == level && childNumber[getChunkInfoIndex(mChunkData[ch].parentChunkId)] > threshold && (chunkFlags[ch] & Mergeable) != 0)
             {
                 chunksToUnify.push_back(ch);
-                NvcVec3 cp = fromPxShared(toPxShared(mChunkData[ch].getMesh()->getBoundingBox()).getCenter());
+                NvcVec3 cp = fromNvShared(toNvShared(mChunkData[ch].getMesh()->getBoundingBox()).getCenter());
                 if (posc(cp, minPoint))
                 {
                     minPoint = cp;
@@ -2681,7 +2681,7 @@ void FractureToolImpl::uniteChunks(uint32_t threshold, uint32_t targetClusterSiz
         std::vector<std::pair<float, uint32_t> > distances;
         for (uint32_t i = 0; i < chunksToUnify.size(); ++i)
         {
-            float d = (toPxShared(minPoint) - toPxShared(mChunkData[chunksToUnify[i]].getMesh()->getBoundingBox()).getCenter()).magnitude();
+            float d = (toNvShared(minPoint) - toNvShared(mChunkData[chunksToUnify[i]].getMesh()->getBoundingBox()).getCenter()).magnitude();
             distances.push_back(std::make_pair(d, chunksToUnify[i]));
         }
         std::sort(distances.begin(), distances.end());
@@ -2800,7 +2800,7 @@ int32_t FractureToolImpl::createId()
     // make sure there is a free ID to be returned
     if (mChunkIdsUsed.size() >= (size_t)INT32_MAX + 1)
     {
-        NvBlastGlobalGetErrorCallback()->reportError(Nv::Blast::ErrorCode::eINTERNAL_ERROR, "Chunk IDs exhausted.", __FILE__, __LINE__);
+        NvBlastGlobalGetErrorCallback()->reportError(nvidia::NvErrorCode::eINTERNAL_ERROR, "Chunk IDs exhausted.", __FILE__, __LINE__);
         return -1;
     }
 

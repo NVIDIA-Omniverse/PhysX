@@ -22,19 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTINTERNALCOMMON_H
 #define NVBLASTINTERNALCOMMON_H
 #include "NvBlastExtAuthoringTypes.h"
-#include "NvBlastPxSharedHelpers.h"
+#include "NvBlastNvSharedHelpers.h"
 #include "NvBlastVolumeIntegrals.h"
-#include <foundation/PxVec2.h>
-#include <foundation/PxVec3.h>
-#include <foundation/PxPlane.h>
-#include <foundation/PxBounds3.h>
-#include <foundation/PxMath.h>
+#include "NvVec2.h"
+#include "NvVec3.h"
+#include "NvPlane.h"
+#include "NvBounds3.h"
+#include "NvMath.h"
 #include <algorithm>
 
 namespace Nv
@@ -105,7 +105,7 @@ enum ProjectionDirections
 /**
 Computes best direction to project points.
 */
-NV_FORCE_INLINE ProjectionDirections getProjectionDirection(const physx::PxVec3& normal)
+NV_FORCE_INLINE ProjectionDirections getProjectionDirection(const nvidia::NvVec3& normal)
 {
     float maxv = std::max(std::abs(normal.x), std::max(std::abs(normal.y), std::abs(normal.z)));
     ProjectionDirections retVal;
@@ -130,51 +130,51 @@ NV_FORCE_INLINE ProjectionDirections getProjectionDirection(const physx::PxVec3&
 /**
 Computes point projected on given axis aligned plane.
 */
-NV_FORCE_INLINE physx::PxVec2 getProjectedPoint(const physx::PxVec3& point, ProjectionDirections dir)
+NV_FORCE_INLINE nvidia::NvVec2 getProjectedPoint(const nvidia::NvVec3& point, ProjectionDirections dir)
 {
     if (dir & YZ_PLANE)
     {
-        return physx::PxVec2(point.y, point.z);
+        return nvidia::NvVec2(point.y, point.z);
     }
     if (dir & ZX_PLANE)
     {
-        return physx::PxVec2(point.x, point.z);
+        return nvidia::NvVec2(point.x, point.z);
     }
-    return physx::PxVec2(point.x, point.y);
+    return nvidia::NvVec2(point.x, point.y);
 }
 
-NV_FORCE_INLINE physx::PxVec2 getProjectedPoint(const NvcVec3& point, ProjectionDirections dir)
+NV_FORCE_INLINE nvidia::NvVec2 getProjectedPoint(const NvcVec3& point, ProjectionDirections dir)
 {
-    return getProjectedPoint((const physx::PxVec3&)point, dir);
+    return getProjectedPoint((const nvidia::NvVec3&)point, dir);
 }
 
 /**
 Computes point projected on given axis aligned plane, this method is polygon-winding aware.
 */
-NV_FORCE_INLINE physx::PxVec2 getProjectedPointWithWinding(const physx::PxVec3& point, ProjectionDirections dir)
+NV_FORCE_INLINE nvidia::NvVec2 getProjectedPointWithWinding(const nvidia::NvVec3& point, ProjectionDirections dir)
 {
     if (dir & YZ_PLANE)
     {
         if (dir & OPPOSITE_WINDING)
         {
-            return physx::PxVec2(point.z, point.y);
+            return nvidia::NvVec2(point.z, point.y);
         }
         else
-        return physx::PxVec2(point.y, point.z);
+        return nvidia::NvVec2(point.y, point.z);
     }
     if (dir & ZX_PLANE)
     {
         if (dir & OPPOSITE_WINDING)
         {
-            return physx::PxVec2(point.z, point.x);
+            return nvidia::NvVec2(point.z, point.x);
         }
-        return physx::PxVec2(point.x, point.z);
+        return nvidia::NvVec2(point.x, point.z);
     }
     if (dir & OPPOSITE_WINDING)
     {
-        return physx::PxVec2(point.y, point.x);
+        return nvidia::NvVec2(point.y, point.x);
     }
-    return physx::PxVec2(point.x, point.y);
+    return nvidia::NvVec2(point.x, point.y);
 }
 
 
@@ -185,7 +185,7 @@ NV_FORCE_INLINE physx::PxVec2 getProjectedPointWithWinding(const physx::PxVec3& 
 /**
 Test fattened bounding box intersetion.
 */
-NV_INLINE bool  weakBoundingBoxIntersection(const physx::PxBounds3& aBox, const physx::PxBounds3& bBox)
+NV_INLINE bool  weakBoundingBoxIntersection(const nvidia::NvBounds3& aBox, const nvidia::NvBounds3& bBox)
 {
     if (std::max(aBox.minimum.x, bBox.minimum.x) > std::min(aBox.maximum.x, bBox.maximum.x) + BBOX_TEST_EPS)
         return false;
@@ -201,11 +201,11 @@ NV_INLINE bool  weakBoundingBoxIntersection(const physx::PxBounds3& aBox, const 
 /**
 Test segment vs plane intersection. If segment intersects the plane true is returned. Point of intersection is written into 'result'.
 */
-NV_INLINE bool getPlaneSegmentIntersection(const physx::PxPlane& pl, const physx::PxVec3& a, const physx::PxVec3& b,
-                                           physx::PxVec3& result)
+NV_INLINE bool getPlaneSegmentIntersection(const nvidia::NvPlane& pl, const nvidia::NvVec3& a, const nvidia::NvVec3& b,
+                                           nvidia::NvVec3& result)
 {
     float div = (b - a).dot(pl.n);
-    if (physx::PxAbs(div) < 0.0001f)
+    if (nvidia::NvAbs(div) < 0.0001f)
     {
         if (pl.contains(a))
         {

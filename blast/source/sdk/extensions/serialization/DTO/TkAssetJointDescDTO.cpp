@@ -22,11 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "TkAssetJointDescDTO.h"
-#include "PxVec3DTO.h"
+#include "NvVec3DTO.h"
 
 
 namespace Nv
@@ -42,7 +42,7 @@ bool TkAssetJointDescDTO::serialize(Nv::Blast::Serialization::TkAssetJointDesc::
     
     for (int i = 0; i < 2; i++)
     {
-        PxVec3DTO::serialize(builder.getAttachPositions()[i], &poco->attachPositions[i]);
+        NvVec3DTO::serialize(builder.getAttachPositions()[i], &poco->attachPositions[i]);
     }
 
     return true;
@@ -62,8 +62,8 @@ Nv::Blast::TkAssetJointDesc* TkAssetJointDescDTO::deserialize(Nv::Blast::Seriali
 bool TkAssetJointDescDTO::deserializeInto(Nv::Blast::Serialization::TkAssetJointDesc::Reader reader, Nv::Blast::TkAssetJointDesc * poco)
 {
     auto readerAttachPositions = reader.getAttachPositions();
-    PxVec3DTO::deserializeInto(readerAttachPositions[0], &poco->attachPositions[0]);
-    PxVec3DTO::deserializeInto(readerAttachPositions[1], &poco->attachPositions[1]);
+    NvVec3DTO::deserializeInto(readerAttachPositions[0], &poco->attachPositions[0]);
+    NvVec3DTO::deserializeInto(readerAttachPositions[1], &poco->attachPositions[1]);
 
     auto readerNodeIndices = reader.getNodeIndices();
     poco->nodeIndices[0] = readerNodeIndices[0];

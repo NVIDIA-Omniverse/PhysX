@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -90,10 +90,10 @@ namespace Gu
 		template<typename T>
 		struct Comparer
 		{
-			const PxArray<T>& points;
-			const PxU32 dimension;
+			const T* points;
+			PxU32 dimension;
 
-			Comparer(const PxArray<T>& points_, const PxU32 dimension_) : points(points_), dimension(dimension_) {}
+			Comparer(const T* points_, const PxU32 dimension_) : points(points_), dimension(dimension_) {}
 
 			bool operator()(const PxI32& a, const PxI32& b) const
 			{
@@ -108,6 +108,9 @@ namespace Gu
 		template<typename T, typename S>
 		static void mapDuplicatePoints(const PxArray<T>& points, PxArray<PxI32>& result, S duplicateDistanceManhattanMetric = static_cast<S>(1e-6))
 		{
+			result.reserve(points.size());
+			result.forceSize_Unsafe(points.size());
+
 			PxArray<PxI32> indexer;
 			indexer.reserve(points.size());
 			indexer.forceSize_Unsafe(points.size());
@@ -117,23 +120,26 @@ namespace Gu
 				result[i] = i;
 			}
 
-			PxSort(indexer.begin(), indexer.size(), Comparer<T>(points, 0));
+			Comparer<T> comparer(points.begin(), 0);
+			PxSort(indexer.begin(), indexer.size(), comparer);
 
 			PxArray<Range> mergeRanges;
 			mergeRanges.pushBack(Range(0, points.size()));
 			splitRanges<T>(mergeRanges, indexer, points, 0, duplicateDistanceManhattanMetric);
 
+			comparer.dimension = 1;
 			for (PxU32 i = 0; i < mergeRanges.size(); ++i)
 			{
 				const Range& r = mergeRanges[i];
-				PxSort(indexer.begin() + r.start, r.Length(), Comparer<T>(points, 1));
+				PxSort(indexer.begin() + r.start, r.Length(), comparer);
 			}
 			splitRanges<T>(mergeRanges, indexer, points, 1, duplicateDistanceManhattanMetric);
 
+			comparer.dimension = 2;
 			for (PxU32 i = 0; i < mergeRanges.size(); ++i)
 			{
 				const Range& r = mergeRanges[i];
-				PxSort(indexer.begin() + r.start, r.Length(), Comparer<T>(points, 2));
+				PxSort(indexer.begin() + r.start, r.Length(), comparer);
 			}
 			splitRanges<T>(mergeRanges, indexer, points, 2, duplicateDistanceManhattanMetric);
 

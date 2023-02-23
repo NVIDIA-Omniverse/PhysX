@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -36,12 +36,12 @@
 #include "NvBlastExtAuthoringBooleanToolImpl.h"
 #include "NvBlastExtAuthoringTriangulator.h"
 #include "NvBlastExtAuthoringPerlinNoise.h"
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 
 #include <vector>
 
 using namespace Nv::Blast;
-using namespace physx;
+using namespace nvidia;
 
 struct DamagePatternImpl : public DamagePattern
 {
@@ -123,8 +123,8 @@ DamagePattern* PatternGeneratorImpl::generateVoronoiPatternInternal(uint32_t cel
                     {
                         float d = sqrt(vr[j].p.x * vr[j].p.x + vr[j].p.y * vr[j].p.y);
 
-                        vr[j].p.x *= (d + 4 * tan(angle * physx::PxPi / 180.f)) / d;
-                        vr[j].p.y *= (d + 4 * tan(angle * physx::PxPi / 180.f)) / d;
+                        vr[j].p.x *= (d + 4 * tan(angle * nvidia::NvPi / 180.f)) / d;
+                        vr[j].p.y *= (d + 4 * tan(angle * nvidia::NvPi / 180.f)) / d;
                     }
                 }
             }
@@ -176,7 +176,7 @@ DamagePattern* PatternGeneratorImpl::generateBeamPattern(const BeamPatternDesc* 
 DamagePattern* PatternGeneratorImpl::generateRegularRadialPattern(const RegularRadialPatternDesc* desc)
 {
     SimplexNoise noise(desc->radialNoiseAmplitude, desc->radialNoiseFrequency, 3, desc->RNG() * 999999);
-    std::vector<PxVec3> points;
+    std::vector<NvVec3> points;
 
     float radialDelta = (desc->radiusMax - desc->radiusMin) / desc->radialSteps;
     float angularDelta = 2 * acos(-1.0f) / desc->angularSteps;
@@ -187,11 +187,11 @@ DamagePattern* PatternGeneratorImpl::generateRegularRadialPattern(const RegularR
         for (uint32_t j = 0; j < desc->angularSteps; ++j)
         {
             float angle = j * angularDelta + desc->RNG() * desc->angularNoiseAmplitude;
-            float rd = ((i + noise.sample(PxVec3(angle, 0, 0))) * radialDelta + desc->radiusMin);
+            float rd = ((i + noise.sample(NvVec3(angle, 0, 0))) * radialDelta + desc->radiusMin);
             float x = rd * cos(angle);
             float y = rd * sin(angle);
             float z = 0;
-            points.push_back(PxVec3(x, y, z));
+            points.push_back(NvVec3(x, y, z));
         }
     }
     float mrd = 0.0;
@@ -206,7 +206,7 @@ DamagePattern* PatternGeneratorImpl::generateRegularRadialPattern(const RegularR
     
     float ap = std::max(0.0f, desc->aperture);
 
-    auto pattern = generateVoronoiPatternInternal((uint32_t)points.size(), fromPxShared(points.data()), desc->interiorMaterialId, ap);
+    auto pattern = generateVoronoiPatternInternal((uint32_t)points.size(), fromNvShared(points.data()), desc->interiorMaterialId, ap);
 
     pattern->activationRadius = desc->radiusMax * desc->debrisRadiusMult;
     pattern->activationType = (ap == 0) ? DamagePattern::Line : DamagePattern::Cone;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtDamageShaders.h"
@@ -40,7 +40,7 @@
 
 using namespace Nv::Blast;
 using namespace Nv::Blast::VecMath;
-using namespace physx;
+using namespace nvidia;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                  Profiles
@@ -120,21 +120,21 @@ float capsuleDistanceDamage(const float pos[3], const void* damageDesc)
 //                                                  AABB Functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-typedef PxBounds3(*BoundFunction)(const void* damageDesc);
+typedef NvBounds3(*BoundFunction)(const void* damageDesc);
 
-PxBounds3 sphereBounds(const void* damageDesc)
+NvBounds3 sphereBounds(const void* damageDesc)
 {
     const NvBlastExtRadialDamageDesc& desc = *static_cast<const NvBlastExtRadialDamageDesc*>(damageDesc);
-    const physx::PxVec3& p = (reinterpret_cast<const physx::PxVec3&>(desc.position));
-    return physx::PxBounds3::centerExtents(p, physx::PxVec3(desc.maxRadius, desc.maxRadius, desc.maxRadius));
+    const nvidia::NvVec3& p = (reinterpret_cast<const nvidia::NvVec3&>(desc.position));
+    return nvidia::NvBounds3::centerExtents(p, nvidia::NvVec3(desc.maxRadius, desc.maxRadius, desc.maxRadius));
 }
 
-PxBounds3 capsuleBounds(const void* damageDesc)
+NvBounds3 capsuleBounds(const void* damageDesc)
 {
     const NvBlastExtCapsuleRadialDamageDesc& desc = *static_cast<const NvBlastExtCapsuleRadialDamageDesc*>(damageDesc);
-    const physx::PxVec3& p0 = (reinterpret_cast<const physx::PxVec3&>(desc.position0));
-    const physx::PxVec3& p1 = (reinterpret_cast<const physx::PxVec3&>(desc.position1));
-    PxBounds3 b = PxBounds3::empty();
+    const nvidia::NvVec3& p0 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position0));
+    const nvidia::NvVec3& p1 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position1));
+    NvBounds3 b = NvBounds3::empty();
     b.include(p0);
     b.include(p1);
     b.fattenFast(desc.maxRadius);
@@ -184,7 +184,7 @@ void RadialProfileGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBl
     const uint32_t ACTOR_MINIMUM_NODE_COUNT_TO_ACCELERATE = actor->assetNodeCount / 3;
     if (damageAccelerator && actor->graphNodeCount > ACTOR_MINIMUM_NODE_COUNT_TO_ACCELERATE)
     {
-        physx::PxBounds3 bounds = boundsFn(programParams->damageDesc);
+        nvidia::NvBounds3 bounds = boundsFn(programParams->damageDesc);
 
         const uint32_t CALLBACK_BUFFER_SIZE = 1000;
 
@@ -424,12 +424,12 @@ void NvBlastExtShearSubgraphShader(NvBlastFractureBuffers* commandBuffers, const
 
 #define SMALL_NUMBER    (1.e-4f)
 
-bool intersectSegmentTriangle(const PxVec3& p, const PxVec3& q, const PxVec3& a, const PxVec3& b, const PxVec3& c, const PxPlane& trianglePlane)
+bool intersectSegmentTriangle(const NvVec3& p, const NvVec3& q, const NvVec3& a, const NvVec3& b, const NvVec3& c, const NvPlane& trianglePlane)
 {
-    const PxVec3 N = trianglePlane.n;
+    const NvVec3 N = trianglePlane.n;
     const float D = trianglePlane.d;
 
-    PxVec3 intersectPoint;
+    NvVec3 intersectPoint;
     float t = (-D - (p.dot(N))) / ((q - p).dot(N));
     // If the parameter value is not between 0 and 1, there is no intersection
     if (t > -SMALL_NUMBER && t < 1.f + SMALL_NUMBER)
@@ -442,7 +442,7 @@ bool intersectSegmentTriangle(const PxVec3& p, const PxVec3& q, const PxVec3& a,
     }
 
     // Compute the normal of the triangle
-    const PxVec3 TriNorm = (b - a).cross(c - a);
+    const NvVec3 TriNorm = (b - a).cross(c - a);
 
     // Compute twice area of triangle ABC
     const float AreaABCInv = 1.0f / (N.dot(TriNorm));
@@ -476,10 +476,10 @@ void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBu
     const float* familyBondHealths = actor->familyBondHealths;
     const NvBlastExtProgramParams* programParams = static_cast<const NvBlastExtProgramParams*>(params);
     const NvBlastExtTriangleIntersectionDamageDesc& desc = *static_cast<const NvBlastExtTriangleIntersectionDamageDesc*>(programParams->damageDesc);
-    const physx::PxVec3& t0 = (reinterpret_cast<const physx::PxVec3&>(desc.position0));
-    const physx::PxVec3& t1 = (reinterpret_cast<const physx::PxVec3&>(desc.position1));
-    const physx::PxVec3& t2 = (reinterpret_cast<const physx::PxVec3&>(desc.position2));
-    const PxPlane trianglePlane(t0, t1, t2);
+    const nvidia::NvVec3& t0 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position0));
+    const nvidia::NvVec3& t1 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position1));
+    const nvidia::NvVec3& t2 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position2));
+    const NvPlane trianglePlane(t0, t1, t2);
 
     uint32_t outCount = 0;
 
@@ -503,10 +503,10 @@ void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBu
 
             virtual void processResults(const ExtDamageAcceleratorInternal::QueryBondData* bondBuffer, uint32_t count) override
             {
-                const physx::PxVec3& t0 = (reinterpret_cast<const physx::PxVec3&>(m_desc.position0));
-                const physx::PxVec3& t1 = (reinterpret_cast<const physx::PxVec3&>(m_desc.position1));
-                const physx::PxVec3& t2 = (reinterpret_cast<const physx::PxVec3&>(m_desc.position2));
-                const PxPlane trianglePlane(t0, t1, t2);
+                const nvidia::NvVec3& t0 = (reinterpret_cast<const nvidia::NvVec3&>(m_desc.position0));
+                const nvidia::NvVec3& t1 = (reinterpret_cast<const nvidia::NvVec3&>(m_desc.position1));
+                const nvidia::NvVec3& t2 = (reinterpret_cast<const nvidia::NvVec3&>(m_desc.position2));
+                const NvPlane trianglePlane(t0, t1, t2);
 
                 for (uint32_t i = 0; i < count; i++)
                 {
@@ -518,11 +518,11 @@ void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBu
                             const NvBlastBond& bond = m_actor->assetBonds[bondData.bond];
                             const uint32_t chunkIndex0 = m_actor->chunkIndices[bondData.node0];
                             const uint32_t chunkIndex1 = m_actor->chunkIndices[bondData.node1];
-                            const physx::PxVec3& c0 = (reinterpret_cast<const physx::PxVec3&>(m_actor->assetChunks[chunkIndex0].centroid));
-                            const PxVec3& normal = (reinterpret_cast<const PxVec3&>(bond.normal));
-                            const PxVec3& bondCentroid = (reinterpret_cast<const PxVec3&>(bond.centroid));
-                            const physx::PxVec3& c1 = isInvalidIndex(chunkIndex1) ? (c0 + normal * (bondCentroid - c0).dot(normal)) :
-                                (reinterpret_cast<const physx::PxVec3&>(m_actor->assetChunks[chunkIndex1].centroid));
+                            const nvidia::NvVec3& c0 = (reinterpret_cast<const nvidia::NvVec3&>(m_actor->assetChunks[chunkIndex0].centroid));
+                            const NvVec3& normal = (reinterpret_cast<const NvVec3&>(bond.normal));
+                            const NvVec3& bondCentroid = (reinterpret_cast<const NvVec3&>(bond.centroid));
+                            const nvidia::NvVec3& c1 = isInvalidIndex(chunkIndex1) ? (c0 + normal * (bondCentroid - c0).dot(normal)) :
+                                (reinterpret_cast<const nvidia::NvVec3&>(m_actor->assetChunks[chunkIndex1].centroid));
 
                             if(intersectSegmentTriangle(c0, c1, t0, t1, t2, trianglePlane))
                             {
@@ -568,11 +568,11 @@ void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBu
                         const NvBlastBond& bond = assetBonds[bondIndex];
                         const uint32_t chunkIndex0 = chunkIndices[currentNodeIndex];
                         const uint32_t chunkIndex1 = chunkIndices[adjacentNodeIndex];
-                        const physx::PxVec3& c0 = (reinterpret_cast<const physx::PxVec3&>(assetChunks[chunkIndex0].centroid));
-                        const PxVec3& normal = (reinterpret_cast<const PxVec3&>(bond.normal));
-                        const PxVec3& bondCentroid = (reinterpret_cast<const PxVec3&>(bond.centroid));
-                        const physx::PxVec3& c1 = isInvalidIndex(chunkIndex1) ? (c0 + normal * (bondCentroid - c0).dot(normal)) : 
-                            (reinterpret_cast<const physx::PxVec3&>(assetChunks[chunkIndex1].centroid));
+                        const nvidia::NvVec3& c0 = (reinterpret_cast<const nvidia::NvVec3&>(assetChunks[chunkIndex0].centroid));
+                        const NvVec3& normal = (reinterpret_cast<const NvVec3&>(bond.normal));
+                        const NvVec3& bondCentroid = (reinterpret_cast<const NvVec3&>(bond.centroid));
+                        const nvidia::NvVec3& c1 = isInvalidIndex(chunkIndex1) ? (c0 + normal * (bondCentroid - c0).dot(normal)) : 
+                            (reinterpret_cast<const nvidia::NvVec3&>(assetChunks[chunkIndex1].centroid));
 
                         if (intersectSegmentTriangle(c0, c1, t0, t1, t2, trianglePlane))
                         {
@@ -601,15 +601,15 @@ void NvBlastExtTriangleIntersectionSubgraphShader(NvBlastFractureBuffers* comman
     const NvBlastChunk& chunk = assetChunks[chunkIndex];
     const NvBlastExtProgramParams* programParams = static_cast<const NvBlastExtProgramParams*>(params);
     const NvBlastExtTriangleIntersectionDamageDesc& desc = *static_cast<const NvBlastExtTriangleIntersectionDamageDesc*>(programParams->damageDesc);
-    const physx::PxVec3& t0 = (reinterpret_cast<const physx::PxVec3&>(desc.position0));
-    const physx::PxVec3& t1 = (reinterpret_cast<const physx::PxVec3&>(desc.position1));
-    const physx::PxVec3& t2 = (reinterpret_cast<const physx::PxVec3&>(desc.position2));
-    const PxPlane trianglePlane(t0, t1, t2);
+    const nvidia::NvVec3& t0 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position0));
+    const nvidia::NvVec3& t1 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position1));
+    const nvidia::NvVec3& t2 = (reinterpret_cast<const nvidia::NvVec3&>(desc.position2));
+    const NvPlane trianglePlane(t0, t1, t2);
 
     for (uint32_t subChunkIndex = chunk.firstChildIndex; subChunkIndex < chunk.childIndexStop; subChunkIndex++)
     {
-        const physx::PxVec3& c0 = (reinterpret_cast<const physx::PxVec3&>(assetChunks[subChunkIndex].centroid));
-        const physx::PxVec3& c1 = (reinterpret_cast<const physx::PxVec3&>(assetChunks[subChunkIndex + 1].centroid));
+        const nvidia::NvVec3& c0 = (reinterpret_cast<const nvidia::NvVec3&>(assetChunks[subChunkIndex].centroid));
+        const nvidia::NvVec3& c1 = (reinterpret_cast<const nvidia::NvVec3&>(assetChunks[subChunkIndex + 1].centroid));
         if (chunkFractureCount < chunkFractureCountMax && intersectSegmentTriangle(c0, c1, t0, t1, t2, trianglePlane))
         {
             NvBlastChunkFractureData& frac = commandBuffers->chunkFractures[chunkFractureCount++];
@@ -694,7 +694,7 @@ void NvBlastExtImpactSpreadGraphShader(NvBlastFractureBuffers* commandBuffers, c
                 const uint32_t bondIndex = adjacentBondIndices[adjacentNodeIndex];
                 const NvBlastBond& bond = assetBonds[bondIndex];
 
-                const PxVec3& bondCentroid = (reinterpret_cast<const PxVec3&>(bond.centroid));
+                const NvVec3& bondCentroid = (reinterpret_cast<const NvVec3&>(bond.centroid));
 
                 if (!canTakeDamage(familyBondHealths[bondIndex]))
                     continue;
@@ -705,9 +705,9 @@ void NvBlastExtImpactSpreadGraphShader(NvBlastFractureBuffers* commandBuffers, c
 
                 const uint32_t chunkIndex0 = chunkIndices[currentNode.index];
                 const uint32_t chunkIndex1 = chunkIndices[neighbourIndex];
-                const physx::PxVec3& c0 = reinterpret_cast<const physx::PxVec3&>(assetChunks[chunkIndex0].centroid);
+                const nvidia::NvVec3& c0 = reinterpret_cast<const nvidia::NvVec3&>(assetChunks[chunkIndex0].centroid);
                 bool isNeighbourWorldChunk = isInvalidIndex(chunkIndex1);
-                const physx::PxVec3& c1 = isNeighbourWorldChunk ? bondCentroid : (reinterpret_cast<const physx::PxVec3&>(assetChunks[chunkIndex1].centroid));
+                const nvidia::NvVec3& c1 = isNeighbourWorldChunk ? bondCentroid : (reinterpret_cast<const nvidia::NvVec3&>(assetChunks[chunkIndex1].centroid));
 
                 const float distance = (c1 - c0).magnitude() * (isNeighbourWorldChunk ? 2.f : 1.f);
                 float totalDistance = currentNode.distance + distance;

@@ -4,9 +4,9 @@
 #include <vector>
 #include "NvBlastExtAuthoringTypes.h"
 
-namespace physx
+namespace nvidia
 {
-    class PxVec3;
+    class NvVec3;
 };
 
 namespace Nv
@@ -28,7 +28,7 @@ Set cutting box at some particular position.
 \param[in] size     Cutting box size
 \param[in] id   Cutting box ID
 */
-void    setCuttingBox(const physx::PxVec3& point, const physx::PxVec3& normal, Mesh* mesh, float size, int64_t id);
+void    setCuttingBox(const nvidia::NvVec3& point, const nvidia::NvVec3& normal, Mesh* mesh, float size, int64_t id);
 /**
 Create cutting box at some particular position.
 \param[in] point    Cutting face center
@@ -36,14 +36,14 @@ Create cutting box at some particular position.
 \param[in] size     Cutting box size
 \param[in] id   Cutting box ID
 */
-Mesh*   getCuttingBox(const physx::PxVec3& point, const physx::PxVec3& normal, float size, int64_t id, int32_t interiorMaterialId);
+Mesh*   getCuttingBox(const nvidia::NvVec3& point, const nvidia::NvVec3& normal, float size, int64_t id, int32_t interiorMaterialId);
 
 /**
 Create box at some particular position.
 \param[in] point    Cutting face center
 \param[in] size     Cutting box size
 */
-Mesh*   getBigBox(const physx::PxVec3& point, float size, int32_t interiorMaterialId);
+Mesh*   getBigBox(const nvidia::NvVec3& point, float size, int32_t interiorMaterialId);
 
 /**
 Create slicing box with noisy cutting surface.
@@ -58,7 +58,7 @@ Create slicing box with noisy cutting surface.
 \param[in] octaves          Noise octaves
 \param[in] seed             Random generator seed, used for noise generation.
 */
-Mesh* getNoisyCuttingBoxPair(const physx::PxVec3& point, const physx::PxVec3& normal, float size, float jaggedPlaneSize, physx::PxVec3 resolution, int64_t id, float amplitude, float frequency, int32_t octaves, int32_t seed, int32_t interiorMaterialId);
+Mesh* getNoisyCuttingBoxPair(const nvidia::NvVec3& point, const nvidia::NvVec3& normal, float size, float jaggedPlaneSize, nvidia::NvVec3 resolution, int64_t id, float amplitude, float frequency, int32_t octaves, int32_t seed, int32_t interiorMaterialId);
 
 
 /**
@@ -69,10 +69,10 @@ void inverseNormalAndIndices(Mesh* mesh);
 
 struct CmpVec
 {
-    bool operator()(const physx::PxVec3& v1, const physx::PxVec3& v2) const;
+    bool operator()(const nvidia::NvVec3& v1, const nvidia::NvVec3& v2) const;
 };
 
-typedef std::map<physx::PxVec3, std::map<uint32_t, uint32_t>, CmpVec> PointMap;
+typedef std::map<nvidia::NvVec3, std::map<uint32_t, uint32_t>, CmpVec> PointMap;
 
 struct SharedFace
 {
@@ -90,14 +90,14 @@ struct SharedFace
 
 struct CmpSharedFace
 {
-    bool operator()(const std::pair<physx::PxVec3, physx::PxVec3>& pv1, const std::pair<physx::PxVec3, physx::PxVec3>& pv2) const;
+    bool operator()(const std::pair<nvidia::NvVec3, nvidia::NvVec3>& pv1, const std::pair<nvidia::NvVec3, nvidia::NvVec3>& pv2) const;
 };
 
-typedef std::map<std::pair<physx::PxVec3, physx::PxVec3>, SharedFace, CmpSharedFace> SharedFacesMap;
+typedef std::map<std::pair<nvidia::NvVec3, nvidia::NvVec3>, SharedFace, CmpSharedFace> SharedFacesMap;
 
 struct CutoutConfiguration;
 
-void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<std::vector<physx::PxVec3>>& points,
+void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<std::vector<nvidia::NvVec3>>& points,
     float heightBot, float heightTop, float conicityBot, float conicityTop,
     int64_t& id, int32_t seed, int32_t interiorMaterialId, SharedFacesMap& sharedFacesMap);
 
@@ -117,7 +117,7 @@ Create cutting cone at some particular position.
 \param[in] sharedFacesMap Shared faces for noisy fracture
 */
 Mesh*   getCuttingCone(const CutoutConfiguration& conf,
-    const std::vector<physx::PxVec3>& points, const std::set<int32_t>& smoothingGroups,
+    const std::vector<nvidia::NvVec3>& points, const std::set<int32_t>& smoothingGroups,
     float heightBot, float heightTop, float conicityBot, float conicityTop,
     int64_t& id, int32_t seed, int32_t interiorMaterialId, const SharedFacesMap& sharedFacesMap, bool inverseNormals = false);
 

@@ -22,22 +22,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtApexSharedParts.h"
 
 #include "NvBlastGlobals.h"
 #include "NvBlastMemory.h"
+#include "NvBlastAssert.h"
 
-#include "foundation/PxMat44.h"
-#include "foundation/PxBounds3.h"
-#include "PxFoundation.h"
-#include "PsVecMath.h"
+#include "NsVecMath.h"
+
+#include "NvMat44.h"
+#include "NvBounds3.h"
+#include "NsVecMath.h"
 #include <vector>
 
-using namespace physx;
-using namespace physx::shdfnd::aos;
+using namespace nvidia;
+using namespace nvidia::shdfnd::aos;
 
 
 namespace Nv
@@ -45,7 +47,7 @@ namespace Nv
 namespace Blast
 {
 
-PX_NOALIAS PX_FORCE_INLINE BoolV PointOutsideOfPlane4(const Vec3VArg _a, const Vec3VArg _b, const Vec3VArg _c, const Vec3VArg _d)
+NV_NOALIAS NV_FORCE_INLINE BoolV PointOutsideOfPlane4(const Vec3VArg _a, const Vec3VArg _b, const Vec3VArg _c, const Vec3VArg _d)
 {
     // this is not 0 because of the following scenario:
     // All the points lie on the same plane and the plane goes through the origin (0,0,0).
@@ -81,7 +83,7 @@ PX_NOALIAS PX_FORCE_INLINE BoolV PointOutsideOfPlane4(const Vec3VArg _a, const V
     return V4IsGrtrOrEq(V4Mul(signa, signd), zero);//same side, outside of the plane
 }
 
-PX_NOALIAS PX_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg a, const Vec3VArg b)
+NV_NOALIAS NV_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg a, const Vec3VArg b)
 {
     const FloatV zero = FZero();
     const FloatV one = FOne();
@@ -98,8 +100,8 @@ PX_NOALIAS PX_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg a, const V
     return V3Sel(con, a, V3ScaleAdd(ab, t, a));
 }
 
-PX_NOALIAS PX_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg Q0, const Vec3VArg Q1, const Vec3VArg A0, const Vec3VArg A1,
-    const Vec3VArg B0, const Vec3VArg B1, PxU32& size, Vec3V& closestA, Vec3V& closestB)
+NV_NOALIAS NV_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg Q0, const Vec3VArg Q1, const Vec3VArg A0, const Vec3VArg A1,
+    const Vec3VArg B0, const Vec3VArg B1, uint32_t& size, Vec3V& closestA, Vec3V& closestB)
 {
     const Vec3V a = Q0;
     const Vec3V b = Q1;
@@ -135,8 +137,8 @@ PX_NOALIAS PX_FORCE_INLINE Vec3V closestPtPointSegment(const Vec3VArg Q0, const 
     return V3Sub(tempClosestA, tempClosestB);
 }
 
-PX_NOALIAS Vec3V closestPtPointSegmentTesselation(const Vec3VArg Q0, const Vec3VArg Q1, const Vec3VArg A0, const Vec3VArg A1,
-    const Vec3VArg B0, const Vec3VArg B1, PxU32& size, Vec3V& closestA, Vec3V& closestB)
+NV_NOALIAS Vec3V closestPtPointSegmentTesselation(const Vec3VArg Q0, const Vec3VArg Q1, const Vec3VArg A0, const Vec3VArg A1,
+    const Vec3VArg B0, const Vec3VArg B1, uint32_t& size, Vec3V& closestA, Vec3V& closestB)
 {
     const FloatV half = FHalf();
 
@@ -186,7 +188,7 @@ PX_NOALIAS Vec3V closestPtPointSegmentTesselation(const Vec3VArg Q0, const Vec3V
     return closestPtPointSegment(q0, q1, a0, a1, b0, b1, size, closestA, closestB);
 }
 
-PX_NOALIAS Vec3V closestPtPointTriangleTesselation(const Vec3V* PX_RESTRICT Q, const Vec3V* PX_RESTRICT A, const Vec3V* PX_RESTRICT B, const PxU32* PX_RESTRICT indices, PxU32& size, Vec3V& closestA, Vec3V& closestB)
+NV_NOALIAS Vec3V closestPtPointTriangleTesselation(const Vec3V* NV_RESTRICT Q, const Vec3V* NV_RESTRICT A, const Vec3V* NV_RESTRICT B, const uint32_t* NV_RESTRICT indices, uint32_t& size, Vec3V& closestA, Vec3V& closestB)
 {
     size = 3;
     const FloatV zero = FZero();
@@ -196,9 +198,9 @@ PX_NOALIAS Vec3V closestPtPointTriangleTesselation(const Vec3V* PX_RESTRICT Q, c
     const FloatV four = FLoad(4.f);
     const FloatV sixty = FLoad(100.f);
 
-    const PxU32 ind0 = indices[0];
-    const PxU32 ind1 = indices[1];
-    const PxU32 ind2 = indices[2];
+    const uint32_t ind0 = indices[0];
+    const uint32_t ind1 = indices[1];
+    const uint32_t ind2 = indices[2];
 
     const Vec3V a = Q[ind0];
     const Vec3V b = Q[ind1];
@@ -344,7 +346,7 @@ PX_NOALIAS Vec3V closestPtPointTriangleTesselation(const Vec3V* PX_RESTRICT Q, c
         //calculate the triangle normal
         const Vec3V triNormal = V3Normalize(w);
 
-        PX_ASSERT(V3AllEq(triNormal, V3Zero()) == 0);
+        NVBLAST_ASSERT(V3AllEq(triNormal, V3Zero()) == 0);
 
 
         //split the longest edge
@@ -476,13 +478,13 @@ PX_NOALIAS Vec3V closestPtPointTriangleTesselation(const Vec3V* PX_RESTRICT Q, c
     return V3Sub(tempClosestA, tempClosestB);
 }
 
-PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3V* PX_RESTRICT A, Vec3V* PX_RESTRICT B, PxU32& size, Vec3V& closestA, Vec3V& closestB)
+NV_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* NV_RESTRICT Q, Vec3V* NV_RESTRICT A, Vec3V* NV_RESTRICT B, uint32_t& size, Vec3V& closestA, Vec3V& closestB)
 {
     const FloatV eps = FEps();
     const Vec3V zeroV = V3Zero();
-    PxU32 tempSize = size;
+    uint32_t tempSize = size;
 
-    FloatV bestSqDist = FLoad(PX_MAX_REAL);
+    FloatV bestSqDist = FLoad(NV_MAX_F32);
     const Vec3V a = Q[0];
     const Vec3V b = Q[1];
     const Vec3V c = Q[2];
@@ -501,7 +503,7 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     if (FAllGrtr(eps, fMin))
     {
         size = 3;
-        PxU32 tempIndices[] = { 0, 1, 2 };
+        uint32_t tempIndices[] = { 0, 1, 2 };
         return closestPtPointTriangleTesselation(Q, A, B, tempIndices, size, closestA, closestB);
     }
 
@@ -509,7 +511,7 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     Vec3V _A[] = { A[0], A[1], A[2], A[3] };
     Vec3V _B[] = { B[0], B[1], B[2], B[3] };
 
-    PxU32 indices[3] = { 0, 1, 2 };
+    uint32_t indices[3] = { 0, 1, 2 };
 
     const BoolV bIsOutside4 = PointOutsideOfPlane4(a, b, c, d);
 
@@ -525,8 +527,8 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     if (BAllEq(BGetX(bIsOutside4), bTrue))
     {
 
-        PxU32 tempIndices[] = { 0, 1, 2 };
-        PxU32 _size = 3;
+        uint32_t tempIndices[] = { 0, 1, 2 };
+        uint32_t _size = 3;
 
         result = closestPtPointTriangleTesselation(_Q, _A, _B, tempIndices, _size, tempClosestA, tempClosestB);
 
@@ -545,9 +547,9 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     if (BAllEq(BGetY(bIsOutside4), bTrue))
     {
 
-        PxU32 tempIndices[] = { 0, 2, 3 };
+        uint32_t tempIndices[] = { 0, 2, 3 };
 
-        PxU32 _size = 3;
+        uint32_t _size = 3;
 
         const Vec3V q = closestPtPointTriangleTesselation(_Q, _A, _B, tempIndices, _size, tempClosestA, tempClosestB);
 
@@ -570,8 +572,8 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     if (BAllEq(BGetZ(bIsOutside4), bTrue))
     {
 
-        PxU32 tempIndices[] = { 0, 3, 1 };
-        PxU32 _size = 3;
+        uint32_t tempIndices[] = { 0, 3, 1 };
+        uint32_t _size = 3;
 
         const Vec3V q = closestPtPointTriangleTesselation(_Q, _A, _B, tempIndices, _size, tempClosestA, tempClosestB);
 
@@ -594,8 +596,8 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     if (BAllEq(BGetW(bIsOutside4), bTrue))
     {
 
-        PxU32 tempIndices[] = { 1, 3, 2 };
-        PxU32 _size = 3;
+        uint32_t tempIndices[] = { 1, 3, 2 };
+        uint32_t _size = 3;
 
         const Vec3V q = closestPtPointTriangleTesselation(_Q, _A, _B, tempIndices, _size, tempClosestA, tempClosestB);
 
@@ -626,8 +628,8 @@ PX_NOALIAS Vec3V closestPtPointTetrahedronTesselation(Vec3V* PX_RESTRICT Q, Vec3
     return result;
 }
 
-PX_NOALIAS PX_FORCE_INLINE Vec3V doTesselation(Vec3V* PX_RESTRICT Q, Vec3V* PX_RESTRICT A, Vec3V* PX_RESTRICT B,
-    const Vec3VArg support, const Vec3VArg supportA, const Vec3VArg supportB, PxU32& size, Vec3V& closestA, Vec3V& closestB)
+NV_NOALIAS NV_FORCE_INLINE Vec3V doTesselation(Vec3V* NV_RESTRICT Q, Vec3V* NV_RESTRICT A, Vec3V* NV_RESTRICT B,
+    const Vec3VArg support, const Vec3VArg supportA, const Vec3VArg supportB, uint32_t& size, Vec3V& closestA, Vec3V& closestB)
 {
     switch (size)
     {
@@ -644,7 +646,7 @@ PX_NOALIAS PX_FORCE_INLINE Vec3V doTesselation(Vec3V* PX_RESTRICT Q, Vec3V* PX_R
     case 3:
     {
 
-        PxU32 tempIndices[3] = { 0, 1, 2 };
+        uint32_t tempIndices[3] = { 0, 1, 2 };
         return closestPtPointTriangleTesselation(Q, A, B, tempIndices, size, closestA, closestB);
     }
     case 4:
@@ -652,7 +654,7 @@ PX_NOALIAS PX_FORCE_INLINE Vec3V doTesselation(Vec3V* PX_RESTRICT Q, Vec3V* PX_R
         return closestPtPointTetrahedronTesselation(Q, A, B, size, closestA, closestB);
     }
     default:
-        PX_ASSERT(0);
+        NVBLAST_ASSERT(0);
     }
     return support;
 }
@@ -670,7 +672,7 @@ enum Status
 struct Output
 {
     /// Get the normal to push apart in direction from A to B
-    PX_FORCE_INLINE Vec3V getNormal() const { return V3Normalize(V3Sub(mClosestB, mClosestA)); }
+    NV_FORCE_INLINE Vec3V getNormal() const { return V3Normalize(V3Sub(mClosestB, mClosestA)); }
     Vec3V mClosestA;                ///< Closest point on A
     Vec3V mClosestB;                ///< Closest point on B
     FloatV mDistSq;
@@ -678,7 +680,7 @@ struct Output
 
 struct ConvexV
 {
-    void calcExtent(const Vec3V& dir, PxF32& minOut, PxF32& maxOut) const
+    void calcExtent(const Vec3V& dir, float& minOut, float& maxOut) const
     {
         // Expand 
         const Vec4V x = Vec4V_From_FloatV(V3GetX(dir));
@@ -709,9 +711,9 @@ struct ConvexV
         const Vec4V y = Vec4V_From_FloatV(V3GetY(dir));
         const Vec4V z = Vec4V_From_FloatV(V3GetZ(dir));
 
-        PX_ALIGN(16, static const PxF32 index4const[]) = { 0.0f, 1.0f, 2.0f, 3.0f };
+        NV_ALIGN(16, static const float index4const[]) = { 0.0f, 1.0f, 2.0f, 3.0f };
         Vec4V index4 = *(const Vec4V*)index4const;
-        PX_ALIGN(16, static const PxF32 delta4const[]) = { 4.0f, 4.0f, 4.0f, 4.0f };
+        NV_ALIGN(16, static const float delta4const[]) = { 4.0f, 4.0f, 4.0f, 4.0f };
         const Vec4V delta4 = *(const Vec4V*)delta4const;
 
         const Vec4V* src = mAovVertices;
@@ -732,23 +734,23 @@ struct ConvexV
             index4 = V4Add(index4, delta4);
         }
         Vec4V horiMax = Vec4V_From_FloatV(V4ExtractMax(max));
-        PxU32 mask = BGetBitMask(V4IsEq(horiMax, max));
-        const PxU32 simdIndex = (0x12131210 >> (mask + mask)) & PxU32(3);
+        uint32_t mask = BGetBitMask(V4IsEq(horiMax, max));
+        const uint32_t simdIndex = (0x12131210 >> (mask + mask)) & uint32_t(3);
 
         /// NOTE! Could be load hit store
         /// Would be better to have all simd. 
-        PX_ALIGN(16, PxF32 f[4]);
+        NV_ALIGN(16, float f[4]);
         V4StoreA(maxIndex, f);
-        PxU32 index = PxU32(PxI32(f[simdIndex]));
+        uint32_t index = uint32_t(uint32_t(f[simdIndex]));
 
         const Vec4V* aovIndex = (mAovVertices + (index >> 2) * 3);
-        const PxF32* aovOffset = ((const PxF32*)aovIndex) + (index & 3);
+        const float* aovOffset = ((const float*)aovIndex) + (index & 3);
 
         return Vec3V_From_Vec4V(V4LoadXYZW(aovOffset[0], aovOffset[4], aovOffset[8], 1.0f));
     }
 
     const Vec4V* mAovVertices;          ///< Vertices storex x,x,x,x, y,y,y,y, z,z,z,z
-    PxU32 mNumAovVertices;          ///< Number of groups of 4 of vertices
+    uint32_t mNumAovVertices;          ///< Number of groups of 4 of vertices
 };
 
 Status Collide(const Vec3V& initialDir, const ConvexV& convexA, const Mat34V& bToA, const ConvexV& convexB, Output& out)
@@ -759,7 +761,7 @@ Status Collide(const Vec3V& initialDir, const ConvexV& convexA, const Mat34V& bT
 
     Mat33V aToB = M34Trnsps33(bToA);
 
-    PxU32 size = 0;
+    uint32_t size = 0;
 
     const Vec3V zeroV = V3Zero();
     const BoolV bTrue = BTTTT();
@@ -788,8 +790,8 @@ Status Collide(const Vec3V& initialDir, const ConvexV& convexA, const Mat34V& bT
         closAA = closA;
         closBB = closB;
 
-        PxU32 index = size++;
-        PX_ASSERT(index < 4);
+        uint32_t index = size++;
+        NVBLAST_ASSERT(index < 4);
 
         const Vec3V supportA = convexA.calcSupport(V3Neg(v));
         const Vec3V supportB = M34MulV3(bToA, convexB.calcSupport(M33MulV3(aToB, v)));
@@ -823,7 +825,7 @@ Status Collide(const Vec3V& initialDir, const ConvexV& convexA, const Mat34V& bT
     return Status(BAllEq(bCon, bTrue) == 1 ? STATUS_CONTACT : STATUS_DEGENERATE);
 }
 
-static void _calcSeparation(const ConvexV& convexA, const physx::PxTransform& aToWorldIn, const Mat34V& bToA, ConvexV& convexB, const Vec3V& centroidAToB, Output& out, Separation& sep)
+static void _calcSeparation(const ConvexV& convexA, const nvidia::NvTransform& aToWorldIn, const Mat34V& bToA, ConvexV& convexB, const Vec3V& centroidAToB, Output& out, Separation& sep)
 {
     
     Mat33V aToB = M34Trnsps33(bToA);
@@ -848,7 +850,7 @@ static void _calcSeparation(const ConvexV& convexA, const physx::PxTransform& aT
     {
         // Offset the min max taking into account transform
         // Distance of origin from B's space in As space in direction of the normal in As space should fix it...
-        PxF32 fix;
+        float fix;
         FStore(V3Dot(bToA.col3, normalA), &fix);
         sep.min1 += fix;
         sep.max1 += fix;
@@ -858,7 +860,7 @@ static void _calcSeparation(const ConvexV& convexA, const physx::PxTransform& aT
     Vec3V center = V3Scale(V3Add(out.mClosestA, out.mClosestB), FLoad(0.5f));
     // Transform to world space
     Mat34V aToWorld;
-    *(PxMat44*)&aToWorld = aToWorldIn;
+    *(NvMat44*)&aToWorld = aToWorldIn;
     // Put the normal in world space
     Vec3V worldCenter = M34MulV3(aToWorld, center);
     Vec3V worldNormal = M34Mul33V3(aToWorld, normalA);
@@ -869,10 +871,10 @@ static void _calcSeparation(const ConvexV& convexA, const physx::PxTransform& aT
     sep.plane.d = -sep.plane.d;
 }
 
-static void _arrayVec3ToVec4(const PxVec3* src, Vec4V* dst, PxU32 num)
+static void _arrayVec3ToVec4(const NvVec3* src, Vec4V* dst, uint32_t num)
 {
-    const PxU32 num4 = num >> 2;
-    for (PxU32 i = 0; i < num4; i++, dst += 3, src += 4)
+    const uint32_t num4 = num >> 2;
+    for (uint32_t i = 0; i < num4; i++, dst += 3, src += 4)
     {
         Vec3V v0 = V3LoadU(&src[0].x);
         Vec3V v1 = V3LoadU(&src[1].x);
@@ -885,11 +887,11 @@ static void _arrayVec3ToVec4(const PxVec3* src, Vec4V* dst, PxU32 num)
         dst[1] = v1;
         dst[2] = v2;
     }
-    const PxU32 remain = num & 3;
+    const uint32_t remain = num & 3;
     if (remain)
     {
         Vec3V work[4];
-        PxU32 i = 0;
+        uint32_t i = 0;
         for (; i < remain; i++) work[i] = V3LoadU(&src[i].x);
         for (; i < 4; i++) work[i] = work[remain - 1];
         V4Transpose(work[0], work[1], work[2], work[3]);
@@ -900,7 +902,7 @@ static void _arrayVec3ToVec4(const PxVec3* src, Vec4V* dst, PxU32 num)
 }
 
 
-static void _arrayVec3ToVec4(const PxVec3* src, const Vec3V& scale, Vec4V* dst, PxU32 num)
+static void _arrayVec3ToVec4(const NvVec3* src, const Vec3V& scale, Vec4V* dst, uint32_t num)
 {
     // If no scale - use the faster version
     if (V3AllEq(scale, V3One()))
@@ -908,8 +910,8 @@ static void _arrayVec3ToVec4(const PxVec3* src, const Vec3V& scale, Vec4V* dst, 
         return _arrayVec3ToVec4(src, dst, num);
     }
 
-    const PxU32 num4 = num >> 2;
-    for (PxU32 i = 0; i < num4; i++, dst += 3, src += 4)
+    const uint32_t num4 = num >> 2;
+    for (uint32_t i = 0; i < num4; i++, dst += 3, src += 4)
     {
         Vec3V v0 = V3Mul(scale, V3LoadU(&src[0].x));
         Vec3V v1 = V3Mul(scale, V3LoadU(&src[1].x));
@@ -922,11 +924,11 @@ static void _arrayVec3ToVec4(const PxVec3* src, const Vec3V& scale, Vec4V* dst, 
         dst[1] = v1;
         dst[2] = v2;
     }
-    const PxU32 remain = num & 3;
+    const uint32_t remain = num & 3;
     if (remain)
     {
         Vec3V work[4];
-        PxU32 i = 0;
+        uint32_t i = 0;
         for (; i < remain; i++) work[i] = V3Mul(scale, V3LoadU(&src[i].x));
         for (; i < 4; i++) work[i] = work[remain - 1];
         V4Transpose(work[0], work[1], work[2], work[3]);
@@ -976,35 +978,35 @@ private:
     _out = (buffSize < STACK_ALLOC_LIMIT ? NvBlastAlloca(buffSize) : _out##Allocator.alloc(buffSize))
 
 
-bool importerHullsInProximityApexFree(uint32_t hull0Count, const PxVec3* hull0, PxBounds3& hull0Bounds, const physx::PxTransform& localToWorldRT0In, const physx::PxVec3& scale0In,
-    uint32_t hull1Count, const PxVec3* hull1, PxBounds3& hull1Bounds, const physx::PxTransform& localToWorldRT1In, const physx::PxVec3& scale1In,
-    physx::PxF32 maxDistance, Separation* separation)
+bool importerHullsInProximityApexFree(uint32_t hull0Count, const NvVec3* hull0, NvBounds3& hull0Bounds, const nvidia::NvTransform& localToWorldRT0In, const nvidia::NvVec3& scale0In,
+    uint32_t hull1Count, const NvVec3* hull1, NvBounds3& hull1Bounds, const nvidia::NvTransform& localToWorldRT1In, const nvidia::NvVec3& scale1In,
+    float maxDistance, Separation* separation)
 {
 
 
-    const PxU32 numVerts0 = static_cast<PxU32>(hull0Count);
-    const PxU32 numVerts1 = static_cast<PxU32>(hull1Count);
-    const PxU32 numAov0 = (numVerts0 + 3) >> 2;
-    const PxU32 numAov1 = (numVerts1 + 3) >> 2;
+    const uint32_t numVerts0 = static_cast<uint32_t>(hull0Count);
+    const uint32_t numVerts1 = static_cast<uint32_t>(hull1Count);
+    const uint32_t numAov0 = (numVerts0 + 3) >> 2;
+    const uint32_t numAov1 = (numVerts1 + 3) >> 2;
 
-    const PxU32 buffSize = (numAov0 + numAov1) * sizeof(Vec4V) * 3;
+    const uint32_t buffSize = (numAov0 + numAov1) * sizeof(Vec4V) * 3;
     void* buff = nullptr;
     ALLOCATE_TEMP_MEMORY(buff, buffSize);
     Vec4V* verts0 = (Vec4V*)buff;
 
     // Make sure it's aligned
-    PX_ASSERT((size_t(verts0) & 0xf) == 0);
+    NVBLAST_ASSERT((size_t(verts0) & 0xf) == 0);
 
     Vec4V* verts1 = verts0 + (numAov0 * 3);
 
     const Vec3V scale0 = V3LoadU(&scale0In.x);
     const Vec3V scale1 = V3LoadU(&scale1In.x);
-    std::vector<PxVec3> vert0(numVerts0);
+    std::vector<NvVec3> vert0(numVerts0);
     for (uint32_t i = 0; i < numVerts0; ++i)
     {
         vert0[i] = hull0[i];
     }
-    std::vector<PxVec3> vert1(numVerts1);
+    std::vector<NvVec3> vert1(numVerts1);
     for (uint32_t i = 0; i < numVerts1; ++i)
     {
         vert1[i] = hull1[i];
@@ -1013,12 +1015,12 @@ bool importerHullsInProximityApexFree(uint32_t hull0Count, const PxVec3* hull0, 
     _arrayVec3ToVec4(vert0.data(), scale0, verts0, numVerts0);
     _arrayVec3ToVec4(vert1.data(), scale1, verts1, numVerts1);
 
-    const PxTransform trans1To0 = localToWorldRT0In.transformInv(localToWorldRT1In);
+    const NvTransform trans1To0 = localToWorldRT0In.transformInv(localToWorldRT1In);
 
     // Load into simd mat
     Mat34V bToA;
-    *(PxMat44*)&bToA = trans1To0;
-    (*(PxMat44*)&bToA).column3.w = 0.0f; // AOS wants the 4th component of Vec3V to be 0 to work properly
+    *(NvMat44*)&bToA = trans1To0;
+    (*(NvMat44*)&bToA).column3.w = 0.0f; // AOS wants the 4th component of Vec3V to be 0 to work properly
 
     ConvexV convexA;
     ConvexV convexB;
@@ -1029,8 +1031,8 @@ bool importerHullsInProximityApexFree(uint32_t hull0Count, const PxVec3* hull0, 
     convexB.mNumAovVertices = numAov1;
     convexB.mAovVertices = verts1;
 
-    const physx::PxVec3 hullACenter = hull0Bounds.getCenter();
-    const physx::PxVec3 hullBCenter = hull1Bounds.getCenter();
+    const nvidia::NvVec3 hullACenter = hull0Bounds.getCenter();
+    const nvidia::NvVec3 hullBCenter = hull1Bounds.getCenter();
     const Vec3V centroidA = V3LoadU(&hullACenter.x);
     const Vec3V centroidB = M34MulV3(bToA, V3LoadU(&hullBCenter.x));
 
@@ -1045,8 +1047,8 @@ bool importerHullsInProximityApexFree(uint32_t hull0Count, const PxVec3* hull0, 
     if (status == STATUS_DEGENERATE)
     {
         // Calculate the tolerance from the extents
-        const PxVec3 extents0 = hull0Bounds.getExtents();
-        const PxVec3 extents1 = hull1Bounds.getExtents();
+        const NvVec3 extents0 = hull0Bounds.getExtents();
+        const NvVec3 extents1 = hull1Bounds.getExtents();
 
         const FloatV tolerance0 = V3ExtractMin(V3Mul(V3LoadU(&extents0.x), scale0));
         const FloatV tolerance1 = V3ExtractMin(V3Mul(V3LoadU(&extents1.x), scale1));
@@ -1074,7 +1076,7 @@ bool importerHullsInProximityApexFree(uint32_t hull0Count, const PxVec3* hull0, 
         {
             _calcSeparation(convexA, localToWorldRT0In, bToA, convexB, initialDir, output, *separation);
         }
-        PxF32 val;
+        float val;
         FStore(output.mDistSq, &val);
         return val < (maxDistance * maxDistance);
     }

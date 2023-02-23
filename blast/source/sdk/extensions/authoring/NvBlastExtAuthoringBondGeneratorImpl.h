@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTEXTAUTHORINGBONDGENERATORIMPL_H
@@ -30,7 +30,7 @@
 
 #include "NvBlastExtAuthoringBondGenerator.h"
 #include "NvBlastExtAuthoringFractureTool.h"
-#include <foundation/PxPlane.h>
+#include "NvPlane.h"
 #include <NvBlastExtAuthoringConvexMeshBuilder.h>
 #include <vector>
 #include <set>
@@ -74,8 +74,8 @@ public:
                 
 private:
     float   processWithMidplanes(TriangleProcessor* trProcessor, const Triangle* mA, uint32_t mavc, const Triangle* mB, uint32_t mbvc, const CollisionHull* hull1, const CollisionHull* hull2,
-                             const std::vector<physx::PxVec3>& hull1p, const std::vector<physx::PxVec3>& hull2p,
-                             physx::PxVec3& normal, physx::PxVec3& centroid, float maxRelSeparation);
+                             const std::vector<nvidia::NvVec3>& hull1p, const std::vector<nvidia::NvVec3>& hull2p,
+                             nvidia::NvVec3& normal, nvidia::NvVec3& centroid, float maxRelSeparation);
 
     int32_t createFullBondListAveraged( uint32_t meshCount, const uint32_t* geometryOffset, const Triangle* geometry, const CollisionHull** chunkHulls,
                                         const bool* supportFlags, const uint32_t* meshGroups, NvBlastBondDesc*& resultBondDescs, BondGenerationConfig conf, std::set<std::pair<uint32_t, uint32_t> >* pairNotToTest = nullptr);
@@ -83,8 +83,8 @@ private:
                                         const bool* supportFlags, NvBlastBondDesc*& resultBondDescs, BondGenerationConfig conf);
     int32_t createFullBondListExactInternal(uint32_t meshCount, const uint32_t* geometryOffset, const Triangle* geometry,
                                             std::vector<PlaneChunkIndexer>& planeTriangleMapping , NvBlastBondDesc*& resultBondDescs);
-    int32_t createBondForcedInternal(   const std::vector<physx::PxVec3>& hull0, const std::vector<physx::PxVec3>& hull1,const CollisionHull& cHull0, 
-                                        const CollisionHull& cHull1, physx::PxBounds3 bound0, physx::PxBounds3 bound1, NvBlastBond& resultBond, float overlapping);
+    int32_t createBondForcedInternal(   const std::vector<nvidia::NvVec3>& hull0, const std::vector<nvidia::NvVec3>& hull1,const CollisionHull& cHull0, 
+                                        const CollisionHull& cHull1, nvidia::NvBounds3 bound0, nvidia::NvBounds3 bound1, NvBlastBond& resultBond, float overlapping);
 
     void    buildGeometryCache(uint32_t meshCount, const uint32_t* geometryOffset, const Triangle* geometry);
     void    resetGeometryCache();
@@ -95,8 +95,8 @@ private:
 
     std::vector<PlaneChunkIndexer>              mPlaneCache;
     std::vector<CollisionHull*>                 mCHullCache;
-    std::vector<std::vector<physx::PxVec3> >    mHullsPointsCache;
-    std::vector<physx::PxBounds3 >              mBoundsCache;
+    std::vector<std::vector<nvidia::NvVec3> >    mHullsPointsCache;
+    std::vector<nvidia::NvBounds3 >              mBoundsCache;
 
 
 };

@@ -22,15 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastGlobals.h"
 #include <NvBlastAssert.h>
-#include <foundation/PxBounds3.h>
-#include <foundation/PxMath.h>
-#include <foundation/PxAssert.h>
-#include <NvBlastPxSharedHelpers.h>
+#include "NvBounds3.h"
+#include "NvMath.h"
+#include "NvAssert.h"
+#include <NvBlastNvSharedHelpers.h>
 #include "NvBlastExtAuthoringCutoutImpl.h"
 #include <algorithm>
 #include <set>
@@ -44,43 +44,43 @@
 using namespace Nv::Blast;
 
 // Unsigned modulus
-PX_INLINE uint32_t mod(int32_t n, uint32_t modulus)
+ uint32_t mod(int32_t n, uint32_t modulus)
 {
     const int32_t d = n/(int32_t)modulus;
     const int32_t m = n - d*(int32_t)modulus;
     return m >= 0 ? (uint32_t)m : (uint32_t)m + modulus;
 }
 
-PX_INLINE float square(float x)
+ float square(float x)
 {
     return x * x;
 }
 
 // 2D cross product
-PX_INLINE float dotXY(const physx::PxVec3& v, const physx::PxVec3& w)
+ float dotXY(const nvidia::NvVec3& v, const nvidia::NvVec3& w)
 {
     return v.x * w.x + v.y * w.y;
 }
 
 // Z-component of cross product
-PX_INLINE float crossZ(const physx::PxVec3& v, const physx::PxVec3& w)
+ float crossZ(const nvidia::NvVec3& v, const nvidia::NvVec3& w)
 {
     return v.x * w.y - v.y * w.x;
 }
 
 // z coordinates may be used to store extra info - only deal with x and y
-PX_INLINE float perpendicularDistanceSquared(const physx::PxVec3& v0, const physx::PxVec3& v1, const physx::PxVec3& v2)
+ float perpendicularDistanceSquared(const nvidia::NvVec3& v0, const nvidia::NvVec3& v1, const nvidia::NvVec3& v2)
 {
-    const physx::PxVec3 base = v2 - v0;
-    const physx::PxVec3 leg = v1 - v0;
+    const nvidia::NvVec3 base = v2 - v0;
+    const nvidia::NvVec3 leg = v1 - v0;
 
     const float baseLen2 = dotXY(base, base);
 
-    return baseLen2 > PX_EPS_F32 * dotXY(leg, leg) ? square(crossZ(base, leg)) / baseLen2 : 0.0f;
+    return baseLen2 > NV_EPS_F32 * dotXY(leg, leg) ? square(crossZ(base, leg)) / baseLen2 : 0.0f;
 }
 
 // z coordinates may be used to store extra info - only deal with x and y
-PX_INLINE float perpendicularDistanceSquared(const std::vector< physx::PxVec3 >& cutout, uint32_t index)
+ float perpendicularDistanceSquared(const std::vector< nvidia::NvVec3 >& cutout, uint32_t index)
 {
     const uint32_t size = cutout.size();
     return perpendicularDistanceSquared(cutout[(index + size - 1) % size], cutout[index], cutout[(index + 1) % size]);
@@ -97,7 +97,7 @@ struct BoundsRep
         aabb.setEmpty();
     }
 
-    physx::PxBounds3    aabb;
+    nvidia::NvBounds3    aabb;
     uint32_t            type;   // By default only reports if subtypes are the same, configurable.  Valid range {0...7}
 };
 
@@ -255,7 +255,7 @@ public:
     void                setMaxCapacity(uint32_t inMaxCapacity)
     {
         // Cannot drop below current capacity, nor above max set by data types
-        maxCapacity = PxClamp(inMaxCapacity, capacity(), calculateMaxCapacity());
+        maxCapacity = nvidia::NvClamp(inMaxCapacity, capacity(), calculateMaxCapacity());
     }
 
     uint32_t        capacity() const
@@ -314,8 +314,8 @@ public:
             {
                 return false;
             }
-            reserve(PxClamp(capacity() * 2, (uint32_t)1, maxCapacity));
-            PX_ASSERT(freeCount() > 0);
+            reserve(nvidia::NvClamp(capacity() * 2, (uint32_t)1, maxCapacity));
+            NVBLAST_ASSERT(freeCount() > 0);
         }
         index = indices[indexCount++];
         return true;
@@ -392,8 +392,8 @@ protected:
             {
                 return false;
             }
-            reserve(physx::PxClamp(2 * (uint32_t)index, (uint32_t)1, maxCapacity));
-            PX_ASSERT(isValid(index));
+            reserve(nvidia::NvClamp(2 * (uint32_t)index, (uint32_t)1, maxCapacity));
+            NVBLAST_ASSERT(isValid(index));
         }
         return !isUsed(index);
     }
@@ -517,7 +517,7 @@ void boundsCalculateOverlaps(std::vector<IntPair>& overlaps, Bounds3Axes axesToU
         for (uint32_t i = 0; i < boundsCount; ++i, boundsPtr += boundsByteStride)
         {
             const BoundsRep& boundsRep = *(const BoundsRep*)boundsPtr;
-            const physx::PxBounds3& box = boundsRep.aabb;
+            const nvidia::NvBounds3& box = boundsRep.aabb;
             float min = box.minimum[axisNum];
             float max = box.maximum[axisNum];
             if (min >= max)
@@ -600,7 +600,7 @@ void boundsCalculateOverlaps(std::vector<IntPair>& overlaps, Bounds3Axes axesToU
         {
             const BoundsRep& boundsRep = *(const BoundsRep*)((uint8_t*)bounds + index*boundsByteStride);
             const uint8_t interaction = (uint8_t)((interactionBits >> (boundsRep.type << 3)) & 0xFF);
-            const physx::PxBounds3& box = boundsRep.aabb;
+            const nvidia::NvBounds3& box = boundsRep.aabb;
             // These conditionals compile out with optimization:
             if (D > 1)
             {
@@ -620,7 +620,7 @@ void boundsCalculateOverlaps(std::vector<IntPair>& overlaps, Bounds3Axes axesToU
                 const BoundsRep& overlapBoundsRep = *(const BoundsRep*)((uint8_t*)bounds + overlapIndex*boundsByteStride);
                 if ((interaction >> overlapBoundsRep.type) & 1)
                 {
-                    const physx::PxBounds3& overlapBox = overlapBoundsRep.aabb;
+                    const nvidia::NvBounds3& overlapBox = overlapBoundsRep.aabb;
                     // These conditionals compile out with optimization:
                     if (D > 1)
                     {
@@ -643,14 +643,14 @@ void boundsCalculateOverlaps(std::vector<IntPair>& overlaps, Bounds3Axes axesToU
                     overlaps.push_back(pair);
                 }
             }
-            PX_ASSERT(localOverlaps.isValid(index));
-            PX_ASSERT(!localOverlaps.isUsed(index));
+            NVBLAST_ASSERT(localOverlaps.isValid(index));
+            NVBLAST_ASSERT(!localOverlaps.isUsed(index));
             localOverlaps.use(index);
         }
         else
         {
             // Remove local overlap
-            PX_ASSERT(localOverlaps.isValid(index));
+            NVBLAST_ASSERT(localOverlaps.isValid(index));
             localOverlaps.free(index);
         }
     }
@@ -916,14 +916,14 @@ private:
 };
 
 
-PX_INLINE int32_t taxicabSine(int32_t i)
+ int32_t taxicabSine(int32_t i)
 {
     // 0 1 1 1 0 -1 -1 -1
     return (int32_t)((0x01A9 >> ((i & 7) << 1)) & 3) - 1;
 }
 
 // Only looks at x and y components
-PX_INLINE bool directionsXYOrderedCCW(const physx::PxVec3& d0, const physx::PxVec3& d1, const physx::PxVec3& d2)
+ bool directionsXYOrderedCCW(const nvidia::NvVec3& d0, const nvidia::NvVec3& d1, const nvidia::NvVec3& d2)
 {
     const bool ccw02 = crossZ(d0, d2) > 0.0f;
     const bool ccw01 = crossZ(d0, d1) > 0.0f;
@@ -931,7 +931,7 @@ PX_INLINE bool directionsXYOrderedCCW(const physx::PxVec3& d0, const physx::PxVe
     return ccw02 ? ccw01 && ccw21 : ccw01 || ccw21;
 }
 
-PX_INLINE std::pair<float, float> compareTraceSegmentToLineSegment(const std::vector<POINT2D>& trace, int _start, int delta, float distThreshold, uint32_t width, uint32_t height, bool hasBorder)
+ std::pair<float, float> compareTraceSegmentToLineSegment(const std::vector<POINT2D>& trace, int _start, int delta, float distThreshold, uint32_t width, uint32_t height, bool hasBorder)
 {
     if (delta < 2)
     {
@@ -954,12 +954,12 @@ PX_INLINE std::pair<float, float> compareTraceSegmentToLineSegment(const std::ve
         {
             return std::make_pair(0.0f, 0.0f);
         }
-        return std::make_pair(PX_MAX_F32, PX_MAX_F32);
+        return std::make_pair(NV_MAX_F32, NV_MAX_F32);
     }
 
-    physx::PxVec3 orig((float)trace[start].x, (float)trace[start].y, 0);
-    physx::PxVec3 dest((float)trace[end].x, (float)trace[end].y, 0);
-    physx::PxVec3 dir = dest - orig;
+    nvidia::NvVec3 orig((float)trace[start].x, (float)trace[start].y, 0);
+    nvidia::NvVec3 dest((float)trace[end].x, (float)trace[end].y, 0);
+    nvidia::NvVec3 dir = dest - orig;
 
     dir.normalize();
 
@@ -976,10 +976,10 @@ PX_INLINE std::pair<float, float> compareTraceSegmentToLineSegment(const std::ve
         {
             break;
         }
-        physx::PxVec3 testDisp((float)trace[start].x, (float)trace[start].y, 0);
+        nvidia::NvVec3 testDisp((float)trace[start].x, (float)trace[start].y, 0);
         testDisp -= orig;
-        aveError += (float)(physx::PxAbs(testDisp.x * dir.y - testDisp.y * dir.x) >= distThreshold);
-        aveError2 += physx::PxAbs(testDisp.x * dir.y - testDisp.y * dir.x);
+        aveError += (float)(nvidia::NvAbs(testDisp.x * dir.y - testDisp.y * dir.x) >= distThreshold);
+        aveError2 += nvidia::NvAbs(testDisp.x * dir.y - testDisp.y * dir.x);
     }
 
     aveError /= delta - 1;
@@ -991,20 +991,20 @@ PX_INLINE std::pair<float, float> compareTraceSegmentToLineSegment(const std::ve
 // Segment i starts at vi and ends at vi+ei
 // Tests for overlap in segments' projection onto xy plane
 // Returns distance between line segments.  (Negative value indicates overlap.)
-PX_INLINE float segmentsIntersectXY(const physx::PxVec3& v0, const physx::PxVec3& e0, const physx::PxVec3& v1, const physx::PxVec3& e1)
+ float segmentsIntersectXY(const nvidia::NvVec3& v0, const nvidia::NvVec3& e0, const nvidia::NvVec3& v1, const nvidia::NvVec3& e1)
 {
-    const physx::PxVec3 dv = v1 - v0;
+    const nvidia::NvVec3 dv = v1 - v0;
 
-    physx::PxVec3 d0 = e0;
+    nvidia::NvVec3 d0 = e0;
     d0.normalize();
-    physx::PxVec3 d1 = e1;
+    nvidia::NvVec3 d1 = e1;
     d1.normalize();
 
     const float c10 = crossZ(dv, d0);
     const float d10 = crossZ(e1, d0);
 
-    float a1 = physx::PxAbs(c10);
-    float b1 = physx::PxAbs(c10 + d10);
+    float a1 = nvidia::NvAbs(c10);
+    float b1 = nvidia::NvAbs(c10 + d10);
 
     if (c10 * (c10 + d10) < 0.0f)
     {
@@ -1021,8 +1021,8 @@ PX_INLINE float segmentsIntersectXY(const physx::PxVec3& v0, const physx::PxVec3
     const float c01 = crossZ(d1, dv);
     const float d01 = crossZ(e0, d1);
 
-    float a2 = physx::PxAbs(c01);
-    float b2 = physx::PxAbs(c01 + d01);
+    float a2 = nvidia::NvAbs(c01);
+    float b2 = nvidia::NvAbs(c01 + d01);
 
     if (c01 * (c01 + d01) < 0.0f)
     {
@@ -1036,7 +1036,7 @@ PX_INLINE float segmentsIntersectXY(const physx::PxVec3& v0, const physx::PxVec3
         }
     }
 
-    return physx::PxMax(physx::PxMin(a1, b1), physx::PxMin(a2, b2));
+    return nvidia::NvMax(nvidia::NvMin(a1, b1), nvidia::NvMin(a2, b2));
 }
 
 // If point projects onto segment, returns true and proj is set to a
@@ -1044,10 +1044,10 @@ PX_INLINE float segmentsIntersectXY(const physx::PxVec3& v0, const physx::PxVec3
 // the projection lies, and dist2 is set to the distance squared from point to
 // the line segment.  Otherwise, returns false.
 // Note, if v1 = v0, then the function returns true with proj = 0.
-PX_INLINE bool projectOntoSegmentXY(float& proj, float& dist2, const physx::PxVec3& point, const physx::PxVec3& v0, const physx::PxVec3& v1, float margin)
+ bool projectOntoSegmentXY(float& proj, float& dist2, const nvidia::NvVec3& point, const nvidia::NvVec3& v0, const nvidia::NvVec3& v1, float margin)
 {
-    const physx::PxVec3 seg = v1 - v0;
-    const physx::PxVec3 x = point - v0;
+    const nvidia::NvVec3 seg = v1 - v0;
+    const nvidia::NvVec3 x = point - v0;
     const float seg2 = dotXY(seg, seg);
     const float d = dotXY(x, seg);
 
@@ -1080,7 +1080,7 @@ PX_INLINE bool projectOntoSegmentXY(float& proj, float& dist2, const physx::PxVe
     return true;
 }
 
-PX_INLINE bool isOnBorder(const physx::PxVec3& v, uint32_t width, uint32_t height)
+ bool isOnBorder(const nvidia::NvVec3& v, uint32_t width, uint32_t height)
 {
     return v.x < -0.5f || v.x >= width - 0.5f || v.y < -0.5f || v.y >= height - 0.5f;
 }
@@ -1131,13 +1131,13 @@ static void createCutout(Nv::Blast::Cutout& cutout, const std::vector<POINT2D>& 
     {
         smoothingGroups.push_back(cutout.vertices.size());
     }
-    cutout.vertices.push_back(physx::PxVec3((float)trace[start].x + pixelCenterOffset, (float)trace[start].y + pixelCenterOffset, 0));
+    cutout.vertices.push_back(nvidia::NvVec3((float)trace[start].x + pixelCenterOffset, (float)trace[start].y + pixelCenterOffset, 0));
 
     // Now complete the loop
     while ((size -= delta) > 0)
     {
         start = (start + delta) % traceSize;
-        cutout.vertices.push_back(physx::PxVec3((float)trace[start].x + pixelCenterOffset, (float)trace[start].y + pixelCenterOffset, 0));
+        cutout.vertices.push_back(nvidia::NvVec3((float)trace[start].x + pixelCenterOffset, (float)trace[start].y + pixelCenterOffset, 0));
         if (size == 1)
         {
             delta = 1;
@@ -1173,13 +1173,13 @@ static void createCutout(Nv::Blast::Cutout& cutout, const std::vector<POINT2D>& 
             const uint32_t i1 = (i + 1) % size;
             const uint32_t i2 = (i + 2) % size;
             const uint32_t i3 = (i + 3) % size;
-            physx::PxVec3& v0 = cutout.vertices[i];
-            physx::PxVec3& v1 = cutout.vertices[i1];
-            physx::PxVec3& v2 = cutout.vertices[i2];
-            physx::PxVec3& v3 = cutout.vertices[i3];
-            const physx::PxVec3 d0 = v1 - v0;
-            const physx::PxVec3 d1 = v2 - v1;
-            const physx::PxVec3 d2 = v3 - v2;
+            nvidia::NvVec3& v0 = cutout.vertices[i];
+            nvidia::NvVec3& v1 = cutout.vertices[i1];
+            nvidia::NvVec3& v2 = cutout.vertices[i2];
+            nvidia::NvVec3& v3 = cutout.vertices[i3];
+            const nvidia::NvVec3 d0 = v1 - v0;
+            const nvidia::NvVec3 d1 = v2 - v1;
+            const nvidia::NvVec3 d2 = v3 - v2;
             const float den = crossZ(d0, d2);
             if (den != 0)
             {
@@ -1257,7 +1257,7 @@ static void splitTJunctions(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold
         {
             bounds[edgeCount].aabb.include(cutout.vertices[j]);
             bounds[edgeCount].aabb.include(cutout.vertices[(j + 1) % cutoutSize]);
-            PX_ASSERT(!bounds[edgeCount].aabb.isEmpty());
+            NVBLAST_ASSERT(!bounds[edgeCount].aabb.isEmpty());
             bounds[edgeCount].aabb.fattenFast(threshold);
             cutoutMap[edgeCount].set((int32_t)i, (int32_t)j);
             ++edgeCount;
@@ -1336,9 +1336,9 @@ static void splitTJunctions(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold
             }
             Nv::Blast::Cutout& cutout = cutoutSet.cutoutLoops[(uint32_t)newVertex.vertex.cutoutIndex];
             const float proj = lastProj > 0.0f ? newVertex.edgeProj / lastProj : 0.0f;
-            const physx::PxVec3 pos = (1.0f - proj) * cutout.vertices[(uint32_t)newVertex.vertex.vertIndex] 
+            const nvidia::NvVec3 pos = (1.0f - proj) * cutout.vertices[(uint32_t)newVertex.vertex.vertIndex] 
                 + proj * cutout.vertices[(uint32_t)(newVertex.vertex.vertIndex + 1) % cutout.vertices.size()];
-            cutout.vertices.push_back(physx::PxVec3());
+            cutout.vertices.push_back(nvidia::NvVec3());
             for (uint32_t n = cutout.vertices.size(); --n > (uint32_t)newVertex.vertex.vertIndex + 1;)
             {
                 cutout.vertices[n] = cutout.vertices[n - 1];
@@ -1370,10 +1370,10 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
         Nv::Blast::Cutout& cutout = cutoutSet.cutoutLoops[i];
         for (uint32_t j = 0; j < cutout.vertices.size(); ++j)
         {
-            physx::PxVec3& vertex = cutout.vertices[j];
-            physx::PxVec3 min(vertex.x - threshold, vertex.y - threshold, 0.0f);
-            physx::PxVec3 max(vertex.x + threshold, vertex.y + threshold, 0.0f);
-            bounds[vertexCount].aabb = physx::PxBounds3(min, max);
+            nvidia::NvVec3& vertex = cutout.vertices[j];
+            nvidia::NvVec3 min(vertex.x - threshold, vertex.y - threshold, 0.0f);
+            nvidia::NvVec3 max(vertex.x + threshold, vertex.y + threshold, 0.0f);
+            bounds[vertexCount].aabb = nvidia::NvBounds3(min, max);
             cutoutMap[vertexCount].set((int32_t)i, (int32_t)j);
             ++vertexCount;
         }
@@ -1411,7 +1411,7 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
             continue;
         }
         const CutoutVert& cutoutVert0 = cutoutMap[(uint32_t)overlaps[start].i0];
-        const physx::PxVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
+        const nvidia::NvVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
         const bool isOnBorder0 = !cutoutSet.periodic && isOnBorder(vert0, width, height);
         for (uint32_t j = start; j < stop; ++j)
         {
@@ -1421,7 +1421,7 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
                 // No pairs from the same cutout
                 continue;
             }
-            const physx::PxVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert1.cutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
+            const nvidia::NvVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert1.cutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
             const bool isOnBorder1 = !cutoutSet.periodic && isOnBorder(vert1, width, height);
             if (isOnBorder0 != isOnBorder1)
             {
@@ -1462,14 +1462,14 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
             continue;
         }
         const CutoutVert& cutoutVert0 = cutoutMap[(uint32_t)pairs[start].i0];
-        const physx::PxVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
+        const nvidia::NvVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
         uint32_t groupStart = start;
         while (groupStart < stop)
         {
             uint32_t next = groupStart;
             const CutoutVert& cutoutVert1 = cutoutMap[(uint32_t)pairs[next].i1];
             int32_t currentOtherCutoutIndex = cutoutVert1.cutoutIndex;
-            const physx::PxVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)currentOtherCutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
+            const nvidia::NvVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)currentOtherCutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
             uint32_t keep = groupStart;
             float minDist2 = (vert0 - vert1).magnitudeSquared();
             while (++next < stop)
@@ -1479,7 +1479,7 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
                 {
                     break;
                 }
-                const physx::PxVec3& vertNext = cutoutSet.cutoutLoops[(uint32_t)cutoutVertNext.cutoutIndex].vertices[(uint32_t)cutoutVertNext.vertIndex];
+                const nvidia::NvVec3& vertNext = cutoutSet.cutoutLoops[(uint32_t)cutoutVertNext.cutoutIndex].vertices[(uint32_t)cutoutVertNext.vertIndex];
                 const float dist2 = (vert0 - vertNext).magnitudeSquared();
                 if (dist2 < minDist2)
                 {
@@ -1518,11 +1518,11 @@ static void mergeVertices(Nv::Blast::CutoutSetImpl& cutoutSet, float threshold, 
             continue;
         }
         const CutoutVert& cutoutVert0 = cutoutMap[i0];
-        physx::PxVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
+        nvidia::NvVec3& vert0 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert0.cutoutIndex].vertices[(uint32_t)cutoutVert0.vertIndex];
         const uint32_t i1 = (uint32_t)pairs[i].i1;
         const CutoutVert& cutoutVert1 = cutoutMap[i1];
-        physx::PxVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert1.cutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
-        const physx::PxVec3 disp = vert1 - vert0;
+        nvidia::NvVec3& vert1 = cutoutSet.cutoutLoops[(uint32_t)cutoutVert1.cutoutIndex].vertices[(uint32_t)cutoutVert1.vertIndex];
+        const nvidia::NvVec3 disp = vert1 - vert0;
         // Move and pin
         pinned[i0] = true;
         if (pinned[i1])
@@ -1644,31 +1644,31 @@ static void simplifyCutoutSetImpl(Nv::Blast::CutoutSetImpl& cutoutSet, float thr
 //  // See if the winding is ccw:
 //
 //  // Scale to normalized size to avoid overflows
-//  physx::PxBounds3 bounds;
+//  nvidia::NvBounds3 bounds;
 //  bounds.setEmpty();
 //  for (uint32_t i = 0; i < size; ++i)
 //  {
 //      bounds.include(cutout.vertices[i]);
 //  }
-//  physx::PxVec3 center = bounds.getCenter();
-//  physx::PxVec3 extent = bounds.getExtents();
-//  if (extent[0] < PX_EPS_F32 || extent[1] < PX_EPS_F32)
+//  nvidia::NvVec3 center = bounds.getCenter();
+//  nvidia::NvVec3 extent = bounds.getExtents();
+//  if (extent[0] < NV_EPS_F32 || extent[1] < NV_EPS_F32)
 //  {
 //      return false;
 //  }
-//  const physx::PxVec3 scale(1.0f / extent[0], 1.0f / extent[1], 0.0f);
+//  const nvidia::NvVec3 scale(1.0f / extent[0], 1.0f / extent[1], 0.0f);
 //
 //  // Find "area" (it will only be correct in sign!)
-//  physx::PxVec3 prevV = (cutout.vertices[size - 1] - center).multiply(scale);
+//  nvidia::NvVec3 prevV = (cutout.vertices[size - 1] - center).multiply(scale);
 //  float area = 0.0f;
 //  for (uint32_t i = 0; i < size; ++i)
 //  {
-//      const physx::PxVec3 v = (cutout.vertices[i] - center).multiply(scale);
+//      const nvidia::NvVec3 v = (cutout.vertices[i] - center).multiply(scale);
 //      area += crossZ(prevV, v);
 //      prevV = v;
 //  }
 //
-//  if (physx::PxAbs(area) < PX_EPS_F32 * PX_EPS_F32)
+//  if (nvidia::NvAbs(area) < NV_EPS_F32 * NV_EPS_F32)
 //  {
 //      return false;
 //  }
@@ -1697,10 +1697,10 @@ static void simplifyCutoutSetImpl(Nv::Blast::CutoutSetImpl& cutoutSet, float thr
 //      uint32_t j = 0;
 //      for (; j < loopSize; ++j)
 //      {
-//          const physx::PxVec3& v0 = cutout.vertices[loop.polyVerts[(j + loopSize - 1) % loopSize].index];
-//          const physx::PxVec3& v1 = cutout.vertices[loop.polyVerts[j].index];
-//          const physx::PxVec3& v2 = cutout.vertices[loop.polyVerts[(j + 1) % loopSize].index];
-//          const physx::PxVec3 e0 = v1 - v0;
+//          const nvidia::NvVec3& v0 = cutout.vertices[loop.polyVerts[(j + loopSize - 1) % loopSize].index];
+//          const nvidia::NvVec3& v1 = cutout.vertices[loop.polyVerts[j].index];
+//          const nvidia::NvVec3& v2 = cutout.vertices[loop.polyVerts[(j + 1) % loopSize].index];
+//          const nvidia::NvVec3 e0 = v1 - v0;
 //          if (crossZ(e0, v2 - v1) < 0.0f)
 //          {
 //              // reflex
@@ -1710,30 +1710,30 @@ static void simplifyCutoutSetImpl(Nv::Blast::CutoutSetImpl& cutoutSet, float thr
 //      if (j < loopSize)
 //      {
 //          // Find a vertex
-//          float minLen2 = PX_MAX_F32;
-//          float maxMinDist = -PX_MAX_F32;
+//          float minLen2 = NV_MAX_F32;
+//          float maxMinDist = -NV_MAX_F32;
 //          uint32_t kToUse = 0;
 //          uint32_t mToUse = 2;
 //          bool cleanSliceFound = false;   // A transversal is parallel with an edge
 //          for (uint32_t k = 0; k < loopSize; ++k)
 //          {
-//              const physx::PxVec3& vkPrev = cutout.vertices[loop.polyVerts[(k + loopSize - 1) % loopSize].index];
-//              const physx::PxVec3& vk = cutout.vertices[loop.polyVerts[k].index];
-//              const physx::PxVec3& vkNext = cutout.vertices[loop.polyVerts[(k + 1) % loopSize].index];
+//              const nvidia::NvVec3& vkPrev = cutout.vertices[loop.polyVerts[(k + loopSize - 1) % loopSize].index];
+//              const nvidia::NvVec3& vk = cutout.vertices[loop.polyVerts[k].index];
+//              const nvidia::NvVec3& vkNext = cutout.vertices[loop.polyVerts[(k + 1) % loopSize].index];
 //              const uint32_t mStop = k ? loopSize : loopSize - 1;
 //              for (uint32_t m = k + 2; m < mStop; ++m)
 //              {
-//                  const physx::PxVec3& vmPrev = cutout.vertices[loop.polyVerts[(m + loopSize - 1) % loopSize].index];
-//                  const physx::PxVec3& vm = cutout.vertices[loop.polyVerts[m].index];
-//                  const physx::PxVec3& vmNext = cutout.vertices[loop.polyVerts[(m + 1) % loopSize].index];
-//                  const physx::PxVec3 newEdge = vm - vk;
+//                  const nvidia::NvVec3& vmPrev = cutout.vertices[loop.polyVerts[(m + loopSize - 1) % loopSize].index];
+//                  const nvidia::NvVec3& vm = cutout.vertices[loop.polyVerts[m].index];
+//                  const nvidia::NvVec3& vmNext = cutout.vertices[loop.polyVerts[(m + 1) % loopSize].index];
+//                  const nvidia::NvVec3 newEdge = vm - vk;
 //                  if (!directionsXYOrderedCCW(vk - vkPrev, newEdge, vkNext - vk) ||
 //                          !directionsXYOrderedCCW(vm - vmPrev, -newEdge, vmNext - vm))
 //                  {
 //                      continue;
 //                  }
 //                  const float len2 = newEdge.magnitudeSquared();
-//                  float minDist = PX_MAX_F32;
+//                  float minDist = NV_MAX_F32;
 //                  for (uint32_t l = 0; l < loopSize; ++l)
 //                  {
 //                      const uint32_t l1 = (l + 1) % loopSize;
@@ -1741,8 +1741,8 @@ static void simplifyCutoutSetImpl(Nv::Blast::CutoutSetImpl& cutoutSet, float thr
 //                      {
 //                          continue;
 //                      }
-//                      const physx::PxVec3& vl = cutout.vertices[loop.polyVerts[l].index];
-//                      const physx::PxVec3& vl1 = cutout.vertices[loop.polyVerts[l1].index];
+//                      const nvidia::NvVec3& vl = cutout.vertices[loop.polyVerts[l].index];
+//                      const nvidia::NvVec3& vl1 = cutout.vertices[loop.polyVerts[l1].index];
 //                      const float dist = segmentsIntersectXY(vl, vl1 - vl, vk, newEdge);
 //                      if (dist < minDist)
 //                      {
@@ -1919,7 +1919,7 @@ void Nv::Blast::createCutoutSet(Nv::Blast::CutoutSetImpl& cutoutSet, const uint8
     cutoutSet.cutouts.clear();
     cutoutSet.cutoutLoops.clear();
     cutoutSet.periodic = periodic;
-    cutoutSet.dimensions = physx::PxVec2((float)bufferWidth, (float)bufferHeight);
+    cutoutSet.dimensions = nvidia::NvVec2((float)bufferWidth, (float)bufferHeight);
 
     if (!periodic)
     {
@@ -2014,7 +2014,7 @@ void Nv::Blast::createCutoutSet(Nv::Blast::CutoutSetImpl& cutoutSet, const uint8
                 traceStarts.push_back(t);   // Save off initial point
                 traces.push_back(new std::vector<POINT2D>());
                 NVBLAST_ASSERT(traces.size() == traceStarts.size()); // This must be the same size as traceStarts
-                //traces.back() = (std::vector<POINT2D>*)PX_ALLOC(sizeof(std::vector<POINT2D>), PX_DEBUG_EXP("CutoutPoint2DSet"));
+                //traces.back() = (std::vector<POINT2D>*)NVBLAST_ALLOC(sizeof(std::vector<POINT2D>), NV_DEBUG_EXP("CutoutPoint2DSet"));
                 //new(traces.back()) std::vector<POINT2D>;
                 // Flood fill region map
                 std::set<uint64_t> visited;
@@ -2050,7 +2050,7 @@ void Nv::Blast::createCutoutSet(Nv::Blast::CutoutSetImpl& cutoutSet, const uint8
                 } while (stack.size());
 
                 // Trace region
-                PX_ASSERT(map.read(t.x, t.y));
+                NVBLAST_ASSERT(map.read(t.x, t.y));
                 std::vector<POINT2D>* trace = traces.back();
                 traceRegion(*trace, regions, pathCounts, regionIndex, t);
 
@@ -2240,7 +2240,7 @@ public:
     {}
 
     //! Construct from two base vectors
-    Matrix22(const physx::PxVec2& col0, const physx::PxVec2& col1)
+    Matrix22(const nvidia::NvVec2& col0, const nvidia::NvVec2& col1)
         : column0(col0), column1(col1)
     {}
 
@@ -2267,27 +2267,27 @@ public:
     //! Set to identity matrix
     static Matrix22 createIdentity()
     {
-        return Matrix22(physx::PxVec2(1,0), physx::PxVec2(0,1));
+        return Matrix22(nvidia::NvVec2(1,0), nvidia::NvVec2(0,1));
     }
 
     //! Set to zero matrix
     static Matrix22 createZero()
     {
-        return Matrix22(physx::PxVec2(0.0f), physx::PxVec2(0.0f));
+        return Matrix22(nvidia::NvVec2(0.0f), nvidia::NvVec2(0.0f));
     }
 
     //! Construct from diagonal, off-diagonals are zero.
-    static Matrix22 createDiagonal(const physx::PxVec2& d)
+    static Matrix22 createDiagonal(const nvidia::NvVec2& d)
     {
-        return Matrix22(physx::PxVec2(d.x,0.0f), physx::PxVec2(0.0f,d.y));
+        return Matrix22(nvidia::NvVec2(d.x,0.0f), nvidia::NvVec2(0.0f,d.y));
     }
 
 
     //! Get transposed matrix
     Matrix22 getTranspose() const
     {
-        const physx::PxVec2 v0(column0.x, column1.x);
-        const physx::PxVec2 v1(column0.y, column1.y);
+        const nvidia::NvVec2 v0(column0.x, column1.x);
+        const nvidia::NvVec2 v1(column0.y, column1.y);
 
         return Matrix22(v0,v1);   
     }
@@ -2349,7 +2349,7 @@ public:
     }
     
     //! Matrix vector multiplication (returns 'this->transform(vec)')
-    physx::PxVec2 operator*(const physx::PxVec2& vec) const
+    nvidia::NvVec2 operator*(const nvidia::NvVec2& vec) const
     {
         return transform(vec);
     }
@@ -2403,28 +2403,28 @@ public:
     // Transform etc
     
     //! Transform vector by matrix, equal to v' = M*v
-    physx::PxVec2 transform(const physx::PxVec2& other) const
+    nvidia::NvVec2 transform(const nvidia::NvVec2& other) const
     {
         return column0*other.x + column1*other.y;
     }
 
-    physx::PxVec2& operator[](unsigned int num)         {return (&column0)[num];}
-    const   physx::PxVec2& operator[](unsigned int num) const   {return (&column0)[num];}
+    nvidia::NvVec2& operator[](unsigned int num)         {return (&column0)[num];}
+    const   nvidia::NvVec2& operator[](unsigned int num) const   {return (&column0)[num];}
 
     //Data, see above for format!
 
-    physx::PxVec2 column0, column1; //the two base vectors
+    nvidia::NvVec2 column0, column1; //the two base vectors
 };
 
-PX_INLINE bool calculateUVMapping(const Nv::Blast::Triangle& triangle, physx::PxMat33& theResultMapping)
+ bool calculateUVMapping(const Nv::Blast::Triangle& triangle, nvidia::NvMat33& theResultMapping)
 {
-    physx::PxMat33 rMat;
-    physx::PxMat33 uvMat;
+    nvidia::NvMat33 rMat;
+    nvidia::NvMat33 uvMat;
     for (unsigned col = 0; col < 3; ++col)
     {
         auto v = (&triangle.a)[col];
-        rMat[col] = toPxShared(v.p);
-        uvMat[col] = physx::PxVec3(v.uv[0].x, v.uv[0].y, 1.0f);
+        rMat[col] = toNvShared(v.p);
+        uvMat[col] = nvidia::NvVec3(v.uv[0].x, v.uv[0].y, 1.0f);
     }
 
     if (uvMat.getDeterminant() == 0.0f)
@@ -2437,15 +2437,15 @@ PX_INLINE bool calculateUVMapping(const Nv::Blast::Triangle& triangle, physx::Px
     return true;
 }
 
-//static bool calculateUVMapping(ExplicitHierarchicalMesh& theHMesh, const physx::PxVec3& theDir, physx::PxMat33& theResultMapping)
+//static bool calculateUVMapping(ExplicitHierarchicalMesh& theHMesh, const nvidia::NvVec3& theDir, nvidia::NvMat33& theResultMapping)
 //{ 
-//  physx::PxVec3 cutoutDir( theDir );
+//  nvidia::NvVec3 cutoutDir( theDir );
 //  cutoutDir.normalize( );
 //
-//  const float cosineThreshold = physx::PxCos(3.141593f / 180);    // 1 degree
+//  const float cosineThreshold = nvidia::NvCos(3.141593f / 180);    // 1 degree
 //
 //  ExplicitRenderTriangle* triangleToUse = NULL;
-//  float greatestCosine = -PX_MAX_F32;
+//  float greatestCosine = -NV_MAX_F32;
 //  float greatestArea = 0.0f;  // for normals within the threshold
 //  for ( uint32_t partIndex = 0; partIndex < theHMesh.partCount(); ++partIndex )
 //  {
@@ -2454,9 +2454,9 @@ PX_INLINE bool calculateUVMapping(const Nv::Blast::Triangle& triangle, physx::Px
 //      for ( uint32_t tIndex = 0; tIndex < triangleCount; ++tIndex )
 //      {           
 //          ExplicitRenderTriangle& theTriangle = theTriangles[tIndex];
-//          physx::PxVec3 theEdge1 = theTriangle.vertices[1].position - theTriangle.vertices[0].position;
-//          physx::PxVec3 theEdge2 = theTriangle.vertices[2].position - theTriangle.vertices[0].position;
-//          physx::PxVec3 theNormal = theEdge1.cross( theEdge2 );
+//          nvidia::NvVec3 theEdge1 = theTriangle.vertices[1].position - theTriangle.vertices[0].position;
+//          nvidia::NvVec3 theEdge2 = theTriangle.vertices[2].position - theTriangle.vertices[0].position;
+//          nvidia::NvVec3 theNormal = theEdge1.cross( theEdge2 );
 //          float theArea = theNormal.normalize();  // twice the area, but that's ok
 //
 //          if (theArea == 0.0f)
@@ -2495,22 +2495,22 @@ PX_INLINE bool calculateUVMapping(const Nv::Blast::Triangle& triangle, physx::Px
 
 
 
-//bool calculateCutoutUVMapping(ExplicitHierarchicalMesh& hMesh, const physx::PxVec3& targetDirection, physx::PxMat33& theMapping)
+//bool calculateCutoutUVMapping(ExplicitHierarchicalMesh& hMesh, const nvidia::NvVec3& targetDirection, nvidia::NvMat33& theMapping)
 //{
 //  return ::calculateUVMapping(hMesh, targetDirection, theMapping);
 //}
 
-//bool calculateCutoutUVMapping(const Nv::Blast::Triangle& targetDirection, physx::PxMat33& theMapping)
+//bool calculateCutoutUVMapping(const Nv::Blast::Triangle& targetDirection, nvidia::NvMat33& theMapping)
 //{
 //  return ::calculateUVMapping(targetDirection, theMapping);
 //}
 
 const NvcVec3& CutoutSetImpl::getCutoutVertex(uint32_t cutoutIndex, uint32_t loopIndex, uint32_t vertexIndex) const
 {
-    return fromPxShared(cutoutLoops[cutouts[cutoutIndex] + loopIndex].vertices[vertexIndex]);
+    return fromNvShared(cutoutLoops[cutouts[cutoutIndex] + loopIndex].vertices[vertexIndex]);
 }
 
 const NvcVec2& CutoutSetImpl::getDimensions() const
 {
-    return fromPxShared(dimensions);
+    return fromNvShared(dimensions);
 }

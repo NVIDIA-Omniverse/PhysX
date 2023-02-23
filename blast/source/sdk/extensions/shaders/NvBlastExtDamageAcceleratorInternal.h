@@ -22,12 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
 #include "NvBlastExtDamageShaders.h"
-#include "foundation/PxBounds3.h"
+#include "NvBounds3.h"
 
 
 namespace Nv
@@ -82,9 +82,9 @@ public:
         uint32_t       m_bondCount;
     };
 
-    virtual void findBondCentroidsInBounds(const physx::PxBounds3& bounds, ResultCallback& resultCallback) const = 0;
-    virtual void findBondSegmentsInBounds(const physx::PxBounds3& bounds, ResultCallback& resultCallback) const = 0;
-    virtual void findBondSegmentsPlaneIntersected(const physx::PxPlane& plane, ResultCallback& resultCallback) const = 0;
+    virtual void findBondCentroidsInBounds(const nvidia::NvBounds3& bounds, ResultCallback& resultCallback) const = 0;
+    virtual void findBondSegmentsInBounds(const nvidia::NvBounds3& bounds, ResultCallback& resultCallback) const = 0;
+    virtual void findBondSegmentsPlaneIntersected(const nvidia::NvPlane& plane, ResultCallback& resultCallback) const = 0;
 
     // Non-thread safe! Multiple calls return the same memory.
     virtual void* getImmediateScratch(size_t size) = 0;

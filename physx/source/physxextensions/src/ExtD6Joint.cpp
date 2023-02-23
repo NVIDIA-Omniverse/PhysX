@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -994,7 +994,7 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 		else 
 		{
 			if(driving & (1<<PxD6Drive::eTWIST))
-				ch.angular(bX, v.x, -2.0f * delta.x, drives[PxD6Drive::eTWIST]); 
+				ch.angular(cA2w_m.column0, v.x, -2.0f * delta.x, drives[PxD6Drive::eTWIST]); 
 
 			if(driving & (1<<PxD6Drive::eSWING))
 			{

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -742,14 +742,13 @@ void streamTriMeshGeometry(const physx::PxGeometry& g)
 	OMNI_PVD_SET(geomtrianglemesh, triangleMesh, g, mesh);
 }
 
-void OmniPvdPxSampler::streamSceneContacts(physx::NpScene* scene)
+void OmniPvdPxSampler::streamSceneContacts(physx::NpScene& scene)
 {
 	if (!isSampling()) return;
 	PxsContactManagerOutputIterator outputIter;
 	Sc::ContactIterator contactIter;
-	scene->getScScene().initContactsIterator(contactIter, outputIter);
+	scene.getScScene().initContactsIterator(contactIter, outputIter);
 	Sc::ContactIterator::Pair* pair;
-	Sc::Contact* contact;
 	PxU32 pairCount = 0;
 	PxArray<PxActor*> pairsActors;
 	PxArray<PxU32> pairsContactCounts;
@@ -759,15 +758,19 @@ void OmniPvdPxSampler::streamSceneContacts(physx::NpScene* scene)
 	PxArray<PxShape*> pairsContactShapes;
 	PxArray<PxU32> pairsContactFacesIndices;
 	
-	Sc::Interaction* interaction = contactIter.getCurrentInteraction();
 	while ((pair = contactIter.getNextPair()) != NULL)
 	{
-		++pairCount;		
-		pairsActors.pushBack(interaction->getActorSim0().getPxActor());
-		pairsActors.pushBack(interaction->getActorSim1().getPxActor());
 		PxU32 pairContactCount = 0;
+		Sc::Contact* contact = NULL;
+		bool firstContact = true;
 		while ((contact = pair->getNextContact()) != NULL)
 		{
+			if (firstContact) {
+				pairsActors.pushBack(pair->getActor0());
+				pairsActors.pushBack(pair->getActor1());
+				++pairCount;
+				firstContact = false;				
+			}
 			++pairContactCount;
 			pairsContactPoints.pushBack(contact->point);
 			pairsContactNormals.pushBack(contact->normal);
@@ -777,31 +780,36 @@ void OmniPvdPxSampler::streamSceneContacts(physx::NpScene* scene)
 			pairsContactFacesIndices.pushBack(contact->faceIndex0);
 			pairsContactFacesIndices.pushBack(contact->faceIndex1);
 		}
-		pairsContactCounts.pushBack(pairContactCount);
-		interaction = contactIter.getCurrentInteraction();
+		if (pairContactCount) 
+		{
+			pairsContactCounts.pushBack(pairContactCount);
+		}
 	}
-	OMNI_PVD_SET(scene, pairCount, *scene, pairCount);
+
+	if (pairCount == 0) return;
+
+	OMNI_PVD_SET(scene, pairCount, scene, pairCount);
 	PxU32 actorsSize = pairsActors.size() * sizeof(PxActor*);
 	PxActor** actors = actorsSize ? &pairsActors[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsActors, *scene, actors, actorsSize);
+	OMNI_PVD_SETB(scene, pairsActors, scene, actors, actorsSize);
 	PxU32 contactCountsSize = pairsContactCounts.size() * sizeof(PxU32);
 	PxU32* contactCounts = contactCountsSize ? &pairsContactCounts[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactCounts, *scene, contactCounts, contactCountsSize);
+	OMNI_PVD_SETB(scene, pairsContactCounts, scene, contactCounts, contactCountsSize);
 	PxU32 contactPointsSize = pairsContactPoints.size() * sizeof(PxVec3);
 	PxReal* contactPoints = contactPointsSize ? &pairsContactPoints[0].x : NULL;
-	OMNI_PVD_SETB(scene, pairsContactPoints, *scene, contactPoints, contactPointsSize);
+	OMNI_PVD_SETB(scene, pairsContactPoints, scene, contactPoints, contactPointsSize);
 	PxU32 contactNormalsSize = pairsContactNormals.size() * sizeof(PxVec3);
 	PxReal* contactNormals = contactNormalsSize ? &pairsContactNormals[0].x : NULL;
-	OMNI_PVD_SETB(scene, pairsContactNormals, *scene, contactNormals, contactNormalsSize);
+	OMNI_PVD_SETB(scene, pairsContactNormals, scene, contactNormals, contactNormalsSize);
 	PxU32 contactSeparationsSize = pairsContactSeparations.size() * sizeof(PxReal);
 	PxReal* contactSeparations = contactSeparationsSize ? &pairsContactSeparations[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactSeparations, *scene, contactSeparations, contactSeparationsSize);
+	OMNI_PVD_SETB(scene, pairsContactSeparations, scene, contactSeparations, contactSeparationsSize);
 	PxU32 contactShapesSize = pairsContactShapes.size() * sizeof(PxShape*);
 	PxShape** contactShapes = contactShapesSize ? &pairsContactShapes[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactShapes, *scene, contactShapes, contactShapesSize);
+	OMNI_PVD_SETB(scene, pairsContactShapes, scene, contactShapes, contactShapesSize);
 	PxU32 contactFacesIndicesSize = pairsContactFacesIndices.size() * sizeof(PxU32);
 	PxU32* contactFacesIndices = contactFacesIndicesSize ? &pairsContactFacesIndices[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactFacesIndices, *scene, contactFacesIndices, contactFacesIndicesSize);
+	OMNI_PVD_SETB(scene, pairsContactFacesIndices, scene, contactFacesIndices, contactFacesIndicesSize);
 }
 
 OmniPvdPxSampler::OmniPvdPxSampler()

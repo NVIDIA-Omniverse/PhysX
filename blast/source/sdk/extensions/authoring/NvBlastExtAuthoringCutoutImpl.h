@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTAUTHORINGFCUTOUTIMPL_H
@@ -30,9 +30,9 @@
 
 #include "NvBlastExtAuthoringCutout.h"
 #include <vector>
-#include <foundation/PxVec2.h>
-#include <foundation/PxVec3.h>
-#include <foundation/PxMat44.h>
+#include "NvVec2.h"
+#include "NvVec3.h"
+#include "NvMat44.h"
 
 namespace Nv
 {
@@ -52,9 +52,9 @@ struct ConvexLoop
 
 struct Cutout
 {
-    std::vector<physx::PxVec3> vertices;
+    std::vector<nvidia::NvVec3> vertices;
     //std::vector<ConvexLoop> convexLoops;
-    std::vector<physx::PxVec3> smoothingGroups;
+    std::vector<nvidia::NvVec3> smoothingGroups;
 };
 
 struct POINT2D
@@ -117,8 +117,8 @@ struct CutoutSetImpl : public CutoutSet
     }
     const NvcVec2& getDimensions() const;
 
-    //void                  serialize(physx::PxFileBuf& stream) const;
-    //void                  deserialize(physx::PxFileBuf& stream);
+    //void                  serialize(nvidia::NvFileBuf& stream) const;
+    //void                  deserialize(nvidia::NvFileBuf& stream);
 
     void                    release()
     {
@@ -128,7 +128,7 @@ struct CutoutSetImpl : public CutoutSet
     std::vector<Cutout>     cutoutLoops;
     std::vector<uint32_t>   cutouts;
     bool                    periodic;
-    physx::PxVec2           dimensions;
+    nvidia::NvVec2           dimensions;
 };
 
 void createCutoutSet(Nv::Blast::CutoutSetImpl& cutoutSet, const uint8_t* pixelBuffer, uint32_t bufferWidth, uint32_t bufferHeight,

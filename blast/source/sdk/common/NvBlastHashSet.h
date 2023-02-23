@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTHASHSET_H
@@ -30,7 +30,7 @@
 
 
 #include "NvBlastAllocator.h"
-#include "PsHashSet.h"
+#include "NsHashSet.h"
 
 namespace Nv
 {
@@ -38,12 +38,12 @@ namespace Blast
 {
 
 /**
-Wrapped PxShared HashSet that uses NvBlastGlobals AllocatorCalllback.
+Wrapped NvShared HashSet that uses NvBlastGlobals AllocatorCallback.
 */
-template <class Key, class HashFn = physx::shdfnd::Hash<Key>>
+template <class Key, class HashFn = nvidia::shdfnd::Hash<Key>>
 struct HashSet
 {
-    typedef physx::shdfnd::HashSet<Key, HashFn, Allocator> type;
+    typedef nvidia::shdfnd::HashSet<Key, HashFn, Allocator> type;
 };
 
 } // namespace Blast

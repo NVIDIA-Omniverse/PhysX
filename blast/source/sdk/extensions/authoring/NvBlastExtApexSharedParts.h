@@ -22,19 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTEXTAPEXSHAREDPARTS_H
 #define NVBLASTEXTAPEXSHAREDPARTS_H
 
 #include "NvBlast.h"
-#include <foundation/PxPlane.h>
-namespace physx
+#include "NvPlane.h"
+namespace nvidia
 {
-    class PxVec3;
-    class PxTransform;
-    class PxBounds3;
+    class NvVec3;
+    class NvTransform;
+    class NvBounds3;
 }
 
 namespace Nv
@@ -44,21 +44,21 @@ namespace Blast
 
 struct Separation
 {
-    physx::PxPlane  plane;
+    nvidia::NvPlane  plane;
     float   min0, max0, min1, max1;
 
     float getDistance()
     {
-        return physx::PxMax(min0 - max1, min1 - max0);
+        return nvidia::NvMax(min0 - max1, min1 - max0);
     }
 };
 
 /**
     Function to compute midplane between two convex hulls. Is copied from APEX.
 */
-bool importerHullsInProximityApexFree(  uint32_t hull0Count, const physx::PxVec3* hull0, physx::PxBounds3& hull0Bounds, const physx::PxTransform& localToWorldRT0In, const physx::PxVec3& scale0In,
-                                        uint32_t hull1Count, const physx::PxVec3* hull1, physx::PxBounds3& hull1Bounds, const physx::PxTransform& localToWorldRT1In, const physx::PxVec3& scale1In,
-                                        physx::PxF32 maxDistance, Separation* separation);
+bool importerHullsInProximityApexFree(  uint32_t hull0Count, const nvidia::NvVec3* hull0, nvidia::NvBounds3& hull0Bounds, const nvidia::NvTransform& localToWorldRT0In, const nvidia::NvVec3& scale0In,
+                                        uint32_t hull1Count, const nvidia::NvVec3* hull1, nvidia::NvBounds3& hull1Bounds, const nvidia::NvTransform& localToWorldRT1In, const nvidia::NvVec3& scale1In,
+                                        float maxDistance, Separation* separation);
 
 } // namespace Blast
 } // namespace Nv

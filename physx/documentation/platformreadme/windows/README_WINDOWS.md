@@ -7,7 +7,7 @@
 
 ## Required packages to generate projects:
 
-* CMake, minimum version 3.14
+* CMake, minimum version 3.21
 * Python, minimum version 3.5
 
 ## PhysX GPU Acceleration:

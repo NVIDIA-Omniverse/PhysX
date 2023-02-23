@@ -1,3 +1,48 @@
+# v5.1.3
+
+## General
+
+### Added:
+
+*  Support for Microsoft Visual Studio 2022 for Windows builds.
+
+### Fixed
+
+* Changing the materials of a shape did not work when using GPU dynamics.
+
+## Rigid Body
+
+### Fixed
+
+* A rare bug involving GPU aggregates, in which newly created actors could freely move through existing actors, has been fixed.
+
+## Joints
+
+### Fixed
+
+* The D6 joint's twist drive was using the wrong actor's axis (B instead of A). This has been fixed, and it could affect joint setups in existing scenes. To fix this in existing content it might be enough to flip the joint frames of involved actors, but this may not be possible depending on which other features (joint limits, etc) have been setup for the same joint. In the worst case it might be necessary to re-tune these joints.
+
+## Soft Body
+
+### Fixed
+
+* Rendering for tetmeshes in snippets had some tet faces inverted. This has been fixed.
+* The voxel tetmesher won't crash anymore when called with zero elements as input.
+* A bug in collision computation between a soft body and a scaled triangle mesh has been fixed.
+
+## Particles
+
+### Fixed
+
+* The Poisson Sampler will not cause number overflows and crashes anymore when called with parameters that lead to too many samples.
+
+## Pvd
+
+### Fixed
+
+* Fixed a potential crash bug when contact points are recorded through OmniPVD.
+
+
 # v5.1.2
 
 ## General

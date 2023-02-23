@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 
 #include "extensions/PxSamplingExt.h"
 #include "GuSDF.h"
@@ -320,12 +320,14 @@ namespace physx
 			{ }
 		};
 
-		void rebuildSparseGrid();
+		//Returns true if successful. False if too many cells are required (overflow)
+		bool rebuildSparseGrid();
 
 	public:
 	    PoissonSamplerShared() : maxNumSamples(0), currentSamplingRadius(0.0f) {}
 
-		void setSamplingRadius(PxReal r);
+		//Returns true if successful. False if too many cells are required (overflow)
+		bool setSamplingRadius(PxReal r);
 
 		void addSamples(const PxArray<PxVec3>& samples);
 
@@ -358,6 +360,8 @@ namespace physx
 		PxHashMap<PxI32, SparseGridNode> sparseGrid3D;
 		PxArray<PxI32> excessList;
 		Cm::BasicRandom rnd;
+
+		bool gridResolutionValid = false;
 
 		//Output
 		PxArray<PxVec3> result;
@@ -439,7 +443,7 @@ namespace physx
 
 		virtual const PxArray<PxVec3>& getSampleBarycentrics() const { return barycentricCoordinates; }
 
-		virtual void setSamplingRadius(PxReal samplingRadius) { poissonSamplerShared.setSamplingRadius(samplingRadius); }
+		virtual bool setSamplingRadius(PxReal samplingRadius) { return poissonSamplerShared.setSamplingRadius(samplingRadius); }
 
 		virtual void addSamples(const PxArray<PxVec3>& samples) { poissonSamplerShared.addSamples(samples); }
 
@@ -495,7 +499,7 @@ namespace physx
 		
 		virtual void addSamplesInBox(const PxBounds3& axisAlignedBox, const PxQuat& boxOrientation, bool createVolumeSamples);
 
-		virtual void setSamplingRadius(PxReal samplingRadius) { poissonSamplerShared.setSamplingRadius(samplingRadius); }
+		virtual bool setSamplingRadius(PxReal samplingRadius) { return poissonSamplerShared.setSamplingRadius(samplingRadius); }
 
 		virtual void addSamples(const PxArray<PxVec3>& samples) { poissonSamplerShared.addSamples(samples); }
 
@@ -679,22 +683,41 @@ namespace physx
 		return 0;
 	}
 
-	void PoissonSamplerShared::setSamplingRadius(PxReal r)
+	bool PoissonSamplerShared::setSamplingRadius(PxReal r)
 	{
 		if (r != currentSamplingRadius)
 		{
 			currentSamplingRadius = r;
-			rebuildSparseGrid();
+			return rebuildSparseGrid();
 		}
+		return gridResolutionValid;
 	}
 
-	void PoissonSamplerShared::rebuildSparseGrid()
+	bool PoissonSamplerShared::rebuildSparseGrid()
 	{
 		const PxReal dimension = 3.0f;
 		cellSize = (currentSamplingRadius / PxSqrt(dimension)) * 0.9999f;
 
-		resolution = Int3(PxMax(1, PxI32(ceilf(size.x / cellSize))), PxMax(1, PxI32(ceilf(size.y / cellSize))), PxMax(1, PxI32(ceilf(size.z / cellSize))));
-		PxI32 numCells = resolution.x * resolution.y * resolution.z;
+		const PxF64 cellsX = PxF64(size.x) / PxF64(cellSize);
+		const PxF64 cellsY = PxF64(size.y) / PxF64(cellSize);
+		const PxF64 cellsZ = PxF64(size.z) / PxF64(cellSize);
+
+		resolution = Int3(PxMax(1, PxI32(ceil(cellsX))), PxMax(1, PxI32(ceil(cellsY))), PxMax(1, PxI32(ceil(cellsZ))));
+		
+		const PxF64 numCellsDbl = PxF64(resolution.x) * PxF64(resolution.y) * PxI64(resolution.z);
+		if (numCellsDbl >= (1u << 31) ||
+			cellsX >= (1u << 31) || 
+			cellsY >= (1u << 31) || 
+			cellsZ >= (1u << 31))
+		{
+			gridResolutionValid = false;
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "Internal grid resolution of sampler too high. Either a smaller mesh or a bigger radius must be used.");
+			return false;
+		}
+
+		gridResolutionValid = true;
+
+		PxU32 numCells = PxU32(resolution.x * resolution.y * resolution.z);
 
 		occupiedCellBits.clear();
 		occupiedCellBits.resize((numCells + 32 - 1) / 32, 0);
@@ -721,6 +744,8 @@ namespace physx
 		excessList.resize(cumulativeSum);
 		for (PxU32 i = 0; i < result.size(); ++i)
 			postAddPointToSparseGrid(result[i], i);
+
+		return true;
 	}
 
 	bool PoissonSamplerShared::postAddPointToSparseGrid(const PxVec3& p, PxI32 pointIndex)
@@ -1380,10 +1405,15 @@ namespace physx
 
 	//Use for triangle meshes
 	//https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-	void PxSamplingExt::poissonSample(const PxSimpleTriangleMesh& mesh, PxReal r, PxArray<PxVec3>& result, PxReal rVolume, PxArray<PxI32>* triangleIds, PxArray<PxVec3>* barycentricCoordinates,
+	bool PxSamplingExt::poissonSample(const PxSimpleTriangleMesh& mesh, PxReal r, PxArray<PxVec3>& result, PxReal rVolume, PxArray<PxI32>* triangleIds, PxArray<PxVec3>* barycentricCoordinates,
 		const PxBounds3* axisAlignedBox, const PxQuat* boxOrientation, PxU32 maxNumSamples, PxU32 numSampleAttemptsAroundPoint)
 	{
 		TriangleMeshPoissonSampler sampler(reinterpret_cast<const PxU32*>(mesh.triangles.data), mesh.triangles.count, reinterpret_cast<const PxVec3*>(mesh.points.data), mesh.points.count, r, numSampleAttemptsAroundPoint, maxNumSamples);
+
+		if (!sampler.poissonSamplerShared.gridResolutionValid)
+		{
+			return false;
+		}
 
 		PxVec3 center = 0.5f*(sampler.max + sampler.poissonSamplerShared.min);
 		PxReal boundingSphereRadius = 1.001f * (sampler.max - sampler.poissonSamplerShared.min).magnitude() * 0.5f;
@@ -1414,15 +1444,20 @@ namespace physx
 			*triangleIds = sampler.getSampleTriangleIds();
 		if (barycentricCoordinates)
 			*barycentricCoordinates = sampler.getSampleBarycentrics();
+
+		return true;
 	}	
 
-	void PxSamplingExt::poissonSample(const PxGeometry& geometry, const PxTransform& transform, const PxBounds3& worldBounds, PxReal r, PxArray<PxVec3>& result, PxReal rVolume,
+	bool PxSamplingExt::poissonSample(const PxGeometry& geometry, const PxTransform& transform, const PxBounds3& worldBounds, PxReal r, PxArray<PxVec3>& result, PxReal rVolume,
 		const PxBounds3* axisAlignedBox, const PxQuat* boxOrientation, PxU32 maxNumSamples, PxU32 numSampleAttemptsAroundPoint)
 	{
 		PxVec3 center = worldBounds.getCenter();
 
 		ShapePoissonSampler sampler(geometry, transform, worldBounds, r, numSampleAttemptsAroundPoint, maxNumSamples);
 		PxReal boundingSphereRadius = 1.001f * worldBounds.getExtents().magnitude();
+
+		if (!sampler.poissonSamplerShared.gridResolutionValid)
+			return false;
 
 		if (axisAlignedBox == NULL || boxOrientation == NULL)
 		{
@@ -1446,5 +1481,6 @@ namespace physx
 		}
 
 		result = sampler.getSamples();
+		return true;
 	}
 }

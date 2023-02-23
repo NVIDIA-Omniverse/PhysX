@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -57,18 +57,18 @@ public:
 
     virtual void release() override;
 
-    virtual void findBondCentroidsInBounds(const physx::PxBounds3& bounds, ResultCallback& resultCallback) const override
+    virtual void findBondCentroidsInBounds(const nvidia::NvBounds3& bounds, ResultCallback& resultCallback) const override
     {
         const_cast<ExtDamageAcceleratorAABBTree*>(this)->findInBounds(bounds, resultCallback, false);
     }
 
-    virtual void findBondSegmentsInBounds(const physx::PxBounds3& bounds, ResultCallback& resultCallback) const override
+    virtual void findBondSegmentsInBounds(const nvidia::NvBounds3& bounds, ResultCallback& resultCallback) const override
     {
         const_cast<ExtDamageAcceleratorAABBTree*>(this)->findInBounds(bounds, resultCallback, true);
 
     }
 
-    virtual void findBondSegmentsPlaneIntersected(const physx::PxPlane& plane, ResultCallback& resultCallback) const override;
+    virtual void findBondSegmentsPlaneIntersected(const nvidia::NvPlane& plane, ResultCallback& resultCallback) const override;
 
     virtual Nv::Blast::DebugBuffer fillDebugRender(int depth, bool segments) override;
 
@@ -90,8 +90,8 @@ private:
         int child[2];
         uint32_t first;
         uint32_t last;
-        physx::PxBounds3 pointsBound;
-        physx::PxBounds3 segmentsBound;
+        nvidia::NvBounds3 pointsBound;
+        nvidia::NvBounds3 segmentsBound;
     };
 
 
@@ -104,13 +104,13 @@ private:
         callback.push(pointIndex, m_bonds[pointIndex].node0, m_bonds[pointIndex].node1);
     }
 
-    void findInBounds(const physx::PxBounds3& bounds, ResultCallback& callback, bool segments) const;
+    void findInBounds(const nvidia::NvBounds3& bounds, ResultCallback& callback, bool segments) const;
 
-    void findPointsInBounds(const Node& node, ResultCallback& callback, const physx::PxBounds3& bounds) const;
+    void findPointsInBounds(const Node& node, ResultCallback& callback, const nvidia::NvBounds3& bounds) const;
 
-    void findSegmentsInBounds(const Node& node, ResultCallback& callback, const physx::PxBounds3& bounds) const;
+    void findSegmentsInBounds(const Node& node, ResultCallback& callback, const nvidia::NvBounds3& bounds) const;
 
-    void findSegmentsPlaneIntersected(const Node& node, ResultCallback& callback, const physx::PxPlane& plane) const;
+    void findSegmentsPlaneIntersected(const Node& node, ResultCallback& callback, const nvidia::NvPlane& plane) const;
 
     void fillDebugBuffer(const Node& node, int currentDepth, int depth, bool segments);
 
@@ -121,12 +121,12 @@ private:
     Array<Node>::type                     m_nodes;
     Array<uint32_t>::type                 m_indices;
 
-    Array<physx::PxVec3>::type            m_points;
+    Array<nvidia::NvVec3>::type            m_points;
 
     struct Segment
     {
-        physx::PxVec3   p0;
-        physx::PxVec3   p1;
+        nvidia::NvVec3   p0;
+        nvidia::NvVec3   p1;
     };
     Array<Segment>::type                  m_segments;
 

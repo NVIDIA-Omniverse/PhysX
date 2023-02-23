@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTTKACTORIMPL_H
@@ -41,7 +41,7 @@
 
 #include "NvBlastTkActor.h"
 
-#include "foundation/PxFlags.h"
+#include "NvFlags.h"
 
 namespace Nv
 {
@@ -238,7 +238,7 @@ private:
     TkFamilyImpl*                           m_family;             //!< The TkFamilyImpl to which this actor belongs
     TkGroupImpl*                            m_group;              //!< The TkGroupImpl (if any) to which this actor belongs
     uint32_t                                m_groupJobIndex;      //!< The index of this actor's job within its group's job list
-    physx::PxFlags<TkActorFlag::Enum, char> m_flags;              //!< Status flags for this actor
+    nvidia::NvFlags<TkActorFlag::Enum, char> m_flags;              //!< Status flags for this actor
     Array<DamageData>::type                 m_damageBuffer;       //!< Buffered damage input
     uint32_t                                m_jointCount;         //!< The number of joints referenced in m_jointList
     DList                                   m_jointList;          //!< A doubly-linked list of joint references

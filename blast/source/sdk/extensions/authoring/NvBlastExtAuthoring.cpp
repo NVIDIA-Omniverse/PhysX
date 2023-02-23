@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #include "NvBlastExtAuthoring.h"
 #include "NvBlastTypes.h"
@@ -41,13 +41,13 @@
 #include "NvBlastExtAuthoringCollisionBuilderImpl.h"
 #include "NvBlastExtAuthoringCutoutImpl.h"
 #include "NvBlastExtAuthoringInternalCommon.h"
-#include "NvBlastPxSharedHelpers.h"
+#include "NvBlastNvSharedHelpers.h"
 
 #include <algorithm>
 #include <memory>
 
 using namespace Nv::Blast;
-using namespace physx;
+using namespace nvidia;
 
 #define SAFE_ARRAY_NEW(T, x) ((x) > 0) ? reinterpret_cast<T*>(NVBLAST_ALLOC(sizeof(T) * (x))) : nullptr;
 #define SAFE_ARRAY_DELETE(x) if (x != nullptr) {NVBLAST_FREE(x); x = nullptr;}
@@ -117,21 +117,21 @@ void NvBlastExtAuthoringTrimCollisionGeometry(ConvexMeshBuilder* cmb, uint32_t c
 void NvBlastExtAuthoringTransformCollisionHullInPlace(CollisionHull* hull, const NvcVec3* scaling, const NvcQuat* rotation, const NvcVec3* translation)
 {
     // Local copies of scaling (S), rotation (R), and translation (T)
-    physx::PxVec3 S = { 1, 1, 1 };
-    physx::PxQuat R = { 0, 0, 0, 1 };
-    physx::PxVec3 T = { 0, 0, 0 };
-    physx::PxVec3 cofS = { 1, 1, 1 };
+    nvidia::NvVec3 S = { 1, 1, 1 };
+    nvidia::NvQuat R = { 0, 0, 0, 1 };
+    nvidia::NvVec3 T = { 0, 0, 0 };
+    nvidia::NvVec3 cofS = { 1, 1, 1 };
     float sgnDetS = 1;
 
     {
         if (rotation)
         {
-            R = *toPxShared(rotation);
+            R = *toNvShared(rotation);
         }
 
         if (scaling)
         {
-            S       = *toPxShared(scaling);
+            S       = *toNvShared(scaling);
             cofS.x = S.y * S.z;
             cofS.y = S.z * S.x;
             cofS.z = S.x * S.y;
@@ -140,14 +140,14 @@ void NvBlastExtAuthoringTransformCollisionHullInPlace(CollisionHull* hull, const
 
         if (translation)
         {
-            T = *toPxShared(translation);
+            T = *toNvShared(translation);
         }
     }
 
     const uint32_t pointCount = hull->pointsCount;
     for (uint32_t pi = 0; pi < pointCount; pi++)
     {
-        physx::PxVec3& p = toPxShared(hull->points[pi]);
+        nvidia::NvVec3& p = toNvShared(hull->points[pi]);
         p = (R.rotate(p.multiply(S)) + T);
     }
     
@@ -155,11 +155,11 @@ void NvBlastExtAuthoringTransformCollisionHullInPlace(CollisionHull* hull, const
     for (uint32_t pi = 0; pi < planeCount; pi++)
     {
         float* plane = hull->polygonData[pi].plane;
-        physx::PxPlane pxPlane(plane[0], plane[1], plane[2], plane[3]);
-        PxVec3 transformedNormal = sgnDetS*R.rotate(pxPlane.n.multiply(cofS)).getNormalized();
-        PxVec3 transformedPt = R.rotate(pxPlane.pointInPlane().multiply(S)) + T;
+        nvidia::NvPlane nvPlane(plane[0], plane[1], plane[2], plane[3]);
+        NvVec3 transformedNormal = sgnDetS*R.rotate(nvPlane.n.multiply(cofS)).getNormalized();
+        NvVec3 transformedPt = R.rotate(nvPlane.pointInPlane().multiply(S)) + T;
         
-        physx::PxPlane transformedPlane(transformedPt, transformedNormal);
+        nvidia::NvPlane transformedPlane(transformedPt, transformedNormal);
         plane[0] = transformedPlane.n[0];
         plane[1] = transformedPlane.n[1];
         plane[2] = transformedPlane.n[2];
@@ -411,7 +411,7 @@ AuthoringResult* NvBlastExtAuthoringProcessFracture(FractureTool& fTool, BlastBo
     // prepare physics data (convexes)
     buildPhysicsChunks(collisionBuilder, aResult, collisionParam);
 
-    // set NvBlastChunk volume and centroid from Px geometry
+    // set NvBlastChunk volume and centroid from CollisionHull
     for (uint32_t i = 0; i < chunkCount; i++)
     {
         float totalVolume = 0.f;
@@ -503,7 +503,7 @@ uint32_t NvBlastExtAuthoringFindAssetConnectingBonds
 
     std::vector<uint32_t> originalComponentIndex;
 
-    const physx::PxVec3 identityScale(1);
+    const nvidia::NvVec3 identityScale(1);
 
     //Combine our hull lists into a single combined list for bondsFromPrefractured
     for (uint32_t c = 0; c < componentCount; c++)
@@ -520,9 +520,9 @@ uint32_t NvBlastExtAuthoringFindAssetConnectingBonds
             const uint32_t hullsEnd = convexHullOffsets[c][chunk + 1];
             for (uint32_t hull = hullsStart; hull < hullsEnd; hull++)
             {
-                if ((scale != nullptr && *toPxShared(scale) != identityScale) ||
-                    (rotation != nullptr && !toPxShared(rotation)->isIdentity()) ||
-                    (translation != nullptr && !toPxShared(translation)->isZero()))
+                if ((scale != nullptr && *toNvShared(scale) != identityScale) ||
+                    (rotation != nullptr && !toNvShared(rotation)->isIdentity()) ||
+                    (translation != nullptr && !toNvShared(translation)->isZero()))
                 {
                     hullsToRelease.emplace_back(NvBlastExtAuthoringTransformCollisionHull(chunkHulls[c][hull], scale, rotation, translation));
                     combinedConvexHulls.emplace_back(hullsToRelease.back());

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "TkBaseTest.h"
@@ -31,7 +31,7 @@
 #include <random>
 #include <algorithm>
 
-#include "PsMemoryBuffer.h"
+#include "NsMemoryBuffer.h"
 
 #include "NvBlastTime.h"
 
@@ -56,7 +56,7 @@ Composite and joint tests:
 struct Composite
 {
     std::vector<TkActorDesc>        m_actorDescs;
-    std::vector<physx::PxTransform> m_relTMs;
+    std::vector<nvidia::NvTransform> m_relTMs;
     std::vector<TkJointDesc>        m_jointDescs;
 };
 
@@ -91,39 +91,39 @@ public:
         const TkJointDesc jointDescsNoNRF[8] =
         {
             // Actor indices, chunk indices, attach position in the composite frame
-            { { families[0], families[1] }, { 6, 5 }, { PxVec3(0.0f, -1.5f, 0.5f), PxVec3(0.0f, -1.5f, 0.5f) } },
-            { { families[0], families[1] }, { 4, 3 }, { PxVec3(0.0f, -0.5f, -0.5f), PxVec3(0.0f, -0.5f, -0.5f) } },
+            { { families[0], families[1] }, { 6, 5 }, { NvVec3(0.0f, -1.5f, 0.5f), NvVec3(0.0f, -1.5f, 0.5f) } },
+            { { families[0], families[1] }, { 4, 3 }, { NvVec3(0.0f, -0.5f, -0.5f), NvVec3(0.0f, -0.5f, -0.5f) } },
                         
-            { { families[0], families[2] }, { 8, 6 }, { PxVec3(-0.5f, 0.0f, 0.5f), PxVec3(-0.5f, 0.0f, 0.5f) } },
-            { { families[0], families[2] }, { 3, 1 }, { PxVec3(-1.5f, 0.0f, -0.5f), PxVec3(-1.5f, 0.0f, -0.5f) } },
+            { { families[0], families[2] }, { 8, 6 }, { NvVec3(-0.5f, 0.0f, 0.5f), NvVec3(-0.5f, 0.0f, 0.5f) } },
+            { { families[0], families[2] }, { 3, 1 }, { NvVec3(-1.5f, 0.0f, -0.5f), NvVec3(-1.5f, 0.0f, -0.5f) } },
                         
-            { { families[1], families[3] }, { 7, 5 }, { PxVec3(0.5f, 0.0f, 0.5f), PxVec3(0.5f, 0.0f, 0.5f) } },
-            { { families[1], families[3] }, { 4, 2 }, { PxVec3(1.0f, 0.0f, -0.5f), PxVec3(1.0f, 0.0f, -0.5f) } },
+            { { families[1], families[3] }, { 7, 5 }, { NvVec3(0.5f, 0.0f, 0.5f), NvVec3(0.5f, 0.0f, 0.5f) } },
+            { { families[1], families[3] }, { 4, 2 }, { NvVec3(1.0f, 0.0f, -0.5f), NvVec3(1.0f, 0.0f, -0.5f) } },
                         
-            { { families[2], families[3] }, { 8, 7 }, { PxVec3(0.0f, 1.5f, 0.5f), PxVec3(0.0f, 1.5f, 0.5f) } },
-            { { families[2], families[3] }, { 2, 1 }, { PxVec3(0.0f, 0.5f, -0.5f), PxVec3(0.0f, 0.5f, -0.5f) } }
+            { { families[2], families[3] }, { 8, 7 }, { NvVec3(0.0f, 1.5f, 0.5f), NvVec3(0.0f, 1.5f, 0.5f) } },
+            { { families[2], families[3] }, { 2, 1 }, { NvVec3(0.0f, 0.5f, -0.5f), NvVec3(0.0f, 0.5f, -0.5f) } }
         };
 
         const TkJointDesc jointDescsWithNRF[12] =
         {
             // Actor indices, chunk indices, attach position in the composite frame
-            { { families[0], families[1] }, { 6, 5 }, { PxVec3(0.0f, -1.5f, 0.5f), PxVec3(0.0f, -1.5f, 0.5f) } },
-            { { families[0], families[1] }, { 4, 3 }, { PxVec3(0.0f, -0.5f, -0.5f), PxVec3(0.0f, -0.5f, -0.5f) } },
+            { { families[0], families[1] }, { 6, 5 }, { NvVec3(0.0f, -1.5f, 0.5f), NvVec3(0.0f, -1.5f, 0.5f) } },
+            { { families[0], families[1] }, { 4, 3 }, { NvVec3(0.0f, -0.5f, -0.5f), NvVec3(0.0f, -0.5f, -0.5f) } },
                         
-            { { families[0], nullptr }, { 8, 0xFFFFFFFF }, { PxVec3(-0.5f, 0.0f, 0.5f), PxVec3(-0.5f, 0.0f, 0.5f) } },
-            { { families[0], nullptr }, { 3, 0xFFFFFFFF }, { PxVec3(-1.5f, 0.0f, -0.5f), PxVec3(-1.5f, 0.0f, -0.5f) } },
+            { { families[0], nullptr }, { 8, 0xFFFFFFFF }, { NvVec3(-0.5f, 0.0f, 0.5f), NvVec3(-0.5f, 0.0f, 0.5f) } },
+            { { families[0], nullptr }, { 3, 0xFFFFFFFF }, { NvVec3(-1.5f, 0.0f, -0.5f), NvVec3(-1.5f, 0.0f, -0.5f) } },
                         
-            { { nullptr, families[2] }, { 0xFFFFFFFF, 6 }, { PxVec3(-0.5f, 0.0f, 0.5f), PxVec3(-0.5f, 0.0f, 0.5f) } },
-            { { nullptr, families[2] }, { 0xFFFFFFFF, 1 }, { PxVec3(-1.5f, 0.0f, -0.5f), PxVec3(-1.5f, 0.0f, -0.5f) } },
+            { { nullptr, families[2] }, { 0xFFFFFFFF, 6 }, { NvVec3(-0.5f, 0.0f, 0.5f), NvVec3(-0.5f, 0.0f, 0.5f) } },
+            { { nullptr, families[2] }, { 0xFFFFFFFF, 1 }, { NvVec3(-1.5f, 0.0f, -0.5f), NvVec3(-1.5f, 0.0f, -0.5f) } },
 
-            { { families[1], nullptr }, { 7, 0xFFFFFFFF }, { PxVec3(0.5f, 0.0f, 0.5f), PxVec3(0.5f, 0.0f, 0.5f) } },
-            { { families[1], nullptr }, { 4, 0xFFFFFFFF }, { PxVec3(1.0f, 0.0f, -0.5f), PxVec3(1.0f, 0.0f, -0.5f) } },
+            { { families[1], nullptr }, { 7, 0xFFFFFFFF }, { NvVec3(0.5f, 0.0f, 0.5f), NvVec3(0.5f, 0.0f, 0.5f) } },
+            { { families[1], nullptr }, { 4, 0xFFFFFFFF }, { NvVec3(1.0f, 0.0f, -0.5f), NvVec3(1.0f, 0.0f, -0.5f) } },
                         
-            { { nullptr, families[3] }, { 0xFFFFFFFF, 5 }, { PxVec3(0.5f, 0.0f, 0.5f), PxVec3(0.5f, 0.0f, 0.5f) } },
-            { { nullptr, families[3] }, { 0xFFFFFFFF, 2 }, { PxVec3(1.0f, 0.0f, -0.5f), PxVec3(1.0f, 0.0f, -0.5f) } },
+            { { nullptr, families[3] }, { 0xFFFFFFFF, 5 }, { NvVec3(0.5f, 0.0f, 0.5f), NvVec3(0.5f, 0.0f, 0.5f) } },
+            { { nullptr, families[3] }, { 0xFFFFFFFF, 2 }, { NvVec3(1.0f, 0.0f, -0.5f), NvVec3(1.0f, 0.0f, -0.5f) } },
 
-            { { families[2], families[3] }, { 8, 7 }, { PxVec3(0.0f, 1.5f, 0.5f), PxVec3(0.0f, 1.5f, 0.5f) } },
-            { { families[2], families[3] }, { 2, 1 }, { PxVec3(0.0f, 0.5f, -0.5f), PxVec3(0.0f, 0.5f, -0.5f), } }
+            { { families[2], families[3] }, { 8, 7 }, { NvVec3(0.0f, 1.5f, 0.5f), NvVec3(0.0f, 1.5f, 0.5f) } },
+            { { families[2], families[3] }, { 2, 1 }, { NvVec3(0.0f, 0.5f, -0.5f), NvVec3(0.0f, 0.5f, -0.5f), } }
         };
 
         const TkJointDesc* jointDescs = createNRFJoints ? jointDescsWithNRF : jointDescsNoNRF;
@@ -145,7 +145,7 @@ public:
 #else
         TkFramework* fw = NvBlastTkFrameworkGet();
 
-        PsMemoryBuffer* membuf = PX_NEW(PsMemoryBuffer);
+        PsMemoryBuffer* membuf = NVBLAST_NEW(PsMemoryBuffer);
         EXPECT_TRUE(membuf != nullptr);
         if (membuf == nullptr)
         {
@@ -622,8 +622,8 @@ public:
         jdesc.families[1] = family2;
         jdesc.chunkIndices[0] = 2;
         jdesc.chunkIndices[1] = 1;
-        jdesc.attachPositions[0] = PxVec3(0.0f, 1.0f, 0.0f);
-        jdesc.attachPositions[1] = PxVec3(0.0f, -1.0f, 0.0f);
+        jdesc.attachPositions[0] = NvVec3(0.0f, 1.0f, 0.0f);
+        jdesc.attachPositions[1] = NvVec3(0.0f, -1.0f, 0.0f);
         TkJoint* joint = framework->createJoint(jdesc);
         EXPECT_TRUE(joint != nullptr);
         tracker.joints.insert(joint);

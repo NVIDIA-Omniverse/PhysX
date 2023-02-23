@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 // This warning arises when using some stl containers with older versions of VC
@@ -35,14 +35,14 @@
 #include <NvBlastExtAuthoringBondGeneratorImpl.h>
 #include <NvBlast.h>
 #include <NvBlastGlobals.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 #include "NvBlastExtTriangleProcessor.h"
 #include "NvBlastExtApexSharedParts.h"
 #include "NvBlastExtAuthoringInternalCommon.h"
 #include "NvBlastExtAuthoringTypes.h"
 #include <vector>
 #include <map>
-#include <foundation/PxPlane.h>
+#include "NvPlane.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -53,7 +53,7 @@
 //#define DEBUG_OUTPUT
 #ifdef DEBUG_OUTPUT
 
-void saveGeometryToObj(std::vector<PxVec3>& triangles, const char* filepath)
+void saveGeometryToObj(std::vector<NvVec3>& triangles, const char* filepath)
 {
 
     FILE* outStream = fopen(filepath, "w");
@@ -68,7 +68,7 @@ void saveGeometryToObj(std::vector<PxVec3>& triangles, const char* filepath)
     }
     for (uint32_t i = 0; i < triangles.size() / 3; ++i)
     {
-        PxVec3 normal =
+        NvVec3 normal =
             (triangles[3 * i + 2] - triangles[3 * i]).cross((triangles[3 * i + 1] - triangles[3 * i])).getNormalized();
         fprintf(outStream, "vn %lf %lf %lf\n", normal.x, normal.y, normal.z);
         fprintf(outStream, "vn %lf %lf %lf\n", normal.x, normal.y, normal.z);
@@ -89,8 +89,8 @@ void saveGeometryToObj(std::vector<PxVec3>& triangles, const char* filepath)
 }
 
 
-std::vector<PxVec3> intersectionBuffer;
-std::vector<PxVec3> meshBuffer;
+std::vector<NvVec3> intersectionBuffer;
+std::vector<NvVec3> meshBuffer;
 #endif
 
 
@@ -101,9 +101,9 @@ namespace Blast
 
 #define EPS_PLANE 0.0001f
 
-physx::PxVec3 getNormal(const Triangle& t)
+nvidia::NvVec3 getNormal(const Triangle& t)
 {
-    return toPxShared(t.b.p - t.a.p).cross(toPxShared(t.c.p - t.a.p));
+    return toNvShared(t.b.p - t.a.p).cross(toNvShared(t.c.p - t.a.p));
 }
 
 bool planeComparer(const PlaneChunkIndexer& as, const PlaneChunkIndexer& bs)
@@ -150,24 +150,24 @@ struct Bond
 struct BondInfo
 {
     float area;
-    physx::PxBounds3 m_bb;
-    physx::PxVec3 centroid;
-    physx::PxVec3 normal;
+    nvidia::NvBounds3 m_bb;
+    nvidia::NvVec3 centroid;
+    nvidia::NvVec3 normal;
     int32_t m_chunkId;
 };
 
-inline physx::PxVec3 getVertex(const Triangle& t, uint32_t i)
+inline nvidia::NvVec3 getVertex(const Triangle& t, uint32_t i)
 {
-    return toPxShared((&t.a)[i].p);
+    return toNvShared((&t.a)[i].p);
 }
 
-void AddTtAnchorPoints(const Triangle* a, const Triangle* b, std::vector<PxVec3>& points)
+void AddTtAnchorPoints(const Triangle* a, const Triangle* b, std::vector<NvVec3>& points)
 {
-    physx::PxVec3 na = getNormal(*a).getNormalized();
-    physx::PxVec3 nb = getNormal(*b).getNormalized();
+    nvidia::NvVec3 na = getNormal(*a).getNormalized();
+    nvidia::NvVec3 nb = getNormal(*b).getNormalized();
 
-    physx::PxPlane pla(toPxShared(a->a.p), na);
-    physx::PxPlane plb(toPxShared(b->a.p), nb);
+    nvidia::NvPlane pla(toNvShared(a->a.p), na);
+    nvidia::NvPlane plb(toNvShared(b->a.p), nb);
 
 
     ProjectionDirections da = getProjectionDirection(na);
@@ -175,21 +175,21 @@ void AddTtAnchorPoints(const Triangle* a, const Triangle* b, std::vector<PxVec3>
 
     TriangleProcessor prc;
 
-    TrPrcTriangle2d ta(getProjectedPoint(toPxShared(a->a.p), da), getProjectedPoint(toPxShared(a->b.p), da),
-                       getProjectedPoint(toPxShared(a->c.p), da));
-    TrPrcTriangle2d tb(getProjectedPoint(toPxShared(b->a.p), db), getProjectedPoint(toPxShared(b->b.p), db),
-                       getProjectedPoint(toPxShared(b->c.p), db));
+    TrPrcTriangle2d ta(getProjectedPoint(toNvShared(a->a.p), da), getProjectedPoint(toNvShared(a->b.p), da),
+                       getProjectedPoint(toNvShared(a->c.p), da));
+    TrPrcTriangle2d tb(getProjectedPoint(toNvShared(b->a.p), db), getProjectedPoint(toNvShared(b->b.p), db),
+                       getProjectedPoint(toNvShared(b->c.p), db));
 
     /**
         Compute
     */
     for (uint32_t i = 0; i < 3; ++i)
     {
-        physx::PxVec3 pt;
+        nvidia::NvVec3 pt;
         if (getPlaneSegmentIntersection(pla, getVertex(*b, i), getVertex(*b, (i + 1) % 3), pt))
         {
 
-            physx::PxVec2 pt2 = getProjectedPoint(pt, da);
+            nvidia::NvVec2 pt2 = getProjectedPoint(pt, da);
             if (prc.isPointInside(pt2, ta))
             {
                 points.push_back(pt);
@@ -197,7 +197,7 @@ void AddTtAnchorPoints(const Triangle* a, const Triangle* b, std::vector<PxVec3>
         }
         if (getPlaneSegmentIntersection(plb, getVertex(*a, i), getVertex(*a, (i + 1) % 3), pt))
         {
-            PxVec2 pt2 = getProjectedPoint(pt, db);
+            NvVec2 pt2 = getProjectedPoint(pt, db);
             if (prc.isPointInside(pt2, tb))
             {
                 points.push_back(pt);
@@ -208,13 +208,13 @@ void AddTtAnchorPoints(const Triangle* a, const Triangle* b, std::vector<PxVec3>
 
 
 inline bool
-pointInsidePoly(const PxVec3& pt, const uint8_t* indices, uint16_t indexCount, const PxVec3* verts, const PxVec3& n)
+pointInsidePoly(const NvVec3& pt, const uint8_t* indices, uint16_t indexCount, const NvVec3* verts, const NvVec3& n)
 {
     int s = 0;
     for (uint16_t i = 0; i < indexCount; ++i)
     {
-        const PxVec3 r0 = verts[indices[i]] - pt;
-        const PxVec3 r1 = verts[indices[(i + 1) % indexCount]] - pt;
+        const NvVec3 r0 = verts[indices[i]] - pt;
+        const NvVec3 r1 = verts[indices[(i + 1) % indexCount]] - pt;
         const float cn  = r0.cross(r1).dot(n);
         const int cns   = cn >= 0 ? 1 : -1;
         if (!s)
@@ -229,16 +229,16 @@ pointInsidePoly(const PxVec3& pt, const uint8_t* indices, uint16_t indexCount, c
     return true;
 }
 
-void AddPpAnchorPoints(const uint8_t* indicesA, uint16_t indexCountA, const PxVec3* vertsA, const float planeA[4],
-                       const uint8_t* indicesB, uint16_t indexCountB, const PxVec3* vertsB, const float planeB[4],
-                       std::vector<PxVec3>& points)
+void AddPpAnchorPoints(const uint8_t* indicesA, uint16_t indexCountA, const NvVec3* vertsA, const float planeA[4],
+                       const uint8_t* indicesB, uint16_t indexCountB, const NvVec3* vertsB, const float planeB[4],
+                       std::vector<NvVec3>& points)
 {
-    PxPlane pla(planeA[0], planeA[1], planeA[2], planeA[3]);
-    PxPlane plb(planeB[0], planeB[1], planeB[2], planeB[3]);
+    NvPlane pla(planeA[0], planeA[1], planeA[2], planeA[3]);
+    NvPlane plb(planeB[0], planeB[1], planeB[2], planeB[3]);
 
     for (uint16_t iA = 0; iA < indexCountA; ++iA)
     {
-        PxVec3 pt;
+        NvVec3 pt;
         if (getPlaneSegmentIntersection(plb, vertsA[indicesA[iA]], vertsA[indicesA[(iA + 1) % indexCountA]], pt))
         {
             if (pointInsidePoly(pt, indicesB, indexCountB, vertsB, plb.n))
@@ -250,7 +250,7 @@ void AddPpAnchorPoints(const uint8_t* indicesA, uint16_t indexCountA, const PxVe
 
     for (uint16_t iB = 0; iB < indexCountA; ++iB)
     {
-        PxVec3 pt;
+        NvVec3 pt;
         if (getPlaneSegmentIntersection(pla, vertsB[indicesB[iB]], vertsB[indicesA[(iB + 1) % indexCountB]], pt))
         {
             if (pointInsidePoly(pt, indicesA, indexCountA, vertsA, pla.n))
@@ -264,19 +264,19 @@ void AddPpAnchorPoints(const uint8_t* indicesA, uint16_t indexCountA, const PxVe
 
 float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcessor, const Triangle* mA, uint32_t mavc,
                                                    const Triangle* mB, uint32_t mbvc, const CollisionHull* hull1,
-                                                   const CollisionHull* hull2, const std::vector<PxVec3>& hull1p,
-                                                   const std::vector<PxVec3>& hull2p, PxVec3& normal, PxVec3& centroid,
+                                                   const CollisionHull* hull2, const std::vector<NvVec3>& hull1p,
+                                                   const std::vector<NvVec3>& hull2p, NvVec3& normal, NvVec3& centroid,
                                                    float maxRelSeparation)
 {
-    PxBounds3 bounds;
-    PxBounds3 aBounds;
-    PxBounds3 bBounds;
+    NvBounds3 bounds;
+    NvBounds3 aBounds;
+    NvBounds3 bBounds;
     bounds.setEmpty();
     aBounds.setEmpty();
     bBounds.setEmpty();
 
-    PxVec3 chunk1Centroid(0, 0, 0);
-    PxVec3 chunk2Centroid(0, 0, 0);
+    NvVec3 chunk1Centroid(0, 0, 0);
+    NvVec3 chunk2Centroid(0, 0, 0);
 
     ///////////////////////////////////////////////////////////////////////////////////
     if (hull1p.size() < 4 || hull2p.size() < 4)
@@ -303,9 +303,9 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
     const float maxSeparation = maxRelSeparation * std::sqrt(std::max(aBounds.getExtents().magnitudeSquared(), bBounds.getExtents().magnitudeSquared()));
 
     Separation separation;
-    if (!importerHullsInProximityApexFree(hull1p.size(), hull1p.data(), aBounds, PxTransform(PxIdentity),
-                                          PxVec3(1, 1, 1), hull2p.size(), hull2p.data(), bBounds,
-                                          PxTransform(PxIdentity), PxVec3(1, 1, 1), 2.0f * maxSeparation, &separation))
+    if (!importerHullsInProximityApexFree(hull1p.size(), hull1p.data(), aBounds, NvTransform(),
+                                          NvVec3(1, 1, 1), hull2p.size(), hull2p.data(), bBounds,
+                                          NvTransform(), NvVec3(1, 1, 1), 2.0f * maxSeparation, &separation))
     {
         return 0.0f;
     }
@@ -316,13 +316,13 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
                                                          // otherwise midplane can be wrong (only if we have geometry)
     {
         // Build first plane interface
-        PxPlane midplane = separation.plane;
+        NvPlane midplane = separation.plane;
         if (!midplane.n.isFinite())
         {
             return 0.0f;
         }
 
-        std::vector<PxVec3> interfacePoints;
+        std::vector<NvVec3> interfacePoints;
 
         float firstCentroidSide  = (midplane.distance(chunk1Centroid) > 0) ? 1 : -1;
         float secondCentroidSide = (midplane.distance(chunk2Centroid) > 0) ? 1 : -1;
@@ -344,10 +344,10 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
                 interfacePoints.push_back(hull2p[i]);
             }
         }
-        std::vector<PxVec3> convexHull;
+        std::vector<NvVec3> convexHull;
         trProcessor->buildConvexHull(interfacePoints, convexHull, midplane.n);
         float area = 0;
-        PxVec3 centroidLocal(0, 0, 0);
+        NvVec3 centroidLocal(0, 0, 0);
         if (convexHull.size() < 3)
         {
             return 0.0f;
@@ -371,7 +371,7 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
     else
     {
         float area = 0.0f;
-        std::vector<PxVec3> intersectionAnchors;
+        std::vector<NvVec3> intersectionAnchors;
         if (hull1 != nullptr && hull2 != nullptr)  // Use hulls
         {
             for (uint32_t i1 = 0; i1 < hull1->polygonDataCount; ++i1)
@@ -381,9 +381,9 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
                 {
                     HullPolygon& poly2 = hull2->polygonData[i2];
                     AddPpAnchorPoints(reinterpret_cast<uint8_t*>(hull1->indices) + poly1.indexBase, poly1.vertexCount,
-                                      toPxShared(hull1->points), poly1.plane,
+                                      toNvShared(hull1->points), poly1.plane,
                                       reinterpret_cast<uint8_t*>(hull2->indices) + poly2.indexBase, poly2.vertexCount,
-                                      toPxShared(hull2->points), poly2.plane, intersectionAnchors);
+                                      toNvShared(hull2->points), poly2.plane, intersectionAnchors);
                 }
             }
         }
@@ -403,7 +403,7 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
             return 0.0f;
         }
 
-        PxVec3 lcoid(0, 0, 0);
+        NvVec3 lcoid(0, 0, 0);
         for (uint32_t i = 0; i < intersectionAnchors.size(); ++i)
         {
             lcoid += intersectionAnchors[i];
@@ -416,8 +416,8 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
             return 0.0f;
         }
 
-        PxVec3 dir1 = intersectionAnchors[0] - lcoid;
-        PxVec3 dir2 = chunk2Centroid - chunk1Centroid;  // A more reasonable fallback than (0,0,0)
+        NvVec3 dir1 = intersectionAnchors[0] - lcoid;
+        NvVec3 dir2 = chunk2Centroid - chunk1Centroid;  // A more reasonable fallback than (0,0,0)
         float maxMagn = 0.0f;
         float maxDist = 0.0f;
 
@@ -425,7 +425,7 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
         {
             float d = (intersectionAnchors[j] - lcoid).magnitude();
 
-            PxVec3 tempNormal = (intersectionAnchors[j] - lcoid).cross(dir1);
+            NvVec3 tempNormal = (intersectionAnchors[j] - lcoid).cross(dir1);
             maxDist           = std::max(d, maxDist);
 
             if (tempNormal.magnitude() > maxMagn)
@@ -445,12 +445,12 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
 
 struct BondGenerationCandidate
 {
-    PxVec3 point;
+    NvVec3 point;
     bool end;
     uint32_t parentChunk;
     uint32_t parentComponent;
     BondGenerationCandidate();
-    BondGenerationCandidate(const PxVec3& p, bool isEnd, uint32_t pr, uint32_t c)
+    BondGenerationCandidate(const NvVec3& p, bool isEnd, uint32_t pr, uint32_t c)
     : point(p), end(isEnd), parentChunk(pr), parentComponent(c){};
 
     bool operator<(const BondGenerationCandidate& in) const
@@ -483,7 +483,7 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
 {
 
     std::vector<std::vector<NvcVec3> > chunksPoints(meshCount);
-    std::vector<PxBounds3> bounds(meshCount);
+    std::vector<NvBounds3> bounds(meshCount);
     if (!chunkHulls)
     {
         for (uint32_t i = 0; i < meshCount; ++i)
@@ -499,14 +499,14 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
                 chunksPoints[i].push_back(geometry[geometryOffset[i] + j].a.p);
                 chunksPoints[i].push_back(geometry[geometryOffset[i] + j].b.p);
                 chunksPoints[i].push_back(geometry[geometryOffset[i] + j].c.p);
-                bounds[i].include(toPxShared(geometry[geometryOffset[i] + j].a.p));
-                bounds[i].include(toPxShared(geometry[geometryOffset[i] + j].b.p));
-                bounds[i].include(toPxShared(geometry[geometryOffset[i] + j].c.p));
+                bounds[i].include(toNvShared(geometry[geometryOffset[i] + j].a.p));
+                bounds[i].include(toNvShared(geometry[geometryOffset[i] + j].b.p));
+                bounds[i].include(toNvShared(geometry[geometryOffset[i] + j].c.p));
             }
         }
     }
 
-    std::vector<std::vector<std::vector<PxVec3> > > hullPoints(meshCount);
+    std::vector<std::vector<std::vector<NvVec3> > > hullPoints(meshCount);
     std::vector<BondGenerationCandidate> candidates;
 
     std::vector<CollisionHull*> tempChunkHulls(meshCount, nullptr);
@@ -516,7 +516,7 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
         {
             continue;
         }
-        PxBounds3 bnd(PxBounds3::empty());
+        NvBounds3 bnd(NvBounds3::empty());
         uint32_t hullCountForMesh             = 0;
         const CollisionHull** beginChunkHulls = nullptr;
         if (chunkHulls)
@@ -541,7 +541,7 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
             curHull.resize(pointCount);
             for (uint32_t i = 0; i < pointCount; ++i)
             {
-                curHull[i] = toPxShared(beginChunkHulls[hull]->points[i]);
+                curHull[i] = toNvShared(beginChunkHulls[hull]->points[i]);
                 bnd.include(curHull[i]);
             }
         }
@@ -602,8 +602,8 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
             {
                 for (uint32_t jhull = 0; jhull < jhullCount; ++jhull)
                 {
-                    PxVec3 normal;
-                    PxVec3 centroid;
+                    NvVec3 normal;
+                    NvVec3 centroid;
 
                     float area = processWithMidplanes(
                         &trProcessor, geometry ? geometry + geometryOffset[i] : nullptr,
@@ -656,13 +656,13 @@ int32_t BlastBondGeneratorImpl::createFullBondListAveraged(uint32_t meshCount, c
 
 uint32_t isSamePlane(NvcPlane& a, NvcPlane& b)
 {
-    if (PxAbs(a.d - b.d) > EPS_PLANE)
+    if (NvAbs(a.d - b.d) > EPS_PLANE)
         return 0;
-    if (PxAbs(a.n.x - b.n.x) > EPS_PLANE)
+    if (NvAbs(a.n.x - b.n.x) > EPS_PLANE)
         return 0;
-    if (PxAbs(a.n.y - b.n.y) > EPS_PLANE)
+    if (NvAbs(a.n.y - b.n.y) > EPS_PLANE)
         return 0;
-    if (PxAbs(a.n.z - b.n.z) > EPS_PLANE)
+    if (NvAbs(a.n.z - b.n.z) > EPS_PLANE)
         return 0;
     return 1;
 }
@@ -688,9 +688,9 @@ int32_t BlastBondGeneratorImpl::createFullBondListExact(uint32_t meshCount, cons
             meshBuffer.push_back(geometry[geometryOffset[i] + j].c.p);
 #endif
 
-            NvcPlane nPlane = fromPxShared(physx::PxPlane(toPxShared(geometry[geometryOffset[i] + j].a.p),
-                                                       toPxShared(geometry[geometryOffset[i] + j].b.p),
-                                                       toPxShared(geometry[geometryOffset[i] + j].c.p)));
+            NvcPlane nPlane = fromNvShared(nvidia::NvPlane(toNvShared(geometry[geometryOffset[i] + j].a.p),
+                                                       toNvShared(geometry[geometryOffset[i] + j].b.p),
+                                                       toNvShared(geometry[geometryOffset[i] + j].c.p)));
             planeTriangleMapping.push_back({ (int32_t)i, (int32_t)j, nPlane });
         }
     }
@@ -719,8 +719,8 @@ void BlastBondGeneratorImpl::buildGeometryCache(uint32_t meshCount, const uint32
         {
 
             NvcPlane nPlane =
-                fromPxShared(physx::PxPlane(toPxShared(mGeometryCache[i][j].a.p), toPxShared(mGeometryCache[i][j].b.p),
-                                         toPxShared(mGeometryCache[i][j].c.p)));
+                fromNvShared(nvidia::NvPlane(toNvShared(mGeometryCache[i][j].a.p), toNvShared(mGeometryCache[i][j].b.p),
+                                         toNvShared(mGeometryCache[i][j].c.p)));
             mPlaneCache.push_back({ (int32_t)i, (int32_t)j, nPlane });
         }
     }
@@ -744,7 +744,7 @@ void BlastBondGeneratorImpl::buildGeometryCache(uint32_t meshCount, const uint32
         mBoundsCache[ch].setEmpty();
         for (uint32_t i = 0; i < mCHullCache[ch]->pointsCount; ++i)
         {
-            mHullsPointsCache[ch][i] = toPxShared(mCHullCache[ch]->points[i]);
+            mHullsPointsCache[ch][i] = toNvShared(mCHullCache[ch]->points[i]);
             mBoundsCache[ch].include(mHullsPointsCache[ch][i]);
         }
     }
@@ -773,7 +773,7 @@ int32_t BlastBondGeneratorImpl::createFullBondListExactInternal(uint32_t meshCou
     std::map<std::pair<int32_t, int32_t>, std::pair<NvBlastBondDesc, int32_t> > bonds;
 
     TriangleProcessor trPrc;
-    std::vector<PxVec3> intersectionBufferLocal;
+    std::vector<NvVec3> intersectionBufferLocal;
 
     NvBlastBondDesc cleanBond = NvBlastBondDesc();
     memset(&cleanBond, 0, sizeof(NvBlastBondDesc));
@@ -796,9 +796,9 @@ int32_t BlastBondGeneratorImpl::createFullBondListExactInternal(uint32_t meshCou
 
         PlaneChunkIndexer& mappedTr = planeTriangleMapping[tIndex];
         const Triangle& trl         = geometry[geometryOffset[mappedTr.chunkId] + mappedTr.trId];
-        PxPlane pln                 = toPxShared(mappedTr.plane);
-        TrPrcTriangle trp(toPxShared(trl.a.p), toPxShared(trl.b.p), toPxShared(trl.c.p));
-        PxVec3 trCentroid = toPxShared(trl.a.p + trl.b.p + trl.c.p) * (1.0f / 3.0f);
+        NvPlane pln                 = toNvShared(mappedTr.plane);
+        TrPrcTriangle trp(toNvShared(trl.a.p), toNvShared(trl.b.p), toNvShared(trl.c.p));
+        NvVec3 trCentroid = toNvShared(trl.a.p + trl.b.p + trl.c.p) * (1.0f / 3.0f);
         trp.points[0] -= trCentroid;
         trp.points[1] -= trCentroid;
         trp.points[2] -= trCentroid;
@@ -845,12 +845,12 @@ int32_t BlastBondGeneratorImpl::createFullBondListExactInternal(uint32_t meshCou
             }
             const Triangle& trl2 = geometry[geometryOffset[mappedTr2.chunkId] + mappedTr2.trId];
 
-            TrPrcTriangle trp2(toPxShared(trl2.a.p), toPxShared(trl2.b.p), toPxShared(trl2.c.p));
+            TrPrcTriangle trp2(toNvShared(trl2.a.p), toNvShared(trl2.b.p), toNvShared(trl2.c.p));
 
             intersectionBufferLocal.clear();
             intersectionBufferLocal.reserve(32);
             trPrc.getTriangleIntersection(trp, trp2d, trp2, trCentroid, intersectionBufferLocal, pln.n);
-            PxVec3 centroidPoint(0, 0, 0);
+            NvVec3 centroidPoint(0, 0, 0);
             int32_t collectedVerticesCount = 0;
             float area                     = 0;
             if (intersectionBufferLocal.size() >= 3)
@@ -909,31 +909,31 @@ int32_t BlastBondGeneratorImpl::createFullBondListExactInternal(uint32_t meshCou
     return mResultBondDescs.size();
 }
 
-int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec3>& hull0,
-                                                         const std::vector<PxVec3>& hull1, const CollisionHull& cHull0,
-                                                         const CollisionHull& cHull1, PxBounds3 bound0,
-                                                         PxBounds3 bound1, NvBlastBond& resultBond, float overlapping)
+int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<NvVec3>& hull0,
+                                                         const std::vector<NvVec3>& hull1, const CollisionHull& cHull0,
+                                                         const CollisionHull& cHull1, NvBounds3 bound0,
+                                                         NvBounds3 bound1, NvBlastBond& resultBond, float overlapping)
 {
 
     TriangleProcessor trProcessor;
     Separation separation;
-    importerHullsInProximityApexFree(hull0.size(), hull0.data(), bound0, PxTransform(PxIdentity), PxVec3(1, 1, 1),
-                                     hull1.size(), hull1.data(), bound1, PxTransform(PxIdentity), PxVec3(1, 1, 1),
+    importerHullsInProximityApexFree(hull0.size(), hull0.data(), bound0, NvTransform(), NvVec3(1, 1, 1),
+                                     hull1.size(), hull1.data(), bound1, NvTransform(), NvVec3(1, 1, 1),
                                      0.000, &separation);
 
     if (std::isnan(separation.plane.d))
     {
         importerHullsInProximityApexFree(
-            hull0.size(), hull0.data(), bound0, PxTransform(PxVec3(0.000001f, 0.000001f, 0.000001f)), PxVec3(1, 1, 1),
-            hull1.size(), hull1.data(), bound1, PxTransform(PxIdentity), PxVec3(1, 1, 1), 0.000, &separation);
+            hull0.size(), hull0.data(), bound0, NvTransform(NvVec3(0.000001f, 0.000001f, 0.000001f)), NvVec3(1, 1, 1),
+            hull1.size(), hull1.data(), bound1, NvTransform(), NvVec3(1, 1, 1), 0.000, &separation);
         if (std::isnan(separation.plane.d))
         {
             return 1;
         }
     }
 
-    PxPlane pl = separation.plane;
-    std::vector<PxVec3> ifsPoints[2];
+    NvPlane pl = separation.plane;
+    std::vector<NvVec3> ifsPoints[2];
 
     float dst[2][2];
 
@@ -941,12 +941,12 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
     dst[0][1] = MAXIMUM_EXTENT;
     for (uint32_t p = 0; p < cHull0.pointsCount; ++p)
     {
-        float d = pl.distance(toPxShared(cHull0.points[p]));
-        if (PxAbs(d) > PxAbs(dst[0][0]))
+        float d = pl.distance(toNvShared(cHull0.points[p]));
+        if (NvAbs(d) > NvAbs(dst[0][0]))
         {
             dst[0][0] = d;
         }
-        if (PxAbs(d) < PxAbs(dst[0][1]))
+        if (NvAbs(d) < NvAbs(dst[0][1]))
         {
             dst[0][1] = d;
         }
@@ -956,12 +956,12 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
     dst[1][1] = MAXIMUM_EXTENT;
     for (uint32_t p = 0; p < cHull1.pointsCount; ++p)
     {
-        float d = pl.distance(toPxShared(cHull0.points[p]));
-        if (PxAbs(d) > PxAbs(dst[1][0]))
+        float d = pl.distance(toNvShared(cHull0.points[p]));
+        if (NvAbs(d) > NvAbs(dst[1][0]))
         {
             dst[1][0] = d;
         }
-        if (PxAbs(d) < PxAbs(dst[1][1]))
+        if (NvAbs(d) < NvAbs(dst[1][1]))
         {
             dst[1][1] = d;
         }
@@ -974,13 +974,13 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
     for (uint32_t i = 0; i < cHull0.polygonDataCount; ++i)
     {
         auto& pd = cHull0.polygonData[i];
-        PxVec3 result;
+        NvVec3 result;
         for (uint32_t j = 0; j < pd.vertexCount; ++j)
         {
             uint32_t nxj        = (j + 1) % pd.vertexCount;
             const uint32_t* ind = cHull0.indices;
-            PxVec3 a            = hull0[ind[j + pd.indexBase]] - pl.n * cvOffset[0];
-            PxVec3 b            = hull0[ind[nxj + pd.indexBase]] - pl.n * cvOffset[0];
+            NvVec3 a            = hull0[ind[j + pd.indexBase]] - pl.n * cvOffset[0];
+            NvVec3 b            = hull0[ind[nxj + pd.indexBase]] - pl.n * cvOffset[0];
 
             if (getPlaneSegmentIntersection(pl, a, b, result))
             {
@@ -992,13 +992,13 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
     for (uint32_t i = 0; i < cHull1.polygonDataCount; ++i)
     {
         auto& pd = cHull1.polygonData[i];
-        PxVec3 result;
+        NvVec3 result;
         for (uint32_t j = 0; j < pd.vertexCount; ++j)
         {
             uint32_t nxj        = (j + 1) % pd.vertexCount;
             const uint32_t* ind = cHull1.indices;
-            PxVec3 a            = hull1[ind[j + pd.indexBase]] - pl.n * cvOffset[1];
-            PxVec3 b            = hull1[ind[nxj + pd.indexBase]] - pl.n * cvOffset[1];
+            NvVec3 a            = hull1[ind[j + pd.indexBase]] - pl.n * cvOffset[1];
+            NvVec3 b            = hull1[ind[nxj + pd.indexBase]] - pl.n * cvOffset[1];
 
             if (getPlaneSegmentIntersection(pl, a, b, result))
             {
@@ -1008,13 +1008,13 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
     }
 
 
-    std::vector<PxVec3> convexes[2];
+    std::vector<NvVec3> convexes[2];
 
     trProcessor.buildConvexHull(ifsPoints[0], convexes[0], pl.n);
     trProcessor.buildConvexHull(ifsPoints[1], convexes[1], pl.n);
 
     float areas[2]      = { 0, 0 };
-    PxVec3 centroids[2] = { PxVec3(0, 0, 0), PxVec3(0, 0, 0) };
+    NvVec3 centroids[2] = { NvVec3(0, 0, 0), NvVec3(0, 0, 0) };
 
     for (uint32_t cv = 0; cv < 2; ++cv)
     {
@@ -1034,7 +1034,7 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<PxVec
 #endif
         }
         centroids[cv] *= (1.0f / convexes[cv].size());
-        areas[cv] = PxAbs(areas[cv]);
+        areas[cv] = NvAbs(areas[cv]);
     }
 
     resultBond.area        = (areas[0] + areas[1]) * 0.5f;
@@ -1090,13 +1090,13 @@ int32_t BlastBondGeneratorImpl::buildDescFromInternalFracture(FractureTool* tool
         {
             desc.flags = NvBlastChunkDesc::SupportFlag;
         }
-        PxVec3 chunkCentroid(0, 0, 0);
+        NvVec3 chunkCentroid(0, 0, 0);
         for (uint32_t tr = 0; tr < trianglesCount[i]; ++tr)
         {
             auto& trRef = trianglesBuffer[i].get()[tr];
-            chunkCentroid += toPxShared(trRef.a.p);
-            chunkCentroid += toPxShared(trRef.b.p);
-            chunkCentroid += toPxShared(trRef.c.p);
+            chunkCentroid += toNvShared(trRef.a.p);
+            chunkCentroid += toNvShared(trRef.b.p);
+            chunkCentroid += toNvShared(trRef.c.p);
 
             int32_t id = trRef.userData;
             if (id == 0)
@@ -1127,10 +1127,10 @@ int32_t BlastBondGeneratorImpl::buildDescFromInternalFracture(FractureTool* tool
         std::vector<BondInfo> backwardChunks;
 
         float area = 0;
-        PxVec3 normal(0, 0, 0);
-        PxVec3 centroid(0, 0, 0);
+        NvVec3 normal(0, 0, 0);
+        NvVec3 centroid(0, 0, 0);
         int32_t collected = 0;
-        PxBounds3 bb      = PxBounds3::empty();
+        NvBounds3 bb      = NvBounds3::empty();
 
         chunkId = -1;
         planeId = bondDescriptors[0].m_planeIndex;
@@ -1165,8 +1165,8 @@ int32_t BlastBondGeneratorImpl::buildDescFromInternalFracture(FractureTool* tool
                 bb.setEmpty();
                 collected = 0;
                 area      = 0;
-                normal    = PxVec3(0, 0, 0);
-                centroid  = PxVec3(0, 0, 0);
+                normal    = NvVec3(0, 0, 0);
+                centroid  = NvVec3(0, 0, 0);
                 if (i != bondDescriptors.size())
                     chunkId = bondDescriptors[i].m_chunkId;
             }
@@ -1235,13 +1235,13 @@ int32_t BlastBondGeneratorImpl::buildDescFromInternalFracture(FractureTool* tool
             collected++;
             auto& trRef = trianglesBuffer[chunkId].get()[bondDescriptors[i].triangleIndex];
             normal += getNormal(trRef);
-            centroid += toPxShared(trRef.a.p);
-            centroid += toPxShared(trRef.b.p);
-            centroid += toPxShared(trRef.c.p);
+            centroid += toNvShared(trRef.a.p);
+            centroid += toNvShared(trRef.b.p);
+            centroid += toNvShared(trRef.c.p);
 
-            bb.include(toPxShared(trRef.a.p));
-            bb.include(toPxShared(trRef.b.p));
-            bb.include(toPxShared(trRef.c.p));
+            bb.include(toNvShared(trRef.a.p));
+            bb.include(toNvShared(trRef.b.p));
+            bb.include(toNvShared(trRef.c.p));
         }
     }
 
@@ -1405,12 +1405,12 @@ int32_t BlastBondGeneratorImpl::createBondBetweenMeshes(uint32_t meshACount, con
     cHull[0] = mConvexMeshBuilder->buildCollisionGeometry(chunksPoints1.size(), chunksPoints1.data());
     cHull[1] = mConvexMeshBuilder->buildCollisionGeometry(chunksPoints2.size(), chunksPoints2.data());
 
-    std::vector<PxVec3> hullPoints[2];
+    std::vector<NvVec3> hullPoints[2];
     hullPoints[0].resize(cHull[0]->pointsCount);
     hullPoints[1].resize(cHull[1]->pointsCount);
 
 
-    PxBounds3 bb[2];
+    NvBounds3 bb[2];
     bb[0].setEmpty();
     bb[1].setEmpty();
 
@@ -1418,7 +1418,7 @@ int32_t BlastBondGeneratorImpl::createBondBetweenMeshes(uint32_t meshACount, con
     {
         for (uint32_t i = 0; i < cHull[cv]->pointsCount; ++i)
         {
-            hullPoints[cv][i] = toPxShared(cHull[cv]->points[i]);
+            hullPoints[cv][i] = toNvShared(cHull[cv]->points[i]);
             bb[cv].include(hullPoints[cv][i]);
         }
     }

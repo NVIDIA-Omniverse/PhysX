@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,11 +37,13 @@ using namespace physx;
 ///////////////////////////////////////////////////////////////////////////////
 
 Sc::ContactIterator::Pair::Pair(const void*& contactPatches, const void*& contactPoints, PxU32 /*contactDataSize*/, const PxReal*& forces, PxU32 numContacts, PxU32 numPatches,
-	ShapeSimBase& shape0, ShapeSimBase& shape1)
+	ShapeSimBase& shape0, ShapeSimBase& shape1, ActorSim* actor0, ActorSim* actor1)
 : mIndex(0)
 , mNumContacts(numContacts)
 , mIter(reinterpret_cast<const PxU8*>(contactPatches), reinterpret_cast<const PxU8*>(contactPoints), reinterpret_cast<const PxU32*>(forces + numContacts), numPatches, numContacts)
 , mForces(forces)
+, mActor0(actor0->getPxActor())
+, mActor1(actor1->getPxActor())
 {	
 	mCurrentContact.shape0 = shape0.getPxShape();
 	mCurrentContact.shape1 = shape1.getPxShape();
@@ -50,6 +52,7 @@ Sc::ContactIterator::Pair::Pair(const void*& contactPatches, const void*& contac
 
 Sc::ContactIterator::Pair* Sc::ContactIterator::getNextPair()
 { 
+	PX_ASSERT(mCurrent || (mCurrent == mLast));
 	if(mCurrent < mLast)
 	{
 		ShapeInteraction* si = static_cast<ShapeInteraction*>(*mCurrent);
@@ -68,7 +71,7 @@ Sc::ContactIterator::Pair* Sc::ContactIterator::getNextPair()
 		else
 			mOffset = nextOffset;
 
-		mCurrentPair = Pair(contactPatches, contactPoints, contactDataSize, forces, numContacts, numPatches, si->getShape0(), si->getShape1());
+		mCurrentPair = Pair(contactPatches, contactPoints, contactDataSize, forces, numContacts, numPatches, si->getShape0(), si->getShape1(), &si->getActorSim0(), &si->getActorSim1());
 		return &mCurrentPair;
 	}
 	else

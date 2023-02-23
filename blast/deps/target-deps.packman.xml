@@ -16,12 +16,6 @@
     <package name="doxygen" version="1.8.5-windows-x86_64" platforms="windows-x86_64" />
   </dependency>
 
-  <dependency name="physxsdk" linkPath="../_build/target-deps/physxsdk">
-    <package name="physxsdk" version="4.1.trunk.26400730-${platform}" platforms="windows-x86_64 linux-x86_64" />
-  </dependency>
-  <dependency name="pxshared" linkPath="../_build/target-deps/pxshared">
-    <package name="pxshared" version="1.1.trunk.25954437-${platform}" platforms="windows-x86_64 linux-x86_64" />
-  </dependency>
 
   <dependency name="BoostMultiprecision" linkPath="../_build/target-deps/BoostMultiprecision">
     <package name="BoostMultiprecision" version="1.64.0.1" platforms="windows-x86_64 linux-x86_64"/>

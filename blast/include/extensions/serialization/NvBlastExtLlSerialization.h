@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -69,8 +69,8 @@ struct LlObjectTypeID
 /**
 Load all low-level serializers into the ExtSerialization manager.  *N.B.* This is done automatically when
 the ExtSerialization manager is created via NvBlastExtSerializationCreate(), so currently this public function
-is unnecessary.  Note also that other modules' serializers (ExtTkSerialization and ExtPxSerialization) are
-_not_ loaded automatically, and need to be explicitly loaded by the user using their respective load functions.
+is unnecessary.  Note also that other modules' serializers (e.g. ExtTkSerialization) are _not_ loaded
+automatically, and need to be explicitly loaded by the user using their respective load functions.
 
 It does no harm to call this function more than once; serializers already loaded will not be loaded again.
 
@@ -78,7 +78,7 @@ It does no harm to call this function more than once; serializers already loaded
 
 \return the number of serializers loaded.
 */
-NVBLAST_API size_t      NvBlastExtLlSerializerLoadSet(Nv::Blast::ExtSerialization& serialization);
+NV_C_API size_t      NvBlastExtLlSerializerLoadSet(Nv::Blast::ExtSerialization& serialization);
 
 
 /**
@@ -95,7 +95,7 @@ Equivalent to:
 
 \return the number of bytes serialized into the buffer (zero if unsuccessful).
 */
-NVBLAST_API uint64_t    NvBlastExtSerializationSerializeAssetIntoBuffer(void*& buffer, Nv::Blast::ExtSerialization& serialization, const NvBlastAsset* asset);
+NV_C_API uint64_t    NvBlastExtSerializationSerializeAssetIntoBuffer(void*& buffer, Nv::Blast::ExtSerialization& serialization, const NvBlastAsset* asset);
 
 
 /**
@@ -112,4 +112,4 @@ Equivalent to:
 
 \return the number of bytes serialized into the buffer (zero if unsuccessful).
 */
-NVBLAST_API uint64_t    NvBlastExtSerializationSerializeFamilyIntoBuffer(void*& buffer, Nv::Blast::ExtSerialization& serialization, const NvBlastFamily* family);
+NV_C_API uint64_t    NvBlastExtSerializationSerializeFamilyIntoBuffer(void*& buffer, Nv::Blast::ExtSerialization& serialization, const NvBlastFamily* family);

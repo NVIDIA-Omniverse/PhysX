@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #include <NvBlastGlobals.h>
 #include "NvBlastExtAuthoringCollisionBuilderImpl.h"
@@ -32,11 +32,11 @@
 #include <NvBlastExtAuthoringBooleanToolImpl.h>
 #include <NvBlastExtAuthoringMeshImpl.h>
 #include <NvBlastExtAuthoringMeshUtils.h>
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 #include <VHACD.h>
 #include <vector>
 
-using namespace physx;
+using namespace nvidia;
 
 namespace Nv
 {
@@ -48,17 +48,17 @@ namespace Blast
 
 void trimCollisionGeometry(ConvexMeshBuilder& cmb, uint32_t chunksCount, CollisionHull** in, const uint32_t* chunkDepth)
 {
-    std::vector<std::vector<PxPlane> > chunkMidplanes(chunksCount);
-    std::vector<PxVec3> centers(chunksCount);
-    std::vector<PxBounds3> hullsBounds(chunksCount);
+    std::vector<std::vector<NvPlane> > chunkMidplanes(chunksCount);
+    std::vector<NvVec3> centers(chunksCount);
+    std::vector<NvBounds3> hullsBounds(chunksCount);
     for (uint32_t i = 0; i < chunksCount; ++i)
     {
         hullsBounds[i].setEmpty();
-        centers[i] = PxVec3(0, 0, 0);
+        centers[i] = NvVec3(0, 0, 0);
         for (uint32_t p = 0; p < in[i]->pointsCount; ++p)
         {
-            centers[i] += toPxShared(in[i]->points[p]);
-            hullsBounds[i].include(toPxShared(in[i]->points[p]));
+            centers[i] += toNvShared(in[i]->points[p]);
+            hullsBounds[i].include(toNvShared(in[i]->points[p]));
         }
         centers[i] = hullsBounds[i].getCenter();
     }
@@ -72,47 +72,47 @@ void trimCollisionGeometry(ConvexMeshBuilder& cmb, uint32_t chunksCount, Collisi
             {
                 continue;
             }
-            if (importerHullsInProximityApexFree(in[hull]->pointsCount, toPxShared(in[hull]->points), hullsBounds[hull],
-                                                 PxTransform(PxIdentity), PxVec3(1, 1, 1), in[hull2]->pointsCount,
-                                                 toPxShared(in[hull2]->points), hullsBounds[hull2], PxTransform(PxIdentity),
-                                                 PxVec3(1, 1, 1), 0.0, &params) == false)
+            if (importerHullsInProximityApexFree(in[hull]->pointsCount, toNvShared(in[hull]->points), hullsBounds[hull],
+                                                 NvTransform(), NvVec3(1, 1, 1), in[hull2]->pointsCount,
+                                                 toNvShared(in[hull2]->points), hullsBounds[hull2], NvTransform(),
+                                                 NvVec3(1, 1, 1), 0.0, &params) == false)
             {
                 continue;
             }
-            PxVec3 c1 = centers[hull];
-            PxVec3 c2 = centers[hull2];
+            NvVec3 c1 = centers[hull];
+            NvVec3 c2 = centers[hull2];
             float d = FLT_MAX;
-            PxVec3 n1;
-            PxVec3 n2;
+            NvVec3 n1;
+            NvVec3 n2;
             for (uint32_t p = 0; p < in[hull]->pointsCount; ++p)
             {
-                float ld = (toPxShared(in[hull]->points[p]) - c2).magnitude();
+                float ld = (toNvShared(in[hull]->points[p]) - c2).magnitude();
                 if (ld < d)
                 {
-                    n1 = toPxShared(in[hull]->points[p]);
+                    n1 = toNvShared(in[hull]->points[p]);
                     d = ld;
                 }
             }
             d = FLT_MAX;
             for (uint32_t p = 0; p < in[hull2]->pointsCount; ++p)
             {
-                float ld = (toPxShared(in[hull2]->points[p]) - c1).magnitude();
+                float ld = (toNvShared(in[hull2]->points[p]) - c1).magnitude();
                 if (ld < d)
                 {
-                    n2 = toPxShared(in[hull2]->points[p]);
+                    n2 = toNvShared(in[hull2]->points[p]);
                     d = ld;
                 }
             }
 
-            PxVec3 dir = c2 - c1;
+            NvVec3 dir = c2 - c1;
 
-            PxPlane pl = PxPlane((n1 + n2) * 0.5, dir.getNormalized());
+            NvPlane pl = NvPlane((n1 + n2) * 0.5, dir.getNormalized());
             chunkMidplanes[hull].push_back(pl);
-            PxPlane pl2 = PxPlane((n1 + n2) * 0.5, -dir.getNormalized());
+            NvPlane pl2 = NvPlane((n1 + n2) * 0.5, -dir.getNormalized());
             chunkMidplanes[hull2].push_back(pl2);       
         }
     }
-    std::vector<PxVec3> hPoints;
+    std::vector<NvVec3> hPoints;
     for (uint32_t i = 0; i < chunksCount; ++i)
     {
         std::vector<Facet> facets;
@@ -141,10 +141,10 @@ void trimCollisionGeometry(ConvexMeshBuilder& cmb, uint32_t chunksCount, Collisi
         Mesh* hullMesh = new MeshImpl(vertices.data(), edges.data(), facets.data(), vertices.size(), edges.size(), facets.size());
         BooleanEvaluator evl;
         //I think the material ID is unused for collision meshes so harcoding MATERIAL_INTERIOR is ok
-        Mesh* cuttingMesh = getCuttingBox(PxVec3(0, 0, 0), PxVec3(0, 0, 1), 40, 0, kMaterialInteriorId);
+        Mesh* cuttingMesh = getCuttingBox(NvVec3(0, 0, 0), NvVec3(0, 0, 1), 40, 0, kMaterialInteriorId);
         for (uint32_t p = 0; p < chunkMidplanes[i].size(); ++p)
         {
-            PxPlane& pl = chunkMidplanes[i][p];
+            NvPlane& pl = chunkMidplanes[i][p];
             setCuttingBox(pl.pointInPlane(), pl.n.getNormalized(), cuttingMesh, 60, 0);
             evl.performFastCutting(hullMesh, cuttingMesh, BooleanConfigurations::BOOLEAN_DIFFERENCE());
             Mesh* result = evl.createNewMesh();
@@ -164,14 +164,14 @@ void trimCollisionGeometry(ConvexMeshBuilder& cmb, uint32_t chunksCount, Collisi
         hPoints.resize(hullMesh->getVerticesCount());
         for (uint32_t v = 0; v < hullMesh->getVerticesCount(); ++v)
         {
-            hPoints[v] = toPxShared(hullMesh->getVertices()[v].p);
+            hPoints[v] = toNvShared(hullMesh->getVertices()[v].p);
         }
         delete hullMesh;
         if (in[i] != nullptr)
         {
             delete in[i];
         }
-        in[i] = cmb.buildCollisionGeometry(hPoints.size(), fromPxShared(hPoints.data()));
+        in[i] = cmb.buildCollisionGeometry(hPoints.size(), fromNvShared(hPoints.data()));
     }
 }
 
@@ -184,13 +184,13 @@ int32_t buildMeshConvexDecomposition(ConvexMeshBuilder& cmb, const Triangle* mes
     uint32_t indx = 0;
     uint32_t indxCoord = 0;
 
-    PxBounds3 chunkBound = PxBounds3::empty();
+    NvBounds3 chunkBound = NvBounds3::empty();
     for (uint32_t i = 0; i < triangleCount; ++i)
     {
         for (auto& t : { mesh[i].a.p , mesh[i].b.p , mesh[i].c.p })
         {
 
-            chunkBound.include(toPxShared(t));
+            chunkBound.include(toNvShared(t));
             coords[indxCoord] = t.x;
             coords[indxCoord + 1] = t.y;
             coords[indxCoord + 2] = t.z;
@@ -202,7 +202,7 @@ int32_t buildMeshConvexDecomposition(ConvexMeshBuilder& cmb, const Triangle* mes
         indx += 3;
     }
 
-    PxVec3 rsc = chunkBound.getDimensions();
+    NvVec3 rsc = chunkBound.getDimensions();
 
     for (uint32_t i = 0; i < coords.size(); i += 3)
     {
@@ -230,16 +230,16 @@ int32_t buildMeshConvexDecomposition(ConvexMeshBuilder& cmb, const Triangle* mes
     {
         VHACD::IVHACD::ConvexHull hl;
         decomposer->GetConvexHull(i, hl);
-        std::vector<PxVec3> vertices;
+        std::vector<NvVec3> vertices;
         for (uint32_t v = 0; v < hl.m_nPoints; ++v)
         {
-            vertices.push_back(PxVec3(hl.m_points[v * 3], hl.m_points[v * 3 + 1], hl.m_points[v * 3 + 2]));
+            vertices.push_back(NvVec3(hl.m_points[v * 3], hl.m_points[v * 3 + 1], hl.m_points[v * 3 + 2]));
             vertices.back().x = vertices.back().x * rsc.x + chunkBound.minimum.x;
             vertices.back().y = vertices.back().y * rsc.y + chunkBound.minimum.y;
             vertices.back().z = vertices.back().z * rsc.z + chunkBound.minimum.z;
 
         }
-        convexes[i] = cmb.buildCollisionGeometry(vertices.size(), fromPxShared(vertices.data()));
+        convexes[i] = cmb.buildCollisionGeometry(vertices.size(), fromNvShared(vertices.data()));
     }
     //VHACD::~VHACD called from release does nothign and does not call Clean()
     decomposer->Clean();

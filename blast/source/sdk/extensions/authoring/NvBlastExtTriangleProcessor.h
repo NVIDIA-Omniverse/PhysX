@@ -22,18 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTEXTTRIANGLEPROCESSOR_H
 #define NVBLASTEXTTRIANGLEPROCESSOR_H
 
-#include <foundation/PxVec2.h>
-#include <foundation/PxVec3.h>
+#include "NvVec2.h"
+#include "NvVec3.h"
 #include <vector>
 #include <algorithm>
 
-using namespace physx;
+using namespace nvidia;
 
 
 namespace Nv
@@ -46,8 +46,8 @@ namespace Blast
 */
 struct TrPrcTriangle
 {
-    PxVec3 points[3];
-    TrPrcTriangle(PxVec3 a = PxVec3(0.0f), PxVec3 b = PxVec3(0.0f), PxVec3 c = PxVec3(0.0f))
+    NvVec3 points[3];
+    TrPrcTriangle(NvVec3 a = NvVec3(0.0f), NvVec3 b = NvVec3(0.0f), NvVec3 c = NvVec3(0.0f))
     {
         points[0] = a;
         points[1] = b;
@@ -68,7 +68,7 @@ struct TrPrcTriangle
         points[1] = b.points[1];
         points[2] = b.points[2];
     }
-    PxVec3 getNormal() const
+    NvVec3 getNormal() const
     {
         return (points[1] - points[0]).cross(points[2] - points[0]);
     }
@@ -79,8 +79,8 @@ struct TrPrcTriangle
 */
 struct TrPrcTriangle2d
 {
-    PxVec2 points[3];
-    TrPrcTriangle2d(PxVec2 a = PxVec2(0.0f), PxVec2 b = PxVec2(0.0f), PxVec2 c = PxVec2(0.0f))
+    NvVec2 points[3];
+    TrPrcTriangle2d(NvVec2 a = NvVec2(0.0f), NvVec2 b = NvVec2(0.0f), NvVec2 c = NvVec2(0.0f))
     {
         points[0] = a;
         points[1] = b;
@@ -120,8 +120,8 @@ class TriangleProcessor
         \param[in] normal       Normal vector to triangle (Common for both A and B).
         \return 1 - if if intersection is found.
     */
-    uint32_t getTriangleIntersection(TrPrcTriangle& a, TrPrcTriangle2d& aProjected, TrPrcTriangle& b, PxVec3& centroid,
-                                     std::vector<PxVec3>& intersectionBuffer, PxVec3 normal);
+    uint32_t getTriangleIntersection(TrPrcTriangle& a, TrPrcTriangle2d& aProjected, TrPrcTriangle& b, NvVec3& centroid,
+                                     std::vector<NvVec3>& intersectionBuffer, NvVec3 normal);
 
     /**
         Test whether BB of triangles intersect.
@@ -138,7 +138,7 @@ class TriangleProcessor
         \param[in] triangle     Triangle in 2d space.
         \return 1 - if inside, 2 if on edge, 0 if neither inside nor edge.
     */
-    uint32_t isPointInside(const PxVec2& point, const TrPrcTriangle2d& triangle);
+    uint32_t isPointInside(const NvVec2& point, const TrPrcTriangle2d& triangle);
 
     /**
         Segment intersection point
@@ -149,12 +149,12 @@ class TriangleProcessor
         \param[out] t1 Intersection point parameter relatively to Segment-1, lies in [0.0, 1.0] range.
         \return 0 if there is no intersections, 1 - if intersection is found.
     */
-    uint32_t getSegmentIntersection(const PxVec2& s1, const PxVec2& e1, const PxVec2& s2, const PxVec2& e2, PxF32& t1);
+    uint32_t getSegmentIntersection(const NvVec2& s1, const NvVec2& e1, const NvVec2& s2, const NvVec2& e2, float& t1);
 
     /**
         Sort vertices of polygon in CCW-order
     */
-    void sortToCCW(std::vector<PxVec3>& points, PxVec3& normal);
+    void sortToCCW(std::vector<NvVec3>& points, NvVec3& normal);
 
     /**
         Builds convex polygon for given set of points. Points should be coplanar.
@@ -162,7 +162,7 @@ class TriangleProcessor
         \param[out] convexHull Output polygon
         \param[in] normal Normal vector to polygon.
     */
-    void buildConvexHull(std::vector<PxVec3>& points, std::vector<PxVec3>& convexHull, const PxVec3& normal);
+    void buildConvexHull(std::vector<NvVec3>& points, std::vector<NvVec3>& convexHull, const NvVec3& normal);
 };
 
 }  // namespace Blast

@@ -2,12 +2,12 @@
 #include "NvBlastExtAuthoringMeshImpl.h"
 #include "NvBlastExtAuthoringPerlinNoise.h"
 #include "NvBlastExtAuthoringFractureTool.h"
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 #include <NvCMath.h>
 #include <algorithm>
 
 
-using namespace physx;
+using namespace nvidia;
 
 #define UV_SCALE 1.f
 
@@ -19,52 +19,52 @@ namespace Nv
 namespace Blast
 {
 
-void getTangents(const PxVec3& normal, PxVec3& t1, PxVec3& t2)
+void getTangents(const NvVec3& normal, NvVec3& t1, NvVec3& t2)
 {
 
     if (std::abs(normal.z) < 0.9)
     {
-        t1 = normal.cross(PxVec3(0, 0, 1));
+        t1 = normal.cross(NvVec3(0, 0, 1));
     }
     else
     {
-        t1 = normal.cross(PxVec3(1, 0, 0));
+        t1 = normal.cross(NvVec3(1, 0, 0));
     }
     t2 = t1.cross(normal);
 }
 
-Mesh* getCuttingBox(const PxVec3& point, const PxVec3& normal, float size, int64_t id, int32_t interiorMaterialId)
+Mesh* getCuttingBox(const NvVec3& point, const NvVec3& normal, float size, int64_t id, int32_t interiorMaterialId)
 {
-    PxVec3 lNormal = normal.getNormalized();
-    PxVec3 t1, t2;
+    NvVec3 lNormal = normal.getNormalized();
+    NvVec3 t1, t2;
     getTangents(lNormal, t1, t2);
 
     std::vector<Vertex> positions(8);
-    toPxShared(positions[0].p) = point + (t1 + t2) * size;
-    toPxShared(positions[1].p) = point + (t2 - t1) * size;
+    toNvShared(positions[0].p) = point + (t1 + t2) * size;
+    toNvShared(positions[1].p) = point + (t2 - t1) * size;
 
-    toPxShared(positions[2].p) = point + (-t1 - t2) * size;
-    toPxShared(positions[3].p) = point + (t1 - t2) * size;
-
-
-    toPxShared(positions[4].p) = point + (t1 + t2 + lNormal) * size;
-    toPxShared(positions[5].p) = point + (t2 - t1 + lNormal) * size;
-
-    toPxShared(positions[6].p) = point + (-t1 - t2 + lNormal) * size;
-    toPxShared(positions[7].p) = point + (t1 - t2 + lNormal) * size;
-
-    toPxShared(positions[0].n) = -lNormal;
-    toPxShared(positions[1].n) = -lNormal;
-
-    toPxShared(positions[2].n) = -lNormal;
-    toPxShared(positions[3].n) = -lNormal;
+    toNvShared(positions[2].p) = point + (-t1 - t2) * size;
+    toNvShared(positions[3].p) = point + (t1 - t2) * size;
 
 
-    toPxShared(positions[4].n) = -lNormal;
-    toPxShared(positions[5].n) = -lNormal;
+    toNvShared(positions[4].p) = point + (t1 + t2 + lNormal) * size;
+    toNvShared(positions[5].p) = point + (t2 - t1 + lNormal) * size;
 
-    toPxShared(positions[6].n) = -lNormal;
-    toPxShared(positions[7].n) = -lNormal;
+    toNvShared(positions[6].p) = point + (-t1 - t2 + lNormal) * size;
+    toNvShared(positions[7].p) = point + (t1 - t2 + lNormal) * size;
+
+    toNvShared(positions[0].n) = -lNormal;
+    toNvShared(positions[1].n) = -lNormal;
+
+    toNvShared(positions[2].n) = -lNormal;
+    toNvShared(positions[3].n) = -lNormal;
+
+
+    toNvShared(positions[4].n) = -lNormal;
+    toNvShared(positions[5].n) = -lNormal;
+
+    toNvShared(positions[6].n) = -lNormal;
+    toNvShared(positions[7].n) = -lNormal;
 
     positions[0].uv[0] = { 0, 0 };
     positions[1].uv[0] = {UV_SCALE, 0};
@@ -127,7 +127,7 @@ void inverseNormalAndIndices(Mesh* mesh)
 {
     for (uint32_t i = 0; i < mesh->getVerticesCount(); ++i)
     {
-        toPxShared(mesh->getVerticesWritable()[i].n) *= -1.0f;
+        toNvShared(mesh->getVerticesWritable()[i].n) *= -1.0f;
     }
     for (uint32_t i = 0; i < mesh->getFacetCount(); ++i)
     {
@@ -135,38 +135,38 @@ void inverseNormalAndIndices(Mesh* mesh)
     }
 }
 
-void setCuttingBox(const PxVec3& point, const PxVec3& normal, Mesh* mesh, float size, int64_t id)
+void setCuttingBox(const NvVec3& point, const NvVec3& normal, Mesh* mesh, float size, int64_t id)
 {
-    PxVec3 t1, t2;
-    PxVec3 lNormal = normal.getNormalized();
+    NvVec3 t1, t2;
+    NvVec3 lNormal = normal.getNormalized();
     getTangents(lNormal, t1, t2);
 
     Vertex* positions = mesh->getVerticesWritable();
-    toPxShared(positions[0].p) = point + (t1 + t2) * size;
-    toPxShared(positions[1].p) = point + (t2 - t1) * size;
+    toNvShared(positions[0].p) = point + (t1 + t2) * size;
+    toNvShared(positions[1].p) = point + (t2 - t1) * size;
 
-    toPxShared(positions[2].p) = point + (-t1 - t2) * size;
-    toPxShared(positions[3].p) = point + (t1 - t2) * size;
-
-
-    toPxShared(positions[4].p) = point + (t1 + t2 + lNormal) * size;
-    toPxShared(positions[5].p) = point + (t2 - t1 + lNormal) * size;
-
-    toPxShared(positions[6].p) = point + (-t1 - t2 + lNormal) * size;
-    toPxShared(positions[7].p) = point + (t1 - t2 + lNormal) * size;
-
-    toPxShared(positions[0].n) = -lNormal;
-    toPxShared(positions[1].n) = -lNormal;
-
-    toPxShared(positions[2].n) = -lNormal;
-    toPxShared(positions[3].n) = -lNormal;
+    toNvShared(positions[2].p) = point + (-t1 - t2) * size;
+    toNvShared(positions[3].p) = point + (t1 - t2) * size;
 
 
-    toPxShared(positions[4].n) = -lNormal;
-    toPxShared(positions[5].n) = -lNormal;
+    toNvShared(positions[4].p) = point + (t1 + t2 + lNormal) * size;
+    toNvShared(positions[5].p) = point + (t2 - t1 + lNormal) * size;
 
-    toPxShared(positions[6].n) = -lNormal;
-    toPxShared(positions[7].n) = -lNormal;
+    toNvShared(positions[6].p) = point + (-t1 - t2 + lNormal) * size;
+    toNvShared(positions[7].p) = point + (t1 - t2 + lNormal) * size;
+
+    toNvShared(positions[0].n) = -lNormal;
+    toNvShared(positions[1].n) = -lNormal;
+
+    toNvShared(positions[2].n) = -lNormal;
+    toNvShared(positions[3].n) = -lNormal;
+
+
+    toNvShared(positions[4].n) = -lNormal;
+    toNvShared(positions[5].n) = -lNormal;
+
+    toNvShared(positions[6].n) = -lNormal;
+    toNvShared(positions[7].n) = -lNormal;
 
     for (uint32_t i = 0; i < mesh->getFacetCount(); ++i)
     {
@@ -177,10 +177,10 @@ void setCuttingBox(const PxVec3& point, const PxVec3& normal, Mesh* mesh, float 
 
 struct Stepper
 {
-    virtual physx::PxVec3 getStep1(uint32_t w, uint32_t h) const  = 0;
-    virtual physx::PxVec3 getStep2(uint32_t w) const              = 0;
-    virtual physx::PxVec3 getStart() const                        = 0;
-    virtual physx::PxVec3 getNormal(uint32_t w, uint32_t h) const = 0;
+    virtual nvidia::NvVec3 getStep1(uint32_t w, uint32_t h) const  = 0;
+    virtual nvidia::NvVec3 getStep2(uint32_t w) const              = 0;
+    virtual nvidia::NvVec3 getStart() const                        = 0;
+    virtual nvidia::NvVec3 getNormal(uint32_t w, uint32_t h) const = 0;
     virtual bool isStep2ClosedLoop() const
     {
         return false;
@@ -193,10 +193,10 @@ struct Stepper
 
 struct PlaneStepper : public Stepper
 {
-    PlaneStepper(const physx::PxVec3& normal, const physx::PxVec3& point, float sizeX, float sizeY,
+    PlaneStepper(const nvidia::NvVec3& normal, const nvidia::NvVec3& point, float sizeX, float sizeY,
                  uint32_t resolutionX, uint32_t resolutionY, bool swapTangents = false)
     {
-        PxVec3 t1, t2;
+        NvVec3 t1, t2;
         lNormal = normal.getNormalized();
         getTangents(lNormal, t1, t2);
         if (swapTangents)
@@ -211,7 +211,7 @@ struct PlaneStepper : public Stepper
         resY = resolutionY;
     }
     // Define face by 4 corner points, points should lay in plane
-    PlaneStepper(const physx::PxVec3& p11, const physx::PxVec3& p12, const physx::PxVec3& p21, const physx::PxVec3& p22,
+    PlaneStepper(const nvidia::NvVec3& p11, const nvidia::NvVec3& p12, const nvidia::NvVec3& p21, const nvidia::NvVec3& p22,
                  uint32_t resolutionX, uint32_t resolutionY)
     {
         lNormal = -(p21 - p11).cross(p12 - p11).getNormalized();
@@ -226,24 +226,24 @@ struct PlaneStepper : public Stepper
         cPos = p21;
         resY = resolutionY;
     }
-    physx::PxVec3 getStep1(uint32_t y, uint32_t) const
+    nvidia::NvVec3 getStep1(uint32_t y, uint32_t) const
     {
         return (t11d * (resY - y) + t21d * y) / resY;
     }
-    physx::PxVec3 getStep2(uint32_t) const
+    nvidia::NvVec3 getStep2(uint32_t) const
     {
         return t22d;
     }
-    physx::PxVec3 getStart() const
+    nvidia::NvVec3 getStart() const
     {
         return cPos;
     }
-    physx::PxVec3 getNormal(uint32_t, uint32_t) const
+    nvidia::NvVec3 getNormal(uint32_t, uint32_t) const
     {
         return lNormal;
     }
 
-    PxVec3 t11d, t12d, t21d, t22d, cPos, lNormal;
+    NvVec3 t11d, t12d, t21d, t22d, cPos, lNormal;
     uint32_t resY;
 };
 
@@ -291,20 +291,20 @@ void fillEdgesAndFaces(std::vector<Edge>& edges, std::vector<Facet>& facets, uin
 }
 
 void getNoisyFace(std::vector<Vertex>& vertices, std::vector<Edge>& edges, std::vector<Facet>& facets, uint32_t h,
-                  uint32_t w, const physx::PxVec2& uvOffset, const physx::PxVec2& uvScale, const Stepper& stepper,
+                  uint32_t w, const nvidia::NvVec2& uvOffset, const nvidia::NvVec2& uvScale, const Stepper& stepper,
                   SimplexNoise& nEval, int64_t id, int32_t interiorMaterialId, bool randomizeLast = false)
 {
     uint32_t randIdx     = randomizeLast ? 1 : 0;
-    PxVec3 cPosit        = stepper.getStart();
+    NvVec3 cPosit        = stepper.getStart();
     uint32_t firstVertex = vertices.size();
     for (uint32_t i = 0; i < w + 1; ++i)
     {
-        PxVec3 lcPosit = cPosit;
+        NvVec3 lcPosit = cPosit;
         for (uint32_t j = 0; j < h + 1; ++j)
         {
             vertices.push_back(Vertex());
-            toPxShared(vertices.back().p) = lcPosit;
-            toPxShared(vertices.back().uv[0]) = uvOffset + uvScale.multiply(physx::PxVec2(j, i));
+            toNvShared(vertices.back().p) = lcPosit;
+            toNvShared(vertices.back().uv[0]) = uvOffset + uvScale.multiply(nvidia::NvVec2(j, i));
             lcPosit += stepper.getStep1(i, j);
         }
         cPosit += stepper.getStep2(i);
@@ -315,7 +315,7 @@ void getNoisyFace(std::vector<Vertex>& vertices, std::vector<Edge>& edges, std::
         for (uint32_t j = 1; j < h; ++j)
         {
             // TODO limit max displacement for cylinder
-            PxVec3& pnt = toPxShared(vertices[i * (h + 1) + j + firstVertex].p);
+            NvVec3& pnt = toNvShared(vertices[i * (h + 1) + j + firstVertex].p);
             pnt += stepper.getNormal(i, j) * nEval.sample(pnt);
         }
     }
@@ -323,7 +323,7 @@ void getNoisyFace(std::vector<Vertex>& vertices, std::vector<Edge>& edges, std::
     fillEdgesAndFaces(edges, facets, h, w, firstVertex, vertices.size(), id, interiorMaterialId);
 }
 
-PX_INLINE uint32_t unsignedMod(int32_t n, uint32_t modulus)
+ uint32_t unsignedMod(int32_t n, uint32_t modulus)
 {
     const int32_t d = n / (int32_t)modulus;
     const int32_t m = n - d * (int32_t)modulus;
@@ -337,12 +337,12 @@ void calculateNormals(std::vector<Vertex>& vertices, uint32_t h, uint32_t w, boo
         for (uint32_t j = 1; j < h; ++j)
         {
             int32_t idx = i * (h + 1) + j;
-            PxVec3 v1   = toPxShared(vertices[idx + h + 1].p - vertices[idx].p);
-            PxVec3 v2   = toPxShared(vertices[idx + 1].p - vertices[idx].p);
-            PxVec3 v3   = toPxShared(vertices[idx - (h + 1)].p - vertices[idx].p);
-            PxVec3 v4   = toPxShared(vertices[idx - 1].p - vertices[idx].p);
+            NvVec3 v1   = toNvShared(vertices[idx + h + 1].p - vertices[idx].p);
+            NvVec3 v2   = toNvShared(vertices[idx + 1].p - vertices[idx].p);
+            NvVec3 v3   = toNvShared(vertices[idx - (h + 1)].p - vertices[idx].p);
+            NvVec3 v4   = toNvShared(vertices[idx - 1].p - vertices[idx].p);
 
-            PxVec3& n = toPxShared(vertices[idx].n);
+            NvVec3& n = toNvShared(vertices[idx].n);
             n = v1.cross(v2) + v2.cross(v3) + v3.cross(v4) + v4.cross(v1);
             if (inverseNormals)
             {
@@ -353,12 +353,12 @@ void calculateNormals(std::vector<Vertex>& vertices, uint32_t h, uint32_t w, boo
     }
 }
 
-Mesh* getNoisyCuttingBoxPair(const physx::PxVec3& point, const physx::PxVec3& normal, float size, float jaggedPlaneSize,
-                             physx::PxVec3 resolution, int64_t id, float amplitude, float frequency, int32_t octaves,
+Mesh* getNoisyCuttingBoxPair(const nvidia::NvVec3& point, const nvidia::NvVec3& normal, float size, float jaggedPlaneSize,
+                             nvidia::NvVec3 resolution, int64_t id, float amplitude, float frequency, int32_t octaves,
                              int32_t seed, int32_t interiorMaterialId)
 {
-    PxVec3 t1, t2;
-    PxVec3 lNormal = normal.getNormalized();
+    NvVec3 t1, t2;
+    NvVec3 lNormal = normal.getNormalized();
     getTangents(lNormal, t1, t2);
     float sz = 2.f * jaggedPlaneSize;
     uint32_t resolutionX =
@@ -375,30 +375,30 @@ Mesh* getNoisyCuttingBoxPair(const physx::PxVec3& point, const physx::PxVec3& no
     vertices.reserve((resolutionX + 1) * (resolutionY + 1) + 12);
     std::vector<Edge> edges;
     std::vector<Facet> facets;
-    getNoisyFace(vertices, edges, facets, resolutionX, resolutionY, physx::PxVec2(0.f),
-                 physx::PxVec2(UV_SCALE / resolutionX, UV_SCALE / resolutionY), stepper, nEval, id, interiorMaterialId);
+    getNoisyFace(vertices, edges, facets, resolutionX, resolutionY, nvidia::NvVec2(0.f),
+                 nvidia::NvVec2(UV_SCALE / resolutionX, UV_SCALE / resolutionY), stepper, nEval, id, interiorMaterialId);
     calculateNormals(vertices, resolutionX, resolutionY);
 
     uint32_t offset = (resolutionX + 1) * (resolutionY + 1);
     vertices.resize(offset + 12);
 
-    toPxShared(vertices[0 + offset].p) = point + (t1 + t2) * size;
-    toPxShared(vertices[1 + offset].p) = point + (t2 - t1) * size;
+    toNvShared(vertices[0 + offset].p) = point + (t1 + t2) * size;
+    toNvShared(vertices[1 + offset].p) = point + (t2 - t1) * size;
 
-    toPxShared(vertices[2 + offset].p) = point + (-t1 - t2) * size;
-    toPxShared(vertices[3 + offset].p) = point + (t1 - t2) * size;
+    toNvShared(vertices[2 + offset].p) = point + (-t1 - t2) * size;
+    toNvShared(vertices[3 + offset].p) = point + (t1 - t2) * size;
 
-    toPxShared(vertices[8 + offset].p) = point + (t1 + t2) * jaggedPlaneSize;
-    toPxShared(vertices[9 + offset].p) = point + (t2 - t1) * jaggedPlaneSize;
+    toNvShared(vertices[8 + offset].p) = point + (t1 + t2) * jaggedPlaneSize;
+    toNvShared(vertices[9 + offset].p) = point + (t2 - t1) * jaggedPlaneSize;
 
-    toPxShared(vertices[10 + offset].p) = point + (-t1 - t2) * jaggedPlaneSize;
-    toPxShared(vertices[11 + offset].p) = point + (t1 - t2) * jaggedPlaneSize;
+    toNvShared(vertices[10 + offset].p) = point + (-t1 - t2) * jaggedPlaneSize;
+    toNvShared(vertices[11 + offset].p) = point + (t1 - t2) * jaggedPlaneSize;
 
-    toPxShared(vertices[4 + offset].p) = point + (t1 + t2 + lNormal) * size;
-    toPxShared(vertices[5 + offset].p) = point + (t2 - t1 + lNormal) * size;
+    toNvShared(vertices[4 + offset].p) = point + (t1 + t2 + lNormal) * size;
+    toNvShared(vertices[5 + offset].p) = point + (t2 - t1 + lNormal) * size;
 
-    toPxShared(vertices[6 + offset].p) = point + (-t1 - t2 + lNormal) * size;
-    toPxShared(vertices[7 + offset].p) = point + (t1 - t2 + lNormal) * size;
+    toNvShared(vertices[6 + offset].p) = point + (-t1 - t2 + lNormal) * size;
+    toNvShared(vertices[7 + offset].p) = point + (t1 - t2 + lNormal) * size;
 
     int32_t edgeOffset = edges.size();
     edges.push_back({0 + offset, 1 + offset});
@@ -447,25 +447,25 @@ Mesh* getNoisyCuttingBoxPair(const physx::PxVec3& point, const physx::PxVec3& no
     return new MeshImpl(vertices.data(), edges.data(), facets.data(), vertices.size(), edges.size(), facets.size());
 }
 
-Mesh* getBigBox(const PxVec3& point, float size, int32_t interiorMaterialId)
+Mesh* getBigBox(const NvVec3& point, float size, int32_t interiorMaterialId)
 {
-    PxVec3 normal(0, 0, 1);
+    NvVec3 normal(0, 0, 1);
     normal.normalize();
-    PxVec3 t1, t2;
+    NvVec3 t1, t2;
     getTangents(normal, t1, t2);
 
     std::vector<Vertex> positions(8);
-    toPxShared(positions[0].p) = point + (t1 + t2 - normal) * size;
-    toPxShared(positions[1].p) = point + (t2 - t1 - normal) * size;
+    toNvShared(positions[0].p) = point + (t1 + t2 - normal) * size;
+    toNvShared(positions[1].p) = point + (t2 - t1 - normal) * size;
 
-    toPxShared(positions[2].p) = point + (-t1 - t2 - normal) * size;
-    toPxShared(positions[3].p) = point + (t1 - t2 - normal) * size;
+    toNvShared(positions[2].p) = point + (-t1 - t2 - normal) * size;
+    toNvShared(positions[3].p) = point + (t1 - t2 - normal) * size;
 
-    toPxShared(positions[4].p) = point + (t1 + t2 + normal) * size;
-    toPxShared(positions[5].p) = point + (t2 - t1 + normal) * size;
+    toNvShared(positions[4].p) = point + (t1 + t2 + normal) * size;
+    toNvShared(positions[5].p) = point + (t2 - t1 + normal) * size;
 
-    toPxShared(positions[6].p) = point + (-t1 - t2 + normal) * size;
-    toPxShared(positions[7].p) = point + (t1 - t2 + normal) * size;
+    toNvShared(positions[6].p) = point + (-t1 - t2 + normal) * size;
+    toNvShared(positions[7].p) = point + (t1 - t2 + normal) * size;
 
     positions[0].uv[0] = {0, 0};
     positions[1].uv[0] = {UV_SCALE, 0};
@@ -527,7 +527,7 @@ Mesh* getBigBox(const PxVec3& point, float size, int32_t interiorMaterialId)
 }
 
 bool CmpSharedFace::
-operator()(const std::pair<physx::PxVec3, physx::PxVec3>& pv1, const std::pair<physx::PxVec3, physx::PxVec3>& pv2) const
+operator()(const std::pair<nvidia::NvVec3, nvidia::NvVec3>& pv1, const std::pair<nvidia::NvVec3, nvidia::NvVec3>& pv2) const
 {
     CmpVec vc;
     if ((pv1.first - pv2.first).magnitude() < 1e-5)
@@ -539,7 +539,7 @@ operator()(const std::pair<physx::PxVec3, physx::PxVec3>& pv1, const std::pair<p
 
 #define INDEXER_OFFSET (1ll << 32)
 
-void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<std::vector<physx::PxVec3> >& cutoutPoints,
+void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<std::vector<nvidia::NvVec3> >& cutoutPoints,
                            float heightBot, float heightTop, float conicityBot, float conicityTop, int64_t& id,
                            int32_t seed, int32_t interiorMaterialId, SharedFacesMap& sharedFacesMap)
 {
@@ -547,7 +547,7 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
     {
         return;
     }
-    std::map<physx::PxVec3, std::pair<uint32_t, std::vector<physx::PxVec3> >, CmpVec> newCutoutPoints;
+    std::map<nvidia::NvVec3, std::pair<uint32_t, std::vector<nvidia::NvVec3> >, CmpVec> newCutoutPoints;
     uint32_t resH = std::max((uint32_t)std::roundf((heightBot + heightTop) / conf.noise.samplingInterval.z), 1u);
 
     // generate noisy faces
@@ -571,13 +571,13 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
             auto cp0 = newCutoutPoints.find(p0);
             if (cp0 == newCutoutPoints.end())
             {
-                newCutoutPoints[p0] = std::make_pair(0u, std::vector<physx::PxVec3>(resH + 1, physx::PxVec3(0.f)));
+                newCutoutPoints[p0] = std::make_pair(0u, std::vector<nvidia::NvVec3>(resH + 1, nvidia::NvVec3(0.f)));
                 cp0                 = newCutoutPoints.find(p0);
             }
             auto cp1 = newCutoutPoints.find(p1);
             if (cp1 == newCutoutPoints.end())
             {
-                newCutoutPoints[p1] = std::make_pair(0u, std::vector<physx::PxVec3>(resH + 1, physx::PxVec3(0.f)));
+                newCutoutPoints[p1] = std::make_pair(0u, std::vector<nvidia::NvVec3>(resH + 1, nvidia::NvVec3(0.f)));
                 cp1                 = newCutoutPoints.find(p1);
             }
 
@@ -587,7 +587,7 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
             uint32_t numPts = (uint32_t)(std::abs(vec.x) / conf.noise.samplingInterval.x +
                                          std::abs(vec.y) / conf.noise.samplingInterval.y) +
                               1;
-            auto normal = vec.cross(physx::PxVec3(0, 0, 1));
+            auto normal = vec.cross(nvidia::NvVec3(0, 0, 1));
             normal      = normal;
 
             auto p00 = p0 * conicityBot;
@@ -611,8 +611,8 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
                 sfIt              = sharedFacesMap.find(t);
                 auto& SF          = sfIt->second;
                 getNoisyFace(SF.vertices, SF.edges, SF.facets, resH, numPts,
-                             physx::PxVec2(0, CYLINDER_UV_SCALE * currentP / (heightBot + heightTop)),
-                             physx::PxVec2(CYLINDER_UV_SCALE / resH,
+                             nvidia::NvVec2(0, CYLINDER_UV_SCALE * currentP / (heightBot + heightTop)),
+                             nvidia::NvVec2(CYLINDER_UV_SCALE / resH,
                                            CYLINDER_UV_SCALE * vec.magnitude() / (heightBot + heightTop) / numPts),
                              stepper, nEval, id++ + INDEXER_OFFSET, interiorMaterialId, true);
 
@@ -621,8 +621,8 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
                 cp1->second.first++;
                 for (uint32_t k = 0; k <= resH; k++)
                 {
-                    cp0->second.second[k] += toPxShared(SF.vertices[k].p);
-                    cp1->second.second[k] += toPxShared(SF.vertices[SF.vertices.size() - resH - 1 + k].p);
+                    cp0->second.second[k] += toNvShared(SF.vertices[k].p);
+                    cp1->second.second[k] += toNvShared(SF.vertices[SF.vertices.size() - resH - 1 + k].p);
                 }
             }
         }
@@ -639,7 +639,7 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
             auto p1   = points[(p + 1) % pointCount];
             auto p2   = points[(p + 2) % pointCount];
             auto& cp1 = newCutoutPoints.find(p1)->second;
-            float d   = physx::PxClamp((p1 - p0).getNormalized().dot((p2 - p1).getNormalized()), 0.f, 1.f);
+            float d   = nvidia::NvClamp((p1 - p0).getNormalized().dot((p2 - p1).getNormalized()), 0.f, 1.f);
 
             for (uint32_t h = 0; h <= resH; h++)
             {
@@ -680,8 +680,8 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
             for (uint32_t h = 0; h <= resH; h++)
             {
                 float z        = cp1.second[h].z;
-                float R0       = (cp0.second[h] / cp0.first - toPxShared(SFIt->second.vertices[idx0 + h].p)).magnitude();
-                float R1       = (cp1.second[h] / cp1.first - toPxShared(SFIt->second.vertices[idx1 + h].p)).magnitude();
+                float R0       = (cp0.second[h] / cp0.first - toNvShared(SFIt->second.vertices[idx0 + h].p)).magnitude();
+                float R1       = (cp1.second[h] / cp1.first - toNvShared(SFIt->second.vertices[idx1 + h].p)).magnitude();
                 float R        = R0 - R1;
                 float r        = 0.25f * (cp1.second[h] / cp1.first - cp0.second[h] / cp0.first).magnitude();
                 float conicity = (conicityBot * h + conicityTop * (resH - h)) / resH;
@@ -717,8 +717,8 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
             for (uint32_t h = 0; h <= resH; h++)
             {
                 float z        = cp1.second[h].z;
-                float R0       = (cp0.second[h] / cp0.first - toPxShared(SFIt->second.vertices[idx0 + h].p)).magnitude();
-                float R1       = (cp1.second[h] / cp1.first - toPxShared(SFIt->second.vertices[idx1 + h].p)).magnitude();
+                float R0       = (cp0.second[h] / cp0.first - toNvShared(SFIt->second.vertices[idx0 + h].p)).magnitude();
+                float R1       = (cp1.second[h] / cp1.first - toNvShared(SFIt->second.vertices[idx1 + h].p)).magnitude();
                 float R        = R0 - R1;
                 float r        = 0.25f * (cp1.second[h] / cp1.first - cp0.second[h] / cp0.first).magnitude();
                 float conicity = (conicityBot * h + conicityTop * (resH - h)) / resH;
@@ -744,18 +744,18 @@ void buildCuttingConeFaces(const CutoutConfiguration& conf, const std::vector<st
         {
             for (uint32_t h = 0; h <= SF.second.h; h++)
             {
-                toPxShared(v[w * (SF.second.h + 1) + h].p) +=
-                    ((cp0.second[h] / cp0.first - toPxShared(v[h].p)) * (SF.second.w - w) +
-                     (cp1.second[h] / cp1.first - toPxShared(v[SF.second.w * (SF.second.h + 1) + h].p)) * w) *
+                toNvShared(v[w * (SF.second.h + 1) + h].p) +=
+                    ((cp0.second[h] / cp0.first - toNvShared(v[h].p)) * (SF.second.w - w) +
+                     (cp1.second[h] / cp1.first - toNvShared(v[SF.second.w * (SF.second.h + 1) + h].p)) * w) *
                     invW;
             }
         }
     }
 }
 
-Mesh* getNoisyCuttingCone(const std::vector<physx::PxVec3>& points, const std::set<int32_t>& smoothingGroups,
-                          const physx::PxTransform& transform, bool useSmoothing, float heightBot, float heightTop,
-                          float conicityMultiplierBot, float conicityMultiplierTop, physx::PxVec3 samplingInterval,
+Mesh* getNoisyCuttingCone(const std::vector<nvidia::NvVec3>& points, const std::set<int32_t>& smoothingGroups,
+                          const nvidia::NvTransform& transform, bool useSmoothing, float heightBot, float heightTop,
+                          float conicityMultiplierBot, float conicityMultiplierTop, nvidia::NvVec3 samplingInterval,
                           int32_t interiorMaterialId, const SharedFacesMap& sharedFacesMap, bool inverseNormals)
 {
     NV_UNUSED(conicityMultiplierTop);
@@ -857,8 +857,8 @@ Mesh* getNoisyCuttingCone(const std::vector<physx::PxVec3>& points, const std::s
             xPos.push_back(p.p.x);
             yPos.push_back(p.p.y);
         }
-        toPxShared(p.p) = transform.transform(toPxShared(p.p));
-        toPxShared(p.n) = transform.rotate(toPxShared(p.n));
+        toNvShared(p.p) = transform.transform(toNvShared(p.p));
+        toNvShared(p.n) = transform.rotate(toNvShared(p.n));
     }
     totalCount /= 2;
 
@@ -890,7 +890,7 @@ Mesh* getNoisyCuttingCone(const std::vector<physx::PxVec3>& points, const std::s
                         static_cast<uint32_t>(edges.size()), static_cast<uint32_t>(facets.size()));
 }
 
-Mesh* getCuttingCone(const CutoutConfiguration& conf, const std::vector<physx::PxVec3>& points,
+Mesh* getCuttingCone(const CutoutConfiguration& conf, const std::vector<nvidia::NvVec3>& points,
                      const std::set<int32_t>& smoothingGroups, float heightBot, float heightTop, float conicityBot,
                      float conicityTop, int64_t& id, int32_t seed, int32_t interiorMaterialId,
                      const SharedFacesMap& sharedFacesMap, bool inverseNormals)
@@ -900,8 +900,8 @@ Mesh* getCuttingCone(const CutoutConfiguration& conf, const std::vector<physx::P
     uint32_t pointCount = points.size();
     if (conf.noise.amplitude > FLT_EPSILON)
     {
-        return getNoisyCuttingCone(points, smoothingGroups, toPxShared(conf.transform), conf.useSmoothing, heightBot, heightTop,
-                                   conicityBot, conicityTop, toPxShared(conf.noise.samplingInterval), interiorMaterialId,
+        return getNoisyCuttingCone(points, smoothingGroups, toNvShared(conf.transform), conf.useSmoothing, heightBot, heightTop,
+                                   conicityBot, conicityTop, toNvShared(conf.noise.samplingInterval), interiorMaterialId,
                                    sharedFacesMap, inverseNormals);
     }
 
@@ -924,12 +924,12 @@ Mesh* getCuttingCone(const CutoutConfiguration& conf, const std::vector<physx::P
         auto& p0 = positions[i];
         auto& p1 = positions[i1];
         p0.n = p1.n = {0.f, 0.f, 0.f};
-        toPxShared(p0.p)        = points[i % pointCount] * conicityBot;
+        toNvShared(p0.p)        = points[i % pointCount] * conicityBot;
         p0.p.z      = -heightBot;
-        toPxShared(p1.p)        = points[i % pointCount] * conicityTop;
+        toNvShared(p1.p)        = points[i % pointCount] * conicityTop;
         p1.p.z      = heightTop;
-        toPxShared(p0.p)        = toPxShared(conf.transform).transform(toPxShared(p0.p));
-        toPxShared(p1.p)        = toPxShared(conf.transform).transform(toPxShared(p1.p));
+        toNvShared(p0.p)        = toNvShared(conf.transform).transform(toNvShared(p0.p));
+        toNvShared(p1.p)        = toNvShared(conf.transform).transform(toNvShared(p1.p));
         p0.uv[0]    = {0.f, CYLINDER_UV_SCALE * currentP / (heightBot + heightTop)};
         p1.uv[0]    = {CYLINDER_UV_SCALE, CYLINDER_UV_SCALE * currentP / (heightBot + heightTop)};
         if (i == pointCount)

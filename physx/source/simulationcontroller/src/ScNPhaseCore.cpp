@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -698,6 +698,16 @@ void NPhaseCore::runOverlapFilters(	PxU32 nbToProcess, const Bp::AABBOverlap* PX
 
 		PX_ASSERT(e0);
 		PX_ASSERT(e1);
+
+		// PT: a bit of defensive coding added for OM-74224. In theory this should not be needed, as the broadphase is not
+		// supposed to return null pointers here. But there seems to be an issue somewhere, most probably in the GPU BP kernels,
+		// and this is an attempt at preventing a crash. We could/should remove this eventually.
+		if(!e0 || !e1)
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "NPhaseCore::runOverlapFilters: found null elements!");
+			continue;
+		}
+
 		PX_ASSERT(!findInteraction(e0, e1));
 
 		ShapeSimBase* s0 = static_cast<ShapeSimBase*>(e0);

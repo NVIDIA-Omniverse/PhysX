@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -48,7 +48,7 @@ Reauthor the provided asset to create external bonds in the specified support ch
 
 \return a new asset with added bonds if successful, NULL otherwise.
 */
-NVBLAST_API NvBlastAsset* NvBlastExtAssetUtilsAddExternalBonds
+NV_C_API NvBlastAsset* NvBlastExtAssetUtilsAddExternalBonds
 (
     const NvBlastAsset* asset,
     const uint32_t* externalBoundChunks,
@@ -85,7 +85,7 @@ NVBLAST_FREE appied to the pointers in the returned NvBlastAssetDesc.
 
 \return an asset descriptor that will build an exact duplicate of the input asset.
 */
-NVBLAST_API NvBlastAssetDesc NvBlastExtAssetUtilsCreateDesc(const NvBlastAsset* asset);
+NV_C_API NvBlastAssetDesc NvBlastExtAssetUtilsCreateDesc(const NvBlastAsset* asset);
 
 
 /**
@@ -126,7 +126,7 @@ NVBLAST_FREE appied to the pointers in the returned NvBlastAssetDesc.
 
 \return an asset descriptor that will build an asset which merges the components, using NvBlastCreateAsset.
 */
-NVBLAST_API NvBlastAssetDesc NvBlastExtAssetUtilsMergeAssets
+NV_C_API NvBlastAssetDesc NvBlastExtAssetUtilsMergeAssets
 (
     const NvBlastAsset** components,
     const NvcVec3* scales,
@@ -151,7 +151,7 @@ Chunk volume and bond area are changed accordingly.
 \param[in]      rotation    Pointer to rotation to be applied. Can be nullptr.
 \param[in]      translation Pointer to translation to be applied. Can be nullptr.
 */
-NVBLAST_API void NvBlastExtAssetTransformInPlace
+NV_C_API void NvBlastExtAssetTransformInPlace
 (
     NvBlastAsset* asset,
     const NvcVec3* scale,

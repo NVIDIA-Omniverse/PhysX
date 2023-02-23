@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #pragma once
@@ -48,7 +48,7 @@ virtual uint64_t    serializeIntoBuffer                                         
     uint64_t offset = 0                                                                             \
 ) override                                                                                          \
 {                                                                                                   \
-    NVBLAST_LOG_WARNING(#_name "::serializeIntoBuffer: ExtPxAsset_RAW serializer is read-only.");   \
+    NVBLAST_LOG_WARNING(#_name "::serializeIntoBuffer: serializer is read-only.");                  \
     NV_UNUSED(buffer);                                                                              \
     NV_UNUSED(bufferProvider);                                                                      \
     NV_UNUSED(object);                                                                              \

@@ -22,15 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #include "NvBlastExtDamageAcceleratorAABBTree.h"
 #include "NvBlastIndexFns.h"
 #include "NvBlastAssert.h"
-#include "foundation/PxVec4.h"
+#include "NvVec4.h"
 #include <algorithm>
 
-using namespace physx;
+using namespace nvidia;
 
 
 namespace Nv
@@ -80,7 +80,7 @@ void ExtDamageAcceleratorAABBTree::build(const NvBlastAsset* asset)
             if (node0 < node1)
             {
                 const NvBlastBond& bond = bonds[bondIndex];
-                const PxVec3& p = (reinterpret_cast<const PxVec3&>(bond.centroid));
+                const NvVec3& p = (reinterpret_cast<const NvVec3&>(bond.centroid));
                 m_points[bondIndex] = p;
                 m_indices[bondIndex] = bondIndex;
                 m_bonds[bondIndex].node0 = node0;
@@ -92,15 +92,15 @@ void ExtDamageAcceleratorAABBTree::build(const NvBlastAsset* asset)
                 if (isInvalidIndex(chunk1))
                 {
                     // for world node we don't have it's centroid, so approximate with projection on bond normal 
-                    m_segments[bondIndex].p0 = (reinterpret_cast<const PxVec3&>(chunks[chunk0].centroid));
-                    const PxVec3 normal = (reinterpret_cast<const PxVec3&>(bond.normal));
+                    m_segments[bondIndex].p0 = (reinterpret_cast<const NvVec3&>(chunks[chunk0].centroid));
+                    const NvVec3 normal = (reinterpret_cast<const NvVec3&>(bond.normal));
                     m_segments[bondIndex].p1 = m_segments[bondIndex].p0 + normal * (p - m_segments[bondIndex].p0).dot(normal) * 2;
 
                 }
                 else
                 {
-                    m_segments[bondIndex].p0 = (reinterpret_cast<const PxVec3&>(chunks[chunk0].centroid));
-                    m_segments[bondIndex].p1 = (reinterpret_cast<const PxVec3&>(chunks[chunk1].centroid));
+                    m_segments[bondIndex].p0 = (reinterpret_cast<const NvVec3&>(chunks[chunk0].centroid));
+                    m_segments[bondIndex].p1 = (reinterpret_cast<const NvVec3&>(chunks[chunk1].centroid));
                 }
             }
         }
@@ -121,8 +121,8 @@ int ExtDamageAcceleratorAABBTree::createNode(uint32_t startIdx, uint32_t endIdx,
     node.last = endIdx;
 
     // calc node bounds
-    node.pointsBound = PxBounds3::empty();
-    node.segmentsBound = PxBounds3::empty();
+    node.pointsBound = NvBounds3::empty();
+    node.segmentsBound = NvBounds3::empty();
     for (uint32_t i = node.first; i <= node.last; i++)
     {
         const uint32_t idx = m_indices[i];
@@ -132,7 +132,7 @@ int ExtDamageAcceleratorAABBTree::createNode(uint32_t startIdx, uint32_t endIdx,
     }
 
     // select axis of biggest extent
-    const PxVec3 ext = node.pointsBound.getExtents();
+    const NvVec3 ext = node.pointsBound.getExtents();
     uint32_t axis = 0;
     for (uint32_t k = 1; k < 3; k++)
     {
@@ -170,7 +170,7 @@ int ExtDamageAcceleratorAABBTree::createNode(uint32_t startIdx, uint32_t endIdx,
 //                                                      Queries
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ExtDamageAcceleratorAABBTree::findInBounds(const physx::PxBounds3& bounds, ResultCallback& callback, bool segments) const
+void ExtDamageAcceleratorAABBTree::findInBounds(const nvidia::NvBounds3& bounds, ResultCallback& callback, bool segments) const
 {
     if (m_root)
     {
@@ -182,7 +182,7 @@ void ExtDamageAcceleratorAABBTree::findInBounds(const physx::PxBounds3& bounds, 
     }
 }
 
-void ExtDamageAcceleratorAABBTree::findPointsInBounds(const Node& node, ResultCallback& callback, const physx::PxBounds3& bounds) const
+void ExtDamageAcceleratorAABBTree::findPointsInBounds(const Node& node, ResultCallback& callback, const nvidia::NvBounds3& bounds) const
 {
     if (!bounds.intersects(node.pointsBound))
     {
@@ -216,7 +216,7 @@ void ExtDamageAcceleratorAABBTree::findPointsInBounds(const Node& node, ResultCa
     }
 }
 
-void ExtDamageAcceleratorAABBTree::findSegmentsInBounds(const Node& node, ResultCallback& callback, const physx::PxBounds3& bounds) const
+void ExtDamageAcceleratorAABBTree::findSegmentsInBounds(const Node& node, ResultCallback& callback, const nvidia::NvBounds3& bounds) const
 {
     if (!bounds.intersects(node.segmentsBound))
     {
@@ -250,25 +250,25 @@ void ExtDamageAcceleratorAABBTree::findSegmentsInBounds(const Node& node, Result
     }
 }
 
-bool intersectSegmentPlane(const PxVec3& v1, const PxVec3& v2, const PxPlane& p)
+bool intersectSegmentPlane(const NvVec3& v1, const NvVec3& v2, const NvPlane& p)
 {
     const bool s1 = p.distance(v1) > 0.f;
     const bool s2 = p.distance(v2) > 0.f;
     return (s1 && !s2) || (s2 && !s1);
 }
 
-bool intersectBoundsPlane(const PxBounds3& b, const PxPlane& p)
+bool intersectBoundsPlane(const NvBounds3& b, const NvPlane& p)
 {
-    const PxVec3 extents = b.getExtents();
-    const PxVec3 center = b.getCenter();
+    const NvVec3 extents = b.getExtents();
+    const NvVec3 center = b.getCenter();
 
-    float r =  extents.x * PxAbs(p.n.x) + extents.y * PxAbs(p.n.y) + extents.z * PxAbs(p.n.z);
+    float r =  extents.x * NvAbs(p.n.x) + extents.y * NvAbs(p.n.y) + extents.z * NvAbs(p.n.z);
     float s = p.n.dot(center) + p.d;
 
-    return PxAbs(s) <= r;
+    return NvAbs(s) <= r;
 }
 
-void ExtDamageAcceleratorAABBTree::findBondSegmentsPlaneIntersected(const physx::PxPlane& plane, ResultCallback& resultCallback) const
+void ExtDamageAcceleratorAABBTree::findBondSegmentsPlaneIntersected(const nvidia::NvPlane& plane, ResultCallback& resultCallback) const
 {
     if (m_root)
     {
@@ -277,7 +277,7 @@ void ExtDamageAcceleratorAABBTree::findBondSegmentsPlaneIntersected(const physx:
     }
 }
 
-void ExtDamageAcceleratorAABBTree::findSegmentsPlaneIntersected(const Node& node, ResultCallback& callback, const physx::PxPlane& plane) const
+void ExtDamageAcceleratorAABBTree::findSegmentsPlaneIntersected(const Node& node, ResultCallback& callback, const nvidia::NvPlane& plane) const
 {
     if (!intersectBoundsPlane(node.segmentsBound, plane))
     {
@@ -307,7 +307,7 @@ void ExtDamageAcceleratorAABBTree::findSegmentsPlaneIntersected(const Node& node
 //                                                  Debug Render
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint32_t PxVec4ToU32Color(const PxVec4& color)
+inline uint32_t NvVec4ToU32Color(const NvVec4& color)
 {
     uint32_t c = 0;
     c |= (int)(color.w * 255); c <<= 8;
@@ -338,13 +338,13 @@ void ExtDamageAcceleratorAABBTree::fillDebugBuffer(const Node& node, int current
 {
     if (depth < 0 || currentDepth == depth)
     {
-        const PxVec4 LEAF_COLOR(1.0f, 1.0f, 1.0f, 1.0f);
-        const PxVec4 NON_LEAF_COLOR(0.3f, 0.3f, 0.3f, 1.0f);
+        const NvVec4 LEAF_COLOR(1.0f, 1.0f, 1.0f, 1.0f);
+        const NvVec4 NON_LEAF_COLOR(0.3f, 0.3f, 0.3f, 1.0f);
 
         // draw box
-        const PxBounds3 bounds = segments ? node.segmentsBound : node.pointsBound;
-        const PxVec3 center = bounds.getCenter();
-        const PxVec3 extents = bounds.getExtents();
+        const NvBounds3 bounds = segments ? node.segmentsBound : node.pointsBound;
+        const NvVec3 center = bounds.getCenter();
+        const NvVec3 extents = bounds.getExtents();
 
         const int vs[] = { 0,3,5,6 };
         for (int i = 0; i < 4; i++)
@@ -354,12 +354,12 @@ void ExtDamageAcceleratorAABBTree::fillDebugBuffer(const Node& node, int current
             {
                 auto flip = [](int x, int k) { return ((x >> k) & 1) * 2.f - 1.f; };
                 const float s = std::pow(0.99f, currentDepth);
-                PxVec3 p0 = center + s * extents.multiply(PxVec3(flip(v, 0), flip(v, 1), flip(v, 2)));
-                PxVec3 p1 = center + s * extents.multiply(PxVec3(flip(v^d, 0), flip(v^d, 1), flip(v^d, 2)));
+                NvVec3 p0 = center + s * extents.multiply(NvVec3(flip(v, 0), flip(v, 1), flip(v, 2)));
+                NvVec3 p1 = center + s * extents.multiply(NvVec3(flip(v^d, 0), flip(v^d, 1), flip(v^d, 2)));
                 m_debugLineBuffer.pushBack(Nv::Blast::DebugLine(
                     reinterpret_cast<NvcVec3&>(p0), 
                     reinterpret_cast<NvcVec3&>(p1), 
-                    PxVec4ToU32Color(LEAF_COLOR * (1.f - (currentDepth + 1) * 0.1f)))
+                    NvVec4ToU32Color(LEAF_COLOR * (1.f - (currentDepth + 1) * 0.1f)))
                 );
             }
         }

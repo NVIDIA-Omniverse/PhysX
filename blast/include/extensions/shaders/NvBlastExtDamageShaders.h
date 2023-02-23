@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -52,7 +52,7 @@ public:
     virtual Nv::Blast::DebugBuffer fillDebugRender(int depth = -1, bool segments = false) = 0;
 };
 
-NVBLAST_API NvBlastExtDamageAccelerator* NvBlastExtDamageAcceleratorCreate(const NvBlastAsset* asset, int type);
+NV_C_API NvBlastExtDamageAccelerator* NvBlastExtDamageAcceleratorCreate(const NvBlastAsset* asset, int type);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -141,10 +141,10 @@ NOTE: The signature of shader functions are equal to NvBlastGraphShaderFunction 
 They are not expected to be called directly.
 @see NvBlastGraphShaderFunction, NvBlastSubgraphShaderFunction
 */
-NVBLAST_API void NvBlastExtFalloffGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtFalloffSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtCutterGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtCutterSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtFalloffGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtFalloffSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtCutterGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtCutterSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -173,8 +173,8 @@ NOTE: The signature of shader functions are equal to NvBlastGraphShaderFunction 
 They are not expected to be called directly.
 @see NvBlastGraphShaderFunction, NvBlastSubgraphShaderFunction
 */
-NVBLAST_API void NvBlastExtCapsuleFalloffGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtCapsuleFalloffSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtCapsuleFalloffGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtCapsuleFalloffSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,8 +202,8 @@ NOTE: The signature of shader functions are equal to NvBlastGraphShaderFunction 
 They are not expected to be called directly.
 @see NvBlastGraphShaderFunction, NvBlastSubgraphShaderFunction
 */
-NVBLAST_API void NvBlastExtShearGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtShearSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtShearGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtShearSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,8 +235,8 @@ NOTE: The signature of shader functions are equal to NvBlastGraphShaderFunction 
 They are not expected to be called directly.
 @see NvBlastGraphShaderFunction, NvBlastSubgraphShaderFunction
 */
-NVBLAST_API void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtTriangleIntersectionSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtTriangleIntersectionGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtTriangleIntersectionSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -272,8 +272,8 @@ NOTE: The signature of shader functions are equal to NvBlastGraphShaderFunction 
 They are not expected to be called directly.
 @see NvBlastGraphShaderFunction, NvBlastSubgraphShaderFunction
 */
-NVBLAST_API void NvBlastExtImpactSpreadGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
-NVBLAST_API void NvBlastExtImpactSpreadSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtImpactSpreadGraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastGraphShaderActor* actor, const void* params);
+NV_C_API void NvBlastExtImpactSpreadSubgraphShader(NvBlastFractureBuffers* commandBuffers, const NvBlastSubgraphShaderActor* actor, const void* params);
 
 
 #endif // NVBLASTEXTDAMAGESHADERS_H

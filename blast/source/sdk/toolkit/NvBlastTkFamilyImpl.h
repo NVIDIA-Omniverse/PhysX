@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTTKFAMILYIMPL_H
@@ -118,7 +118,7 @@ public:
 
     TkActorImpl*                    getActorByChunk(uint32_t chunkIndex);
 
-    typedef physx::shdfnd::Pair<uint32_t, uint32_t> ExternalJointKey;   //!< The chunk indices within the TkFamily objects joined by the joint.  These chunks will be support chunks.
+    typedef nvidia::shdfnd::Pair<uint32_t, uint32_t> ExternalJointKey;   //!< The chunk indices within the TkFamily objects joined by the joint.  These chunks will be support chunks.
 
     TkJointImpl*                    findExternalJoint(const TkFamilyImpl* otherFamily, ExternalJointKey key) const;
 

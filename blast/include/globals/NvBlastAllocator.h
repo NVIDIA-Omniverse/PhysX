@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -31,10 +31,11 @@
 #ifndef NVBLASTALLOCATOR_H
 #define NVBLASTALLOCATOR_H
 
+#include "NvAllocatorCallback.h"
 #include "NvBlastGlobals.h"
 
 /**
-This file contains AllocatorCallback wrappers compatible with PxShared containers.
+This file contains nvidia::NvAllocatorCallback wrappers compatible with NvShared containers.
 */
 
 namespace Nv
@@ -43,7 +44,7 @@ namespace Blast
 {
 
 /**
-Allocator uses global AllocatorCallback.
+Allocator uses global nvidia::NvAllocatorCallback.
 */
 class Allocator
 {

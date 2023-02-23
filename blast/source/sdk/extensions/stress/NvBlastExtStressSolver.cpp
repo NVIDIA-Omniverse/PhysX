@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtStressSolver.h"
@@ -34,9 +34,8 @@
 #include "NvBlastAssert.h"
 #include "NvBlastIndexFns.h"
 
-#include <PsVecMath.h>
-#include "PsFPU.h"
-#include "NvBlastPxSharedHelpers.h"
+#include "NsFPU.h"
+#include "NvBlastNvSharedHelpers.h"
 #include "NvCMath.h"
 
 #include "stress.h"
@@ -59,13 +58,13 @@ namespace Nv
 namespace Blast
 {
 
-using namespace physx;
+using namespace nvidia;
 
-static_assert(sizeof(PxVec3) == sizeof(NvcVec3), "sizeof(PxVec3) must equal sizeof(NvcVec3).");
-static_assert(offsetof(PxVec3, x) == offsetof(NvcVec3, x) &&
-              offsetof(PxVec3, y) == offsetof(NvcVec3, y) &&
-              offsetof(PxVec3, z) == offsetof(NvcVec3, z),
-              "Elements of PxVec3 and NvcVec3 must have the same struct offset.");
+static_assert(sizeof(NvVec3) == sizeof(NvcVec3), "sizeof(NvVec3) must equal sizeof(NvcVec3).");
+static_assert(offsetof(NvVec3, x) == offsetof(NvcVec3, x) &&
+              offsetof(NvVec3, y) == offsetof(NvcVec3, y) &&
+              offsetof(NvVec3, z) == offsetof(NvcVec3, z),
+              "Elements of NvVec3 and NvcVec3 must have the same struct offset.");
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +81,7 @@ public:
         reset(nodeCount);
     }
 
-    void getBondImpulses(uint32_t bond, PxVec3& impulseLinear, PxVec3& impulseAngular) const
+    void getBondImpulses(uint32_t bond, NvVec3& impulseLinear, NvVec3& impulseAngular) const
     {
         NVBLAST_ASSERT(bond < m_impulses.size());
         const AngLin6& f = m_impulses[bond];
@@ -108,7 +107,7 @@ public:
         return m_nodes.size();
     }
 
-    void setNodeMassInfo(uint32_t node, const PxVec3& CoM, float mass, float inertia)
+    void setNodeMassInfo(uint32_t node, const NvVec3& CoM, float mass, float inertia)
     {
         NVBLAST_ASSERT(node < m_nodes.size());
         SolverNodeS& n = m_nodes[node];
@@ -126,7 +125,7 @@ public:
         m_stressProcessor.prepare(m_nodes.begin(), m_nodes.size(), m_bonds.begin(), m_bonds.size(), params);
     }
 
-    void setNodeVelocities(uint32_t node, const PxVec3& velocityLinear, const PxVec3& velocityAngular)
+    void setNodeVelocities(uint32_t node, const NvVec3& velocityLinear, const NvVec3& velocityAngular)
     {
         NVBLAST_ASSERT(node < m_velocities.size());
         AngLin6& v = m_velocities[node];
@@ -135,7 +134,7 @@ public:
         m_inputsChanged = true;
     }
 
-    uint32_t addBond(uint32_t node0, uint32_t node1, const PxVec3& bondCentroid)
+    uint32_t addBond(uint32_t node0, uint32_t node1, const NvVec3& bondCentroid)
     {
         SolverBond b;
         b.nodes[0] = node0;
@@ -235,19 +234,19 @@ public:
         // The normal used to compute stress values
         // Can be different than the bond normal if graph reduction is used
         // and multiple bonds are grouped together
-        physx::PxVec3 normal;
+        nvidia::NvVec3 normal;
 
         // Centroid used to compute node offsets, instead of assuming the bond is halfway between node positions.
         // This also allows the bonds to the world node to be drawn
-        physx::PxVec3 centroid;
+        nvidia::NvVec3 centroid;
     };
 
     struct NodeData
     {
         float mass;
         float volume;
-        PxVec3 localPos;
-        PxVec3 localVel;
+        NvVec3 localPos;
+        NvVec3 localVel;
         uint32_t solverNode;
         uint32_t neighborsCount;
     };
@@ -255,7 +254,7 @@ public:
     struct SolverNodeData
     {
         uint32_t supportNodesCount;
-        PxVec3 localPos;
+        NvVec3 localPos;
         union
         {
             float mass;
@@ -306,7 +305,7 @@ public:
         return m_solverBondsData[bond];
     }
 
-    void getSolverInternalBondImpulses(uint32_t bond, PxVec3& impulseLinear, PxVec3& impulseAngular) const
+    void getSolverInternalBondImpulses(uint32_t bond, NvVec3& impulseLinear, NvVec3& impulseAngular) const
     {
         m_solver.getBondImpulses(bond, impulseLinear, impulseAngular);
     }
@@ -342,7 +341,7 @@ public:
     }
 
     void calcSolverBondStresses(
-        uint32_t bondIdx, float bondArea, float nodeDist, const physx::PxVec3& bondNormal,
+        uint32_t bondIdx, float bondArea, float nodeDist, const nvidia::NvVec3& bondNormal,
         float& stressNormal, float& stressShear) const
     {
         if (!canTakeDamage(bondArea))
@@ -354,7 +353,7 @@ public:
         // impulseLinear in the direction of the bond normal is stressNormal, perpendicular is stressShear
         // ignore impulseAngular for now, not sure how to account for that
         // convert to pressure to factor out area
-        PxVec3 impulseLinear, impulseAngular;
+        NvVec3 impulseLinear, impulseAngular;
         getSolverInternalBondImpulses(bondIdx, impulseLinear, impulseAngular);
         const float normalComponentLinear = impulseLinear.dot(bondNormal);
         stressNormal = normalComponentLinear / bondArea;
@@ -426,7 +425,7 @@ public:
         return stress;
     }
 
-    void setNodeInfo(uint32_t node, float mass, float volume, PxVec3 localPos)
+    void setNodeInfo(uint32_t node, float mass, float volume, NvVec3 localPos)
     {
         m_nodesData[node].mass = mass;
         m_nodesData[node].volume = volume;
@@ -446,7 +445,7 @@ public:
         }
     }
 
-    void addNodeForce(uint32_t node, const PxVec3& force, ExtForceMode::Enum mode)
+    void addNodeForce(uint32_t node, const NvVec3& force, ExtForceMode::Enum mode)
     {
         const float mass = m_nodesData[node].mass;
         if (mass > 0)
@@ -544,7 +543,7 @@ public:
 
         for (const NodeData& node : m_nodesData)
         {
-            m_solver.setNodeVelocities(node.solverNode, node.localVel, PxVec3(PxZero));
+            m_solver.setNodeVelocities(node.solverNode, node.localVel, NvVec3(NvZero));
         }
 
         m_solver.solve(settings.maxSolverIterationsPerFrame, warmStart);
@@ -601,7 +600,7 @@ private:
     {
         for (auto& node : m_nodesData)
         {
-            node.localVel = PxVec3(PxZero);
+            node.localVel = NvVec3(NvZero);
         }
     }
 
@@ -616,9 +615,9 @@ private:
             // calculate the total area of all bonds involved so pressure can be calculated
             float totalArea = 0.0f;
             // calculate an average normal and centroid for all bonds as well, weighted by their area
-            physx::PxVec3 bondNormal(PxZero);
-            physx::PxVec3 bondCentroid(PxZero);
-            physx::PxVec3 averageNodeDisp(PxZero);
+            nvidia::NvVec3 bondNormal(NvZero);
+            nvidia::NvVec3 bondCentroid(NvZero);
+            nvidia::NvVec3 averageNodeDisp(NvZero);
             const auto& blastBondIndices = m_solverBondsData[i].blastBondIndices;
             for (auto blastBondIndex : blastBondIndices)
             {
@@ -626,17 +625,17 @@ private:
                 {
                     const uint32_t bondIndex = m_blastBondIndexMap[blastBondIndex];
                     const BondData& bond = m_bondsData[bondIndex];
-                    const physx::PxVec3 nodeDisp = m_nodesData[bond.node1].localPos - m_nodesData[bond.node0].localPos;
+                    const nvidia::NvVec3 nodeDisp = m_nodesData[bond.node1].localPos - m_nodesData[bond.node0].localPos;
 
                     // the current health of a bond is the effective area remaining
                     const float remainingArea = bondHealth[blastBondIndex];
                     const NvBlastBond& blastBond = bonds[blastBondIndex];
 
                     // Align normal(s) with node displacement, so that compressive/tensile distinction is correct
-                    const physx::PxVec3 assetBondNormal(blastBond.normal[0], blastBond.normal[1], blastBond.normal[2]);
-                    const physx::PxVec3 blastBondNormal = std::copysignf(1.0f, assetBondNormal.dot(nodeDisp))*assetBondNormal;
+                    const nvidia::NvVec3 assetBondNormal(blastBond.normal[0], blastBond.normal[1], blastBond.normal[2]);
+                    const nvidia::NvVec3 blastBondNormal = std::copysignf(1.0f, assetBondNormal.dot(nodeDisp))*assetBondNormal;
 
-                    const physx::PxVec3 blastBondCentroid(blastBond.centroid[0], blastBond.centroid[1], blastBond.centroid[2]);
+                    const nvidia::NvVec3 blastBondCentroid(blastBond.centroid[0], blastBond.centroid[1], blastBond.centroid[2]);
 
                     if (!canTakeDamage(remainingArea))  // Check unbreakable limit
                     {
@@ -836,7 +835,7 @@ private:
         for (SolverNodeData& solverNode : m_solverNodesData)
         {
             solverNode.supportNodesCount = 0;
-            solverNode.localPos = PxVec3(PxZero);
+            solverNode.localPos = NvVec3(NvZero);
             solverNode.mass = 0.0f;
             solverNode.volume = 0.0f;
         }
@@ -860,7 +859,7 @@ private:
         {
             const SolverNodeData& solverNode = m_solverNodesData[nodeIndex];
 
-            const float R = PxPow(solverNode.volume * 3.0f * PxInvPi / 4.0f, 1.0f / 3.0f); // sphere volume approximation
+            const float R = NvPow(solverNode.volume * 3.0f * NvInvPi / 4.0f, 1.0f / 3.0f); // sphere volume approximation
             const float inertia = solverNode.mass * (R * R * 0.4f); // sphere inertia tensor approximation: I = 2/5 * M * R^2 ; invI = 1 / I;
             m_solver.setNodeMassInfo(nodeIndex, solverNode.localPos, solverNode.mass, inertia);
         }
@@ -886,8 +885,8 @@ private:
             bond.stressShear = 0.0f;
 
             // initialize normal and centroid using blast values
-            bond.normal = *(PxVec3*)bonds[bond.blastBondIndex].normal;
-            bond.centroid = *(PxVec3*)bonds[bond.blastBondIndex].centroid;
+            bond.normal = *(NvVec3*)bonds[bond.blastBondIndex].normal;
+            bond.centroid = *(NvVec3*)bonds[bond.blastBondIndex].centroid;
 
             // fix normal direction to point from node0 to node1
             bond.normal *= std::copysignf(1.0f, bond.normal.dot(node1.localPos - node1.localPos));
@@ -1252,7 +1251,7 @@ void ExtStressSolverImpl::setAllNodesInfoFromLL(float density)
         if (chunkIndex0 >= chunkCount)
         {
             // chunkIndex is invalid means it is static node (represents world)
-            m_graphProcessor->setNodeInfo(node0, 0.0f, 0.0f, PxVec3());
+            m_graphProcessor->setNodeInfo(node0, 0.0f, 0.0f, NvVec3());
         }
         else
         {
@@ -1260,7 +1259,7 @@ void ExtStressSolverImpl::setAllNodesInfoFromLL(float density)
             const NvBlastChunk& chunk = chunks[chunkIndex0];
             const float volume = chunk.volume;
             const float mass = volume * density;
-            const PxVec3 localPos = *reinterpret_cast<const PxVec3*>(chunk.centroid);
+            const NvVec3 localPos = *reinterpret_cast<const NvVec3*>(chunk.centroid);
             m_graphProcessor->setNodeInfo(node0, mass, volume, localPos);
         }
     }
@@ -1268,7 +1267,7 @@ void ExtStressSolverImpl::setAllNodesInfoFromLL(float density)
 
 void ExtStressSolverImpl::setNodeInfo(uint32_t graphNode, float mass, float volume, NvcVec3 localPos)
 {
-    m_graphProcessor->setNodeInfo(graphNode, mass, volume, toPxShared(localPos));
+    m_graphProcessor->setNodeInfo(graphNode, mass, volume, toNvShared(localPos));
 }
 
 bool ExtStressSolverImpl::getExcessForces(uint32_t actorIndex, const NvcVec3& com, NvcVec3& force, NvcVec3& torque)
@@ -1294,8 +1293,8 @@ bool ExtStressSolverImpl::getExcessForces(uint32_t actorIndex, const NvcVec3& co
     }
 
     // walk the visible nodes for the actor looking for bonds that broke this frame
-    physx::PxVec3 totalForce(0.0f);
-    physx::PxVec3 totalTorque(0.0f);
+    nvidia::NvVec3 totalForce(0.0f);
+    nvidia::NvVec3 totalTorque(0.0f);
     for (uint32_t n = 0; n < nodeCount; n++)
     {
         // find bonds that broke this frame (health <= 0 but internal stress bond index is still valid)
@@ -1334,37 +1333,37 @@ bool ExtStressSolverImpl::getExcessForces(uint32_t actorIndex, const NvcVec3& co
             NVBLAST_ASSERT(bondData.node0 == internalBondData.node0 && bondData.node1 == internalBondData.node1);
 
             // accumulators for forces just from this bond
-            physx::PxVec3 pxLinearPressure(0.0f);
-            physx::PxVec3 pxAngularPressure(0.0f);
+            nvidia::NvVec3 nvLinearPressure(0.0f);
+            nvidia::NvVec3 nvAngularPressure(0.0f);
 
             // deal with linear forces
             const float excessCompression = bondData.stressNormal + m_settings.compressionFatalLimit;
             const float excessTension = bondData.stressNormal - m_settings.tensionFatalLimit;
             if (excessCompression < 0.0f)
             {
-                pxLinearPressure += excessCompression * bondData.normal;
+                nvLinearPressure += excessCompression * bondData.normal;
             }
             else if (excessTension > 0.0f)
             {
                 // tension is in the negative direction of the linear impulse
-                pxLinearPressure += excessTension * bondData.normal;
+                nvLinearPressure += excessTension * bondData.normal;
             }
 
             const float excessShear = bondData.stressShear - m_settings.shearFatalLimit;
             if (excessShear > 0.0f)
             {
-                PxVec3 impulseLinear, impulseAngular;
+                NvVec3 impulseLinear, impulseAngular;
                 m_graphProcessor->getSolverInternalBondImpulses(internalBondIndex, impulseLinear, impulseAngular);
-                const physx::PxVec3 shearDir = impulseLinear - impulseLinear.dot(bondData.normal)*bondData.normal;
-                pxLinearPressure += excessShear * shearDir.getNormalized();
+                const nvidia::NvVec3 shearDir = impulseLinear - impulseLinear.dot(bondData.normal)*bondData.normal;
+                nvLinearPressure += excessShear * shearDir.getNormalized();
             }
 
-            if (pxLinearPressure.magnitudeSquared() > FLT_EPSILON)
+            if (nvLinearPressure.magnitudeSquared() > FLT_EPSILON)
             {
                 const float* bondCenter = m_bonds[blastBondIndex].centroid;
-                const physx::PxVec3 forceOffset = physx::PxVec3(bondCenter[0], bondCenter[1], bondCenter[3]) - toPxShared(com);
-                const physx::PxVec3 torqueFromForce = forceOffset.cross(pxLinearPressure);
-                pxAngularPressure += torqueFromForce;
+                const nvidia::NvVec3 forceOffset = nvidia::NvVec3(bondCenter[0], bondCenter[1], bondCenter[3]) - toNvShared(com);
+                const nvidia::NvVec3 torqueFromForce = forceOffset.cross(nvLinearPressure);
+                nvAngularPressure += torqueFromForce;
             }
 
             // add the contributions from this bond to the total forces for the actor
@@ -1374,14 +1373,14 @@ bool ExtStressSolverImpl::getExcessForces(uint32_t actorIndex, const NvcVec3& co
 
             const float sign = otherNodeIdx > nodeIdx ? 1.0f : -1.0f;
 
-            totalForce += pxLinearPressure * (sign*bondRemainingArea);
-            totalTorque += pxAngularPressure * (sign*bondRemainingArea);
+            totalForce += nvLinearPressure * (sign*bondRemainingArea);
+            totalTorque += nvAngularPressure * (sign*bondRemainingArea);
         }
     }
 
     // convert to the output format and return true if non-zero forces were accumulated
-    force = fromPxShared(totalForce);
-    torque = fromPxShared(totalTorque);
+    force = fromNvShared(totalForce);
+    torque = fromNvShared(totalTorque);
     return (totalForce.magnitudeSquared() + totalTorque.magnitudeSquared()) > 0.0f;
 }
 
@@ -1469,7 +1468,7 @@ bool ExtStressSolverImpl::addForce(const NvBlastActor& actor, NvcVec3 localPosit
         for (uint32_t i = 0; i < nodeCount; ++i)
         {
             const uint32_t node = graphNodeIndices[i];
-            const float sqrDist = (toPxShared(localPosition) - m_graphProcessor->getNodeData(node).localPos).magnitudeSquared();
+            const float sqrDist = (toNvShared(localPosition) - m_graphProcessor->getNodeData(node).localPos).magnitudeSquared();
             if (sqrDist < bestDist)
             {
                 bestDist = sqrDist;
@@ -1479,7 +1478,7 @@ bool ExtStressSolverImpl::addForce(const NvBlastActor& actor, NvcVec3 localPosit
 
         if (!isInvalidIndex(bestNode))
         {
-            m_graphProcessor->addNodeForce(bestNode, toPxShared(localForce), mode);
+            m_graphProcessor->addNodeForce(bestNode, toNvShared(localForce), mode);
             return true;
         }
     }
@@ -1488,7 +1487,7 @@ bool ExtStressSolverImpl::addForce(const NvBlastActor& actor, NvcVec3 localPosit
 
 void ExtStressSolverImpl::addForce(uint32_t graphNode, NvcVec3 localForce, ExtForceMode::Enum mode)
 {
-    m_graphProcessor->addNodeForce(graphNode, toPxShared(localForce), mode);
+    m_graphProcessor->addNodeForce(graphNode, toNvShared(localForce), mode);
 }
 
 bool ExtStressSolverImpl::addGravity(const NvBlastActor& actor, NvcVec3 localGravity)
@@ -1502,7 +1501,7 @@ bool ExtStressSolverImpl::addGravity(const NvBlastActor& actor, NvcVec3 localGra
         for (uint32_t i = 0; i < nodeCount; ++i)
         {
             const uint32_t node = graphNodeIndices[i];
-            m_graphProcessor->addNodeForce(node, toPxShared(localGravity), ExtForceMode::ACCELERATION);
+            m_graphProcessor->addNodeForce(node, toNvShared(localGravity), ExtForceMode::ACCELERATION);
         }
         return true;
     }
@@ -1523,9 +1522,9 @@ bool ExtStressSolverImpl::addCentrifugalAcceleration(const NvBlastActor& actor, 
             const uint32_t node = graphNodeIndices[i];
             const auto& localPos = m_graphProcessor->getNodeData(node).localPos;
             // a = w x (w x r)
-            const PxVec3 centrifugalAcceleration =
-                toPxShared(localAngularVelocity)
-                    .cross(toPxShared(localAngularVelocity).cross(localPos - toPxShared(localCenterMass)));
+            const NvVec3 centrifugalAcceleration =
+                toNvShared(localAngularVelocity)
+                    .cross(toNvShared(localAngularVelocity).cross(localPos - toNvShared(localCenterMass)));
             m_graphProcessor->addNodeForce(node, centrifugalAcceleration, ExtForceMode::ACCELERATION);
         }
         return true;
@@ -1549,7 +1548,7 @@ void ExtStressSolverImpl::update()
 
 void ExtStressSolverImpl::solve()
 {
-    PX_SIMD_GUARD;
+    NV_SIMD_GUARD;
 
     m_graphProcessor->solve(m_settings, m_bondHealths, m_bonds, WARM_START && !m_reset);
     m_reset = false;
@@ -1683,12 +1682,12 @@ uint32_t ExtStressSolverImpl::generateFractureCommandsPerActor(const NvBlastActo
 //                                                  Debug Render
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static PxU32 PxVec4ToU32Color(const PxVec4& color)
+inline uint32_t NvVec4ToU32Color(const NvVec4& color)
 {
-    return ((PxU32)(color.w * 255) << 24) | // A
-           ((PxU32)(color.x * 255) << 16) | // R
-           ((PxU32)(color.y * 255) << 8)  | // G
-           ((PxU32)(color.z * 255));        // B
+    return ((uint32_t)(color.w * 255) << 24) | // A
+           ((uint32_t)(color.x * 255) << 16) | // R
+           ((uint32_t)(color.y * 255) << 8)  | // G
+           ((uint32_t)(color.z * 255));        // B
 }
 
 static float Lerp(float v0, float v1, float val)
@@ -1701,14 +1700,14 @@ inline float clamp01(float v)
     return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
 }
 
-inline PxVec4 colorConvertHSVAtoRGBA(float h, float s, float v, float a)
+inline NvVec4 colorConvertHSVAtoRGBA(float h, float s, float v, float a)
 {
     const float t = 6.0f * (h - std::floor(h));
     const int n = (int)t;
     const float m = t - (float)n;
     const float c = 1.0f - s;
     const float b[6] = { 1.0f, 1.0f - s * m, c, c, 1.0f - s * (1.0f - m), 1.0f };
-    return PxVec4(v * b[n % 6], v * b[(n + 4) % 6], v * b[(n + 2) % 6], a); // n % 6 protects against roundoff errors
+    return NvVec4(v * b[n % 6], v * b[(n + 4) % 6], v * b[(n + 2) % 6], a); // n % 6 protects against roundoff errors
 }
 
 inline uint32_t bondHealthColor(float stressPct)
@@ -1723,14 +1722,14 @@ inline uint32_t bondHealthColor(float stressPct)
     const float hue = stressPct < 0.5f ?
         Lerp(BOND_HEALTHY_HUE, BOND_ELASTIC_HUE, 2.0f * stressPct) : Lerp(BOND_STRESSED_HUE, BOND_FATAL_HUE, 2.0f * stressPct - 1.0f);
 
-    return PxVec4ToU32Color(colorConvertHSVAtoRGBA(hue, 1.0f, 1.0f, 1.0f));
+    return NvVec4ToU32Color(colorConvertHSVAtoRGBA(hue, 1.0f, 1.0f, 1.0f));
 }
 
 const ExtStressSolver::DebugBuffer ExtStressSolverImpl::fillDebugRender(const uint32_t* nodes, uint32_t nodeCount, DebugRenderMode mode, float scale)
 {
     NV_UNUSED(scale);
 
-    const uint32_t BOND_UNBREAKABLE_COLOR = PxVec4ToU32Color(PxVec4(0.0f, 0.682f, 1.0f, 1.0f));
+    const uint32_t BOND_UNBREAKABLE_COLOR = NvVec4ToU32Color(NvVec4(0.0f, 0.682f, 1.0f, 1.0f));
 
     ExtStressSolver::DebugBuffer debugBuffer = { nullptr, 0 };
 
@@ -1760,8 +1759,8 @@ const ExtStressSolver::DebugBuffer ExtStressSolverImpl::fillDebugRender(const ui
             //NVBLAST_ASSERT(nodesSet[node1] != 0);
             const auto& solverNode0 = m_graphProcessor->getSolverNodeData(node0);
             const auto& solverNode1 = m_graphProcessor->getSolverNodeData(node1);
-            const NvcVec3 p0 = fromPxShared(solverNode0.mass > 0.0f ? solverNode0.localPos : bondData.centroid);
-            const NvcVec3 p1 = fromPxShared(solverNode1.mass > 0.0f ? solverNode1.localPos : bondData.centroid);
+            const NvcVec3 p0 = fromNvShared(solverNode0.mass > 0.0f ? solverNode0.localPos : bondData.centroid);
+            const NvcVec3 p1 = fromNvShared(solverNode1.mass > 0.0f ? solverNode1.localPos : bondData.centroid);
 
             // don't render lines for broken bonds
             const float stressPct = m_graphProcessor->getSolverBondStressPct(i, m_bondHealths, m_settings, mode);

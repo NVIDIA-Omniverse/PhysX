@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -35,17 +35,10 @@
 #include "NvBlastTkType.h"
 #include "NvBlastTkEvent.h"
 
-#include "NvBlastPreprocessor.h"
+#include "NvPreprocessor.h"
 #include "NvBlastTypes.h"
 
-#include "foundation/PxVec3.h"
-
-
-// Forward declarations
-namespace physx
-{
-class PxTransform;
-}
+#include "NvVec3.h"
 
 
 namespace Nv
@@ -133,7 +126,7 @@ struct TkJointDesc
 {
     TkFamily*       families[2];        //!< The TkFamily objects containing the chunks joined by the joint
     uint32_t        chunkIndices[2];    //!< The chunk indices within the corresponding TkFamily objects joined by the joint.  The indexed chunks will be support chunks.
-    physx::PxVec3   attachPositions[2]; //!< The position of the joint relative to each TkActor which owns the chunks jointed by this joint
+    nvidia::NvVec3  attachPositions[2]; //!< The position of the joint relative to each TkActor which owns the chunks jointed by this joint
 };
 
 
@@ -317,7 +310,7 @@ Create a new TkFramework.  This creates a global singleton, and will fail if a T
 
 \return the new TkFramework if successful, NULL otherwise.
 */
-NVBLAST_API Nv::Blast::TkFramework* NvBlastTkFrameworkCreate();
+NV_C_API Nv::Blast::TkFramework* NvBlastTkFrameworkCreate();
 
 
 /**
@@ -325,7 +318,7 @@ Retrieve a pointer to the global TkFramework singleton (if it exists).
 
 \return the pointer to the global TkFramework (NULL if none exists).
 */
-NVBLAST_API Nv::Blast::TkFramework* NvBlastTkFrameworkGet();
+NV_C_API Nv::Blast::TkFramework* NvBlastTkFrameworkGet();
 
 
 #endif // ifndef NVBLASTTKFRAMEWORK_H

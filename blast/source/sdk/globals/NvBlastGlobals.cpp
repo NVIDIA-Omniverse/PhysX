@@ -22,11 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastGlobals.h"
 #include "NvBlastAssert.h"
+#include "NvAllocatorCallback.h"
+#include "NvErrorCallback.h"
+#include "NsGlobals.h"
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
@@ -88,7 +91,7 @@ NV_FORCE_INLINE void platformAlignedFree(void* ptr)
 }
 #endif
 
-class DefaultAllocatorCallback : public AllocatorCallback
+class DefaultAllocatorCallback : public nvidia::NvAllocatorCallback
 {
 public:
     virtual void* allocate(size_t size, const char* typeName, const char* filename, int line) override
@@ -104,28 +107,28 @@ public:
         platformAlignedFree(ptr);
     }
 };
-DefaultAllocatorCallback g_defaultAllocatorCallback;
+DefaultAllocatorCallback s_defaultAllocatorCallback;
 
 
-class DefaultErrorCallback : public ErrorCallback
+class DefaultErrorCallback : public nvidia::NvErrorCallback
 {
-    virtual void reportError(ErrorCode::Enum code, const char* msg, const char* file, int line) override
+    virtual void reportError(nvidia::NvErrorCode::Enum code, const char* msg, const char* file, int line) override
     {
-#if NV_DEBUG || NV_CHECKED
+#if 1 || NV_DEBUG || NV_CHECKED
         std::stringstream str;
         str << "NvBlast ";
         bool critical = false;
         switch (code)
         {
-        case ErrorCode::eNO_ERROR:          str << "[Info]";                critical = false; break;
-        case ErrorCode::eDEBUG_INFO:        str << "[Debug Info]";          critical = false; break;
-        case ErrorCode::eDEBUG_WARNING:     str << "[Debug Warning]";       critical = false; break;
-        case ErrorCode::eINVALID_PARAMETER: str << "[Invalid Parameter]";   critical = true;  break;
-        case ErrorCode::eINVALID_OPERATION: str << "[Invalid Operation]";   critical = true;  break;
-        case ErrorCode::eOUT_OF_MEMORY:     str << "[Out of] Memory";       critical = true;  break;
-        case ErrorCode::eINTERNAL_ERROR:    str << "[Internal Error]";      critical = true;  break;
-        case ErrorCode::eABORT:             str << "[Abort]";               critical = true;  break;
-        case ErrorCode::ePERF_WARNING:      str << "[Perf Warning]";        critical = false; break;
+        case nvidia::NvErrorCode::eNO_ERROR:          str << "[Info]";                critical = false; break;
+        case nvidia::NvErrorCode::eDEBUG_INFO:        str << "[Debug Info]";          critical = false; break;
+        case nvidia::NvErrorCode::eDEBUG_WARNING:     str << "[Debug Warning]";       critical = false; break;
+        case nvidia::NvErrorCode::eINVALID_PARAMETER: str << "[Invalid Parameter]";   critical = true;  break;
+        case nvidia::NvErrorCode::eINVALID_OPERATION: str << "[Invalid Operation]";   critical = true;  break;
+        case nvidia::NvErrorCode::eOUT_OF_MEMORY:     str << "[Out of] Memory";       critical = true;  break;
+        case nvidia::NvErrorCode::eINTERNAL_ERROR:    str << "[Internal Error]";      critical = true;  break;
+        case nvidia::NvErrorCode::eABORT:             str << "[Abort]";               critical = true;  break;
+        case nvidia::NvErrorCode::ePERF_WARNING:      str << "[Perf Warning]";        critical = false; break;
         default:                            NVBLAST_ASSERT(false);
         }
         str << file << "(" << line << "): " << msg << "\n";
@@ -144,12 +147,13 @@ class DefaultErrorCallback : public ErrorCallback
 #endif
     }
 };
-DefaultErrorCallback g_defaultErrorCallback;
+static DefaultErrorCallback s_defaultErrorCallback;
 
 
-AllocatorCallback* g_allocatorCallback = &g_defaultAllocatorCallback;
-ErrorCallback* g_errorCallback = &g_defaultErrorCallback;
+static nvidia::NvAllocatorCallback* s_allocatorCallback = &s_defaultAllocatorCallback;
+static nvidia::NvErrorCallback* s_errorCallback = &s_defaultErrorCallback;
 
+nvidia::NvProfilerCallback *g_profilerCallback = nullptr;
 
 } // namespace Blast
 } // namespace Nv
@@ -157,22 +161,32 @@ ErrorCallback* g_errorCallback = &g_defaultErrorCallback;
 
 //////// Global API implementation ////////
 
-Nv::Blast::AllocatorCallback* NvBlastGlobalGetAllocatorCallback()
+nvidia::NvAllocatorCallback* NvBlastGlobalGetAllocatorCallback()
 {
-    return Nv::Blast::g_allocatorCallback;
+    return Nv::Blast::s_allocatorCallback;
 }
 
-void NvBlastGlobalSetAllocatorCallback(Nv::Blast::AllocatorCallback* allocator)
+void NvBlastGlobalSetAllocatorCallback(nvidia::NvAllocatorCallback* allocator)
 {
-    Nv::Blast::g_allocatorCallback = allocator ? allocator : &Nv::Blast::g_defaultAllocatorCallback;
+    Nv::Blast::s_allocatorCallback = allocator ? allocator : &Nv::Blast::s_defaultAllocatorCallback;
 }
 
-Nv::Blast::ErrorCallback* NvBlastGlobalGetErrorCallback()
+nvidia::NvErrorCallback* NvBlastGlobalGetErrorCallback()
 {
-    return Nv::Blast::g_errorCallback;
+    return Nv::Blast::s_errorCallback;
 }
 
-void NvBlastGlobalSetErrorCallback(Nv::Blast::ErrorCallback* errorCallback)
+void NvBlastGlobalSetErrorCallback(nvidia::NvErrorCallback* errorCallback)
 {
-    Nv::Blast::g_errorCallback = errorCallback ? errorCallback : &Nv::Blast::g_defaultErrorCallback;
+    Nv::Blast::s_errorCallback = errorCallback ? errorCallback : &Nv::Blast::s_defaultErrorCallback;
+}
+
+nvidia::NvProfilerCallback* NvBlastGlobalGetProfilerCallback()
+{
+    return Nv::Blast::g_profilerCallback;
+}
+
+void NvBlastGlobalSetProfilerCallback(nvidia::NvProfilerCallback* profilerCallback)
+{
+    Nv::Blast::g_profilerCallback = profilerCallback;
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTMEMORY_H
@@ -127,8 +127,5 @@ align16(_lastOffset + _lastSize)
 #include <alloca.h>
 #define NvBlastAlloca(x) alloca(x)
 #endif
-
-#define NvBlastAllocaAligned16(x) (void*)(((uintptr_t)PxAlloca(x + 0xF) + 0xF) & ~(uintptr_t)0xF)
-
 
 #endif // #ifndef NVBLASTMEMORY_H

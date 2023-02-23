@@ -22,11 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef TESTPROFILER_H
 #define TESTPROFILER_H
+
+#include "NvBlastInternalProfiler.h"
 
 #define TEST_ZONE_BEGIN(name)   platformZoneStart(name)
 #define TEST_ZONE_END(name)     platformZoneEnd()

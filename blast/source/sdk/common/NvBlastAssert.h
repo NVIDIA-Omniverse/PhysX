@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTASSERT_H
 #define NVBLASTASSERT_H
 
 
-#include "NvBlastPreprocessor.h"
+#include "NvPreprocessor.h"
 
 
 #if !NV_ENABLE_ASSERTS
@@ -72,7 +72,7 @@
 extern "C"
 {
 
-NVBLAST_API void NvBlastAssertHandler(const char* expr, const char* file, int line, bool& ignore);
+NV_C_API void NvBlastAssertHandler(const char* expr, const char* file, int line, bool& ignore);
 
 } // extern "C"
 

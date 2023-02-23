@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTASSET_H
@@ -303,7 +303,7 @@ NV_INLINE uint32_t Asset::getContiguousLowerSupportIndex(uint32_t chunkIndex) co
 
 
 //JDM: Expose this so serialization layer can use it.
-NVBLAST_API Asset* initializeAsset(void* mem, uint32_t chunkCount, uint32_t graphNodeCount, uint32_t leafChunkCount, uint32_t firstSubsupportChunkIndex, uint32_t bondCount, NvBlastLog logFn);
+NV_C_API Asset* initializeAsset(void* mem, uint32_t chunkCount, uint32_t graphNodeCount, uint32_t leafChunkCount, uint32_t firstSubsupportChunkIndex, uint32_t bondCount, NvBlastLog logFn);
 
 } // namespace Blast
 } // namespace Nv

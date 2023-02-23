@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef BLASTBASETEST_H
@@ -43,7 +43,7 @@
 
 
 template<int FailLevel, int Verbosity>
-class BlastBaseTest : public testing::Test, public Nv::Blast::ErrorCallback
+class BlastBaseTest : public testing::Test, public nvidia::NvErrorCallback
 {
 public:
     BlastBaseTest()
@@ -88,16 +88,16 @@ public:
         }
     }
 
-    // ErrorCallback interface
-    virtual void reportError(Nv::Blast::ErrorCode::Enum code, const char* message, const char* file, int line) override
+    // nvidia::NvErrorCallback interface
+    virtual void reportError(nvidia::NvErrorCode::Enum code, const char* message, const char* file, int line) override
     {
         uint32_t failMask = 0;
         switch (FailLevel)
         {
         case NvBlastMessage::Debug:
-        case NvBlastMessage::Info:      failMask |= Nv::Blast::ErrorCode::eDEBUG_INFO;
-        case NvBlastMessage::Warning:   failMask |= Nv::Blast::ErrorCode::eDEBUG_WARNING;
-        case NvBlastMessage::Error:     failMask |= Nv::Blast::ErrorCode::eABORT | Nv::Blast::ErrorCode::eABORT | Nv::Blast::ErrorCode::eINTERNAL_ERROR | Nv::Blast::ErrorCode::eOUT_OF_MEMORY | Nv::Blast::ErrorCode::eINVALID_OPERATION | Nv::Blast::ErrorCode::eINVALID_PARAMETER;
+        case NvBlastMessage::Info:      failMask |= nvidia::NvErrorCode::eDEBUG_INFO;
+        case NvBlastMessage::Warning:   failMask |= nvidia::NvErrorCode::eDEBUG_WARNING;
+        case NvBlastMessage::Error:     failMask |= nvidia::NvErrorCode::eABORT | nvidia::NvErrorCode::eABORT | nvidia::NvErrorCode::eINTERNAL_ERROR | nvidia::NvErrorCode::eOUT_OF_MEMORY | nvidia::NvErrorCode::eINVALID_OPERATION | nvidia::NvErrorCode::eINVALID_PARAMETER;
         default: break;
         }
 
@@ -109,15 +109,15 @@ public:
         std::string output = "NvBlast Test ";
         switch (code)
         {
-        case Nv::Blast::ErrorCode::eNO_ERROR:                                           break;
-        case Nv::Blast::ErrorCode::eDEBUG_INFO:         output += "Debug Info";         break;
-        case Nv::Blast::ErrorCode::eDEBUG_WARNING:      output += "Debug Warning";      break;
-        case Nv::Blast::ErrorCode::eINVALID_PARAMETER:  output += "Invalid Parameter";  break;
-        case Nv::Blast::ErrorCode::eINVALID_OPERATION:  output += "Invalid Operation";  break;
-        case Nv::Blast::ErrorCode::eOUT_OF_MEMORY:      output += "Out of Memory";      break;
-        case Nv::Blast::ErrorCode::eINTERNAL_ERROR:     output += "Internal Error";     break;
-        case Nv::Blast::ErrorCode::eABORT:              output += "Abort";              break;
-        case Nv::Blast::ErrorCode::ePERF_WARNING:       output += "Perf Warning";   break;
+        case nvidia::NvErrorCode::eNO_ERROR:                                           break;
+        case nvidia::NvErrorCode::eDEBUG_INFO:         output += "Debug Info";         break;
+        case nvidia::NvErrorCode::eDEBUG_WARNING:      output += "Debug Warning";      break;
+        case nvidia::NvErrorCode::eINVALID_PARAMETER:  output += "Invalid Parameter";  break;
+        case nvidia::NvErrorCode::eINVALID_OPERATION:  output += "Invalid Operation";  break;
+        case nvidia::NvErrorCode::eOUT_OF_MEMORY:      output += "Out of Memory";      break;
+        case nvidia::NvErrorCode::eINTERNAL_ERROR:     output += "Internal Error";     break;
+        case nvidia::NvErrorCode::eABORT:              output += "Abort";              break;
+        case nvidia::NvErrorCode::ePERF_WARNING:       output += "Perf Warning";   break;
         default:                                        FAIL();
         }
         output += std::string(" message in ") + file + "(" + std::to_string(line) + "): " + message + "\n";

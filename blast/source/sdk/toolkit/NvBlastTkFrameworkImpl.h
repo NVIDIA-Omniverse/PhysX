@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTTKFRAMEWORKIMPL_H
 #define NVBLASTTKFRAMEWORKIMPL_H
 
 #include "NvBlastTkFramework.h"
-#include "NvBlastProfilerInternal.h"
+#include "NvBlastInternalProfiler.h"
 
 #include "NvBlastTkCommon.h"
 

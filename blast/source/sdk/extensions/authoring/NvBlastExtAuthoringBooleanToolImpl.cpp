@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastGlobals.h"
@@ -30,13 +30,13 @@
 #include "NvBlastExtAuthoringBooleanTool.h"
 #include "NvBlastExtAuthoringMeshImpl.h"
 #include "NvBlastExtAuthoringAcceleratorImpl.h"
-#include <NvBlastPxSharedHelpers.h>
+#include <NvBlastNvSharedHelpers.h>
 
 #include <math.h>
 #include <set>
 #include <algorithm>
 
-using physx::PxBounds3;
+using nvidia::NvBounds3;
 
 namespace Nv
 {
@@ -280,7 +280,7 @@ int32_t shadowing02(const NvcVec3& p, const Vertex* points, const Edge* edges, i
         NvcVec3 vc = p2.p - p1.p;
         float t = 0;
         t = (std::abs(vc.x) > std::abs(vc.y)) ? (p.x - p1.p.x) / vc.x : (p.y - p1.p.y) / vc.y;
-        t = physx::PxClamp(t, 0.0f, 1.0f);
+        t = nvidia::NvClamp(t, 0.0f, 1.0f);
 
         z = t * vc.z + p1.p.z;
         hasOnFacetPoint = true;
@@ -337,7 +337,7 @@ int32_t shadowing20(const NvcVec3& p, const Vertex* points, const Edge* edges, i
         NvcVec3 vc = p2.p - p1.p;
         float t = 0;
         t = (std::abs(vc.x) > std::abs(vc.y)) ? (p.x - p1.p.x) / vc.x : (p.y - p1.p.y) / vc.y;      
-        t = physx::PxClamp(t, 0.0f, 1.0f);  
+        t = nvidia::NvClamp(t, 0.0f, 1.0f);  
         
         hasOnFacetPoint = true;
         onFacetPoint.p.x = p.x;
@@ -937,7 +937,7 @@ void BooleanEvaluator::collectRetainedPartsFromA(const BooleanConf& mode)
     int32_t inclusionValue = 0;
     const Vertex* vertices = mMeshA->getVertices();
     VertexComparator comp;
-    const PxBounds3& bMeshBoudning = toPxShared(mMeshB->getBoundingBox());
+    const NvBounds3& bMeshBoudning = toNvShared(mMeshB->getBoundingBox());
     const Edge* facetEdges = mMeshA->getEdges();
     std::vector<Vertex> retainedStartVertices;
     std::vector<Vertex> retainedEndVertices;
@@ -955,7 +955,7 @@ void BooleanEvaluator::collectRetainedPartsFromA(const BooleanConf& mode)
 
             int32_t lastPos = static_cast<int32_t>(retainedEndVertices.size());
             /* Test start and end point of edge against mesh */
-            if (bMeshBoudning.contains(toPxShared(vertices[facetEdges->s].p)))
+            if (bMeshBoudning.contains(toNvShared(vertices[facetEdges->s].p)))
             {
                 statusValue = vertexMeshStatus03(vertices[facetEdges->s].p, mMeshB);
             }
@@ -982,7 +982,7 @@ void BooleanEvaluator::collectRetainedPartsFromA(const BooleanConf& mode)
                 }
             }
 
-            if (bMeshBoudning.contains(toPxShared(vertices[facetEdges->e].p)))
+            if (bMeshBoudning.contains(toNvShared(vertices[facetEdges->e].p)))
             {
                 statusValue = vertexMeshStatus03(vertices[facetEdges->e].p, mMeshB);
             }
@@ -1068,7 +1068,7 @@ void BooleanEvaluator::collectRetainedPartsFromB(const BooleanConf& mode)
     int32_t inclusionValue = 0;
     const Vertex* vertices = mMeshB->getVertices();
     VertexComparator comp;
-    const PxBounds3& aMeshBoudning = toPxShared(mMeshA->getBoundingBox());
+    const NvBounds3& aMeshBoudning = toNvShared(mMeshA->getBoundingBox());
     const Edge* facetEdges = mMeshB->getEdges();
     std::vector<Vertex> retainedStartVertices;
     std::vector<Vertex> retainedEndVertices;
@@ -1084,7 +1084,7 @@ void BooleanEvaluator::collectRetainedPartsFromB(const BooleanConf& mode)
             NvcVec3 compositeEndPoint = {0, 0, 0};
             NvcVec3 compositeStartPoint = {0, 0, 0};
             int32_t lastPos = static_cast<int32_t>(retainedEndVertices.size());
-            if (aMeshBoudning.contains(toPxShared(vertices[facetEdges->s].p)))
+            if (aMeshBoudning.contains(toNvShared(vertices[facetEdges->s].p)))
             {
                 statusValue = vertexMeshStatus30(vertices[facetEdges->s].p, mMeshA);
             }
@@ -1112,7 +1112,7 @@ void BooleanEvaluator::collectRetainedPartsFromB(const BooleanConf& mode)
                 }
             }
 
-            if (aMeshBoudning.contains(toPxShared(vertices[facetEdges->e].p)))
+            if (aMeshBoudning.contains(toNvShared(vertices[facetEdges->e].p)))
             {
                 statusValue = vertexMeshStatus30(vertices[facetEdges->e].p, mMeshA);
             }

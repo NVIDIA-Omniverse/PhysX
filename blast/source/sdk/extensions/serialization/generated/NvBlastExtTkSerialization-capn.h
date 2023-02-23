@@ -17,7 +17,7 @@ namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(ffd67c4b7067dde6);
 CAPNP_DECLARE_SCHEMA(b7dbad810488a897);
-CAPNP_DECLARE_SCHEMA(ed817d93facd8e00);
+CAPNP_DECLARE_SCHEMA(bf661e95794f2749);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -56,15 +56,15 @@ struct TkAssetJointDesc {
   };
 };
 
-struct PxVec3 {
-  PxVec3() = delete;
+struct NvVec3 {
+  NvVec3() = delete;
 
   class Reader;
   class Builder;
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ed817d93facd8e00, 2, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(bf661e95794f2749, 2, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -186,7 +186,7 @@ public:
   inline  ::capnp::List< ::uint32_t>::Reader getNodeIndices() const;
 
   inline bool hasAttachPositions() const;
-  inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Reader getAttachPositions() const;
+  inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Reader getAttachPositions() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -225,11 +225,11 @@ public:
   inline ::capnp::Orphan< ::capnp::List< ::uint32_t>> disownNodeIndices();
 
   inline bool hasAttachPositions();
-  inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Builder getAttachPositions();
-  inline void setAttachPositions( ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Reader value);
-  inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Builder initAttachPositions(unsigned int size);
-  inline void adoptAttachPositions(::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>&& value);
-  inline ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>> disownAttachPositions();
+  inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Builder getAttachPositions();
+  inline void setAttachPositions( ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Reader value);
+  inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Builder initAttachPositions(unsigned int size);
+  inline void adoptAttachPositions(::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>> disownAttachPositions();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -257,9 +257,9 @@ private:
 };
 #endif  // !CAPNP_LITE
 
-class PxVec3::Reader {
+class NvVec3::Reader {
 public:
-  typedef PxVec3 Reads;
+  typedef NvVec3 Reads;
 
   Reader() = default;
   inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
@@ -292,9 +292,9 @@ private:
   friend class ::capnp::Orphanage;
 };
 
-class PxVec3::Builder {
+class NvVec3::Builder {
 public:
-  typedef PxVec3 Builds;
+  typedef NvVec3 Builds;
 
   Builder() = delete;  // Deleted to discourage incorrect usage.
                        // You can explicitly initialize to nullptr instead.
@@ -327,9 +327,9 @@ private:
 };
 
 #if !CAPNP_LITE
-class PxVec3::Pipeline {
+class NvVec3::Pipeline {
 public:
-  typedef PxVec3 Pipelines;
+  typedef NvVec3 Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -464,70 +464,70 @@ inline bool TkAssetJointDesc::Builder::hasAttachPositions() {
   return !_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Reader TkAssetJointDesc::Reader::getAttachPositions() const {
-  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::get(_reader.getPointerField(
+inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Reader TkAssetJointDesc::Reader::getAttachPositions() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::get(_reader.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Builder TkAssetJointDesc::Builder::getAttachPositions() {
-  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::get(_builder.getPointerField(
+inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Builder TkAssetJointDesc::Builder::getAttachPositions() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::get(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline void TkAssetJointDesc::Builder::setAttachPositions( ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::set(_builder.getPointerField(
+inline void TkAssetJointDesc::Builder::setAttachPositions( ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::set(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), value);
 }
-inline  ::capnp::List< ::Nv::Blast::Serialization::PxVec3>::Builder TkAssetJointDesc::Builder::initAttachPositions(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::init(_builder.getPointerField(
+inline  ::capnp::List< ::Nv::Blast::Serialization::NvVec3>::Builder TkAssetJointDesc::Builder::initAttachPositions(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::init(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), size);
 }
 inline void TkAssetJointDesc::Builder::adoptAttachPositions(
-    ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::adopt(_builder.getPointerField(
+    ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::adopt(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>> TkAssetJointDesc::Builder::disownAttachPositions() {
-  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::PxVec3>>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>> TkAssetJointDesc::Builder::disownAttachPositions() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::Nv::Blast::Serialization::NvVec3>>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
-inline float PxVec3::Reader::getX() const {
+inline float NvVec3::Reader::getX() const {
   return _reader.getDataField<float>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
 
-inline float PxVec3::Builder::getX() {
+inline float NvVec3::Builder::getX() {
   return _builder.getDataField<float>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
-inline void PxVec3::Builder::setX(float value) {
+inline void NvVec3::Builder::setX(float value) {
   _builder.setDataField<float>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline float PxVec3::Reader::getY() const {
+inline float NvVec3::Reader::getY() const {
   return _reader.getDataField<float>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS);
 }
 
-inline float PxVec3::Builder::getY() {
+inline float NvVec3::Builder::getY() {
   return _builder.getDataField<float>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS);
 }
-inline void PxVec3::Builder::setY(float value) {
+inline void NvVec3::Builder::setY(float value) {
   _builder.setDataField<float>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
-inline float PxVec3::Reader::getZ() const {
+inline float NvVec3::Reader::getZ() const {
   return _reader.getDataField<float>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
 
-inline float PxVec3::Builder::getZ() {
+inline float NvVec3::Builder::getZ() {
   return _builder.getDataField<float>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
-inline void PxVec3::Builder::setZ(float value) {
+inline void NvVec3::Builder::setZ(float value) {
   _builder.setDataField<float>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }

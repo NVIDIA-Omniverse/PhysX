@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 //! @file
 //!
@@ -155,4 +155,4 @@ This uses the global allocator set in NvBlastGlobals.h.
 
 \return a new serialization manager.
 */
-NVBLAST_API Nv::Blast::ExtSerialization*    NvBlastExtSerializationCreate();
+NV_C_API Nv::Blast::ExtSerialization*    NvBlastExtSerializationCreate();

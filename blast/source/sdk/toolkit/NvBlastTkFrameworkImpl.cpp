@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastAssert.h"
@@ -40,8 +40,8 @@
 #include <algorithm>
 
 
-using namespace physx;
-using namespace physx::shdfnd;
+using namespace nvidia;
+using namespace nvidia::shdfnd;
 
 
 NV_INLINE bool operator < (const NvBlastID& id1, const NvBlastID& id2)

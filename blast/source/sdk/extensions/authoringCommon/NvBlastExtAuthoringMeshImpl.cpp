@@ -22,15 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "NvBlastExtAuthoringMeshImpl.h"
 #include "NvBlastExtAuthoringTypes.h"
 #include <NvBlastAssert.h>
-#include "foundation/PxMath.h"
-#include <NvBlastPxSharedHelpers.h>
+#include "NvMath.h"
+#include <NvBlastNvSharedHelpers.h>
 #include <NvBlastVolumeIntegrals.h>
 #include <cmath>
 #include <string.h>
@@ -257,12 +257,12 @@ void MeshImpl::release()
 
 const NvcBounds3& MeshImpl::getBoundingBox() const
 {
-    return fromPxShared(mBounds);
+    return fromNvShared(mBounds);
 }
 
 NvcBounds3& MeshImpl::getBoundingBoxWritable()
 {
-    return fromPxShared(mBounds);
+    return fromNvShared(mBounds);
 }
 
 
@@ -271,7 +271,7 @@ void MeshImpl::recalculateBoundingBox()
     mBounds.setEmpty();
     for (uint32_t i = 0; i < mVertices.size(); ++i)
     {
-        mBounds.include(toPxShared(mVertices[i].p));
+        mBounds.include(toNvShared(mVertices[i].p));
     }
     calcPerFacetBounds();
 }
@@ -282,7 +282,7 @@ const NvcBounds3* MeshImpl::getFacetBound(uint32_t index) const
     {
         return nullptr;
     }
-    return &fromPxShared(mPerFacetBounds[index]);
+    return &fromNvShared(mPerFacetBounds[index]);
 }
 
 void MeshImpl::calcPerFacetBounds()
@@ -296,8 +296,8 @@ void MeshImpl::calcPerFacetBounds()
 
         for (uint32_t v = 0; v < mFacets[i].edgesCount; ++v)
         {
-            fb.include(toPxShared(mVertices[mEdges[mFacets[i].firstEdgeNumber + v].s].p));
-            fb.include(toPxShared(mVertices[mEdges[mFacets[i].firstEdgeNumber + v].e].p));
+            fb.include(toNvShared(mVertices[mEdges[mFacets[i].firstEdgeNumber + v].s].p));
+            fb.include(toNvShared(mVertices[mEdges[mFacets[i].firstEdgeNumber + v].e].p));
         }
     }
 }

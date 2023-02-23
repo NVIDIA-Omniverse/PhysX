@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTINCLUDEWINDOWS_H
@@ -30,7 +30,7 @@
 
 #ifndef _WINDOWS_ // windows already included if this is defined
 
-#include "NvBlastPreprocessor.h"
+#include "NvPreprocessor.h"
 
 #ifndef _WIN32
 #error "This file should only be included by Windows builds!!"

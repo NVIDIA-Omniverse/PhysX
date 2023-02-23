@@ -43,10 +43,10 @@ struct TkAsset
 struct TkAssetJointDesc
 {
     nodeIndices @0 :List(UInt32);
-    attachPositions @1 :List(PxVec3);
+    attachPositions @1 :List(NvVec3);
 }
 
-struct PxVec3
+struct NvVec3
 {
     x @0 :Float32;
     y @1 :Float32;

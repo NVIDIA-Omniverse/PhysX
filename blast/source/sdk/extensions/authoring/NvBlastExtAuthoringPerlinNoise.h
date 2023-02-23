@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2022-2023 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTEXTAUTHORINGPERLINNOISE_H
@@ -30,11 +30,11 @@
 
 #include <NvBlastExtAuthoringFractureTool.h>
 
-#include <foundation/PxVec4.h>
-#include <foundation/PxVec3.h>
+#include "NvVec4.h"
+#include "NvVec3.h"
 
 #define PERLIN_NOISE_SAMPLE_TABLE 512
-using physx::PxVec3;
+using nvidia::NvVec3;
 namespace Nv
 {
 namespace Blast
@@ -45,7 +45,7 @@ namespace Blast
 */
 
 
-NV_INLINE float at3(const float& rx, const float& ry, const float& rz, const PxVec3 q)
+NV_INLINE float at3(const float& rx, const float& ry, const float& rz, const NvVec3 q)
 {
     return rx * q[0] + ry * q[1] + rz * q[2];
 }
@@ -54,7 +54,7 @@ NV_INLINE float fade(float t) { return t * t * t * (t * (t  * 6.0f - 15.0f) + 10
 
 NV_INLINE float lerp(float t, float a, float b) { return a + t * (b - a); }
 
-NV_INLINE void setup(int i, PxVec3 point, float& t, int& b0, int& b1, float& r0, float& r1)
+NV_INLINE void setup(int i, NvVec3 point, float& t, int& b0, int& b1, float& r0, float& r1)
 {
     t = point[i] + (0x1000);
     b0 = ((int)t) & (PERLIN_NOISE_SAMPLE_TABLE - 1);
@@ -64,11 +64,11 @@ NV_INLINE void setup(int i, PxVec3 point, float& t, int& b0, int& b1, float& r0,
 }
 
 
-NV_INLINE float noiseSample(PxVec3 point, int* p, PxVec3* g)
+NV_INLINE float noiseSample(NvVec3 point, int* p, NvVec3* g)
 {
     int bx0, bx1, by0, by1, bz0, bz1, b00, b10, b01, b11;
     float rx0, rx1, ry0, ry1, rz0, rz1, sy, sz, a, b, c, d, t, u, v;
-    PxVec3 q;
+    NvVec3 q;
     int i, j;
 
     setup(0, point, t, bx0, bx1, rx0, rx1);
@@ -149,7 +149,7 @@ public:
     /**
         Get Perlin Noise value at given point
     */
-    float sample(const physx::PxVec3& point)
+    float sample(const nvidia::NvVec3& point)
     {
         return perlinNoise(point);
     }
@@ -157,7 +157,7 @@ public:
 private:
     PerlinNoise& operator=(const PerlinNoise&);
 
-    float perlinNoise(physx::PxVec3 point)
+    float perlinNoise(nvidia::NvVec3 point)
     {
         if (!mbInit)
             init();
@@ -171,7 +171,7 @@ private:
 
         for (int i = 0; i < octaves; ++i)
         {
-            PxVec3 lpnt;
+            NvVec3 lpnt;
             lpnt[0] = point.x;
             lpnt[1] = point.y;
             lpnt[2] = point.z;
@@ -222,7 +222,7 @@ private:
     // Permutation vector
     int                             p[(unsigned)(PERLIN_NOISE_SAMPLE_TABLE + PERLIN_NOISE_SAMPLE_TABLE + 2)];
     // Gradient vector
-    PxVec3                          g[(unsigned)(PERLIN_NOISE_SAMPLE_TABLE + PERLIN_NOISE_SAMPLE_TABLE + 2)];
+    NvVec3                          g[(unsigned)(PERLIN_NOISE_SAMPLE_TABLE + PERLIN_NOISE_SAMPLE_TABLE + 2)];
 
     bool                            mbInit;
 };
@@ -276,11 +276,11 @@ public:
         \param[in] seed Random seed value
         \return Noise valued vector (x,y,z) and scalar (w)
     */
-    physx::PxVec4 eval4D(float x, float y, float z, float w, int seed)
+    nvidia::NvVec4 eval4D(float x, float y, float z, float w, int seed)
     {
         // The skewing and unskewing factors are hairy again for the 4D case
-        const float F4 = (physx::PxSqrt(5.0f) - 1.0f) / 4.0f;
-        const float G4 = (5.0f - physx::PxSqrt(5.0f)) / 20.0f;
+        const float F4 = (nvidia::NvSqrt(5.0f) - 1.0f) / 4.0f;
+        const float G4 = (5.0f - nvidia::NvSqrt(5.0f)) / 20.0f;
         // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
         float s = (x + y + z + w) * F4; // Factor for 4D skewing
         int ix = fastfloor(x + s);
@@ -301,7 +301,7 @@ public:
         c += (y0 > w0) ? (1 << 2) : (1 << 6);
         c += (z0 > w0) ? (1 << 4) : (1 << 6);
 
-        physx::PxVec4 res;
+        nvidia::NvVec4 res;
         res.setZero();
 
         // Calculate the contribution from the five corners
@@ -331,7 +331,7 @@ public:
                 gradIndex ^= (gradIndex >> SHIFT_NOISE_GEN);
                 gradIndex &= 31;
 
-                physx::PxVec4 g;
+                nvidia::NvVec4 g;
                 {
                     const int h = gradIndex;
                     const int hs = 2 - (h >> 4);
@@ -365,7 +365,7 @@ public:
         \param[in] p Point in which noise will be evaluated
         \return Noise value at given point
     */
-    float sample(physx::PxVec3 p)
+    float sample(nvidia::NvVec3 p)
     {
         p *= mFrequency;
         float result = 0.0f;

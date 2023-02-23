@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastTkFrameworkImpl.h"
@@ -263,7 +263,7 @@ bool TkAssetImpl::addJointDesc(uint32_t chunkIndex0, uint32_t chunkIndex1)
     const NvBlastBond& bond = NvBlastAssetGetBonds(m_assetLL, logLL)[bondIndex];
 
     TkAssetJointDesc jointDesc;
-    jointDesc.attachPositions[0] = jointDesc.attachPositions[1] = physx::PxVec3(bond.centroid[0], bond.centroid[1], bond.centroid[2]);
+    jointDesc.attachPositions[0] = jointDesc.attachPositions[1] = nvidia::NvVec3(bond.centroid[0], bond.centroid[1], bond.centroid[2]);
     jointDesc.nodeIndices[0] = node0;
     jointDesc.nodeIndices[1] = node1;
     m_jointDescs.pushBack(jointDesc);

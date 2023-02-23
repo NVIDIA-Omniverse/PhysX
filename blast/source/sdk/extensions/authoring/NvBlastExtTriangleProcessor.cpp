@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtTriangleProcessor.h"
@@ -30,7 +30,7 @@
 #define COLLIN_EPS 1e-4f
 #define V_COMP_EPS 1e-5f
 
-using namespace physx;
+using namespace nvidia;
 
 namespace Nv
 {
@@ -39,12 +39,12 @@ namespace Blast
 /**
     Segments bounding box interseciton test
 */
-bool boundingRectangleIntersection(const PxVec2& s1, const PxVec2& e1, const PxVec2& s2, const PxVec2& e2)
+bool boundingRectangleIntersection(const NvVec2& s1, const NvVec2& e1, const NvVec2& s2, const NvVec2& e2)
 {
     // sl1/sl2 is always left bottom end of rectangle
     // se1/el2 is always right top end of rectangle
 
-    PxF32 sl1, sl2, el1, el2;
+    float sl1, sl2, el1, el2;
     if (s1.x < e1.x)
     {
         sl1 = s1.x;
@@ -66,7 +66,7 @@ bool boundingRectangleIntersection(const PxVec2& s1, const PxVec2& e1, const PxV
         el2 = s2.x;
         sl2 = e2.x;
     }
-    if (PxMax(sl1, sl2) > PxMin(el1, el2))
+    if (NvMax(sl1, sl2) > NvMin(el1, el2))
         return false;
 
     if (s1.y < e1.y)
@@ -90,22 +90,22 @@ bool boundingRectangleIntersection(const PxVec2& s1, const PxVec2& e1, const PxV
         el2 = s2.y;
         sl2 = e2.y;
     }
-    if (PxMax(sl1, sl2) > PxMin(el1, el2))
+    if (NvMax(sl1, sl2) > NvMin(el1, el2))
         return false;
 
     return true;
 }
 
-inline PxF32 getRotation(PxVec2 a, PxVec2 b)
+inline float getRotation(NvVec2 a, NvVec2 b)
 {
     return a.x * b.y - a.y * b.x;
 }
 
-inline PxF32 getParameter(const PxVec2& a, const PxVec2& b, const PxVec2& point)
+inline float getParameter(const NvVec2& a, const NvVec2& b, const NvVec2& point)
 {
     return (point - a).magnitude() / (b - a).magnitude();
 }
-inline PxVec3 lerp3D(const PxVec3& a, const PxVec3& b, const PxF32 t)
+inline NvVec3 lerp3D(const NvVec3& a, const NvVec3& b, const float t)
 {
     return (b - a) * t + a;
 }
@@ -114,9 +114,9 @@ inline PxVec3 lerp3D(const PxVec3& a, const PxVec3& b, const PxF32 t)
 
 struct Line2D
 {
-    PxVec2 normal;
-    PxF32 c;
-    Line2D(PxVec2 vec, PxVec2 point)
+    NvVec2 normal;
+    float c;
+    Line2D(NvVec2 vec, NvVec2 point)
     {
         normal.x = vec.y;
         normal.y = -vec.x;
@@ -125,31 +125,31 @@ struct Line2D
 };
 
 
-uint32_t TriangleProcessor::getSegmentIntersection(const PxVec2& s1, const PxVec2& e1, const PxVec2& s2, const PxVec2& e2, PxF32& t1)
+uint32_t TriangleProcessor::getSegmentIntersection(const NvVec2& s1, const NvVec2& e1, const NvVec2& s2, const NvVec2& e2, float& t1)
 {
     if (!boundingRectangleIntersection(s1, e1, s2, e2))
         return 0;
 
-    PxVec2 vec1 = e1 - s1;
-    PxVec2 vec2 = e2 - s2;
-    PxF32 det1 = getRotation(vec1, vec2);
-    if (PxAbs(det1) < COLLIN_EPS)
+    NvVec2 vec1 = e1 - s1;
+    NvVec2 vec2 = e2 - s2;
+    float det1 = getRotation(vec1, vec2);
+    if (NvAbs(det1) < COLLIN_EPS)
     {
         return 0;
     }
     Line2D lineA(vec1, s1);
     Line2D lineB(vec2, s2);
-    PxVec2 fInt;
+    NvVec2 fInt;
 
-    PxF32 detX = lineA.normal.y * lineB.c - lineA.c * lineB.normal.y;
-    PxF32 detY = lineA.c * lineB.normal.x - lineB.c * lineA.normal.x;
-    PxF32 x = detX / det1;
-    PxF32 y = detY / det1;
+    float detX = lineA.normal.y * lineB.c - lineA.c * lineB.normal.y;
+    float detY = lineA.c * lineB.normal.x - lineB.c * lineA.normal.x;
+    float x = detX / det1;
+    float y = detY / det1;
 
-    if (x + V_COMP_EPS >= PxMax(PxMin(s1.x, e1.x), PxMin(s2.x, e2.x)) &&
-        x - V_COMP_EPS <= PxMin(PxMax(s1.x, e1.x), PxMax(s2.x, e2.x)) &&
-        y + V_COMP_EPS >= PxMax(PxMin(s1.y, e1.y), PxMin(s2.y, e2.y)) &&
-        y - V_COMP_EPS <= PxMin(PxMax(s1.y, e1.y), PxMax(s2.y, e2.y)))
+    if (x + V_COMP_EPS >= NvMax(NvMin(s1.x, e1.x), NvMin(s2.x, e2.x)) &&
+        x - V_COMP_EPS <= NvMin(NvMax(s1.x, e1.x), NvMax(s2.x, e2.x)) &&
+        y + V_COMP_EPS >= NvMax(NvMin(s1.y, e1.y), NvMin(s2.y, e2.y)) &&
+        y - V_COMP_EPS <= NvMin(NvMax(s1.y, e1.y), NvMax(s2.y, e2.y)))
     {
         fInt.x = x;
         fInt.y = y;
@@ -162,21 +162,21 @@ uint32_t TriangleProcessor::getSegmentIntersection(const PxVec2& s1, const PxVec
 
 struct cwComparer
 {
-    PxVec3 basePoint;
-    PxVec3 normal;
-    cwComparer(PxVec3 basePointIn, PxVec3 norm)
+    NvVec3 basePoint;
+    NvVec3 normal;
+    cwComparer(NvVec3 basePointIn, NvVec3 norm)
     {
         basePoint = basePointIn;
         normal = norm;
     };
-    bool operator()(const PxVec3& a, const PxVec3& b)
+    bool operator()(const NvVec3& a, const NvVec3& b)
     {
-        PxVec3 norm = (a - basePoint).cross(b - basePoint);
+        NvVec3 norm = (a - basePoint).cross(b - basePoint);
         return normal.dot(norm) > 0;        
     }
 };
 
-bool vec3Comparer(const PxVec3& a, const PxVec3& b)
+bool vec3Comparer(const NvVec3& a, const NvVec3& b)
 {
         if (a.x + V_COMP_EPS < b.x) return true;
         if (a.x - V_COMP_EPS > b.x) return false;
@@ -186,13 +186,13 @@ bool vec3Comparer(const PxVec3& a, const PxVec3& b)
         return false;
 }
 
-void TriangleProcessor::sortToCCW(std::vector<PxVec3>& points, PxVec3& normal)
+void TriangleProcessor::sortToCCW(std::vector<NvVec3>& points, NvVec3& normal)
 {
     std::sort(points.begin(), points.end(), vec3Comparer);
     int lastUnique = 0;
     for (uint32_t i = 1; i < points.size(); ++i)
     {
-        PxVec3 df = (points[i] - points[lastUnique]).abs();
+        NvVec3 df = (points[i] - points[lastUnique]).abs();
         if (df.x > V_COMP_EPS || df.y > V_COMP_EPS || df.z > V_COMP_EPS)
         {
             points[++lastUnique] = points[i];
@@ -208,14 +208,14 @@ void TriangleProcessor::sortToCCW(std::vector<PxVec3>& points, PxVec3& normal)
 
 
 
-void TriangleProcessor::buildConvexHull(std::vector<PxVec3>& points, std::vector<PxVec3>& convexHull,const PxVec3& normal)
+void TriangleProcessor::buildConvexHull(std::vector<NvVec3>& points, std::vector<NvVec3>& convexHull,const NvVec3& normal)
 {
 
     std::sort(points.begin(), points.end(), vec3Comparer);
     int lastUnique = 0;
     for (uint32_t i = 1; i < points.size(); ++i)
     {
-        PxVec3 df = (points[i] - points[lastUnique]).abs();
+        NvVec3 df = (points[i] - points[lastUnique]).abs();
         if (df.x > V_COMP_EPS || df.y > V_COMP_EPS || df.z > V_COMP_EPS)
         {
             points[++lastUnique] = points[i];
@@ -234,9 +234,9 @@ void TriangleProcessor::buildConvexHull(std::vector<PxVec3>& points, std::vector
     ProjectionDirections projectionDirection = getProjectionDirection(normal);
     for (uint32_t i = 2; i < points.size(); ++i)
     {
-        PxVec2 pnt = getProjectedPointWithWinding(points[i], projectionDirection);
-        PxVec2 vec = pnt - getProjectedPointWithWinding(convexHull.back(), projectionDirection);
-        if (PxAbs(vec.x) < V_COMP_EPS && PxAbs(vec.y) < V_COMP_EPS)
+        NvVec2 pnt = getProjectedPointWithWinding(points[i], projectionDirection);
+        NvVec2 vec = pnt - getProjectedPointWithWinding(convexHull.back(), projectionDirection);
+        if (NvAbs(vec.x) < V_COMP_EPS && NvAbs(vec.y) < V_COMP_EPS)
         {
             continue;
         }
@@ -257,7 +257,7 @@ void TriangleProcessor::buildConvexHull(std::vector<PxVec3>& points, std::vector
 }
 
 
-uint32_t TriangleProcessor::getTriangleIntersection(TrPrcTriangle& a, TrPrcTriangle2d& aProjected, TrPrcTriangle &b, PxVec3& centroid, std::vector<PxVec3>& intersectionBuffer, PxVec3 normal)
+uint32_t TriangleProcessor::getTriangleIntersection(TrPrcTriangle& a, TrPrcTriangle2d& aProjected, TrPrcTriangle &b, NvVec3& centroid, std::vector<NvVec3>& intersectionBuffer, NvVec3 normal)
 {
 
     b.points[0] -= centroid;
@@ -308,7 +308,7 @@ uint32_t TriangleProcessor::getTriangleIntersection(TrPrcTriangle& a, TrPrcTrian
         return 0;
 
     // Intersection between two triangles is convex, but points should be reordered to construct right polygon //
-    std::vector<PxVec3> intrs;
+    std::vector<NvVec3> intrs;
     buildConvexHull(intersectionBuffer, intrs, normal);
     intersectionBuffer = intrs;
 
@@ -342,16 +342,16 @@ bool TriangleProcessor::triangleBoundingBoxIntersection(TrPrcTriangle2d& a, TrPr
 }
 
 
-uint32_t TriangleProcessor::isPointInside(const PxVec2& point, const TrPrcTriangle2d& triangle)
+uint32_t TriangleProcessor::isPointInside(const NvVec2& point, const TrPrcTriangle2d& triangle)
 {
-    PxF32 av = getRotation(point - triangle.points[0], triangle.points[1] - triangle.points[0]);
-    PxF32 bv = getRotation(point - triangle.points[1], triangle.points[2] - triangle.points[1]);
-    PxF32 cv = getRotation(point - triangle.points[2], triangle.points[0] - triangle.points[2]);
+    float av = getRotation(point - triangle.points[0], triangle.points[1] - triangle.points[0]);
+    float bv = getRotation(point - triangle.points[1], triangle.points[2] - triangle.points[1]);
+    float cv = getRotation(point - triangle.points[2], triangle.points[0] - triangle.points[2]);
 
 
-    if (PxAbs(av) < COLLIN_EPS) av = 0;
-    if (PxAbs(bv) < COLLIN_EPS) bv = 0;
-    if (PxAbs(cv) < COLLIN_EPS) cv = 0;
+    if (NvAbs(av) < COLLIN_EPS) av = 0;
+    if (NvAbs(bv) < COLLIN_EPS) bv = 0;
+    if (NvAbs(cv) < COLLIN_EPS) cv = 0;
 
     if (av >= 0 && bv >= 0 && cv >= 0)
     {

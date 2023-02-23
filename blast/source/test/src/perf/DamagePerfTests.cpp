@@ -22,21 +22,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "BlastBasePerfTest.h"
 #include "NvBlastExtDamageShaders.h"
 #include "NvBlastExtSerialization.h"
 #include "NvBlastTime.h"
-#include "foundation/PxVec3.h"
-#include "foundation/PxBounds3.h"
+#include "NvVec3.h"
+#include "NvBounds3.h"
 #include <memory>
 #include <random>
 #include <cstdio>
 
 using namespace Nv::Blast;
-using namespace physx;
+using namespace nvidia;
 
 static void blast
 (
@@ -168,13 +168,13 @@ public:
 
             {
                 std::vector<char> scratch;
-                physx::PxBounds3 bounds = physx::PxBounds3::empty();
+                nvidia::NvBounds3 bounds = nvidia::NvBounds3::empty();
 #if 1
                 scratch.resize((size_t)NvBlastGetRequiredScratchForCreateAsset(&desc, messageLog));
                 void* mem = alignedZeroedAlloc(NvBlastGetAssetMemorySize(&desc, messageLog));
                 NvBlastAsset* asset = NvBlastCreateAsset(mem, &desc, scratch.data(), messageLog);
                 EXPECT_TRUE(asset != nullptr);
-                bounds = physx::PxBounds3::centerExtents(physx::PxVec3(0, 0, 0), physx::PxVec3(cube.extents.x, cube.extents.y, cube.extents.z));
+                bounds = nvidia::NvBounds3::centerExtents(nvidia::NvVec3(0, 0, 0), nvidia::NvVec3(cube.extents.x, cube.extents.y, cube.extents.z));
 #else
                 // load asset
                 NvBlastAsset* asset = nullptr;
@@ -189,7 +189,7 @@ public:
                 const NvBlastBond* bonds = NvBlastAssetGetBonds(asset, messageLog);
                 for (uint32_t i = 0; i < bc; i++)
                 {
-                    bounds.include(reinterpret_cast<const physx::PxVec3&>(bonds[i].centroid));
+                    bounds.include(reinterpret_cast<const nvidia::NvVec3&>(bonds[i].centroid));
                 }
 #endif
 

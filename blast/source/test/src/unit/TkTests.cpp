@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
 
 
 #include "TkBaseTest.h"
@@ -32,11 +32,9 @@
 #include <algorithm>
 #include <functional>
 
-#include "PsMemoryBuffer.h"
+#include "NsMemoryBuffer.h"
 
 #include "NvBlastTime.h"
-
-#include "NvBlastExtPxTask.h"
 
 struct ExpectedVisibleChunks 
 {
@@ -90,21 +88,6 @@ TEST_F(TkTestStrict, CreateAsset)
 
     releaseFramework();
 }
-
-#if USE_PHYSX_DISPATCHER
-TEST_F(TkTestStrict, DISABLED_MemLeak)
-{
-    PxFoundation* pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, NvBlastGetPxAllocatorCallback(), NvBlastGetPxErrorCallback());
-    PxU32 affinity[] = { 1, 2, 4, 8 };
-    PxDefaultCpuDispatcher* cpuDispatcher = PxDefaultCpuDispatcherCreate(4, affinity);
-    cpuDispatcher->setRunProfiled(false);
-    PxTaskManager* taskman = PxTaskManager::createTaskManager(NvBlastGetPxErrorCallback(), cpuDispatcher, nullptr);
-
-    cpuDispatcher->release();
-    taskman->release();
-    pxFoundation->release();
-}
-#endif
 
 TEST_F(TkTestStrict, ActorDamageNoGroup)
 {
@@ -365,8 +348,8 @@ TEST_F(TkTestStrict, ActorDamageMultiGroup)
     TkGroup* group1 = fwk->createGroup(gdesc);
     EXPECT_TRUE(group1 != nullptr);
 
-    ExtGroupTaskManager& gtm1 = *ExtGroupTaskManager::create(*m_taskman, group1);
-    ExtGroupTaskManager& gtm0 = *ExtGroupTaskManager::create(*m_taskman, group0);
+    TkGroupTaskManager& gtm1 = *TkGroupTaskManager::create(*m_taskman, group1);
+    TkGroupTaskManager& gtm0 = *TkGroupTaskManager::create(*m_taskman, group0);
 
     std::vector<TkFamily*> families(2);
     std::map<TkFamily*, ExpectedVisibleChunks> expectedVisibleChunks;
@@ -796,7 +779,7 @@ TkFamily* TkBaseTest<FailMask, Verbosity>::familySerialization(TkFamily* family)
     const TkType* familyType = fw->getType(TkTypeIndex::Family);
     EXPECT_TRUE(familyType != nullptr);
 
-    PsMemoryBuffer* membuf = PX_NEW(PsMemoryBuffer);
+    PsMemoryBuffer* membuf = NVBLAST_NEW(PsMemoryBuffer);
     EXPECT_TRUE(membuf != nullptr);
     if (membuf != nullptr)
     {
@@ -1356,16 +1339,8 @@ TEST_F(TkTestAllowWarnings, ChangeThreadCountToZero)
     actor3->getFamily().addListener(listener);
     actor4->getFamily().addListener(listener);
 
-#if USE_PHYSX_DISPATCHER
-    PxU32 affinity[] = { 1, 2, 4, 8 };
-    PxDefaultCpuDispatcher* disp0 = PxDefaultCpuDispatcherCreate(0, affinity);
-    disp0->setRunProfiled(false);
-    PxDefaultCpuDispatcher* disp4 = PxDefaultCpuDispatcherCreate(4, affinity);
-    disp4->setRunProfiled(false);
-#else
     TestCpuDispatcher* disp0 = new TestCpuDispatcher(0);
     TestCpuDispatcher* disp4 = new TestCpuDispatcher(4);
-#endif
 
     m_taskman->setCpuDispatcher(*disp4);
 
@@ -1461,16 +1436,8 @@ TEST_F(TkTestStrict, ChangeThreadCountUp)
     actor3->getFamily().addListener(listener);
     actor4->getFamily().addListener(listener);
 
-#if USE_PHYSX_DISPATCHER
-    PxU32 affinity[] = { 1, 2, 4, 8 };
-    PxDefaultCpuDispatcher* disp2 = PxDefaultCpuDispatcherCreate(2, affinity);
-    disp2->setRunProfiled(false);
-    PxDefaultCpuDispatcher* disp4 = PxDefaultCpuDispatcherCreate(4, affinity);
-    disp4->setRunProfiled(false);
-#else
     TestCpuDispatcher* disp2 = new TestCpuDispatcher(2);
     TestCpuDispatcher* disp4 = new TestCpuDispatcher(4);
-#endif
 
     m_taskman->setCpuDispatcher(*disp2);
     TkGroupDesc groupDesc = { m_taskman->getCpuDispatcher()->getWorkerCount() };
@@ -1566,11 +1533,7 @@ TEST_F(TkTestAllowWarnings, GroupNoWorkers)
     actor3->getFamily().addListener(listener);
     actor4->getFamily().addListener(listener);
 
-#if USE_PHYSX_DISPATCHER
-    PxDefaultCpuDispatcher* disp = PxDefaultCpuDispatcherCreate(0);
-#else
     TestCpuDispatcher* disp = new TestCpuDispatcher(0);
-#endif
     m_taskman->setCpuDispatcher(*disp);
 
     TkGroupDesc groupDesc = { m_taskman->getCpuDispatcher()->getWorkerCount() };
