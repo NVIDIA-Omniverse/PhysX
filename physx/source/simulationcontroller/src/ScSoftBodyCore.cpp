@@ -62,48 +62,16 @@ Sc::SoftBodyCore::SoftBodyCore() :
 	mCore.mFlags = PxSoftBodyFlags(0);
 
 	mCore.mPositionInvMass = NULL;
-	mCore.mPositionInvMassCPU = NULL;
+	mCore.mRestPosition = NULL;
 
 	mCore.mSimPositionInvMass = NULL;
-	mCore.mSimPositionInvMassCPU = NULL;
-	mCore.mSimVelocityInvMass = NULL;
-	mCore.mSimVelocityInvMassCPU = NULL;
+	mCore.mSimVelocity = NULL;
 
 	mCore.mKinematicTarget = NULL;
-	mCore.mKinematicTargetCPU = NULL;
 }
 
 
-Sc::SoftBodyCore::~SoftBodyCore()
-{
-	if (mCore.mPositionInvMass)
-		mCore.mPositionInvMass->release();
-
-	if (mCore.mPositionInvMassCPU)
-		mCore.mPositionInvMassCPU->release();
-
-	if(mCore.mRestPositionInvMassCPU)
-		mCore.mRestPositionInvMassCPU->release();
-
-	if (mCore.mSimPositionInvMass)
-		mCore.mSimPositionInvMass->release();
-
-	if (mCore.mSimPositionInvMassCPU)
-		mCore.mSimPositionInvMassCPU->release();
-
-	if (mCore.mSimVelocityInvMass)
-		mCore.mSimVelocityInvMass->release();
-
-	if (mCore.mSimVelocityInvMassCPU)
-		mCore.mSimVelocityInvMassCPU->release();
-
-	if (mCore.mKinematicTarget)
-		mCore.mKinematicTarget->release();
-
-	if (mCore.mKinematicTargetCPU)
-		mCore.mKinematicTargetCPU->release();
-}
-
+Sc::SoftBodyCore::~SoftBodyCore() { }
 
 
 void Sc::SoftBodyCore::setMaterial(const PxU16 handle)
@@ -136,7 +104,7 @@ void Sc::SoftBodyCore::setFlags(PxSoftBodyFlags flags)
 	}
 
 	mCore.mFlags = flags;
-
+	mCore.dirty = true;
 }
 
 
@@ -428,12 +396,12 @@ void Sc::SoftBodyCore::removeSoftBodyFilters(Sc::SoftBodyCore& core, PxU32* tetI
 
 
 PxU32 Sc::SoftBodyCore::addSoftBodyAttachment(Sc::SoftBodyCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-	PxConeLimitedConstraint* constraint)
+	PxConeLimitedConstraint* constraint, PxReal constraintOffset)
 {
 	Sc::SoftBodySim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addSoftBodyAttachment(core, tetIdx0, triBarycentric0, *sim, tetIdx1, tetBarycentric1, constraint);
+		handle = sim->getScene().addSoftBodyAttachment(core, tetIdx0, triBarycentric0, *sim, tetIdx1, tetBarycentric1, constraint, constraintOffset);
 
 	return handle;
 }
@@ -463,13 +431,13 @@ void Sc::SoftBodyCore::removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, P
 		sim->getScene().removeClothFilter(core, triIdx, *sim, tetIdx);
 }
 
-PxU32 Sc::SoftBodyCore::addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, 
-	const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint)
+PxU32 Sc::SoftBodyCore::addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
+	PxConeLimitedConstraint* constraint, PxReal constraintOffset)
 {
 	Sc::SoftBodySim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addClothAttachment(core, triIdx, triBarycentric, *sim, tetIdx, tetBarycentric, constraint);
+		handle = sim->getScene().addClothAttachment(core, triIdx, triBarycentric, *sim, tetIdx, tetBarycentric, constraint, constraintOffset);
 
 	return handle;
 }
@@ -484,9 +452,9 @@ void Sc::SoftBodyCore::removeClothAttachment(Sc::FEMClothCore& core, PxU32 handl
 
 }
 
-PxU32 Sc::SoftBodyCore::getGpuSoftBodyIndex()
+PxU32 Sc::SoftBodyCore::getGpuSoftBodyIndex() const
 {
-	Sc::SoftBodySim* sim = getSim();
+	const Sc::SoftBodySim* sim = getSim();
 
 	return sim ? sim->getGpuSoftBodyIndex() : 0xffffffff;
 }
@@ -513,6 +481,23 @@ void Sc::SoftBodyCore::onShapeChange(ShapeCore& shape, ShapeChangeNotifyFlags no
 		s.onContactOffsetChange();
 	if (notifyFlags & ShapeChangeNotifyFlag::eRESTOFFSET)
 		s.onRestOffsetChange();
+}
+
+void Sc::SoftBodyCore::setKinematicTargets(const PxVec4* positions, PxSoftBodyFlags flags)
+{
+	mCore.mKinematicTarget = positions;
+
+	if (positions != NULL)
+	{
+		mCore.mFlags |= PxSoftBodyFlags(flags & PxSoftBodyFlags(PxSoftBodyFlag::eKINEMATIC | PxSoftBodyFlag::ePARTIALLY_KINEMATIC));
+	}
+	else
+	{
+		mCore.mFlags.clear(PxSoftBodyFlag::eKINEMATIC);
+		mCore.mFlags.clear(PxSoftBodyFlag::ePARTIALLY_KINEMATIC);
+	}
+
+	mCore.dirty = true;
 }
 
 

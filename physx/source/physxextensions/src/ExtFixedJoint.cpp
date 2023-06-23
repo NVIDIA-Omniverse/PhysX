@@ -35,55 +35,7 @@ using namespace Ext;
 FixedJoint::FixedJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1) :
 	FixedJointT(PxJointConcreteType::eFIXED, actor0, localFrame0, actor1, localFrame1, "FixedJointData")
 {
-	FixedJointData* data = static_cast<FixedJointData*>(mData);
-
-	data->projectionLinearTolerance		= 1e10f;
-	data->projectionAngularTolerance	= PxPi;
-}
-
-PxReal FixedJoint::getProjectionLinearTolerance() const
-{ 
-	return data().projectionLinearTolerance; 
-}
-
-void FixedJoint::setProjectionLinearTolerance(PxReal tolerance)
-{ 
-	PX_CHECK_AND_RETURN(PxIsFinite(tolerance) && tolerance >=0, "PxFixedJoint::setProjectionLinearTolerance: invalid parameter");
-	data().projectionLinearTolerance = tolerance; 
-	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, fixedProjectionLinearTolerance, static_cast<PxJoint&>(*this), tolerance)
-#endif
-}
-
-PxReal FixedJoint::getProjectionAngularTolerance() const
-{ 
-	return data().projectionAngularTolerance; 
-}
-
-void FixedJoint::setProjectionAngularTolerance(PxReal tolerance)	
-{ 
-	PX_CHECK_AND_RETURN(PxIsFinite(tolerance) && tolerance >=0 && tolerance <= PxPi, "PxFixedJoint::setProjectionAngularTolerance: invalid parameter");
-	data().projectionAngularTolerance = tolerance;
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, fixedProjectionAngularTolerance, static_cast<PxJoint&>(*this), tolerance)
-#endif
-}
-
-static void FixedJointProject(const void* constantBlock, PxTransform& bodyAToWorld, PxTransform& bodyBToWorld, bool projectToA)
-{
-	const FixedJointData &data = *reinterpret_cast<const FixedJointData*>(constantBlock);
-
-	PxTransform cA2w, cB2w, cB2cA, projected;
-	joint::computeDerived(data, bodyAToWorld, bodyBToWorld, cA2w, cB2w, cB2cA);
-
-	bool linearTrunc, angularTrunc;
-	projected.p = joint::truncateLinear(cB2cA.p, data.projectionLinearTolerance, linearTrunc);
-	projected.q = joint::truncateAngular(cB2cA.q, PxSin(data.projectionAngularTolerance/2), PxCos(data.projectionAngularTolerance/2), angularTrunc);
-	
-	if(linearTrunc || angularTrunc)
-		joint::projectTransforms(bodyAToWorld, bodyBToWorld, cA2w, cB2w, projected, data, projectToA);
+//	FixedJointData* data = static_cast<FixedJointData*>(mData);
 }
 
 static void FixedJointVisualize(PxConstraintVisualizer& viz, const void* constantBlock, const PxTransform& body0Transform, const PxTransform& body1Transform, PxU32 flags)
@@ -92,7 +44,7 @@ static void FixedJointVisualize(PxConstraintVisualizer& viz, const void* constan
 	{
 		const FixedJointData& data = *reinterpret_cast<const FixedJointData*>(constantBlock);
 
-		PxTransform cA2w, cB2w;
+		PxTransform32 cA2w, cB2w;
 		joint::computeJointFrames(cA2w, cB2w, data, body0Transform, body1Transform);
 		viz.visualizeJointFrames(cA2w, cB2w);
 	}
@@ -111,11 +63,10 @@ static PxU32 FixedJointSolverPrep(Px1DConstraint* constraints,
 {
 	const FixedJointData& data = *reinterpret_cast<const FixedJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
-	if (cA2w.q.dot(cB2w.q)<0.0f)	// minimum dist quat (equiv to flipping cB2bB.q, which we don't use anywhere)
-		cB2w.q = -cB2w.q;
+	joint::applyNeighborhoodOperator(cA2w, cB2w);
 
 	PxVec3 ra, rb;
 	ch.prepareLockedAxes(cA2w.q, cB2w.q, cA2w.transformInv(cB2w.p), 7, 7, ra, rb);
@@ -127,7 +78,7 @@ static PxU32 FixedJointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gFixedJointShaders = { FixedJointSolverPrep, FixedJointProject, FixedJointVisualize, PxConstraintFlag::Enum(0) };
+static PxConstraintShaderTable gFixedJointShaders = { FixedJointSolverPrep, FixedJointVisualize, PxConstraintFlag::Enum(0) };
 
 PxConstraintSolverPrep FixedJoint::getPrep()	const	{ return gFixedJointShaders.solverPrep;  }
 
@@ -153,10 +104,9 @@ void FixedJoint::resolveReferences(PxDeserializationContext& context)
 template<>
 void physx::Ext::omniPvdInitJoint<FixedJoint>(FixedJoint* joint)
 {
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_SET(joint, type, j, PxJointConcreteType::eFIXED)
-	OMNI_PVD_SET(joint, fixedProjectionLinearTolerance, j, joint->getProjectionLinearTolerance())
-	OMNI_PVD_SET(joint, fixedProjectionAngularTolerance, j, joint->getProjectionAngularTolerance())
+	PxFixedJoint& j = static_cast<PxFixedJoint&>(*joint);
+	OMNI_PVD_CREATE(PxFixedJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eFIXED);
 }
 
 #endif

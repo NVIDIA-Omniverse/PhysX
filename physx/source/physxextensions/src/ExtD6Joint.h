@@ -40,13 +40,6 @@ namespace Ext
 {
 	struct D6JointData : public JointData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		PxD6Motion::Enum		motion[6]; 
 		PxJointLinearLimit		distanceLimit;
 		PxJointLinearLimitPair	linearLimitX;
@@ -69,10 +62,6 @@ namespace Ext
 		PxU32					driving;	// bitmap of active drives (implies driven DOFs not locked)
 
 		PxReal					distanceMinDist;	// distance limit minimum distance to get a good direction
-
-		// projection quantities
-		PxReal					projectionLinearTolerance;
-		PxReal					projectionAngularTolerance;
 
 		// PT: the PxD6Motion values are now shared for both kind of linear limits, so we need
 		// an extra bool to know which one(s) should be actually used.
@@ -140,10 +129,6 @@ namespace Ext
 		virtual	PxTransform				getDrivePosition()	const	PX_OVERRIDE;
 		virtual	void					setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool autowake = true)	PX_OVERRIDE;
 		virtual	void					getDriveVelocity(PxVec3& linear, PxVec3& angular)	const	PX_OVERRIDE;						
-		virtual	void					setProjectionLinearTolerance(PxReal tolerance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionLinearTolerance()	const	PX_OVERRIDE;
-		virtual	void					setProjectionAngularTolerance(PxReal tolerance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionAngularTolerance()	const	PX_OVERRIDE;
 		//~PxD6Joint
 
 		// PxConstraintConnector

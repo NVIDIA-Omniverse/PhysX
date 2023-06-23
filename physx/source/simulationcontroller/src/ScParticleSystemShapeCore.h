@@ -27,6 +27,8 @@
 #ifndef SC_PARTICLESYSTEM_SHAPECORE_H
 #define SC_PARTICLESYSTEM_SHAPECORE_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "foundation/PxUserAllocated.h"
 #include "PxvGeometry.h"
 #include "foundation/PxUtilities.h"
@@ -46,12 +48,6 @@ namespace physx
 
 		class ParticleSystemShapeCore : public Sc::ShapeCore
 		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
 		public:
 			// PX_SERIALIZATION
 			ParticleSystemShapeCore(const PxEMPTY);
@@ -69,9 +65,6 @@ namespace physx
 			void addParticleBuffer(PxParticleBuffer* particleBuffer);
 			void removeParticleBuffer(PxParticleBuffer* particleBuffer);
 
-			void setPeriodicBoundary(const PxVec3& boundary) { mLLCore.periodicBoundary = boundary; }
-			PxVec3 getPeriodicBoundary() const { return mLLCore.periodicBoundary; }
-
 			PxU64 getGpuMemStat() { return mGpuMemStat; }
 
 		protected:
@@ -80,8 +73,7 @@ namespace physx
 		};
 
 	} // namespace Sc
-
-
 }
+#endif
 
 #endif

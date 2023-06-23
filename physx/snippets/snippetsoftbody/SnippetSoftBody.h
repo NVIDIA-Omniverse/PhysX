@@ -30,15 +30,19 @@
 #define PHYSX_SNIPPET_SOFTBODY_H
 
 #include "PxPhysicsAPI.h"
+#include "cudamanager/PxCudaContextManager.h"
+#include "cudamanager/PxCudaContext.h"
 #include <vector>
 
 class SoftBody
 {
 public:
-	SoftBody(physx::PxSoftBody* softBody, physx::PxBuffer* positionInvMass) :
+	SoftBody(physx::PxSoftBody* softBody, physx::PxCudaContextManager* cudaContextManager) :
 		mSoftBody(softBody),
-		mPositionInvMass(positionInvMass)
-	{ }
+		mCudaContextManager(cudaContextManager)
+	{
+		mPositionsInvMass = PX_PINNED_HOST_ALLOC_T(physx::PxVec4, cudaContextManager, softBody->getCollisionMesh()->getNbVertices());
+	}
 
 	~SoftBody()
 	{
@@ -48,27 +52,30 @@ public:
 	{
 		if (mSoftBody)
 			mSoftBody->release();
-		if (mPositionInvMass)
-			mPositionInvMass->release();
+		if (mPositionsInvMass)
+			PX_PINNED_HOST_FREE(mCudaContextManager, mPositionsInvMass);
 	}
 
+	void copyDeformedVerticesFromGPUAsync(CUstream stream)
+	{	
+		physx::PxTetrahedronMesh* tetMesh = mSoftBody->getCollisionMesh();
+
+		physx::PxScopedCudaLock _lock(*mCudaContextManager);
+		mCudaContextManager->getCudaContext()->memcpyDtoHAsync(mPositionsInvMass, reinterpret_cast<CUdeviceptr>(mSoftBody->getPositionInvMassBufferD()), tetMesh->getNbVertices() * sizeof(physx::PxVec4), stream);
+	}
 
 	void copyDeformedVerticesFromGPU()
 	{	
-		mSoftBody->readData(physx::PxSoftBodyData::ePOSITION_INVMASS, *mPositionInvMass);
+		physx::PxTetrahedronMesh* tetMesh = mSoftBody->getCollisionMesh();
 
-		physx::PxTetrahedronMesh* mTetMesh = mSoftBody->getCollisionMesh();
-		physx::PxVec4* positionsInvMass = static_cast<physx::PxVec4*>(mPositionInvMass->map());
-		
-		mPositionsInvMass.resize(mTetMesh->getNbVertices());
-		memcpy(mPositionsInvMass.begin(), positionsInvMass, mTetMesh->getNbVertices() * sizeof(physx::PxVec4));
-		
-		mPositionInvMass->unmap();	
+		physx::PxScopedCudaLock _lock(*mCudaContextManager);
+		mCudaContextManager->getCudaContext()->memcpyDtoH(mPositionsInvMass, reinterpret_cast<CUdeviceptr>(mSoftBody->getPositionInvMassBufferD()), tetMesh->getNbVertices() * sizeof(physx::PxVec4));
 	}
 
-	physx::PxArray<physx::PxVec4> mPositionsInvMass;
+
+	physx::PxVec4* mPositionsInvMass;
 	physx::PxSoftBody* mSoftBody;
-	physx::PxBuffer* mPositionInvMass;
+	physx::PxCudaContextManager* mCudaContextManager;
 };
 
 #endif

@@ -83,6 +83,14 @@ namespace physx
 		virtual	bool		setHinges(const PxBase* hinge0, const PxBase* hinge1)	= 0;
 
 		/**
+		\brief Get the hinge/revolute joints connected by the gear joint.
+
+		\param[out]	hinge0		The first hinge joint
+		\param[out]	hinge1		The second hinge joint
+		*/
+		virtual	void		getHinges(const PxBase*& hinge0, const PxBase*& hinge1)	const	= 0;
+
+		/**
 		\brief Set the desired gear ratio.
 
 		For two gears with n0 and n1 teeth respectively, the gear ratio is n0/n1.

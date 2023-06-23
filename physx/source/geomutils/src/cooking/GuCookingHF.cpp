@@ -37,16 +37,11 @@ using namespace Gu;
 
 bool immediateCooking::cookHeightField(const PxHeightFieldDesc& desc, PxOutputStream& stream)
 {
+	if(!desc.isValid())
+		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Cooking::cookHeightField: user-provided heightfield descriptor is invalid!");
+
 	PX_FPU_GUARD;
 
-	if(!desc.isValid())
-	{
-#if PX_CHECKED
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Cooking::cookHeightField: user-provided heightfield descriptor is invalid!");
-#endif
-		return false;
-	}
-	
 	HeightField hf(NULL);
 
 	if(!hf.loadFromDesc(desc))
@@ -68,15 +63,13 @@ bool immediateCooking::cookHeightField(const PxHeightFieldDesc& desc, PxOutputSt
 
 PxHeightField* immediateCooking::createHeightField(const PxHeightFieldDesc& desc, PxInsertionCallback& insertionCallback)
 {
-	PX_FPU_GUARD;
-
 	if(!desc.isValid())
 	{
-#if PX_CHECKED
 		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Cooking::createHeightField: user-provided heightfield descriptor is invalid!");
-#endif
 		return NULL;
 	}
+
+	PX_FPU_GUARD;
 
 	HeightField* hf;
 	PX_NEW_SERIALIZED(hf, HeightField)(NULL);

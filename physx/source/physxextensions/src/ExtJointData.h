@@ -37,15 +37,8 @@ namespace Ext
 {
 	struct JointData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-				PxConstraintInvMassScale	invMassScale;		//16
-				PxTransform					c2b[2];				//72
-				PxU32						pading[2];			//80
+				PxConstraintInvMassScale	invMassScale;
+				PxTransform32				c2b[2];
 	protected:
 		        ~JointData()	{}
 	};

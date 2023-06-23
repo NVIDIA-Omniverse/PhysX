@@ -30,7 +30,6 @@
 #include "foundation/PxMathIntrinsics.h"
 #include "foundation/PxFPU.h"
 #include "GuIntersectionRayBox.h"
-#include "GuIntersectionRayBoxSIMD.h"
 
 using namespace physx;
 

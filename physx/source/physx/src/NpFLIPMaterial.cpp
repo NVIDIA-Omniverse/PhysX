@@ -44,7 +44,7 @@ NpFLIPMaterial::NpFLIPMaterial(const PxsFLIPMaterialCore& desc) :
 
 NpFLIPMaterial::~NpFLIPMaterial()
 {
-	NpPhysics::getInstance().removeFLIPMaterialFromTable(*this);
+	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
 
 // PX_SERIALIZATION
@@ -101,7 +101,7 @@ PxU32 NpFLIPMaterial::getReferenceCount() const
 
 PX_INLINE void NpFLIPMaterial::updateMaterial()
 {
-	NpPhysics::getInstance().updateFLIPMaterial(*this);
+	NpPhysics::getInstance().updateMaterial(*this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

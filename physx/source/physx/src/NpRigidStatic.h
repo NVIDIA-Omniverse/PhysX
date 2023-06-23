@@ -40,12 +40,6 @@ typedef NpRigidActorTemplate<PxRigidStatic> NpRigidStaticT;
 
 class NpRigidStatic : public NpRigidStaticT
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 // PX_SERIALIZATION
 											NpRigidStatic(PxBaseFlags baseFlags) : NpRigidStaticT(baseFlags), mCore(PxEmpty) {}

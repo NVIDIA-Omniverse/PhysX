@@ -36,6 +36,8 @@
 using namespace physx;
 using namespace Ext;
 
+PX_IMPLEMENT_OUTPUT_ERROR
+
 RackAndPinionJoint::RackAndPinionJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1) :
 	RackAndPinionJointT(PxJointConcreteType::eRACK_AND_PINION, actor0, localFrame0, actor1, localFrame1, "RackAndPinionJointData")
 {
@@ -55,9 +57,8 @@ void RackAndPinionJoint::setRatio(float ratio)
 	data->ratio = ratio;
 	resetError();
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, rackAndPinionRatio, static_cast<PxJoint&>(*this), ratio)
-#endif
+
+	OMNI_PVD_SET(PxRackAndPinionJoint, ratio, static_cast<PxRackAndPinionJoint&>(*this), ratio)
 }
 
 float RackAndPinionJoint::getRatio() const
@@ -69,22 +70,13 @@ float RackAndPinionJoint::getRatio() const
 bool RackAndPinionJoint::setData(PxU32 nbRackTeeth, PxU32 nbPinionTeeth, float rackLength)
 {
 	if(!nbRackTeeth)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setData: nbRackTeeth cannot be zero.");
-		return false;
-	}
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setData: nbRackTeeth cannot be zero.");
 
 	if(!nbPinionTeeth)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setData: nbPinionTeeth cannot be zero.");
-		return false;
-	}
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setData: nbPinionTeeth cannot be zero.");
 
 	if(rackLength<=0.0f)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setData: rackLength must be positive.");
-		return false;
-	}
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setData: rackLength must be positive.");
 
 	RackAndPinionJointData* data = reinterpret_cast<RackAndPinionJointData*>(mData);
 	data->ratio = (PxTwoPi*nbRackTeeth)/(rackLength*nbPinionTeeth);
@@ -98,10 +90,7 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 	RackAndPinionJointData* data = static_cast<RackAndPinionJointData*>(mData);
 
 	if(!hinge || !prismatic)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setJoints: cannot pass null pointers to this function.");
-		return false;
-	}
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: cannot pass null pointers to this function.");
 
 	const PxType type0 = hinge->getConcreteType();
 	if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
@@ -109,18 +98,12 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 		const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge);
 		const PxArticulationJointType::Enum artiJointType0 = joint0->getJointType();
 		if(artiJointType0 != PxArticulationJointType::eREVOLUTE && artiJointType0 != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxGearJoint::setJoints: passed joint must be a revolute joint.");
-			return false;
-		}
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setJoints: passed joint must be a revolute joint.");
 	}
 	else
 	{
 		if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setJoints: passed hinge joint must be either a revolute joint or a D6 joint.");
-			return false;
-		}
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed hinge joint must be either a revolute joint or a D6 joint.");
 	}
 
 	const PxType type1 = prismatic->getConcreteType();
@@ -129,18 +112,12 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 		const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(prismatic);
 		const PxArticulationJointType::Enum artiJointType1 = joint1->getJointType();
 		if(artiJointType1 != PxArticulationJointType::ePRISMATIC)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxGearJoint::setJoints: passed joint must be a prismatic joint.");
-			return false;
-		}
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setJoints: passed joint must be a prismatic joint.");
 	}
 	else
 	{
 		if(type1 != PxJointConcreteType::ePRISMATIC && type1 != PxJointConcreteType::eD6)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRackAndPinionJoint::setJoints: passed prismatic joint must be either a prismatic joint or a D6 joint.");
-			return false;
-		}
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed prismatic joint must be either a prismatic joint or a D6 joint.");
 	}
 
 	data->hingeJoint = hinge;
@@ -151,10 +128,17 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 #if PX_SUPPORT_OMNI_PVD
 	const PxBase* joints[] ={ hinge, prismatic };
 	PxU32 jointsLength = sizeof(joints);
-	OMNI_PVD_SETB(joint, rackAndPinionJoints, static_cast<PxJoint&>(*this), joints, jointsLength)
+	OMNI_PVD_SETB(PxRackAndPinionJoint, joints, static_cast<PxRackAndPinionJoint&>(*this), joints, jointsLength)
 #endif
 		
 	return true;
+}
+
+void RackAndPinionJoint::getJoints(const PxBase*& hinge, const PxBase*& prismatic) const
+{
+	const RackAndPinionJointData* data = static_cast<const RackAndPinionJointData*>(mData);
+	hinge = data->hingeJoint;
+	prismatic = data->prismaticJoint;
 }
 
 static float angleDiff(float angle0, float angle1)
@@ -271,11 +255,6 @@ void RackAndPinionJoint::resetError()
 	mInitDone = false;
 }
 
-static void RackAndPinionJointProject(const void* /*constantBlock*/, PxTransform& /*bodyAToWorld*/, PxTransform& /*bodyBToWorld*/, bool /*projectToA*/)
-{
-//	const RackAndPinionJointData& data = *reinterpret_cast<const RackAndPinionJointData*>(constantBlock);
-}
-
 static void RackAndPinionJointVisualize(PxConstraintVisualizer& viz, const void* constantBlock, const PxTransform& body0Transform, const PxTransform& body1Transform, PxU32 flags)
 {
 	if(flags & PxConstraintVisualizationFlag::eLOCAL_FRAMES)
@@ -283,7 +262,7 @@ static void RackAndPinionJointVisualize(PxConstraintVisualizer& viz, const void*
 		const RackAndPinionJointData& data = *reinterpret_cast<const RackAndPinionJointData*>(constantBlock);
 
 		// Visualize joint frames
-		PxTransform cA2w, cB2w;
+		PxTransform32 cA2w, cB2w;
 		joint::computeJointFrames(cA2w, cB2w, data, body0Transform, body1Transform);
 		viz.visualizeJointFrames(cA2w, cB2w);
 	}
@@ -294,7 +273,7 @@ static void RackAndPinionJointVisualize(PxConstraintVisualizer& viz, const void*
 
 		if(0)
 		{
-			PxTransform cA2w, cB2w;
+			PxTransform32 cA2w, cB2w;
 			joint::computeJointFrames(cA2w, cB2w, data, body0Transform, body1Transform);
 
 			const PxVec3 gearAxis0 = cA2w.q.getBasisVector0();
@@ -318,7 +297,7 @@ static PxU32 RackAndPinionJointSolverPrep(Px1DConstraint* constraints,
 {
 	const RackAndPinionJointData& data = *reinterpret_cast<const RackAndPinionJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
 	cA2wOut = cB2w.p;
@@ -366,7 +345,7 @@ static PxU32 RackAndPinionJointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gRackAndPinionJointShaders = { RackAndPinionJointSolverPrep, RackAndPinionJointProject, RackAndPinionJointVisualize, PxConstraintFlag::eALWAYS_UPDATE };
+static PxConstraintShaderTable gRackAndPinionJointShaders = { RackAndPinionJointSolverPrep, RackAndPinionJointVisualize, PxConstraintFlag::eALWAYS_UPDATE };
 
 PxConstraintSolverPrep RackAndPinionJoint::getPrep()	const	{ return gRackAndPinionJointShaders.solverPrep;  }
 
@@ -396,9 +375,10 @@ void RackAndPinionJoint::resolveReferences(PxDeserializationContext& context)
 template<>
 void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(RackAndPinionJoint* joint)
 {
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_SET(joint, type, j, PxJointConcreteType::eRACK_AND_PINION)
-	OMNI_PVD_SET(joint, rackAndPinionRatio, j, joint->getRatio())
+	PxRackAndPinionJoint& j = static_cast<PxRackAndPinionJoint&>(*joint);
+	OMNI_PVD_CREATE(PxRackAndPinionJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eRACK_AND_PINION);
+	OMNI_PVD_SET(PxRackAndPinionJoint, ratio, j, joint->getRatio())
 }
 
 #endif

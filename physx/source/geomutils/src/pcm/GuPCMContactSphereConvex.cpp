@@ -63,7 +63,7 @@ static bool fullContactsGenerationSphereConvex(const Gu::CapsuleV& capsule, cons
 	Gu::PolygonalData polyData;
 	getPCMConvexData(convexHull,idtScale, polyData);
 
-	PxU8 buff[sizeof(SupportLocalImpl<ConvexHullV>)];
+	PX_ALIGN(16, PxU8 buff[sizeof(SupportLocalImpl<ConvexHullV>)]);
 	SupportLocal* map = (idtScale ? static_cast<SupportLocal*>(PX_PLACEMENT_NEW(buff, SupportLocalImpl<ConvexHullNoScaleV>)(static_cast<const ConvexHullNoScaleV&>(convexHull), transf1, convexHull.vertex2Shape, convexHull.shape2Vertex, idtScale)) : 
 	static_cast<SupportLocal*>(PX_PLACEMENT_NEW(buff, SupportLocalImpl<ConvexHullV>)(convexHull, transf1, convexHull.vertex2Shape, convexHull.shape2Vertex, idtScale)));
 

@@ -43,7 +43,7 @@ NpPBDMaterial::NpPBDMaterial(const PxsPBDMaterialCore& desc) :
 
 NpPBDMaterial::~NpPBDMaterial()
 {
-	NpPhysics::getInstance().removePBDMaterialFromTable(*this);
+	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
 
 // PX_SERIALIZATION
@@ -100,7 +100,7 @@ PxU32 NpPBDMaterial::getReferenceCount() const
 
 PX_INLINE void NpPBDMaterial::updateMaterial()
 {
-	NpPhysics::getInstance().updatePBDMaterial(*this);
+	NpPhysics::getInstance().updateMaterial(*this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -274,143 +274,6 @@ PxReal NpPBDMaterial::getGravityScale() const
 {
 	return mMaterial.gravityScale;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-NpCustomMaterial::NpCustomMaterial(const PxsCustomMaterialCore& desc) :
-	PxCustomMaterial(PxConcreteType::eCUSTOM_MATERIAL, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE),
-	mMaterial(desc)
-{
-	mMaterial.mMaterial = this;  // back-reference	
-}
-
-NpCustomMaterial::~NpCustomMaterial()
-{
-	NpPhysics::getInstance().removeCustomMaterialFromTable(*this);
-}
-
-// PX_SERIALIZATION
-void NpCustomMaterial::resolveReferences(PxDeserializationContext&)
-{
-	// ### this one could be automated if NpMaterial would inherit from MaterialCore
-	// ### well actually in that case the pointer would not even be needed....
-	mMaterial.mMaterial = this;	// Resolve MaterialCore::mMaterial
-
-	// Maybe not the best place to do it but it has to be done before the shapes resolve material indices
-	// since the material index translation table is needed there. This requires that the materials have
-	// been added to the table already.
-	// PT: TODO: missing line here?
-}
-
-void NpCustomMaterial::onRefCountZero()
-{
-	void* ud = userData;
-
-	if (getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
-	{
-		NpFactory::getInstance().releaseCustomMaterialToPool(*this);
-	}
-	else
-		this->~NpCustomMaterial();
-
-	NpPhysics::getInstance().notifyDeletionListenersMemRelease(this, ud);
-}
-
-NpCustomMaterial* NpCustomMaterial::createObject(PxU8*& address, PxDeserializationContext& context)
-{
-	NpCustomMaterial* obj = PX_PLACEMENT_NEW(address, NpCustomMaterial(PxBaseFlag::eIS_RELEASABLE));
-	address += sizeof(NpCustomMaterial);
-	obj->importExtraData(context);
-	obj->resolveReferences(context);
-	return obj;
-}
-//~PX_SERIALIZATION
-
-void NpCustomMaterial::release()
-{
-	RefCountable_decRefCount(*this);
-}
-
-void NpCustomMaterial::acquireReference()
-{
-	RefCountable_incRefCount(*this);
-}
-
-PxU32 NpCustomMaterial::getReferenceCount() const
-{
-	return RefCountable_getRefCount(*this);
-}
-
-PX_INLINE void NpCustomMaterial::updateMaterial()
-{
-	NpPhysics::getInstance().updateCustomMaterial(*this);
-}
-
-void NpCustomMaterial::setFriction(PxReal x)
-{
-	PX_UNUSED(x);
-}
-
-PxReal NpCustomMaterial::getFriction() const
-{
-	return 0.0f;
-}
-
-void NpCustomMaterial::setDamping(PxReal x)
-{
-	PX_UNUSED(x);
-}
-
-PxReal NpCustomMaterial::getDamping() const
-{
-	return 0.0f;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-void NpCustomMaterial::setAdhesion(PxReal x)
-{
-	PX_CHECK_AND_RETURN(x >= 0.f, "PxCustomMaterial::setAdhesion: invalid float");
-	mMaterial.adhesion = x;
-
-	updateMaterial();
-}
-
-PxReal NpCustomMaterial::getAdhesion() const
-{
-	return mMaterial.adhesion;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void NpCustomMaterial::setGravityScale(PxReal x)
-{
-	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxCustomMaterial::setAdhesion: invalid float");
-	mMaterial.gravityScale = x;
-
-	updateMaterial();
-}
-
-PxReal NpCustomMaterial::getGravityScale() const
-{
-	return mMaterial.gravityScale;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void NpCustomMaterial::setAdhesionRadiusScale(PxReal x)
-{
-	PX_CHECK_AND_RETURN(x >= 0.f , "PxCustomMaterial::setAdhesionRadiusScale: scale must be positive");
-	mMaterial.adhesionRadiusScale = x;
-
-	updateMaterial();
-}
-PxReal NpCustomMaterial::getAdhesionRadiusScale() const
-{
-	return mMaterial.adhesionRadiusScale;
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 

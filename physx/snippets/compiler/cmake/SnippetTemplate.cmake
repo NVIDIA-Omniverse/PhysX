@@ -47,7 +47,6 @@ TARGET_INCLUDE_DIRECTORIES(Snippet${SNIPPET_NAME}
 	
 	PRIVATE ${PHYSX_ROOT_DIR}/include/
 	PRIVATE ${PHYSX_ROOT_DIR}/source/physxextensions/src
-	PRIVATE ${PHYSX_ROOT_DIR}/source/physxgpuextensions/src
 )
 
 TARGET_COMPILE_DEFINITIONS(Snippet${SNIPPET_NAME}

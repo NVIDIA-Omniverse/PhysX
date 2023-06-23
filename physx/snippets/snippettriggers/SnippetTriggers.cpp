@@ -172,10 +172,10 @@ static	PxFilterFlags triggersUsingFilterCallback(PxFilterObjectAttributes /*attr
 
 class TriggersFilterCallback : public PxSimulationFilterCallback
 {
-	virtual		PxFilterFlags	pairFound(PxU32 /*pairID*/,
-		PxFilterObjectAttributes /*attributes0*/, PxFilterData /*filterData0*/, const PxActor* /*a0*/, const PxShape* s0,
-		PxFilterObjectAttributes /*attributes1*/, PxFilterData /*filterData1*/, const PxActor* /*a1*/, const PxShape* s1,
-		PxPairFlags& pairFlags)
+	virtual		PxFilterFlags	pairFound(	PxU64 /*pairID*/,
+											PxFilterObjectAttributes /*attributes0*/, PxFilterData /*filterData0*/, const PxActor* /*a0*/, const PxShape* s0,
+											PxFilterObjectAttributes /*attributes1*/, PxFilterData /*filterData1*/, const PxActor* /*a1*/, const PxShape* s1,
+											PxPairFlags& pairFlags)	PX_OVERRIDE
 	{
 //		printf("pairFound\n");
 
@@ -192,17 +192,15 @@ class TriggersFilterCallback : public PxSimulationFilterCallback
 		return PxFilterFlags();
 	}
 
-	virtual		void			pairLost(PxU32 /*pairID*/,
-		PxFilterObjectAttributes /*attributes0*/,
-		PxFilterData /*filterData0*/,
-		PxFilterObjectAttributes /*attributes1*/,
-		PxFilterData /*filterData1*/,
-		bool /*objectRemoved*/)
+	virtual		void	pairLost(	PxU64 /*pairID*/,
+									PxFilterObjectAttributes /*attributes0*/, PxFilterData /*filterData0*/,
+									PxFilterObjectAttributes /*attributes1*/, PxFilterData /*filterData1*/,
+									bool /*objectRemoved*/)	PX_OVERRIDE
 	{
 //		printf("pairLost\n");
 	}
 
-	virtual		bool			statusChange(PxU32& /*pairID*/, PxPairFlags& /*pairFlags*/, PxFilterFlags& /*filterFlags*/)
+	virtual		bool	statusChange(PxU64& /*pairID*/, PxPairFlags& /*pairFlags*/, PxFilterFlags& /*filterFlags*/)	PX_OVERRIDE
 	{
 //		printf("statusChange\n");
 		return false;
@@ -211,22 +209,22 @@ class TriggersFilterCallback : public PxSimulationFilterCallback
 
 class ContactReportCallback: public PxSimulationEventCallback
 {
-	void onConstraintBreak(PxConstraintInfo* /*constraints*/, PxU32 /*count*/)
+	void onConstraintBreak(PxConstraintInfo* /*constraints*/, PxU32 /*count*/)	PX_OVERRIDE
 	{
 		printf("onConstraintBreak\n");
 	}
 
-	void onWake(PxActor** /*actors*/, PxU32 /*count*/)
+	void onWake(PxActor** /*actors*/, PxU32 /*count*/)	PX_OVERRIDE
 	{
 		printf("onWake\n");
 	}
 
-	void onSleep(PxActor** /*actors*/, PxU32 /*count*/)
+	void onSleep(PxActor** /*actors*/, PxU32 /*count*/)	PX_OVERRIDE
 	{
 		printf("onSleep\n");
 	}
 
-	void onTrigger(PxTriggerPair* pairs, PxU32 count)
+	void onTrigger(PxTriggerPair* pairs, PxU32 count)	PX_OVERRIDE
 	{
 //		printf("onTrigger: %d trigger pairs\n", count);
 		while(count--)
@@ -239,12 +237,12 @@ class ContactReportCallback: public PxSimulationEventCallback
 		}
 	}
 
-	void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32)
+	void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32)	PX_OVERRIDE
 	{
 		printf("onAdvance\n");
 	}
 
-	void onContact(const PxContactPairHeader& /*pairHeader*/, const PxContactPair* pairs, PxU32 count) 
+	void onContact(const PxContactPairHeader& /*pairHeader*/, const PxContactPair* pairs, PxU32 count)	PX_OVERRIDE
 	{
 //		printf("onContact: %d pairs\n", count);
 
@@ -441,6 +439,7 @@ void stepPhysics(bool /*interactive*/)
 
 	if(gScene)
 	{
+//		printf("Update...\n");
 		gScene->simulate(1.0f/60.0f);
 		gScene->fetchResults(true);
 	}

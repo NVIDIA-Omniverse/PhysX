@@ -34,172 +34,34 @@ namespace physx
 {
 	namespace Ext
 	{
-		//3D vector class with double precision
-		class Vec3
-		{
-		public:
-			PxF64 x;
-			PxF64 y;
-			PxF64 z;
-
-			PX_FORCE_INLINE Vec3() : x(0), y(0), z(0) {}
-
-			PX_FORCE_INLINE Vec3(const Vec3 &other) { x = other.x; y = other.y; z = other.z; }
-
-			PX_FORCE_INLINE Vec3(PxF64 x_, PxF64 y_, PxF64 z_) : x(x_), y(y_), z(z_)
-			{}
-
-			PX_FORCE_INLINE Vec3(PxF32 x_, PxF32 y_, PxF32 z_) : x(PxF64(x_)), y(PxF64(y_)), z(PxF64(z_))
-			{}
-
-			PX_FORCE_INLINE void set(PxF64 xCoord, PxF64 yCoord, PxF64 zCoord)
-			{
-				x = xCoord;
-				y = yCoord;
-				z = zCoord;
-			}
-
-			PX_FORCE_INLINE PxVec3 toFloat() const
-			{
-				return PxVec3(PxF32(x), PxF32(y), PxF32(z));
-			}
-
-			PX_FORCE_INLINE Vec3 max(const Vec3& lhs) const
-			{
-				return Vec3(PxMax(x, lhs.x), PxMax(y, lhs.y), PxMax(z, lhs.z));
-			}
-
-			PX_FORCE_INLINE Vec3 min(const Vec3& lhs) const
-			{
-				return Vec3(PxMin(x, lhs.x), PxMin(y, lhs.y), PxMin(z, lhs.z));
-			}
-
-			PX_FORCE_INLINE PxF64 magnitudeSquared() const
-			{
-				return x * x + y * y + z * z;
-			}
-
-			PX_FORCE_INLINE PxF64 magnitude() const
-			{
-				return PxSqrt(x * x + y * y + z * z);
-			}
-
-			PX_FORCE_INLINE Vec3 getNormalized() const
-			{
-				PxF64 s = magnitudeSquared();
-				if (s == 0)
-					return *this;
-				s = 1.0 / PxSqrt(s);
-				return Vec3(s * x, s * y, s * z);
-			}
-
-			PX_FORCE_INLINE PxF64 dot(const Vec3& rhs) const
-			{
-				return x * rhs.x + y * rhs.y + z * rhs.z;
-			}
-
-			PX_FORCE_INLINE Vec3 cross(const Vec3& v) const
-			{
-				return Vec3(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
-			}
-
-			PX_FORCE_INLINE Vec3 operator+(const Vec3& v) const
-			{
-				return Vec3(x + v.x, y + v.y, z + v.z);
-			}
-
-			PX_FORCE_INLINE Vec3 operator-(const Vec3& v) const
-			{
-				return Vec3(x - v.x, y - v.y, z - v.z);
-			}
-
-			PX_FORCE_INLINE Vec3 operator*(const PxF64& v) const
-			{
-				return Vec3(x * v, y * v, z * v);
-			}
-
-			PX_FORCE_INLINE Vec3 operator/(const PxF64& v) const
-			{
-				PxF64 inv = 1.0 / v;
-				return Vec3(x * inv, y * inv, z * inv);
-			}
-
-			PX_FORCE_INLINE Vec3& operator+=(const Vec3& v)
-			{
-				x += v.x;
-				y += v.y;
-				z += v.z;
-				return *this;
-			}
-
-			PX_FORCE_INLINE Vec3& operator-=(const Vec3& v)
-			{
-				x -= v.x;
-				y -= v.y;
-				z -= v.z;
-				return *this;
-			}
-
-			PX_FORCE_INLINE Vec3& operator*=(PxF64 f)
-			{
-				x *= f;
-				y *= f;
-				z *= f;
-				return *this;
-			}
-
-			PX_FORCE_INLINE Vec3& operator/=(PxF64 f)
-			{
-				f = 1.0 / f;
-				x *= f;
-				y *= f;
-				z *= f;
-				return *this;
-			}
-
-			PX_FORCE_INLINE PxF64& operator[](PxU32 index)
-			{
-				PX_ASSERT(index <= 2);
-
-				return reinterpret_cast<PxF64*>(this)[index];
-			}
-
-			PX_FORCE_INLINE const PxF64& operator[](PxU32 index) const
-			{
-				PX_ASSERT(index <= 2);
-
-				return reinterpret_cast<const PxF64*>(this)[index];
-			}
-		};
-
 		// ---------------------------------------------------------------------------------
 		struct Bounds3 {
 			Bounds3() {}
-			Bounds3(const Vec3 &min, const Vec3 &max) : minimum(min), maximum(max) {}
+			Bounds3(const PxVec3d &min, const PxVec3d &max) : minimum(min), maximum(max) {}
 
 			void setEmpty() {
-				minimum = Vec3(PX_MAX_F64, PX_MAX_F64, PX_MAX_F64);
-				maximum = Vec3(-PX_MAX_F64, -PX_MAX_F64, -PX_MAX_F64);
+				minimum = PxVec3d(PX_MAX_F64, PX_MAX_F64, PX_MAX_F64);
+				maximum = PxVec3d(-PX_MAX_F64, -PX_MAX_F64, -PX_MAX_F64);
 			}
 
-			Vec3 getDimensions() const {
+			PxVec3d getDimensions() const {
 				return maximum - minimum;
 			}
 
-			void include(const Vec3 &p) {
-				minimum = minimum.min(p);
-				maximum = maximum.max(p);
+			void include(const PxVec3d &p) {
+				minimum = minimum.minimum(p);
+				maximum = maximum.maximum(p);
 			}
 
 			void include(const Bounds3 &b) {
-				minimum = minimum.min(b.minimum);
-				maximum = maximum.max(b.maximum);
+				minimum = minimum.minimum(b.minimum);
+				maximum = maximum.maximum(b.maximum);
 			}
 			void expand(double d) {
-				minimum -= Vec3(d, d, d);
-				maximum += Vec3(d, d, d);
+				minimum -= PxVec3d(d, d, d);
+				maximum += PxVec3d(d, d, d);
 			}
-			Vec3 minimum, maximum;
+			PxVec3d minimum, maximum;
 		};
 	}
 }

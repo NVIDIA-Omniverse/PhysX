@@ -47,10 +47,11 @@ TriggerInteraction::TriggerInteraction(	ShapeSimBase& tShape, ShapeSimBase& oSha
 	PX_COMPILE_TIME_ASSERT(PxPairFlag::eNOTIFY_TOUCH_LOST < 0xffff);
 	PX_COMPILE_TIME_ASSERT(LAST < 0xffff);
 
-	bool active = registerInActors();
-	Scene& scene = getScene();
-	scene.registerInteraction(this, active);
-	scene.getNPhaseCore()->registerInteraction(this);
+	{
+		const bool active = onActivate(NULL);
+		registerInActors();
+		getScene().registerInteraction(this, active);
+	}
 
 	PX_ASSERT(getTriggerShape().getFlags() & PxShapeFlag::eTRIGGER_SHAPE);
 	mTriggerCache.state = Gu::TRIGGER_DISJOINT;
@@ -58,9 +59,7 @@ TriggerInteraction::TriggerInteraction(	ShapeSimBase& tShape, ShapeSimBase& oSha
 
 TriggerInteraction::~TriggerInteraction()
 {
-	Scene& scene = getScene();
-	scene.unregisterInteraction(this);
-	scene.getNPhaseCore()->unregisterInteraction(this);
+	getScene().unregisterInteraction(this);
 	unregisterFromActors();
 }
 
@@ -100,7 +99,7 @@ static bool isOneActorActive(TriggerInteraction* trigger)
 // - If the scenario above does not apply, then a trigger pair can only be deactivated, if both actors are sleeping.
 // - If an overlapping actor is activated/deactivated, the trigger interaction gets notified
 //
-bool TriggerInteraction::onActivate_(void*)
+bool TriggerInteraction::onActivate(void*)
 {
 	// IMPORTANT: this method can get called concurrently from multiple threads -> make sure shared resources
 	//            are protected (note: there are none at the moment but it might change)
@@ -122,7 +121,7 @@ bool TriggerInteraction::onActivate_(void*)
 	}
 }
 
-bool TriggerInteraction::onDeactivate_()
+bool TriggerInteraction::onDeactivate()
 {
 	if(!readFlag(PROCESS_THIS_FRAME))
 	{

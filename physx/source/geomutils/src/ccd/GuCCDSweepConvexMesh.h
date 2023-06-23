@@ -36,10 +36,10 @@
 #define GU_TRIANGLE_SWEEP_METHOD_ARGS				\
 	const PxGeometry& shape0,						\
 	const PxGeometry& shape1,						\
-	const PxTransform& transform0,					\
-	const PxTransform& transform1,					\
-	const PxTransform& lastTm0,						\
-	const PxTransform& lastTm1,						\
+	const PxTransform32& transform0,				\
+	const PxTransform32& transform1,				\
+	const PxTransform32& lastTm0,					\
+	const PxTransform32& lastTm1,					\
 	PxReal restDistance,							\
 	PxVec3& worldNormal,							\
 	PxVec3& worldPoint,								\
@@ -50,10 +50,10 @@
 #define GU_SWEEP_METHOD_ARGS			\
 	const Gu::CCDShape& shape0,			\
 	const Gu::CCDShape& shape1,			\
-	const PxTransform& transform0,		\
-	const PxTransform& transform1,		\
-	const PxTransform& lastTm0,			\
-	const PxTransform& lastTm1,			\
+	const PxTransform32& transform0,	\
+	const PxTransform32& transform1,	\
+	const PxTransform32& lastTm0,		\
+	const PxTransform32& lastTm1,		\
 	PxReal restDistance,				\
 	PxVec3& worldNormal,				\
 	PxVec3& worldPoint,					\
@@ -70,10 +70,10 @@
 #define GU_SWEEP_METHOD_ARGS_UNUSED		\
 	const Gu::CCDShape& /*shape0*/,		\
 	const Gu::CCDShape& /*shape1*/,		\
-	const PxTransform& /*transform0*/,	\
-	const PxTransform& /*transform1*/,	\
-	const PxTransform& /*lastTm0*/,		\
-	const PxTransform& /*lastTm1*/,		\
+	const PxTransform32& /*transform0*/,\
+	const PxTransform32& /*transform1*/,\
+	const PxTransform32& /*lastTm0*/,	\
+	const PxTransform32& /*lastTm1*/,	\
 	PxReal /*restDistance*/,			\
 	PxVec3& /*worldNormal*/,			\
 	PxVec3& /*worldPoint*/,				\

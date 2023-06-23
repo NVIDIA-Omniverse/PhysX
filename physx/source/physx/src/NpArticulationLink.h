@@ -49,12 +49,6 @@ typedef NpRigidBodyTemplate<PxArticulationLink> NpArticulationLinkT;
 
 class NpArticulationLinkArray : public PxInlineArray<NpArticulationLink*, 4>  //!!!AL TODO: check if default of 4 elements makes sense
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 // PX_SERIALIZATION
 	NpArticulationLinkArray(const PxEMPTY) : PxInlineArray<NpArticulationLink*, 4> (PxEmpty) {}
@@ -65,12 +59,6 @@ public:
 
 class NpArticulationLink : public NpArticulationLinkT
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 // PX_SERIALIZATION
 											NpArticulationLink(PxBaseFlags baseFlags) : NpArticulationLinkT(baseFlags), mChildLinks(PxEmpty)	{}
@@ -141,7 +129,7 @@ private:
 
 public:
 	PX_INLINE	NpArticulationLink* const*	getChildren() { return mChildLinks.empty() ? NULL : &mChildLinks.front(); }
-				void						setKinematicLink(const bool value);
+				void						setFixedBaseLink(bool value);
 
 #if PX_ENABLE_DEBUG_VISUALIZATION
 				void						visualize(PxRenderOutput& out, NpScene& scene, float scale)	const;

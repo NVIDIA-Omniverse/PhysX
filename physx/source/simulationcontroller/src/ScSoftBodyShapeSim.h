@@ -27,11 +27,12 @@
 #ifndef SC_SOFTBODY_SHAPE_SIM_H
 #define SC_SOFTBODY_SHAPE_SIM_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "PxPhysXConfig.h"
 
 #include "ScElementSim.h"
 #include "ScShapeSimBase.h"
-
 
 namespace physx
 {
@@ -70,7 +71,6 @@ namespace physx
 			//PX_FORCE_INLINE	SoftBodySim&			getBodySim()		const { return static_cast<SoftBodySim&>(getActor()); }
 			SoftBodySim&		getBodySim() const;
 
-
 			void				updateBounds();
 			void				updateBoundsInAABBMgr();
 			PxBounds3			getBounds() const;
@@ -80,7 +80,7 @@ namespace physx
 		};
 
 	} // namespace Sc
-
 }
+#endif
 
 #endif

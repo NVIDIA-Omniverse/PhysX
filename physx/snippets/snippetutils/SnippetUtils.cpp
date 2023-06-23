@@ -55,63 +55,6 @@ struct UtilAllocator // since we're allocating internal classes here, make sure 
 
 namespace SnippetUtils
 {
-	void setRotX(PxMat33& m, PxReal angle)
-	{
-		m = PxMat33(PxIdentity);
-
-		const PxReal cos = cosf(angle);
-		const PxReal sin = sinf(angle);
-
-		m[1][1] = m[2][2] = cos;
-		m[1][2] = sin;
-		m[2][1] = -sin;
-	}
-
-	void setRotY(PxMat33& m, PxReal angle)
-	{
-		m = PxMat33(PxIdentity);
-
-		const PxReal cos = cosf(angle);
-		const PxReal sin = sinf(angle);
-
-		m[0][0] = m[2][2] = cos;
-		m[0][2] = -sin;
-		m[2][0] = sin;
-	}
-
-	void setRotZ(PxMat33& m, PxReal angle)
-	{
-		m = PxMat33(PxIdentity);
-
-		const PxReal cos = cosf(angle);
-		const PxReal sin = sinf(angle);
-
-		m[0][0] = m[1][1] = cos;
-		m[0][1] = sin;
-		m[1][0] = -sin;
-	}
-
-	PxQuat getRotXQuat(float angle)
-	{
-		PxMat33 m;
-		setRotX(m, angle);
-		return PxQuat(m);
-	}
-
-	PxQuat getRotYQuat(float angle)
-	{
-		PxMat33 m;
-		setRotY(m, angle);
-		return PxQuat(m);
-	}
-
-	PxQuat getRotZQuat(float angle)
-	{
-		PxMat33 m;
-		setRotZ(m, angle);
-		return PxQuat(m);
-	}
-
 	PxVec3 BasicRandom::unitRandomPt()
 	{
 		PxVec3 v;

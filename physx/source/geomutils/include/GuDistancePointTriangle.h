@@ -31,6 +31,7 @@
 
 #include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
+#include "foundation/PxVecMath.h"
 
 namespace physx
 {
@@ -99,11 +100,8 @@ namespace Gu
 	PX_PHYSX_COMMON_API PxVec3 closestPtPointTriangle(const PxVec3& p, const PxVec3& a, const PxVec3& b, const PxVec3& c, float& s, float& t);
 
 	PX_FORCE_INLINE PxReal distancePointTriangleSquared(const PxVec3& point, 
-														const PxVec3& triangleOrigin, 
-														const PxVec3& triangleEdge0, 
-														const PxVec3& triangleEdge1,
-														PxReal* param0=NULL, 
-														PxReal* param1=NULL)
+														const PxVec3& triangleOrigin, const PxVec3& triangleEdge0, const PxVec3& triangleEdge1,
+														PxReal* param0=NULL, PxReal* param1=NULL)
 	{
 		const PxVec3 pt0 = triangleEdge0 + triangleOrigin;
 		const PxVec3 pt1 = triangleEdge1 + triangleOrigin;
@@ -116,8 +114,14 @@ namespace Gu
 		return (cp - point).magnitudeSquared();
 	}
 
+	PX_PHYSX_COMMON_API aos::FloatV distancePointTriangleSquared(	const aos::Vec3VArg point, 
+																	const aos::Vec3VArg a, 
+																	const aos::Vec3VArg b, 
+																	const aos::Vec3VArg c,
+																	aos::FloatV& u,
+																	aos::FloatV& v,
+																	aos::Vec3V& closestP); 
 } // namespace Gu
-
 }
 
 #endif

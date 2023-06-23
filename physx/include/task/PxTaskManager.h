@@ -57,10 +57,7 @@ struct PxTaskType
 	{
 		eCPU,				//!< PxTask will be run on the CPU
 		eNOT_PRESENT,		//!< Return code when attempting to find a task that does not exist
-		eCOMPLETED,			//!< PxTask execution has been completed
-		TT_CPU PX_DEPRECATED = eCPU,
-		TT_NOT_PRESENT PX_DEPRECATED = eNOT_PRESENT,
-		TT_COMPLETED PX_DEPRECATED = eCOMPLETED
+		eCOMPLETED			//!< PxTask execution has been completed
 	};
 };
 

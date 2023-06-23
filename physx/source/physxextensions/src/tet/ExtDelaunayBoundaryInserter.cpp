@@ -64,7 +64,7 @@ namespace Ext
 
 	//Returns a value proportional to the signed volume of the tetrahedron specified by the points a, b, c and d
 	//Usualy only the result's sign is used in algorithms checking for intersections etc.
-	PX_FORCE_INLINE PxF64 orient3D(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d)
+	PX_FORCE_INLINE PxF64 orient3D(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c, const PxVec3d& d)
 	{
 		return (a - d).dot((b - d).cross(c - d));
 	}
@@ -78,15 +78,15 @@ namespace Ext
 		return -1.0;
 	}
 
-	PX_FORCE_INLINE PxF64 signedDistancePointPlane(const Vec3& point, const Vec3& normal, PxF64 planeD)
+	PX_FORCE_INLINE PxF64 signedDistancePointPlane(const PxVec3d& point, const PxVec3d& normal, PxF64 planeD)
 	{
 		return point.dot(normal) + planeD;
 	}
 
-	PX_FORCE_INLINE bool lineSegmentIntersectsTriangle(const Vec3& segmentStart, const Vec3& segmentEnd,
-		const Vec3& triA, const Vec3& triB, const Vec3& triC, Vec3& intersectionPoint)
+	PX_FORCE_INLINE bool lineSegmentIntersectsTriangle(const PxVec3d& segmentStart, const PxVec3d& segmentEnd,
+		const PxVec3d& triA, const PxVec3d& triB, const PxVec3d& triC, PxVec3d& intersectionPoint)
 	{
-		Vec3 n = (triB - triA).cross(triC - triA);
+		PxVec3d n = (triB - triA).cross(triC - triA);
 
 		PxF64 l2 = n.magnitudeSquared();
 		if (l2 < 1e-12)
@@ -135,7 +135,7 @@ namespace Ext
 	{
 	private:
 		const PxArray<Triangle>& triangles;
-		PxArray<Vec3>& points;
+		PxArray<PxVec3d>& points;
 		PxHashMap<PxU64, PxI32>& edgesToSplit;
 		PxArray<PxArray<PxI32>>& pointToOriginalTriangle;
 
@@ -147,7 +147,7 @@ namespace Ext
 		bool repeat = false;
 
 	public:
-		PX_FORCE_INLINE IntersectionFixingTraversalController(const PxArray<Triangle>& triangles_, PxArray<Vec3>& points_,
+		PX_FORCE_INLINE IntersectionFixingTraversalController(const PxArray<Triangle>& triangles_, PxArray<PxVec3d>& points_,
 			PxHashMap<PxU64, PxI32>& edgesToSplit_, PxArray<PxArray<PxI32>>& pointToOriginalTriangle_) :
 			triangles(triangles_), points(points_), edgesToSplit(edgesToSplit_), pointToOriginalTriangle(pointToOriginalTriangle_)
 		{ }
@@ -161,8 +161,8 @@ namespace Ext
 
 			a = PxI32(e >> 32);
 			b = PxI32(e);
-			const Vec3& pA = points[a];
-			const Vec3& pB = points[b];
+			const PxVec3d& pA = points[a];
+			const PxVec3d& pB = points[b];
 			box = PxBounds3(PxVec3(PxF32(PxMin(pA.x, pB.x)), PxF32(PxMin(pA.y, pB.y)), PxF32(PxMin(pA.z, pB.z))),
 				PxVec3(PxF32(PxMax(pA.x, pB.x)), PxF32(PxMax(pA.y, pB.y)), PxF32(PxMax(pA.z, pB.z))));
 		}
@@ -175,11 +175,11 @@ namespace Ext
 				if (!contains(pointToOriginalTriangle[a], PxI32(j)) && !contains(pointToOriginalTriangle[b], PxI32(j)))
 				{
 					const Triangle& tri = triangles[j];
-					const Vec3& triA = points[tri[0]];
-					const Vec3& triB = points[tri[1]];
-					const Vec3& triC = points[tri[2]];
+					const PxVec3d& triA = points[tri[0]];
+					const PxVec3d& triB = points[tri[1]];
+					const PxVec3d& triC = points[tri[2]];
 
-					Vec3 intersectionPoint;
+					PxVec3d intersectionPoint;
 					if (lineSegmentIntersectsTriangle(points[a], points[b], triA, triB, triC, intersectionPoint))
 					{
 						if (edgesToSplit.find(edge) == NULL)
@@ -214,14 +214,14 @@ namespace Ext
 #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 
-	void minMax(const PxArray<Vec3>& points, Vec3& min, Vec3& max)
+	void minMax(const PxArray<PxVec3d>& points, PxVec3d& min, PxVec3d& max)
 	{
-		min = Vec3(DBL_MAX, DBL_MAX, DBL_MAX);
-		max = Vec3(-DBL_MAX, -DBL_MAX, -DBL_MAX);
+		min = PxVec3d(DBL_MAX, DBL_MAX, DBL_MAX);
+		max = PxVec3d(-DBL_MAX, -DBL_MAX, -DBL_MAX);
 
 		for (PxU32 i = 0; i < points.size(); ++i)
 		{
-			const Vec3& p = points[i];
+			const PxVec3d& p = points[i];
 			if (!PxIsFinite(p.x) || !PxIsFinite(p.y) || !PxIsFinite(p.z))
 				continue;
 			if (p.x > max.x) max.x = p.x; if (p.y > max.y) max.y = p.y; if (p.z > max.z) max.z = p.z;
@@ -234,9 +234,9 @@ namespace Ext
 #endif
 
 	//Creates a delaunay tetrahedralization out of the specified points
-	void generateDelaunay3D(const PxArray<Vec3>& points, PxArray<Tetrahedron>& tetrahedra)
+	void generateDelaunay3D(const PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tetrahedra)
 	{
-		Vec3 min, max;
+		PxVec3d min, max;
 		minMax(points, min, max);
 
 		DelaunayTetrahedralizer delaunay(min, max);
@@ -244,23 +244,23 @@ namespace Ext
 		delaunay.insertPoints(points, 0, points.size(), tetrahedra);
 	}
 
-	PX_FORCE_INLINE PxF64 determinant(const Vec3& col1, const Vec3& col2, const Vec3& col3)
+	PX_FORCE_INLINE PxF64 determinant(const PxVec3d& col1, const PxVec3d& col2, const PxVec3d& col3)
 	{
 		return col1.dot(col2.cross(col3));
 	}
 
 	//Simple but slow implementation of winding numbers to determine if a point is inside a mesh or not
 	//https://igl.ethz.ch/projects/winding-number/robust-inside-outside-segmentation-using-generalized-winding-numbers-siggraph-2013-jacobson-et-al.pdf
-	PxF64 windingNumber(const PxArray<Vec3>& points, const PxArray<Triangle>& triangles, const Vec3& p)
+	PxF64 windingNumber(const PxArray<PxVec3d>& points, const PxArray<Triangle>& triangles, const PxVec3d& p)
 	{
 		PxF64 sum = 0;
 
 		for (PxU32 i = 0; i < triangles.size(); i++)
 		{
 			const Triangle& tri = triangles[i];
-			const Vec3 a = points[tri[0]] - p;
-			const Vec3 b = points[tri[1]] - p;
-			const Vec3 c = points[tri[2]] - p;
+			const PxVec3d a = points[tri[0]] - p;
+			const PxVec3d b = points[tri[1]] - p;
+			const PxVec3d c = points[tri[2]] - p;
 			PxF64 la = a.magnitude(), lb = b.magnitude(), lc = c.magnitude();
 			PxF64 omega = atan2(determinant(a, b, c), (la * lb * lc + a.dot(b) * lc + b.dot(c) * la + c.dot(a) * lb));
 			sum += omega;
@@ -286,8 +286,8 @@ namespace Ext
 	};
 
 	//A memory friendly implementation to compute a full batch of winding numbers for every specified query point in testPoints
-	void multiWindingNumberMemoryFriendly(const PxArray<Vec3>& meshPoints, const PxArray<Triangle>& meshTriangles,
-		const PxArray<Vec3>& testPoints, PxArray<PxF64>& result)
+	void multiWindingNumberMemoryFriendly(const PxArray<PxVec3d>& meshPoints, const PxArray<Triangle>& meshTriangles,
+		const PxArray<PxVec3d>& testPoints, PxArray<PxF64>& result)
 	{
 		PxU32 l = testPoints.size();
 		result.resize(l);
@@ -297,16 +297,16 @@ namespace Ext
 		for (PxU32 i = 0; i < meshTriangles.size(); i++)
 		{
 			const Triangle& tri = meshTriangles[i];
-			const Vec3 aa = meshPoints[tri[0]];
-			const Vec3 bb = meshPoints[tri[1]];
-			const Vec3 cc = meshPoints[tri[2]];
+			const PxVec3d aa = meshPoints[tri[0]];
+			const PxVec3d bb = meshPoints[tri[1]];
+			const PxVec3d cc = meshPoints[tri[2]];
 
 			for (PxU32 j = 0; j < l; ++j)
 			{
-				const Vec3 p = testPoints[j];
-				Vec3 a = aa;
-				Vec3 b = bb;
-				Vec3 c = cc;
+				const PxVec3d p = testPoints[j];
+				PxVec3d a = aa;
+				PxVec3d b = bb;
+				PxVec3d c = cc;
 				a.x -= p.x; a.y -= p.y; a.z -= p.z;
 				b.x -= p.x; b.y -= p.y; b.z -= p.z;
 				c.x -= p.x; c.y -= p.y; c.z -= p.z;
@@ -332,15 +332,15 @@ namespace Ext
 	
 	//Generates a tetmesh matching the surface of the specified triangle mesh exactly - might insert additional points on the
 	//triangle mesh's surface. I also provides access about the location of newly created points.
-	void generateTetmesh(const PxArray<Vec3>& trianglePoints, const PxArray<Triangle>& triangles,
+	void generateTetmesh(const PxArray<PxVec3d>& trianglePoints, const PxArray<Triangle>& triangles,
 		PxArray<SubdivisionEdge>& allEdges, PxI32& numOriginalEdges, PxArray<PxArray<PxI32>>& pointToOriginalTriangle,
-		PxI32& numPointsBelongingToMultipleTriangles, PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets)
+		PxI32& numPointsBelongingToMultipleTriangles, PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets)
 	{
 		points.resize(trianglePoints.size());
 		for (PxU32 i = 0; i < trianglePoints.size(); ++i)
 			points[i] = trianglePoints[i];
 
-		Vec3 min, max;
+		PxVec3d min, max;
 		minMax(points, min, max);
 
 		PxHashSet<PxU64> edges;
@@ -465,7 +465,7 @@ namespace Ext
 		for (PxU32 i = 0; i < tets.size(); ++i)
 		{
 			const Tetrahedron& tet = tets[i];
-			Vec3 q = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
+			PxVec3d q = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
 			PxF64 windingNumber = computeWindingNumber(tree, q, 2.0, clusters, triangles, points);
 
 			windingNumbers[i] = windingNumber;
@@ -474,7 +474,7 @@ namespace Ext
 		if (windingNumberSum < 0.0)
 			sign = -1;
 
-		//Array<Vec3> tetCenters;
+		//Array<PxVec3d> tetCenters;
 		//tetCenters.resize(tets.size());
 		//for (PxU32 i = 0; i < tets.size(); ++i)
 		//{
@@ -496,8 +496,8 @@ namespace Ext
 		}
 	}
 
-	void generateTetmesh(const PxArray<Vec3>& trianglePoints, const PxArray<Triangle>& triangles,
-		PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets)
+	void generateTetmesh(const PxArray<PxVec3d>& trianglePoints, const PxArray<Triangle>& triangles,
+		PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets)
 	{
 		PxArray<SubdivisionEdge> allEdges;
 		PxI32 numOriginalEdges;
@@ -580,7 +580,7 @@ namespace Ext
 	}
 
 	//Removes vertices not referenced by any tetrahedron and maps the tet's indices to match the compacted vertex list
-	void removeUnusedVertices(PxArray<Vec3>& vertices, PxArray<Tetrahedron>& tets, PxU32 numPointsToKeepAtBeginning = 0)
+	void removeUnusedVertices(PxArray<PxVec3d>& vertices, PxArray<Tetrahedron>& tets, PxU32 numPointsToKeepAtBeginning = 0)
 	{
 		PxArray<PxI32> compressorMap;
 		compressorMap.resize(vertices.size());
@@ -627,14 +627,14 @@ namespace Ext
 			vertices.removeRange(indexer, vertices.size() - indexer);
 	}
 
-	PxF64 tetQuality(const Vec3& p0, const Vec3& p1, const Vec3& p2, const Vec3& p3)
+	PxF64 tetQuality(const PxVec3d& p0, const PxVec3d& p1, const PxVec3d& p2, const PxVec3d& p3)
 	{
-		const Vec3 d0 = p1 - p0;
-		const Vec3 d1 = p2 - p0;
-		const Vec3 d2 = p3 - p0;
-		const Vec3 d3 = p2 - p1;
-		const Vec3 d4 = p3 - p2;
-		const Vec3 d5 = p1 - p3;
+		const PxVec3d d0 = p1 - p0;
+		const PxVec3d d1 = p2 - p0;
+		const PxVec3d d2 = p3 - p0;
+		const PxVec3d d3 = p2 - p1;
+		const PxVec3d d4 = p3 - p2;
+		const PxVec3d d5 = p1 - p3;
 
 		PxF64 s0 = d0.magnitudeSquared();
 		PxF64 s1 = d1.magnitudeSquared();
@@ -658,7 +658,7 @@ namespace Ext
 		return tet[0] + tet[1] + tet[2] + tet[3] - faceA - faceB - faceC;
 	}
 
-	void improveTetmesh(PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets, PxI32 numPointsBelongingToMultipleTriangles,
+	void improveTetmesh(PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets, PxI32 numPointsBelongingToMultipleTriangles,
 		PxArray<PxArray<PxI32>>& pointToOriginalTriangle, PxArray<PxArray<PxI32>>& edges, PxI32 numOriginalPoints)
 	{
 		DelaunayTetrahedralizer del(points, finalTets);
@@ -749,10 +749,10 @@ namespace Ext
 					continue;
 				PxI32 other = getTetCornerOppositeToFace(tet, link.triA, link.triB, link.triC);
 
-				const Vec3& a = points[link.triA];
-				const Vec3& b = points[link.triB];
-				const Vec3& c = points[link.triC];
-				Vec3 n = (b - a).cross(c - a);
+				const PxVec3d& a = points[link.triA];
+				const PxVec3d& b = points[link.triB];
+				const PxVec3d& c = points[link.triC];
+				PxVec3d n = (b - a).cross(c - a);
 				//n.normalize();
 				PxF64 planeD = -(n.dot(a));
 
@@ -868,8 +868,8 @@ namespace Ext
 	//Generates a tetmesh matching the surface of the specified triangle mesh exactly - might insert additional points on the
 	//triangle mesh's surface. It will try to remove as many points inserted during construction as possible by applying an 
 	//edge collapse post processing step.
-	void generateTetsWithCollapse(const PxArray<Vec3>& trianglePoints, const PxArray<Triangle>& triangles,
-		PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets)
+	void generateTetsWithCollapse(const PxArray<PxVec3d>& trianglePoints, const PxArray<Triangle>& triangles,
+		PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets)
 	{
 		const PxI32 numOriginalPoints = PxI32(trianglePoints.size());
 	
@@ -880,7 +880,7 @@ namespace Ext
 		PxArray<PxArray<PxI32>> edges;
 	
 
-		Vec3 min, max;
+		PxVec3d min, max;
 		minMax(trianglePoints, min, max);
 		DelaunayTetrahedralizer del(min, max);
 		PxArray<Tetrahedron> tets;
@@ -938,7 +938,7 @@ namespace Ext
 		for (PxU32 i = 0; i < tets.size(); ++i)
 		{
 			const Tetrahedron& tet = tets[i];
-			Vec3 q = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
+			PxVec3d q = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
 			PxF64 windingNumber = computeWindingNumber(tree, q, 2.0, clusters, triangles, points);
 			windingNumbers[i] = windingNumber;
 			windingNumberSum += windingNumber;
@@ -961,13 +961,13 @@ namespace Ext
 		improveTetmesh(points, finalTets, numPointsBelongingToMultipleTriangles, pointToOriginalTriangle, edges, numOriginalPoints);
 	}
 	
-	bool convexTetmesh(PxArray<Vec3>& points, const PxArray<Triangle>& tris, PxArray<Tetrahedron>& tets)
+	bool convexTetmesh(PxArray<PxVec3d>& points, const PxArray<Triangle>& tris, PxArray<Tetrahedron>& tets)
 	{
-		Vec3 centroid = Vec3(0.0f, 0.0f, 0.0f);
+		PxVec3d centroid = PxVec3d(0.0, 0.0, 0.0);
 		PxI32 counter = 0;
 		for (PxU32 i = 0; i < points.size(); ++i) 
 		{
-			const Vec3& p = points[i];
+			const PxVec3d& p = points[i];
 			if (!PxIsFinite(p.x) || !PxIsFinite(p.y) || !PxIsFinite(p.z))
 				continue;
 			centroid += p;
@@ -1007,42 +1007,42 @@ namespace Ext
 		return true;
 	}
 	
-	void convert(const PxArray<PxF32>& points, PxArray<Vec3>& result)
+	void convert(const PxArray<PxF32>& points, PxArray<PxVec3d>& result)
 	{
 		result.resize(points.size() / 3);
 		for (PxU32 i = 0; i < result.size(); ++i)
-			result[i] = Vec3(points[3 * i], points[3 * i + 1], points[3 * i + 2]);
+			result[i] = PxVec3d(PxF64(points[3 * i]), PxF64(points[3 * i + 1]), PxF64(points[3 * i + 2]));
 	}
 
-	void convert(const PxArray<Vec3>& points, PxArray<PxF32>& result)
+	void convert(const PxArray<PxVec3d>& points, PxArray<PxF32>& result)
 	{
 		result.resize(3 * points.size());
 		for (PxU32 i = 0; i < points.size(); ++i)
 		{
-			const Vec3& p = points[i];
+			const PxVec3d& p = points[i];
 			result[3 * i] = PxF32(p.x);
 			result[3 * i + 1] = PxF32(p.y);
 			result[3 * i + 2] = PxF32(p.z);
 		}
 	}
 
-	void convert(const PxArray<Vec3>& points, PxArray<PxVec3>& result)
+	void convert(const PxArray<PxVec3d>& points, PxArray<PxVec3>& result)
 	{
 		result.resize(points.size());
 		for (PxU32 i = 0; i < points.size(); ++i)
 		{
-			const Vec3& p = points[i];
+			const PxVec3d& p = points[i];
 			result[i] = PxVec3(PxF32(p.x), PxF32(p.y), PxF32(p.z));
 		}
 	}
 
-	void convert(const PxBoundedData& points, PxArray<Vec3>& result)
+	void convert(const PxBoundedData& points, PxArray<PxVec3d>& result)
 	{
 		result.resize(points.count);
 		for (PxU32 i = 0; i < points.count; ++i)
 		{
 			const PxVec3& p = points.at<PxVec3>(i);
-			result[i] = Vec3(p.x, p.y, p.z);
+			result[i] = PxVec3d(PxF64(p.x), PxF64(p.y), PxF64(p.z));
 		}
 	}
 
@@ -1143,7 +1143,7 @@ namespace Ext
 
 		for (PxU32 i = 0; i < tris.size(); i += 3)
 		{
-			const PxI32* tri = &tris[3 * i];
+			const PxI32* tri = &tris[i];
 			const PxVec3& a = vertices[tri[0]];
 			const PxVec3& b = vertices[tri[1]];
 			const PxVec3& c = vertices[tri[2]];
@@ -1170,7 +1170,7 @@ namespace Ext
 	{
 		//writeOFF("c:\\tmp\\debug.off", trianglePoints, triangles);
 
-		PxArray<Vec3> points;
+		PxArray<PxVec3d> points;
 		convert(inputPoints, points);
 		PxArray<Triangle> tris;
 		convert(inputTriangles, has16bitIndices, tris);
@@ -1179,11 +1179,11 @@ namespace Ext
 		//PX_ASSERT(!(result & PxTriangleMeshAnalysisResult::eMESH_IS_INVALID));
 
 		PxArray<PxI32> map;
-		MeshAnalyzer::mapDuplicatePoints<Vec3, PxF64>(points, map);
+		MeshAnalyzer::mapDuplicatePoints<PxVec3d, PxF64>(points.begin(), points.size(), map);
 		for (PxI32 i = 0; i < PxI32(points.size()); ++i)
 		{
 			if(map[i] != i)
-				points[i] = Vec3(NAN, NAN, NAN);
+				points[i] = PxVec3d(PxF64(NAN), PxF64(NAN), PxF64(NAN));
 		}
 		for (PxU32 i = 0; i < tris.size(); ++i)
 		{
@@ -1198,7 +1198,7 @@ namespace Ext
 			}
 		}
 
-		PxArray<Vec3> tetPts;
+		PxArray<PxVec3d> tetPts;
 		PxArray<Tetrahedron> tets;
 		//if (makeTriOrientationConsistent(tris))
 		{
@@ -1218,9 +1218,9 @@ namespace Ext
 			else
 			{
 				//Transform points such that the are located inside the unit cube
-				Vec3 min, max;
+				PxVec3d min, max;
 				minMax(points, min, max);
-				Vec3 size = max - min;
+				PxVec3d size = max - min;
 				PxF64 scaling = 1.0 / PxMax(size.x, PxMax(size.y, size.z));
 
 				//Add some noise to avoid geometric degeneracies
@@ -1228,7 +1228,7 @@ namespace Ext
 				PxF64 randomMagnitude = 1e-6;
 				for (PxU32 i = 0; i < points.size(); ++i)
 				{
-					Vec3& p = points[i];
+					PxVec3d& p = points[i];
 					p = (p - min) * scaling;
 					p.x += PxF64(r.rand(-0.5f, 0.5f)) * randomMagnitude;
 					p.y += PxF64(r.rand(-0.5f, 0.5f)) * randomMagnitude;
@@ -1240,7 +1240,7 @@ namespace Ext
 				//Scale back to original size
 				scaling = 1.0 / scaling;
 				//for (PxU32 i = 0; i < l; ++i)
-				//	tetPts[i] = Vec3(trianglePoints[3 * i], trianglePoints[3 * i + 1], trianglePoints[3 * i + 2]);
+				//	tetPts[i] = PxVec3d(trianglePoints[3 * i], trianglePoints[3 * i + 1], trianglePoints[3 * i + 2]);
 				for (PxU32 i = 0; i < map.size(); ++i)
 				{
 					tetPts[i] = tetPts[map[i]];
@@ -2120,7 +2120,8 @@ namespace Ext
 	{
 		PxArray<bool> flip;
 		PxHashMap<PxU64, PxI32> edges;
-		if (!MeshAnalyzer::checkConsistentTriangleOrientation(triangles.begin(), triangles.size(), flip, edges))
+		PxArray<PxArray<PxU32>> connectedTriangleGroups;
+		if (!MeshAnalyzer::buildConsistentTriangleOrientationMap(triangles.begin(), triangles.size(), flip, edges, connectedTriangleGroups))
 			return PxTriangleMeshAnalysisResult::Enum::eEDGE_SHARED_BY_MORE_THAN_TWO_TRIANGLES;
 
 		PxTriangleMeshAnalysisResults result = PxTriangleMeshAnalysisResult::eVALID;
@@ -2296,7 +2297,7 @@ namespace Ext
 
 
 		PxArray<PxI32> map;
-		MeshAnalyzer::mapDuplicatePoints<PxVec3, PxF32>(normalizedPoints, map);
+		MeshAnalyzer::mapDuplicatePoints<PxVec3, PxF32>(normalizedPoints.begin(), normalizedPoints.size(), map);
 		PxArray<Triangle> mappedTriangles;
 		mappedTriangles.reserve(triangles.count);
 		for (PxU32 i = 0; i < triangles.count; ++i)

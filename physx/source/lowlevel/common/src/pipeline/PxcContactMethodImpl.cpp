@@ -86,9 +86,6 @@ static bool PxcPCMContactGeometryCustomGeometry	(GU_CONTACT_METHOD_ARGS)	{ retur
 
 #undef ARGS
 
-#define DYNAMIC_CONTACT_REGISTRATION(x) PxcInvalidContactPair
-//#define DYNAMIC_CONTACT_REGISTRATION(x) x
-
 namespace physx
 {
 //Table of contact methods for different shape-type combinations
@@ -104,7 +101,7 @@ PxcContactMethod g_ContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		PxcInvalidContactPair,			//PxGeometryType::ePARTICLESYSTEM
 		PxcInvalidContactPair,			//PxGeometryType::eTETRAHEDRONMESH
 		PxcContactSphereMesh,			//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcContactSphereHeightField),	//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
+		PxcContactSphereHeightField,	//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
 		PxcInvalidContactPair,				//PxGeometryType::eHAIRSYSTEM
 		PxcContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
@@ -134,7 +131,7 @@ PxcContactMethod g_ContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		PxcInvalidContactPair,			//PxGeometryType::ePARTICLESYSTEM
 		PxcInvalidContactPair,			//PxGeometryType::eTETRAHEDRONMESH
 		PxcContactCapsuleMesh,			//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcContactCapsuleHeightField),	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcContactCapsuleHeightField,	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
 		PxcInvalidContactPair,				//PxGeometryType::eHAIRSYSTEM
 		PxcContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
@@ -149,7 +146,7 @@ PxcContactMethod g_ContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		PxcInvalidContactPair,			//PxGeometryType::ePARTICLESYSTEM
 		PxcInvalidContactPair,			//PxGeometryType::eTETRAHEDRONMESH
 		PxcContactBoxMesh,				//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcContactBoxHeightField),		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcContactBoxHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
 		PxcInvalidContactPair,				//PxGeometryType::eHAIRSYSTEM
 		PxcContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
@@ -164,7 +161,7 @@ PxcContactMethod g_ContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		PxcInvalidContactPair,			//PxGeometryType::ePARTICLESYSTEM
 		PxcInvalidContactPair,			//PxGeometryType::eTETRAHEDRONMESH
 		PxcContactConvexMesh,			//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcContactConvexHeightField),	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcContactConvexHeightField,	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
 		PxcInvalidContactPair,				//PxGeometryType::eHAIRSYSTEM
 		PxcContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
@@ -266,17 +263,17 @@ PxcContactMethod g_PCMContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 {
 	//PxGeometryType::eSPHERE
 	{
-		PxcPCMContactSphereSphere,										//PxGeometryType::eSPHERE
-		PxcPCMContactSpherePlane,										//PxGeometryType::ePLANE
-		PxcPCMContactSphereCapsule,										//PxGeometryType::eCAPSULE
-		PxcPCMContactSphereBox,											//PxGeometryType::eBOX
-		PxcPCMContactSphereConvex,										//PxGeometryType::eCONVEXMESH
-		PxcInvalidContactPair,											//PxGeometryType::ePARTICLESYSTEM
-		PxcInvalidContactPair,											//PxGeometryType::eTETRAHEDRONMESH
-		PxcPCMContactSphereMesh,										//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcPCMContactSphereHeightField),	//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
-		PxcInvalidContactPair,											//PxGeometryType::eHAIRSYSTEM
-		PxcPCMContactGeometryCustomGeometry,							//PxGeometryType::eCUSTOM
+		PxcPCMContactSphereSphere,				//PxGeometryType::eSPHERE
+		PxcPCMContactSpherePlane,				//PxGeometryType::ePLANE
+		PxcPCMContactSphereCapsule,				//PxGeometryType::eCAPSULE
+		PxcPCMContactSphereBox,					//PxGeometryType::eBOX
+		PxcPCMContactSphereConvex,				//PxGeometryType::eCONVEXMESH
+		PxcInvalidContactPair,					//PxGeometryType::ePARTICLESYSTEM
+		PxcInvalidContactPair,					//PxGeometryType::eTETRAHEDRONMESH
+		PxcPCMContactSphereMesh,				//PxGeometryType::eTRIANGLEMESH
+		PxcPCMContactSphereHeightField,			//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
+		PxcInvalidContactPair,					//PxGeometryType::eHAIRSYSTEM
+		PxcPCMContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::ePLANE
@@ -296,47 +293,47 @@ PxcContactMethod g_PCMContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 
 	//PxGeometryType::eCAPSULE
 	{
-		0,																//PxGeometryType::eSPHERE
-		0,																//PxGeometryType::ePLANE
-		PxcPCMContactCapsuleCapsule,									//PxGeometryType::eCAPSULE
-		PxcPCMContactCapsuleBox,										//PxGeometryType::eBOX
-		PxcPCMContactCapsuleConvex,										//PxGeometryType::eCONVEXMESH
-		PxcInvalidContactPair,											//PxGeometryType::ePARTICLESYSTEM
-		PxcInvalidContactPair,											//PxGeometryType::eTETRAHEDRONMESH
-		PxcPCMContactCapsuleMesh,										//PxGeometryType::eTRIANGLEMESH	
-		DYNAMIC_CONTACT_REGISTRATION(PxcPCMContactCapsuleHeightField),	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcInvalidContactPair,											//PxGeometryType::eHAIRSYSTEM
-		PxcPCMContactGeometryCustomGeometry,							//PxGeometryType::eCUSTOM
+		0,										//PxGeometryType::eSPHERE
+		0,										//PxGeometryType::ePLANE
+		PxcPCMContactCapsuleCapsule,			//PxGeometryType::eCAPSULE
+		PxcPCMContactCapsuleBox,				//PxGeometryType::eBOX
+		PxcPCMContactCapsuleConvex,				//PxGeometryType::eCONVEXMESH
+		PxcInvalidContactPair,					//PxGeometryType::ePARTICLESYSTEM
+		PxcInvalidContactPair,					//PxGeometryType::eTETRAHEDRONMESH
+		PxcPCMContactCapsuleMesh,				//PxGeometryType::eTRIANGLEMESH	
+		PxcPCMContactCapsuleHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcInvalidContactPair,					//PxGeometryType::eHAIRSYSTEM
+		PxcPCMContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eBOX
 	{
-		0,																//PxGeometryType::eSPHERE
-		0,																//PxGeometryType::ePLANE
-		0,																//PxGeometryType::eCAPSULE
-		PxcPCMContactBoxBox,											//PxGeometryType::eBOX
-		PxcPCMContactBoxConvex,											//PxGeometryType::eCONVEXMESH
-		PxcInvalidContactPair,											//PxGeometryType::ePARTICLESYSTEM
-		PxcInvalidContactPair,											//PxGeometryType::eTETRAHEDRONMESH
-		PxcPCMContactBoxMesh,											//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcPCMContactBoxHeightField),		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcInvalidContactPair,											//PxGeometryType::eHAIRSYSTEM
-		PxcPCMContactGeometryCustomGeometry,							//PxGeometryType::eCUSTOM
+		0,										//PxGeometryType::eSPHERE
+		0,										//PxGeometryType::ePLANE
+		0,										//PxGeometryType::eCAPSULE
+		PxcPCMContactBoxBox,					//PxGeometryType::eBOX
+		PxcPCMContactBoxConvex,					//PxGeometryType::eCONVEXMESH
+		PxcInvalidContactPair,					//PxGeometryType::ePARTICLESYSTEM
+		PxcInvalidContactPair,					//PxGeometryType::eTETRAHEDRONMESH
+		PxcPCMContactBoxMesh,					//PxGeometryType::eTRIANGLEMESH
+		PxcPCMContactBoxHeightField,			//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcInvalidContactPair,					//PxGeometryType::eHAIRSYSTEM
+		PxcPCMContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eCONVEXMESH
 	{
-		0,																//PxGeometryType::eSPHERE
-		0,																//PxGeometryType::ePLANE
-		0,																//PxGeometryType::eCAPSULE
-		0,																//PxGeometryType::eBOX
-		PxcPCMContactConvexConvex,										//PxGeometryType::eCONVEXMESH
-		PxcInvalidContactPair,											//PxGeometryType::ePARTICLESYSTEM
-		PxcInvalidContactPair,											//PxGeometryType::eTETRAHEDRONMESH
-		PxcPCMContactConvexMesh,										//PxGeometryType::eTRIANGLEMESH
-		DYNAMIC_CONTACT_REGISTRATION(PxcPCMContactConvexHeightField),	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcInvalidContactPair,											//PxGeometryType::eHAIRSYSTEM
-		PxcPCMContactGeometryCustomGeometry,							//PxGeometryType::eCUSTOM
+		0,										//PxGeometryType::eSPHERE
+		0,										//PxGeometryType::ePLANE
+		0,										//PxGeometryType::eCAPSULE
+		0,										//PxGeometryType::eBOX
+		PxcPCMContactConvexConvex,				//PxGeometryType::eCONVEXMESH
+		PxcInvalidContactPair,					//PxGeometryType::ePARTICLESYSTEM
+		PxcInvalidContactPair,					//PxGeometryType::eTETRAHEDRONMESH
+		PxcPCMContactConvexMesh,				//PxGeometryType::eTRIANGLEMESH
+		PxcPCMContactConvexHeightField,			//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
+		PxcInvalidContactPair,					//PxGeometryType::eHAIRSYSTEM
+		PxcPCMContactGeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::ePARTICLESYSTEM
@@ -411,7 +408,7 @@ PxcContactMethod g_PCMContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::eTRIANGLEMESH
 		0,									//PxGeometryType::eHEIGHTFIELD
 		PxcInvalidContactPair,				//PxGeometryType::eHAIRSYSTEM
-		PxcPCMContactGeometryCustomGeometry,//PxGeometryType::eCUSTOM
+		PxcInvalidContactPair,				//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eCUSTOM
@@ -430,18 +427,5 @@ PxcContactMethod g_PCMContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 	},
 };
 PX_COMPILE_TIME_ASSERT(sizeof(g_PCMContactMethodTable) / sizeof(g_PCMContactMethodTable[0]) == PxGeometryType::eGEOMETRY_COUNT);
-
-void PxvRegisterHeightFields()
-{
-	g_ContactMethodTable[PxGeometryType::eSPHERE][PxGeometryType::eHEIGHTFIELD]				= PxcContactSphereHeightField;
-	g_ContactMethodTable[PxGeometryType::eCAPSULE][PxGeometryType::eHEIGHTFIELD]			= PxcContactCapsuleHeightField;
-	g_ContactMethodTable[PxGeometryType::eBOX][PxGeometryType::eHEIGHTFIELD]				= PxcContactBoxHeightField;
-	g_ContactMethodTable[PxGeometryType::eCONVEXMESH][PxGeometryType::eHEIGHTFIELD]			= PxcContactConvexHeightField;
-
-	g_PCMContactMethodTable[PxGeometryType::eSPHERE][PxGeometryType::eHEIGHTFIELD]			= PxcPCMContactSphereHeightField;
-	g_PCMContactMethodTable[PxGeometryType::eCAPSULE][PxGeometryType::eHEIGHTFIELD]			= PxcPCMContactCapsuleHeightField;
-	g_PCMContactMethodTable[PxGeometryType::eBOX][PxGeometryType::eHEIGHTFIELD]				= PxcPCMContactBoxHeightField;
-	g_PCMContactMethodTable[PxGeometryType::eCONVEXMESH][PxGeometryType::eHEIGHTFIELD]		= PxcPCMContactConvexHeightField;
-}
 
 }

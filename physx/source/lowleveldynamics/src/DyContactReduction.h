@@ -294,7 +294,7 @@ namespace Dy
 							{
 								for(PxU32 b = 0; b < tmpPatch->stride; ++b)
 								{
-									PxReal magSq =  (mOriginalContacts[tmpPatch->startIndex + b].point - p0).dot(dir);
+									PxReal magSq = (mOriginalContacts[tmpPatch->startIndex + b].point - p0).dot(dir);
 									if(magSq > maxDist)
 									{
 										ind = tmpPatch->startIndex + b;

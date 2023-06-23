@@ -33,7 +33,6 @@
 
 namespace physx
 {
-	class PxsSimulationController;
 namespace Sc
 {
 	class ConstraintSim;
@@ -41,12 +40,6 @@ namespace Sc
 
 	class ConstraintCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 // PX_SERIALIZATION
 											ConstraintCore(const PxEMPTY) : mFlags(PxEmpty), mConnector(NULL), mSim(NULL)	{}
@@ -54,7 +47,6 @@ namespace Sc
 											{ 
 												mConnector = &n;	
 												mSolverPrep = shaders.solverPrep;
-												mProject = shaders.project;
 												mVisualize = shaders.visualize;
 											}
 		static		void					getBinaryMetaData(PxOutputStream& stream);
@@ -86,7 +78,6 @@ namespace Sc
 					void					breakApart();
 
 	PX_FORCE_INLINE	PxConstraintVisualize	getVisualize()									const	{ return mVisualize;				}
-	PX_FORCE_INLINE	PxConstraintProject		getProject()									const	{ return mProject;					}
 	PX_FORCE_INLINE	PxConstraintSolverPrep	getSolverPrep()									const	{ return mSolverPrep;				}
 	PX_FORCE_INLINE	PxU32					getConstantBlockSize()							const	{ return mDataSize;					}
 
@@ -111,7 +102,6 @@ namespace Sc
 					PxVec3					mAppliedTorque;
 
 					PxConstraintConnector*	mConnector;
-					PxConstraintProject		mProject;
 					PxConstraintSolverPrep	mSolverPrep;
 					PxConstraintVisualize	mVisualize;
 					PxU32					mDataSize;

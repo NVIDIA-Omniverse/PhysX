@@ -146,10 +146,6 @@ namespace physx
 	{
 	};
 
-	class PxsCustomMaterialManager : public PxsMaterialManagerT<PxsCustomMaterialCore>
-	{
-	};
-
 	template<class MaterialCore>
 	class PxsMaterialManagerIterator
 	{

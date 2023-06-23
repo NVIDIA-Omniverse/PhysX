@@ -144,6 +144,12 @@ namespace physx
 		PxU32 numThreadsForSdfConstruction;
 
 		/**
+		\brief Optional pointer to the geometry of the mesh that is used to compute the SDF. If it is not set, the geometry of the mesh, that this descriptor is passed to during cooking, will be taken.
+		The mesh data must only be available during cooking. It can be released once cooking completed.
+		*/
+		PxSimpleTriangleMesh baseMesh;
+
+		/**
 		\brief Constructor
 		*/
 		PX_INLINE PxSDFDesc();

@@ -301,7 +301,7 @@ namespace local
 
 			QuickHullHalfEdge* testEdge = edge;
 			QuickHullHalfEdge* startEdge = NULL;
-			float maxDist = 0.0f;
+			float maxDist = -1.0f;
 			for (PxU32 i = 0; i < 3; i++)
 			{
 				const float d = (testEdge->tail.point - testEdge->next->tail.point).magnitudeSquared();
@@ -1091,7 +1091,7 @@ namespace local
 	//////////////////////////////////////////////////////////////////////////
 	// merge polygons with similar normals
 	void QuickHull::postMergeHull()
-	{		
+	{
 		// merge faces with similar normals 
 		for (PxU32 i = 0; i < mHullFaces.size(); i++)
 		{
@@ -1223,7 +1223,7 @@ namespace local
 	// adds vertex to the hull
 	// sets addFailed to true if we failed to add a point because the merging failed
 	// this can happen as the face plane equation changes and some faces might become concave
-	// returns false if the new faces count would hit the hull face hard limit (255)
+	// returns false if the new faces count would hit the hull face hard limit (255 / 64 for GPU-compatible)
 	bool QuickHull::addPointToHull(const QuickHullVertex* eyeVtx, QuickHullFace& eyeFace, bool& addFailed)
 	{
 		addFailed = false;
@@ -1881,6 +1881,10 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::createConvexHull()
 			else
 				res = expandHullOBB();
 		}
+		else
+		{
+			mQuickHull->postMergeHull();
+		}
 		res = PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED;		
 		break;
 	case local::QuickHullResult::eVERTEX_LIMIT_REACHED:
@@ -1899,7 +1903,7 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::createConvexHull()
 	// check if we need to build GRB compatible mesh
 	// if hull was cropped we already have a compatible mesh, if not check 
 	// the max verts per face
-	if((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) && !mCropedConvexHull &&
+	if(((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) || mCookingParams.buildGPUData) && !mCropedConvexHull &&
 		(res == PxConvexMeshCookingResult::eSUCCESS || res == PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED))
 	{
 		PX_ASSERT(mQuickHull);
@@ -2003,7 +2007,7 @@ bool QuickHullConvexHullLib::cleanupForSimplex(PxVec3* vertices, PxU32 vertexCou
 
 	// set third vertex to be the vertex farthest from
 	// the line between simplex[0] and simplex[1]
-	PxVec3 normal;
+	PxVec3 normal(0.0f);
 	float maxDist = 0;
 	imax = 0;
 	PxVec3 u01 = (simplex[1] - simplex[0]);
@@ -2255,7 +2259,7 @@ PxConvexMeshCookingResult::Enum QuickHullConvexHullLib::expandHullOBB()
 			break;
 		}
 		// check for vertex limit per face if necessary, GRB supports max 32 verts per face
-		if ((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) && c->maxNumVertsPerFace() > gpuMaxVertsPerFace)
+		if (((mConvexMeshDesc.flags & PxConvexFlag::eGPU_COMPATIBLE) || mCookingParams.buildGPUData) && c->maxNumVertsPerFace() > gpuMaxVertsPerFace)
 		{ 
 			PX_DELETE(c);
 			c = tmp;

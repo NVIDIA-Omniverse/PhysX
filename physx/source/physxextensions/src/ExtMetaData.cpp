@@ -51,10 +51,7 @@ static void getBinaryMetaData_JointData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_CLASS(stream,		JointData)
 
-	PX_DEF_BIN_METADATA_ITEMS_AUTO(stream,	JointData,				PxTransform,				c2b,				0)
-#ifdef EXPLICIT_PADDING_METADATA
-	PX_DEF_BIN_METADATA_ITEM(stream,		JointData,				PxU32,				        paddingFromFlags,	PxMetaDataFlag::ePADDING)
-#endif
+	PX_DEF_BIN_METADATA_ITEMS_AUTO(stream,	JointData,				PxTransform32,				c2b,				0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		JointData,				PxConstraintInvMassScale,	invMassScale,	    0)
 }
 
@@ -77,7 +74,6 @@ static void getBinaryMetaData_PxJointLimitParameters(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxJointLimitParameters,		PxReal,						bounceThreshold,	0)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxJointLimitParameters,		PxReal,						stiffness,			0)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxJointLimitParameters,		PxReal,						damping,			0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	PxJointLimitParameters,		PxReal,						contactDistance_deprecated,	0)
 }
 
 static void getBinaryMetaData_PxJointLinearLimit(PxOutputStream& stream)
@@ -149,9 +145,6 @@ static void getBinaryMetaData_RevoluteJointData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		RevoluteJointData,		PxJointAngularLimitPair,limit,						0)
 
-	PX_DEF_BIN_METADATA_ITEM(stream,		RevoluteJointData,		PxReal,					projectionLinearTolerance,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		RevoluteJointData,		PxReal,					projectionAngularTolerance,	0)
-
 	PX_DEF_BIN_METADATA_ITEM(stream,		RevoluteJointData,		PxRevoluteJointFlags,	jointFlags,					0)
 #ifdef EXPLICIT_PADDING_METADATA
 	PX_DEF_BIN_METADATA_ITEM(stream,		RevoluteJointData,		PxU16,					paddingFromFlags,			PxMetaDataFlag::ePADDING)
@@ -187,8 +180,6 @@ static void getBinaryMetaData_SphericalJointData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	SphericalJointData, 	JointData)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		SphericalJointData,		PxJointLimitCone,		limit,						0)
-
-	PX_DEF_BIN_METADATA_ITEM(stream,		SphericalJointData,		PxReal,					projectionLinearTolerance,	0)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		SphericalJointData,		PxSphericalJointFlags,	jointFlags,					0)
 #ifdef EXPLICIT_PADDING_METADATA
@@ -284,9 +275,6 @@ static void getBinaryMetaData_D6JointData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		PxReal,						distanceMinDist,			0)
 
-	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		PxReal,						projectionLinearTolerance,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		PxReal,						projectionAngularTolerance,	0)
-
 	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		bool,						mUseDistanceLimit,			0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		bool,						mUseNewLinearLimits,		0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		D6JointData,		bool,						mUseConeLimit,				0)
@@ -325,8 +313,6 @@ static void getBinaryMetaData_PrismaticJointData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	PrismaticJointData, 	JointData)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		PrismaticJointData,		PxJointLinearLimitPair,	limit,						0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		PrismaticJointData,		PxReal,					projectionLinearTolerance,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		PrismaticJointData,		PxReal,					projectionAngularTolerance,	0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		PrismaticJointData,		PxPrismaticJointFlags,	jointFlags,					0)
 #ifdef EXPLICIT_PADDING_METADATA
 	PX_DEF_BIN_METADATA_ITEM(stream,		PrismaticJointData,		PxU16,					paddingFromFlags,			PxMetaDataFlag::ePADDING)
@@ -358,9 +344,6 @@ static void getBinaryMetaData_FixedJointData(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_CLASS(stream,		FixedJointData)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	FixedJointData, JointData)
-
-	PX_DEF_BIN_METADATA_ITEM(stream,		FixedJointData,	PxReal,	projectionLinearTolerance,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		FixedJointData,	PxReal,	projectionAngularTolerance,	0)
 }
 
 void FixedJoint::getBinaryMetaData(PxOutputStream& stream)

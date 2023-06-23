@@ -34,7 +34,7 @@
 #if PX_SUPPORT_OMNI_PVD
 #include "../pvdruntime/include/OmniPvdWriter.h"
 #include "../pvdruntime/include/OmniPvdFileWriteStream.h"
-#endif
+
 using namespace physx;
 
 static PxDefaultAllocator		gAllocator;
@@ -82,7 +82,6 @@ void initPhysicsWithOmniPvd()
 		return;
 	}
 
-#if PX_SUPPORT_OMNI_PVD
 	gOmniPvd = PxCreateOmniPvd(*gFoundation);
 	if (!gOmniPvd)
 	{
@@ -102,8 +101,7 @@ void initPhysicsWithOmniPvd()
 		return;
 	}
 	fStream->setFileName(gOmniPvdPath);
-	omniWriter->setWriteStream(static_cast<OmniPvdWriteStream*>(fStream));
-#endif
+	omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*fStream));
 
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, NULL, gOmniPvd);
 	if (!gPhysics)
@@ -111,7 +109,7 @@ void initPhysicsWithOmniPvd()
 		printf("Error : could not create a PhysX instance!");
 		return;
 	}
-#if PX_SUPPORT_OMNI_PVD
+
 	if (gPhysics->getOmniPvd())
 	{
 		gPhysics->getOmniPvd()->startSampling();
@@ -121,7 +119,7 @@ void initPhysicsWithOmniPvd()
 		printf("Error : could not start OmniPvd sampling!");
 		return;
 	}
-#endif
+
 	initPhysXScene();
 }
 
@@ -129,10 +127,8 @@ void cleanupPhysics()
 {
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
-	PX_RELEASE(gPhysics);	
-#if PX_SUPPORT_OMNI_PVD
+	PX_RELEASE(gPhysics);
 	PX_RELEASE(gOmniPvd);
-#endif
 	PX_RELEASE(gFoundation);	
 }
 
@@ -162,9 +158,11 @@ void keyPress(unsigned char key, const PxTransform& camera)
 	case ' ':	createDynamic(camera, PxSphereGeometry(3.0f), camera.rotate(PxVec3(0, 0, -1)) * 200);	break;
 	}
 }
+#endif  // PX_SUPPORT_OMNI_PVD
 
 int snippetMain(int argc, const char *const* argv)
 {
+#if PX_SUPPORT_OMNI_PVD
 	if (!parseOmniPvdOutputFile(argc, argv))
 	{ 
 		return 1;
@@ -179,5 +177,12 @@ int snippetMain(int argc, const char *const* argv)
 		stepPhysics();
 	cleanupPhysics();
 #endif
+#else
+	PX_UNUSED(argc);
+	PX_UNUSED(argv);
+
+	printf("PVD is not supported in release build configuration. Please use any of the other build configurations to run this snippet.\n");
+#endif  // PX_SUPPORT_OMNI_PVD
+
 	return 0;
 }

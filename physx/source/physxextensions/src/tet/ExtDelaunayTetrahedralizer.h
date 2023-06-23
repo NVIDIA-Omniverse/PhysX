@@ -45,12 +45,12 @@ namespace Ext
 	void buildNeighborhood(const PxArray<Tetrahedron>& tets, PxArray<PxI32>& result);
 	void buildNeighborhood(const PxI32* tets, PxU32 numTets, PxArray<PxI32>& result);
 
-	PX_FORCE_INLINE PxF64 tetVolume(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d)
+	PX_FORCE_INLINE PxF64 tetVolume(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c, const PxVec3d& d)
 	{
 		return (-1.0 / 6.0) * (a - d).dot((b - d).cross(c - d));
 	}
 
-	PX_FORCE_INLINE PxF64 tetVolume(const Tetrahedron& tet, const PxArray<Vec3>& points)
+	PX_FORCE_INLINE PxF64 tetVolume(const Tetrahedron& tet, const PxArray<PxVec3d>& points)
 	{
 		return tetVolume(points[tet[0]], points[tet[1]], points[tet[2]], points[tet[3]]);
 	}
@@ -107,11 +107,11 @@ namespace Ext
 
 	class MinimizeMaxAmipsEnergy : public BaseTetAnalyzer
 	{
-		const PxArray<Vec3>& points;
+		const PxArray<PxVec3d>& points;
 		const PxArray<Tetrahedron>& tetrahedra;
 
 	public:
-		MinimizeMaxAmipsEnergy(const PxArray<Vec3>& points_, const PxArray<Tetrahedron>& tetrahedra_) : points(points_), tetrahedra(tetrahedra_)
+		MinimizeMaxAmipsEnergy(const PxArray<PxVec3d>& points_, const PxArray<Tetrahedron>& tetrahedra_) : points(points_), tetrahedra(tetrahedra_)
 		{}
 
 		PxF64 quality(const PxArray<PxI32> tetIndices) const;
@@ -128,11 +128,11 @@ namespace Ext
 
 	class MaximizeMinTetVolume : public BaseTetAnalyzer
 	{
-		const PxArray<Vec3>& points;
+		const PxArray<PxVec3d>& points;
 		const PxArray<Tetrahedron>& tetrahedra;
 
 	public:
-		MaximizeMinTetVolume(const PxArray<Vec3>& points_, const PxArray<Tetrahedron>& tetrahedra_) : points(points_), tetrahedra(tetrahedra_)
+		MaximizeMinTetVolume(const PxArray<PxVec3d>& points_, const PxArray<Tetrahedron>& tetrahedra_) : points(points_), tetrahedra(tetrahedra_)
 		{}
 
 		PxF64 quality(const PxArray<PxI32> tetIndices) const;
@@ -211,18 +211,18 @@ namespace Ext
 	{
 	public:
 		//The bounds specified must contain all points that will get inserted by calling insertPoints.
-		DelaunayTetrahedralizer(const Vec3& min, const Vec3& max);
+		DelaunayTetrahedralizer(const PxVec3d& min, const PxVec3d& max);
 
-		DelaunayTetrahedralizer(PxArray<Vec3>& points, PxArray<Tetrahedron>& tets);
+		DelaunayTetrahedralizer(PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets);
 
-		void initialize(PxArray<Vec3>& points, PxArray<Tetrahedron>& tets);
+		void initialize(PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets);
 
 		//Inserts a bunch of new points into the tetrahedralization and keeps the delaunay condition satisfied. The new result will
 		//get stored in the tetrahedra array. Points to insert must already be present in inPoints, the indices of the points to insert
 		//can be controlled with start and end index (end index is exclusive, start index is inclusive)
-		void insertPoints(const PxArray<Vec3>& inPoints, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tetrahedra);
+		void insertPoints(const PxArray<PxVec3d>& inPoints, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tetrahedra);
 		
-		bool insertPoints(const PxArray<Vec3>& inPoints, PxI32 start, PxI32 end);
+		bool insertPoints(const PxArray<PxVec3d>& inPoints, PxI32 start, PxI32 end);
 
 		void exportTetrahedra(PxArray<Tetrahedron>& tetrahedra);
 
@@ -240,14 +240,14 @@ namespace Ext
 
 		void collectTetsConnectedToEdge(PxI32 edgeStart, PxI32 edgeEnd, PxArray<PxI32>& tetIds);
 
-		PX_FORCE_INLINE const Vec3& point(PxI32 index) const { return centeredNormalizedPoints[index]; }
+		PX_FORCE_INLINE const PxVec3d& point(PxI32 index) const { return centeredNormalizedPoints[index]; }
 
 		PX_FORCE_INLINE PxU32 numPoints() const { return centeredNormalizedPoints.size(); }
 
-		PX_FORCE_INLINE PxArray<Vec3>& points() { return centeredNormalizedPoints; }
-		PX_FORCE_INLINE const PxArray<Vec3>& points() const { return centeredNormalizedPoints; }
+		PX_FORCE_INLINE PxArray<PxVec3d>& points() { return centeredNormalizedPoints; }
+		PX_FORCE_INLINE const PxArray<PxVec3d>& points() const { return centeredNormalizedPoints; }
 
-		PxU32 addPoint(const Vec3& p)
+		PxU32 addPoint(const PxVec3d& p)
 		{
 			centeredNormalizedPoints.pushBack(p);
 			vertexToTet.pushBack(-1);
@@ -261,7 +261,7 @@ namespace Ext
 		PX_FORCE_INLINE PxArray<Tetrahedron>& tetrahedra() { return result; }
 		PX_FORCE_INLINE const PxArray<Tetrahedron>& tetrahedra() const { return result; }
 
-		void copyInternalPointsTo(PxArray<Vec3>& points) { points = centeredNormalizedPoints; }
+		void copyInternalPointsTo(PxArray<PxVec3d>& points) { points = centeredNormalizedPoints; }
 
 		bool optimizeByFlipping(PxArray<PxI32>& affectedFaces, const BaseTetAnalyzer& qualityAnalyzer);
 
@@ -279,12 +279,12 @@ namespace Ext
 
 		bool recoverEdgeByFlip(PxI32 eStart, PxI32 eEnd, RecoverEdgeMemoryCache& cache);
 
-		void generateTetmeshEnforcingEdges(const PxArray<Vec3>& trianglePoints, const PxArray<Gu::IndexedTriangleT<PxI32>>& triangles, PxArray<PxArray<PxI32>>& allEdges,
+		void generateTetmeshEnforcingEdges(const PxArray<PxVec3d>& trianglePoints, const PxArray<Gu::IndexedTriangleT<PxI32>>& triangles, PxArray<PxArray<PxI32>>& allEdges,
 			PxArray<PxArray<PxI32>>& pointToOriginalTriangle, 
-			PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets);
+			PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets);
 
 	private:
-		PxArray<Vec3> centeredNormalizedPoints;
+		PxArray<PxVec3d> centeredNormalizedPoints;
 		PxArray<PxI32> neighbors;
 		PxArray<PxI32> unusedTets;
 		PxArray<PxI32> vertexToTet;
@@ -354,7 +354,7 @@ namespace Ext
 
 	//Modified tetmesh quality improvement implementation of the method described in https://cs.nyu.edu/~yixinhu/tetwild.pdf Section 3.2 Mesh Improvement
 	void optimize(DelaunayTetrahedralizer& del, PxArray<PxArray<PxI32>>& pointToOriginalTriangle, PxI32 numFixPoints,
-		PxArray<Vec3>& optimizedPoints, PxArray<Tetrahedron>& optimizedTets, PxI32 numPasses = 10);
+		PxArray<PxVec3d>& optimizedPoints, PxArray<Tetrahedron>& optimizedTets, PxI32 numPasses = 10);
 }
 }
 

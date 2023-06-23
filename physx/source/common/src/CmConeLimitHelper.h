@@ -41,28 +41,28 @@ namespace physx
 {
 namespace Cm
 {
-	PX_FORCE_INLINE PxReal tanAdd(PxReal tan1, PxReal tan2)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal tanAdd(PxReal tan1, PxReal tan2)
 	{
-		PX_ASSERT(PxAbs(1-tan1*tan2)>1e-6f);
-		return (tan1+tan2)/(1-tan1*tan2);
+		PX_ASSERT(PxAbs(1.0f-tan1*tan2)>1e-6f);
+		return (tan1+tan2)/(1.0f-tan1*tan2);
 	}
 
-	PX_FORCE_INLINE float computeAxisAndError(const PxVec3& r, const PxVec3& d, const PxVec3& twistAxis, PxVec3& axis)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE float computeAxisAndError(const PxVec3& r, const PxVec3& d, const PxVec3& twistAxis, PxVec3& axis)
 	{
 		// the point on the cone defined by the tanQ swing vector r		
 		// this code is equal to quatFromTanQVector(r).rotate(PxVec3(1.0f, 0.0f, 0.0f);
-		PxVec3 p(1.f,0,0);
-		PxReal r2 = r.dot(r), a = 1-r2, b = 1/(1+r2), b2 = b*b;
-		PxReal v1 = 2*a*b2;
-		PxVec3 v2(a, 2*r.z, -2*r.y);		// a*p + 2*r.cross(p);
-		PxVec3 coneLine = v1 * v2 - p;		// already normalized
+		const PxVec3 p(1.0f, 0.0f, 0.0f);
+		const PxReal r2 = r.dot(r), a = 1.0f - r2, b = 1.0f/(1.0f+r2), b2 = b*b;
+		const PxReal v1 = 2.0f * a * b2;
+		const PxVec3 v2(a, 2.0f * r.z, -2.0f * r.y);	// a*p + 2*r.cross(p);
+		const PxVec3 coneLine = v1 * v2 - p;			// already normalized
 
 		// the derivative of coneLine in the direction d	
-		PxReal rd = r.dot(d);
-		PxReal dv1 = -4*rd*(3-r2)*b2*b;
-		PxVec3 dv2(-2*rd, 2*d.z, -2*d.y);
+		const PxReal rd = r.dot(d);
+		const PxReal dv1 = -4.0f * rd * (3.0f - r2)*b2*b;
+		const PxVec3 dv2(-2.0f * rd, 2.0f * d.z, -2.0f * d.y);
 	
-		PxVec3 coneNormal = v1 * dv2 + dv1 * v2;
+		const PxVec3 coneNormal = v1 * dv2 + dv1 * v2;
 
 		axis = coneLine.cross(coneNormal)/coneNormal.magnitude();
 		return coneLine.cross(axis).dot(twistAxis);
@@ -74,23 +74,23 @@ namespace Cm
 	class ConeLimitHelper
 	{
 	public:
-		ConeLimitHelper(PxReal tanQSwingY, PxReal tanQSwingZ, PxReal tanQPadding)
+		PX_CUDA_CALLABLE	ConeLimitHelper(PxReal tanQSwingY, PxReal tanQSwingZ, PxReal tanQPadding)
 			: mTanQYMax(tanQSwingY), mTanQZMax(tanQSwingZ), mTanQPadding(tanQPadding) {}
 
 		// whether the point is inside the (inwardly) padded cone - if it is, there's no limit
 		// constraint
 
-		PX_FORCE_INLINE bool contains(const PxVec3& tanQSwing)	const
+		PX_CUDA_CALLABLE PX_FORCE_INLINE bool contains(const PxVec3& tanQSwing)	const
 		{
-			PxReal tanQSwingYPadded = tanAdd(PxAbs(tanQSwing.y),mTanQPadding);
-			PxReal tanQSwingZPadded = tanAdd(PxAbs(tanQSwing.z),mTanQPadding);
+			const PxReal tanQSwingYPadded = tanAdd(PxAbs(tanQSwing.y),mTanQPadding);
+			const PxReal tanQSwingZPadded = tanAdd(PxAbs(tanQSwing.z),mTanQPadding);
 			return PxSqr(tanQSwingYPadded/mTanQYMax)+PxSqr(tanQSwingZPadded/mTanQZMax) <= 1;
 		}
 
-		PX_FORCE_INLINE PxVec3 clamp(const PxVec3& tanQSwing, PxVec3& normal)	const
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3 clamp(const PxVec3& tanQSwing, PxVec3& normal)	const
 		{
-			PxVec3 p = PxEllipseClamp(tanQSwing, PxVec3(0,mTanQYMax,mTanQZMax));
-			normal = PxVec3(0, p.y/PxSqr(mTanQYMax), p.z/PxSqr(mTanQZMax));
+			const PxVec3 p = PxEllipseClamp(tanQSwing, PxVec3(0.0f, mTanQYMax, mTanQZMax));
+			normal = PxVec3(0.0f, p.y/PxSqr(mTanQYMax), p.z/PxSqr(mTanQZMax));
 #ifdef PX_PARANOIA_ELLIPSE_CHECK
 			PxReal err = PxAbs(PxSqr(p.y/mTanQYMax) + PxSqr(p.z/mTanQZMax) - 1);
 			PX_ASSERT(err<1e-3);
@@ -105,18 +105,18 @@ namespace Cm
 		// limit (i.e. the image of the x axis), the error is the sine of the angular difference,
 		// positive if the twist axis is inside the cone 
 
-		bool getLimit(const PxQuat& swing, PxVec3& axis, PxReal& error)	const
+		PX_CUDA_CALLABLE bool getLimit(const PxQuat& swing, PxVec3& axis, PxReal& error)	const
 		{
-			PX_ASSERT(swing.w>0);
-			PxVec3 twistAxis = swing.getBasisVector0();
-			PxVec3 tanQSwing = PxVec3(0, PxTanHalf(swing.z,swing.w), -PxTanHalf(swing.y,swing.w));
+			PX_ASSERT(swing.w>0.0f);
+			const PxVec3 twistAxis = swing.getBasisVector0();
+			const PxVec3 tanQSwing = PxVec3(0.0f, PxTanHalf(swing.z,swing.w), -PxTanHalf(swing.y,swing.w));
 			if(contains(tanQSwing))
 				return false;
 
 			PxVec3 normal, clamped = clamp(tanQSwing, normal);
 
 			// rotation vector and ellipse normal
-			PxVec3 r(0,-clamped.z,clamped.y), d(0, -normal.z, normal.y);
+			const PxVec3 r(0.0f, -clamped.z, clamped.y), d(0.0f, -normal.z, normal.y);
 
 			error = computeAxisAndError(r, d, twistAxis, axis);
 
@@ -131,33 +131,21 @@ namespace Cm
 
 	private:
 
-
 		PxReal mTanQYMax, mTanQZMax, mTanQPadding;
 	};
 	
 	class ConeLimitHelperTanLess
 	{
 	public:
-		ConeLimitHelperTanLess(PxReal swingY, PxReal swingZ, PxReal padding)
-			: mYMax(swingY), mZMax(swingZ), mPadding(padding) {}
+		PX_CUDA_CALLABLE	ConeLimitHelperTanLess(PxReal swingY, PxReal swingZ)
+			: mYMax(swingY), mZMax(swingZ)	{}
 
-		// whether the point is inside the (inwardly) padded cone - if it is, there's no limit
-		// constraint
-		PX_FORCE_INLINE bool contains(const PxVec3& swing)	const
-		{
-			// padded current swing angles
-			PxReal swingYPadded = PxAbs(swing.y) + mPadding;
-			PxReal swingZPadded = PxAbs(swing.z) + mPadding;
-			// if angle is within ellipse defined by mYMax/mZMax
-			return PxSqr(swingYPadded/mYMax)+PxSqr(swingZPadded/mZMax) <= 1;
-		}
-
-		PX_FORCE_INLINE PxVec3 clamp(const PxVec3& swing, PxVec3& normal)	const
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3 clamp(const PxVec3& swing, PxVec3& normal)	const
 		{
 			// finds the closest point on the ellipse to a given point
-			PxVec3 p = PxEllipseClamp(swing, PxVec3(0,mYMax,mZMax));
+			const PxVec3 p = PxEllipseClamp(swing, PxVec3(0.0f, mYMax, mZMax));
 			// normal to the point on ellipse
-			normal = PxVec3(0, p.y/PxSqr(mYMax), p.z/PxSqr(mZMax));
+			normal = PxVec3(0.0f, p.y/PxSqr(mYMax), p.z/PxSqr(mZMax));
 #ifdef PX_PARANOIA_ELLIPSE_CHECK
 			PxReal err = PxAbs(PxSqr(p.y/mYMax) + PxSqr(p.z/mZMax) - 1);
 			PX_ASSERT(err<1e-3);
@@ -172,29 +160,25 @@ namespace Cm
 		// limit (i.e. the image of the x axis), the error is the sine of the angular difference,
 		// positive if the twist axis is inside the cone 
 
-		bool getLimit(const PxQuat& swing, PxVec3& axis, PxReal& error)	const
+		PX_CUDA_CALLABLE void getLimit(const PxQuat& swing, PxVec3& axis, PxReal& error)	const
 		{
-			PX_ASSERT(swing.w>0);
-			PxVec3 twistAxis = swing.getBasisVector0();			
+			PX_ASSERT(swing.w>0.0f);
+			const PxVec3 twistAxis = swing.getBasisVector0();			
 			// get the angles from the swing quaternion
-			PxVec3 swingAngle(0.0f, 4 * PxAtan2(swing.y, 1 + swing.w), 4 * PxAtan2(swing.z, 1 + swing.w));			
-			if(contains(swingAngle))
-				return false;
+			const PxVec3 swingAngle(0.0f, 4.0f * PxAtan2(swing.y, 1.0f + swing.w), 4.0f * PxAtan2(swing.z, 1.0f + swing.w));
 
 			PxVec3 normal, clamped = clamp(swingAngle, normal);
 
 			// rotation vector and ellipse normal
-			PxVec3 r(0,PxTan(clamped.y/4),PxTan(clamped.z/4)), d(0, normal.y, normal.z);
+			const PxVec3 r(0.0f, PxTan(clamped.y/4.0f), PxTan(clamped.z/4.0f)), d(0.0f, normal.y, normal.z);
 
 			error = computeAxisAndError(r, d, twistAxis, axis);
 
-			PX_ASSERT(PxAbs(axis.magnitude()-1)<1e-5f);
-
-			return true;
+			PX_ASSERT(PxAbs(axis.magnitude()-1.0f)<1e-5f);
 		}
 
 	private:
-		PxReal mYMax, mZMax, mPadding;
+		PxReal mYMax, mZMax;
 	};
 
 } // namespace Cm

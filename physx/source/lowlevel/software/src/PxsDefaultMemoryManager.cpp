@@ -26,7 +26,6 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "PxsDefaultMemoryManager.h"	// PT: TODO: remove this empty file?
 #include "PxsMemoryManager.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxArray.h"

@@ -46,14 +46,12 @@ using namespace aos;
 
 namespace physx
 {
-	static bool testPolyFaceNormal(const Gu::TriangleV& triangle, const PolygonalData& polyData, SupportLocalImpl<TriangleV>* triMap, SupportLocal* polyMap,  const FloatVArg contactDist, 
-		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, const FeatureStatus faceStatus, FeatureStatus& status)
+	static bool testPolyFaceNormal(const PolygonalData& polyData, const SupportLocalImpl<TriangleV>* triMap, const SupportLocal* polyMap, const FloatVArg contactDist, 
+		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, FeatureStatus faceStatus, FeatureStatus& status)
 	{
-		PX_UNUSED(triangle);
-
 		FloatV _minOverlap = FMax();
-		PxU32  _feature = 0;
-		Vec3V  _faceNormal = faceNormal;
+		PxU32 _feature = 0;
+		Vec3V _faceNormal = faceNormal;
 		FloatV min0, max0;
 		FloatV min1, max1;
 		const FloatV eps = FEps();
@@ -93,7 +91,6 @@ namespace physx
 		}
 		else
 		{
-		
 			//in the local space of polyData0
 			for(PxU32 i=0; i<polyData.mNbPolygons; ++i)
 			{
@@ -142,18 +139,12 @@ namespace physx
 		feature = _feature;
 
 		return true;
-
 	}
 
-
-
 	//triangle is in the local space of polyData
-	static bool testTriangleFaceNormal(const TriangleV& triangle, const PolygonalData& polyData, SupportLocalImpl<TriangleV>* triMap, SupportLocal* polyMap, const FloatVArg contactDist, 
-		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, const FeatureStatus faceStatus, FeatureStatus& status)
+	static bool testTriangleFaceNormal(const TriangleV& triangle, const PolygonalData& /*polyData*/, const SupportLocalImpl<TriangleV>* /*triMap*/, const SupportLocal* polyMap, const FloatVArg contactDist, 
+		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, FeatureStatus faceStatus, FeatureStatus& status)
 	{
-		PX_UNUSED(triMap);
-		PX_UNUSED(polyData);
-
 		FloatV min1, max1;
 		const FloatV eps = FEps();
 
@@ -176,13 +167,11 @@ namespace physx
 		faceNormal=triangleLocNormal;
 
 		return true;
-
 	}
 
-	static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, const PolygonalData& polyData, SupportLocalImpl<TriangleV>* triMap, SupportLocal* polyMap, const FloatVArg contactDist,
-		FloatV& minOverlap, Vec3V& minNormal, const FeatureStatus edgeStatus, FeatureStatus& status)
+	static bool testPolyEdgeNormal(const TriangleV& triangle, const PxU8 triFlags, const PolygonalData& polyData, const SupportLocalImpl<TriangleV>* triMap, const SupportLocal* polyMap, const FloatVArg contactDist,
+		FloatV& minOverlap, Vec3V& minNormal, FeatureStatus edgeStatus, FeatureStatus& status)
 	{
-		PX_UNUSED(triFlags);
 		FloatV overlap = minOverlap;
 		FloatV min0, max0;
 		FloatV min1, max1;
@@ -193,19 +182,19 @@ namespace physx
 		const Vec3V v1 = M33MulV3(polyMap->shape2Vertex, triangle.verts[1]);
 		const Vec3V v2 = M33MulV3(polyMap->shape2Vertex, triangle.verts[2]);
 
-		TriangleV vertexSpaceTriangle(v0, v1, v2);
+		const TriangleV vertexSpaceTriangle(v0, v1, v2);
 
 		PxU32 nbTriangleAxes = 0;
 		Vec3V triangleAxes[3];
 		for(PxI8 kStart = 0, kEnd =2; kStart<3; kEnd = kStart++)
 		{
-			bool active = (triFlags & (1 << (kEnd+3))) != 0;
+			const bool active = (triFlags & (1 << (kEnd+3))) != 0;
 	
 			if(active)
 			{
 				const Vec3V p00 = vertexSpaceTriangle.verts[kStart];
 				const Vec3V p01 = vertexSpaceTriangle.verts[kEnd];
-				triangleAxes[nbTriangleAxes++] =  V3Sub(p01, p00);
+				triangleAxes[nbTriangleAxes++] = V3Sub(p01, p00);
 			}
 		}
 
@@ -236,7 +225,6 @@ namespace physx
 
 				for (PxU32 j = 0; j < nbTriangleAxes; ++j)
 				{
-
 					const Vec3V currentPolyEdge = triangleAxes[j];
 					const Vec3V v = V3Cross(convexEdge, currentPolyEdge);
 
@@ -268,21 +256,16 @@ namespace physx
 							minNormal = V3Neg(n0);
 							status = edgeStatus;
 						}
-
 					}
 				}
-				
 			}
 		}
 		minOverlap = overlap;
 		
 		return true;
-
 	}
 
 #if BRUTE_FORCE_EDGE_EDGE
-
-
 	bool testPolyEdgeNormalBruteForce(const TriangleV& triangle, const PxU8 triFlags, const PolygonalData& polyData, SupportLocalImpl<TriangleV>* triMap, SupportLocal* polyMap, const FloatVArg contactDist,
 		FloatV& minOverlap, Vec3V& minNormal, const FeatureStatus edgeStatus, FeatureStatus& status)
 	{
@@ -321,7 +304,6 @@ namespace physx
 
 				for (PxI8 kEnd = 0, kStart = 2; kEnd<3; kStart = kEnd++)
 				{
-
 					const Vec3V triVert0 = triangle.verts[kStart];
 					const Vec3V triVert1 = triangle.verts[kEnd];
 
@@ -350,7 +332,6 @@ namespace physx
 							bestTriStart = kStart;
 							bestTriEnd = kEnd;
 						}
-
 					}
 				}
 			}
@@ -364,13 +345,11 @@ namespace physx
 		}
 
 		return true;
-
 	}
 
 	bool testPolyEdgeNormalBruteForceVertsByEdges(const TriangleV& triangle, const PxU8 triFlags, const PolygonalData& polyData, SupportLocalImpl<TriangleV>* triMap, SupportLocal* polyMap, const FloatVArg contactDist,
 		FloatV& minOverlap, Vec3V& minNormal, const FeatureStatus edgeStatus, FeatureStatus& status, PxU32& bestEdgeIndex, PxI8& bestTriStart, PxI8& bestTriEnd)
 	{
-
 		PX_UNUSED(triFlags);
 
 		const PxU32 numConvexEdges = polyData.mNbEdges;
@@ -391,7 +370,6 @@ namespace physx
 			const Vec3V vertex11 = M33MulV3(polyMap->vertex2Shape, V3LoadU(vertices[v1idx1]));
 
 			Vec3V convexEdge = V3Sub(vertex11, vertex10);
-
 
 			for (PxI8 kEnd = 0, kStart = 2; kEnd<3; kStart = kEnd++)
 			{
@@ -433,7 +411,6 @@ namespace physx
 					}
 				}
 			}
-
 		}
 
 		if (FAllGrtr(minOverlap, bestDist))
@@ -444,19 +421,13 @@ namespace physx
 
 		}
 		return true;
-
 	}
-
 
 #endif
 
 #if EDGE_EDGE_GAUSS_MAP
-
-
-
 	bool isMinkowskiFace(const Vec3V& A, const Vec3V& B, const Vec3V& B_x_A, const Vec3V& C, const Vec3V& D, const Vec3V& D_x_C)
 	{
-
 		const FloatV zero = FZero();
 		// Two edges build a face on the Minkowski sum if the associated arcs AB and CD intersect on the Gauss map. 
 		// The associated arcs are defined by the adjacent face normals of each edge.  
@@ -497,9 +468,8 @@ namespace physx
 		Vec3V bestAxis = V3Zero();
 		const Vec3V eps2 = V3Splat(FLoad(1e-6));
 
-
 		//Center is in shape space
-		const Vec3V shapeSpaceCOM =V3LoadU(polyData.mCenter);
+		const Vec3V shapeSpaceCOM = V3LoadU(polyData.mCenter);
 		const Vec3V vertexSpaceCOM = M33MulV3(polyMap->shape2Vertex, shapeSpaceCOM);
 
 		PxVec3 vertexCOM;
@@ -507,7 +477,6 @@ namespace physx
 
 		for (PxU32 convexEdgeIdx = 0; convexEdgeIdx < numConvexEdges; ++convexEdgeIdx)
 		{
-
 			const PxU16 v0idx1 = verticesByEdges16[convexEdgeIdx*2];
 			const PxU32 v1idx1 = verticesByEdges16[convexEdgeIdx * 2 + 1];
 
@@ -533,8 +502,7 @@ namespace physx
 			PX_ASSERT(signDist1 < 0.f);
 
 			for (PxI8 kEnd = 0, kStart = 2; kEnd<3; kStart = kEnd++)
-			{ 
-				
+			{
 				const Vec3V triVert0 = triangle.verts[kStart];
 				const Vec3V triVert1 = triangle.verts[kEnd];
 				const Vec3V triEdge = V3Sub(triVert1, triVert0);
@@ -542,7 +510,6 @@ namespace physx
 				//if (isMinkowskiFace(convexNormal0, convexNormal1, V3Neg(convexEdge), V3Neg(triNormal), triNormal, V3Neg(triEdge)))
 				if (isMinkowskiFace(convexNormal0, convexNormal1, convexEdge, V3Neg(triNormal), triNormal, triEdge))
 				{
-
 					// compute the separation along this axis in vertex space
 					axis = V3Cross(convexEdge, triEdge);
 
@@ -564,7 +531,6 @@ namespace physx
 
 						if (FAllGrtr(dist, contactDist))
 							return false;
-
 #if SAT_VARIFY
 						FloatV min0, max0;
 						FloatV min1, max1;
@@ -586,9 +552,7 @@ namespace physx
 						const FloatV dif = FAbs(FAdd(tempDist, dist));
 						PX_UNUSED(dif);
 						PX_ASSERT(FAllGrtr(FLoad(1e-4f), dif));
-
 #endif
-
 						if (FAllGrtr(dist, bestDist))
 						{
 							bestDist = dist;
@@ -601,7 +565,6 @@ namespace physx
 					}
 				}
 			}
-			
 		}
 
 		if (FAllGrtr(minOverlap, bestDist))
@@ -611,12 +574,10 @@ namespace physx
 			status = edgeStatus;
 		}
 		return true;
-			
 	}
-
 #endif
 
-	static PX_FORCE_INLINE PxU32 addMeshContacts(MeshPersistentContact* manifoldContacts, const Vec3V& pA, const Vec3V& pB, const Vec4V& normalPen, const PxU32 triangleIndex, const PxU32 numContacts)
+	static PX_FORCE_INLINE PxU32 addMeshContacts(MeshPersistentContact* manifoldContacts, const Vec3V& pA, const Vec3V& pB, const Vec4V& normalPen, PxU32 triangleIndex, PxU32 numContacts)
 	{
 		manifoldContacts[numContacts].mLocalPointA = pA;
 		manifoldContacts[numContacts].mLocalPointB = pB;
@@ -625,13 +586,10 @@ namespace physx
 		return numContacts+1;
 	}
 
-
-	static void generatedTriangleContacts(const Gu::TriangleV& triangle, const PxU32 triangleIndex, const PxU8/* _triFlags*/, const Gu::PolygonalData& polyData1, const Gu::HullPolygonData& incidentPolygon,  Gu::SupportLocal* map1, Gu::MeshPersistentContact* manifoldContacts, PxU32& numManifoldContacts, 
+	static void generatedTriangleContacts(const Gu::TriangleV& triangle, PxU32 triangleIndex, PxU8/* _triFlags*/, const Gu::PolygonalData& polyData1, const Gu::HullPolygonData& incidentPolygon, const Gu::SupportLocal* map1, Gu::MeshPersistentContact* manifoldContacts, PxU32& numManifoldContacts, 
 		const aos::FloatVArg contactDist, const aos::Vec3VArg contactNormal, PxRenderOutput* renderOutput)
 	{
-
 		PX_UNUSED(renderOutput);
-		using namespace aos;
 
 		//PxU8 triFlags = _triFlags;
 		const PxU32 previousContacts = numManifoldContacts;
@@ -646,13 +604,10 @@ namespace physx
 		Vec3V* points1In0 = reinterpret_cast<Vec3V*>(PxAllocaAligned(sizeof(Vec3V)*incidentPolygon.mNbVerts, 16));
 		FloatV* points1In0TValue = reinterpret_cast<FloatV*>(PxAllocaAligned(sizeof(FloatV)*incidentPolygon.mNbVerts, 16));
 		bool* points1In0Penetration = reinterpret_cast<bool*>(PxAlloca(sizeof(bool)*incidentPolygon.mNbVerts));
-		
 
 		points0In0[0] = triangle.verts[0];
 		points0In0[1] = triangle.verts[1];
 		points0In0[2] = triangle.verts[2];
-
-
 
 		//Transform all the verts from vertex space to shape space
 		map1->populateVerts(inds1, incidentPolygon.mNbVerts, polyData1.mVerts, points1In0);
@@ -676,7 +631,6 @@ namespace physx
 			rPolygonMax = V3Max(rPolygonMax, points0In0[i]);
 		}
 		
-		
 		rPolygonMin = V3Sub(rPolygonMin, eps);
 		rPolygonMax = V3Add(rPolygonMax, eps);
 
@@ -685,7 +639,6 @@ namespace physx
 
 		Vec3V iPolygonMin= max; 
 		Vec3V iPolygonMax = nmax;
-
 
 		PxU32 inside = 0;
 		for(PxU32 i=0; i<incidentPolygon.mNbVerts; ++i)
@@ -729,12 +682,8 @@ namespace physx
 			points1In0Penetration[i] = penetrated;
 		}
 
-
-
 		if(inside == incidentPolygon.mNbVerts)
-		{
 			return;
-		}
 
 		inside = 0;
 		iPolygonMin = V3Sub(iPolygonMin, eps);
@@ -747,7 +696,6 @@ namespace physx
 		{
 			if(contains(points1In0, incidentPolygon.mNbVerts, points0In0[i], iPolygonMin, iPolygonMax))
 			{
-				
 				inside++;
 
 				const Vec3V vert0 = M33TrnspsMulV3(rot, points0In0[i]);
@@ -755,7 +703,6 @@ namespace physx
 
 				if(FAllGrtr(t, contactDist))
 					continue;
-
 
 				const Vec3V projPoint = V3NegScaleSub(incidentNormal, t, vert0);
 
@@ -775,9 +722,7 @@ namespace physx
 					numManifoldContacts = previousContacts + GU_SINGLE_MANIFOLD_SINGLE_POLYGONE_CACHE_SIZE;
 				}
 			}
-				
 		}
-
 
 		if(inside == 3)
 			return;  
@@ -785,8 +730,6 @@ namespace physx
 		//(2) segment intesection
 		for (PxU32 rStart = 0, rEnd = 2; rStart < 3; rEnd = rStart++)
 		{
-
-
 			const Vec3V rpA = points0In0[rStart];
 			const Vec3V rpB = points0In0[rEnd];
 
@@ -810,17 +753,16 @@ namespace physx
 				if (BAllEqTTTT(con))
 					continue;
 
-				FloatV a1 = signed2DTriArea(rpA, rpB, ipA);
-				FloatV a2 = signed2DTriArea(rpA, rpB, ipB);
+				const FloatV a1 = signed2DTriArea(rpA, rpB, ipA);
+				const FloatV a2 = signed2DTriArea(rpA, rpB, ipB);
 
 				if (FAllGrtr(zero, FMul(a1, a2)))
 				{
-					FloatV a3 = signed2DTriArea(ipA, ipB, rpA);
-					FloatV a4 = signed2DTriArea(ipA, ipB, rpB);
+					const FloatV a3 = signed2DTriArea(ipA, ipB, rpA);
+					const FloatV a4 = signed2DTriArea(ipA, ipB, rpB);
 
 					if (FAllGrtr(zero, FMul(a3, a4)))
 					{
-
 						//these two segment intersect in 2d
 						const FloatV t = FMul(a1, FRecip(FSub(a2, a1)));
 
@@ -851,20 +793,14 @@ namespace physx
 					}
 				}
 			}
-
 		}
-		
 	}
 
-
-	static void generatedPolyContacts(const Gu::PolygonalData& polyData0, const Gu::HullPolygonData& referencePolygon, const Gu::TriangleV& triangle, const PxU32 triangleIndex, const PxU8 triFlags, 
-		Gu::SupportLocal* map0, Gu::MeshPersistentContact* manifoldContacts, PxU32& numManifoldContacts, const aos::FloatVArg contactDist, const aos::Vec3VArg contactNormal, 
-		PxRenderOutput* renderOutput)
+	static void generatedPolyContacts(const Gu::PolygonalData& polyData0, const Gu::HullPolygonData& referencePolygon, const Gu::TriangleV& triangle, PxU32 triangleIndex, PxU8 triFlags, 
+		const Gu::SupportLocal* map0, Gu::MeshPersistentContact* manifoldContacts, PxU32& numManifoldContacts, const aos::FloatVArg contactDist, const aos::Vec3VArg contactNormal, PxRenderOutput* renderOutput)
 	{
 		PX_UNUSED(triFlags);
 		PX_UNUSED(renderOutput);
-
-		using namespace aos;
 
 		const FloatV zero = FZero();
 
@@ -881,7 +817,7 @@ namespace physx
 		Vec3V points1In0[3];
 		FloatV points1In0TValue[3];
 
-		bool points1In0Penetration[3];
+		bool points1In0Penetration[3] = { false, false, false };
 		
 		//Transform all the verts from vertex space to shape space
 		map0->populateVerts(inds0, referencePolygon.mNbVerts, polyData0.mVerts, points0In0);
@@ -916,8 +852,6 @@ namespace physx
 		
 		rPolygonMin = V3Sub(rPolygonMin, eps);
 		rPolygonMax = V3Add(rPolygonMax, eps);
-
-		
 		
 		const FloatV d = V3GetZ(points0In0[0]);
 
@@ -963,14 +897,10 @@ namespace physx
 					}
 				}
 			}
-			
 		}
-
 
 		if(inside == 3)
-		{
 			return;
-		}
 
 		inside = 0;
 		iPolygonMin = V3Sub(iPolygonMin, eps);
@@ -983,7 +913,6 @@ namespace physx
 		{
 			if(contains(points1In0, 3, points0In0[i], iPolygonMin, iPolygonMax))
 			{
-			
 				const Vec3V vert0 = M33TrnspsMulV3(rot, points0In0[i]);
 
 				const FloatV t =FSub(V3Dot(incidentNormal, vert0), iPlaneD);
@@ -1017,15 +946,11 @@ namespace physx
 						numManifoldContacts = previousContacts + GU_SINGLE_MANIFOLD_SINGLE_POLYGONE_CACHE_SIZE;
 					}
 				}
-					
 			}
-				
 		}
 
 		if(inside == referencePolygon.mNbVerts)
 			return;
-
-
 	
 		//Always generate segment contacts
 		//(2) segment intesection
@@ -1042,7 +967,6 @@ namespace physx
 		
 			for (PxU32 rStart = 0, rEnd = PxU32(referencePolygon.mNbVerts - 1); rStart < referencePolygon.mNbVerts; rEnd = rStart++) 
 			{
-	
 				const Vec3V rpA = points0In0[rStart];
 				const Vec3V rpB = points0In0[rEnd];
 
@@ -1054,20 +978,17 @@ namespace physx
 		
 				if(BAllEqTTTT(con))
 					continue;
-			
 					
-				FloatV a1 = signed2DTriArea(rpA, rpB, ipA);
-				FloatV a2 = signed2DTriArea(rpA, rpB, ipB);
-
+				const FloatV a1 = signed2DTriArea(rpA, rpB, ipA);
+				const FloatV a2 = signed2DTriArea(rpA, rpB, ipB);
 
 				if(FAllGrtr(zero, FMul(a1, a2)))
 				{
-					FloatV a3 = signed2DTriArea(ipA, ipB, rpA);
-					FloatV a4 = signed2DTriArea(ipA, ipB, rpB);
+					const FloatV a3 = signed2DTriArea(ipA, ipB, rpA);
+					const FloatV a4 = signed2DTriArea(ipA, ipB, rpB);
 
 					if(FAllGrtr(zero, FMul(a3, a4)))
 					{
-						
 						//these two segment intersect
 						const FloatV t = FMul(a1, FRecip(FSub(a2, a1)));
 
@@ -1082,7 +1003,6 @@ namespace physx
 				
 						if(FAllGrtr(pen, contactDist))
 							continue;
-		
 					
 						const Vec4V localNormalPen = V4SetW(Vec4V_From_Vec3V(nContactNormal), pen);
 						numManifoldContacts = addMeshContacts(manifoldContacts, pA, pB, localNormalPen, triangleIndex, numManifoldContacts);
@@ -1100,34 +1020,26 @@ namespace physx
 				}
 			}
 		}
-			
 	}
 
-
-	bool Gu::PCMConvexVsMeshContactGeneration::generateTriangleFullContactManifold(Gu::TriangleV& localTriangle, const PxU32 triangleIndex, const PxU32* triIndices, const PxU8 triFlags, const Gu::PolygonalData& polyData,  Gu::SupportLocalImpl<Gu::TriangleV>* localTriMap, Gu::SupportLocal* polyMap, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts,
+	bool Gu::PCMConvexVsMeshContactGeneration::generateTriangleFullContactManifold(const Gu::TriangleV& localTriangle, PxU32 triangleIndex, const PxU32* triIndices, PxU8 triFlags, const Gu::PolygonalData& polyData, const Gu::SupportLocalImpl<Gu::TriangleV>* localTriMap, const Gu::SupportLocal* polyMap, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts,
 		const aos::FloatVArg contactDist, aos::Vec3V& patchNormal)
 	{
-	
-		using namespace aos;
-
 		{
-				
 			FeatureStatus status = POLYDATA0;
 			FloatV minOverlap = FMax();
 			//minNormal will be in the local space of polyData
 			Vec3V minNormal = V3Zero();
-
 
 			PxU32 feature0;
 			if(!testTriangleFaceNormal(localTriangle, polyData, localTriMap, polyMap, contactDist, minOverlap, feature0, minNormal, POLYDATA0, status))
 				return false;
 
 			PxU32 feature1;
-			if(!testPolyFaceNormal(localTriangle, polyData, localTriMap, polyMap, contactDist, minOverlap, feature1, minNormal, POLYDATA1, status))
+			if(!testPolyFaceNormal(polyData, localTriMap, polyMap, contactDist, minOverlap, feature1, minNormal, POLYDATA1, status))
 				return false;
 
-
-			if (!testPolyEdgeNormal(localTriangle, triFlags, polyData, localTriMap, polyMap, contactDist, minOverlap, minNormal, EDGE, status))
+			if(!testPolyEdgeNormal(localTriangle, triFlags, polyData, localTriMap, polyMap, contactDist, minOverlap, minNormal, EDGE, status))
 				return false;
 
 			const Vec3V triNormal = localTriangle.normal();
@@ -1147,11 +1059,9 @@ namespace physx
 				{
 					generatedTriangleContacts(localTriangle, triangleIndex, triFlags, polyData, polyData.mPolygons[index2], polyMap, manifoldContacts, numContacts, contactDist, triNormal, mRenderOutput);
 				}
-			
 			}
 			else
 			{
-
 				if(status == POLYDATA1)
 				{
 					const Gu::HullPolygonData* referencePolygon = &polyData.mPolygons[feature1];
@@ -1211,17 +1121,12 @@ namespace physx
 		return true;
 	}
 
-
-	bool Gu::PCMConvexVsMeshContactGeneration::generateTriangleFullContactManifold(Gu::TriangleV& localTriangle,  const PxU32 triangleIndex, const PxU8 triFlags, const Gu::PolygonalData& polyData,  Gu::SupportLocalImpl<Gu::TriangleV>* localTriMap, Gu::SupportLocal* polyMap, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts,
+	bool Gu::PCMConvexVsMeshContactGeneration::generateTriangleFullContactManifold(const Gu::TriangleV& localTriangle, PxU32 triangleIndex, PxU8 triFlags, const Gu::PolygonalData& polyData, const Gu::SupportLocalImpl<Gu::TriangleV>* localTriMap, const Gu::SupportLocal* polyMap, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts,
 		const aos::FloatVArg contactDist, aos::Vec3V& patchNormal, PxRenderOutput* renderOutput)
 	{
-	
-		using namespace aos;
-
 		const FloatV threshold = FLoad(0.7071f);//about 45 degree
 		PX_UNUSED(threshold);
 		{
-			
 			FeatureStatus status = POLYDATA0;
 			FloatV minOverlap = FMax();
 			//minNormal will be in the local space of polyData
@@ -1232,7 +1137,7 @@ namespace physx
 				return false;
 			
 			PxU32 feature1;
-			if(!testPolyFaceNormal(localTriangle, polyData, localTriMap, polyMap, contactDist, minOverlap, feature1, minNormal, POLYDATA1, status))
+			if(!testPolyFaceNormal(polyData, localTriMap, polyMap, contactDist, minOverlap, feature1, minNormal, POLYDATA1, status))
 				return false;
 
 			if(!testPolyEdgeNormal(localTriangle, triFlags, polyData, localTriMap, polyMap, contactDist, minOverlap, minNormal, EDGE, status))
@@ -1243,17 +1148,13 @@ namespace physx
 
 			const Gu::HullPolygonData* referencePolygon = &polyData.mPolygons[getPolygonIndex(polyData, polyMap, triNormal)];
 			generatedTriangleContacts(localTriangle, triangleIndex, triFlags, polyData, *referencePolygon, polyMap, manifoldContacts, numContacts, contactDist, triNormal, renderOutput);
-			
 		}
 
 		return true;
 	}
 
-	bool Gu::PCMConvexVsMeshContactGeneration::generatePolyDataContactManifold(Gu::TriangleV& localTriangle, const PxU32 featureIndex,  const PxU32 triangleIndex, const PxU8 triFlags, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts, const aos::FloatVArg contactDist, aos::Vec3V& patchNormal)
+	bool Gu::PCMConvexVsMeshContactGeneration::generatePolyDataContactManifold(const Gu::TriangleV& localTriangle, PxU32 featureIndex, PxU32 triangleIndex, PxU8 triFlags, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts, const aos::FloatVArg contactDist, aos::Vec3V& patchNormal)
 	{
-	
-		using namespace aos;
-
 		const Gu::HullPolygonData* referencePolygon = &mPolyData.mPolygons[featureIndex];
 		
 		const Vec3V contactNormal = V3Normalize(M33TrnspsMulV3(mPolyMap->shape2Vertex, V3LoadU(referencePolygon->mPlane.n)));
@@ -1264,6 +1165,5 @@ namespace physx
 
 		return true;
 	}
-
 
 }//physx

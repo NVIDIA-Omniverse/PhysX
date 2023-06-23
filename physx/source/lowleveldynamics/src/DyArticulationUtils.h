@@ -32,7 +32,6 @@
 #include "foundation/PxBitUtils.h"
 #include "foundation/PxVecMath.h"
 #include "CmSpatialVector.h"
-#include "DySpatial.h"
 #include "DyVArticulation.h"
 
 namespace physx

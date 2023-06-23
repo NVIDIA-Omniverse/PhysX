@@ -55,7 +55,7 @@ class PxsRigidBody
 		// PT: this flag is now only used on the GPU. For the CPU the data is now stored directly in PxsBodyCore.
 		eDISABLE_GRAVITY_GPU	=	1 << 5,
 		eSPECULATIVE_CCD		=	1 << 6,
-		eENABLE_GYROSCROPIC		=	1 << 7,
+		eENABLE_GYROSCOPIC		=	1 << 7,
 		//KS - copied here for GPU simulation to avoid needing to pass another set of flags around.
 		eLOCK_LINEAR_X			=	1 << (PX_INTERNAL_LOCK_FLAG_START),
 		eLOCK_LINEAR_Y			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 1),
@@ -122,7 +122,9 @@ class PxsRigidBody
 	PX_FORCE_INLINE	PxU32				isUnfreezeThisFrame()				const	{ return PxU32(mInternalFlags & eUNFREEZE_THIS_FRAME);		}
 	PX_FORCE_INLINE	void				clearFreezeFlag()							{ mInternalFlags &= ~eFREEZE_THIS_FRAME;					}
 	PX_FORCE_INLINE	void				clearUnfreezeFlag()							{ mInternalFlags &= ~eUNFREEZE_THIS_FRAME;					}
-	PX_FORCE_INLINE	void				clearAllFrameFlags()						{ mInternalFlags &= ~(eFREEZE_THIS_FRAME | eUNFREEZE_THIS_FRAME | eACTIVATE_THIS_FRAME | eDEACTIVATE_THIS_FRAME);								}
+	PX_FORCE_INLINE	void				clearAllFrameFlags()						{ mInternalFlags &= ~(eFREEZE_THIS_FRAME | eUNFREEZE_THIS_FRAME | eACTIVATE_THIS_FRAME | eDEACTIVATE_THIS_FRAME);	}
+
+	PX_FORCE_INLINE	void				resetSleepFilter()							{ sleepAngVelAcc = sleepLinVelAcc = PxVec3(0.0f);			}
 
 	// PT: implemented in PxsCCD.cpp:
 					void				advanceToToi(PxReal toi, PxReal dt, bool clip);

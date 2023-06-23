@@ -534,7 +534,7 @@ bool TriangleMeshBuilder::loadFromDescInternal(PxTriangleMeshDesc& desc, PxTrian
 	return true;
 }
 
-void TriangleMeshBuilder::buildInertiaTensor()
+void TriangleMeshBuilder::buildInertiaTensor(bool flipNormals)
 {
 	PxTriangleMeshDesc simpleMesh;
 
@@ -545,6 +545,8 @@ void TriangleMeshBuilder::buildInertiaTensor()
 	simpleMesh.triangles.stride = sizeof(PxU32) * 3;
 	simpleMesh.triangles.data = mMeshData.mTriangles;
 	simpleMesh.flags &= (~PxMeshFlag::e16_BIT_INDICES);
+	if (flipNormals)
+		simpleMesh.flags.raise(PxMeshFlag::eFLIPNORMALS);
 
 	PxIntegrals integrals;
 	computeVolumeIntegrals(simpleMesh, 1, integrals);
@@ -559,6 +561,8 @@ void TriangleMeshBuilder::buildInertiaTensorFromSDF()
 	if (MeshAnalyzer::checkMeshWatertightness(reinterpret_cast<const Gu::Triangle*>(mMeshData.mTriangles), mMeshData.mNbTriangles))
 	{
 		buildInertiaTensor();
+		if (mMeshData.mMass < 0.0f)
+			buildInertiaTensor(true); //The mesh can be watertight but all triangles might be oriented the wrong way round
 		return;
 	}
 	
@@ -792,6 +796,18 @@ bool TriangleMeshBuilder::save(PxOutputStream& stream, bool platformMismatch, co
 #pragma warning(disable:4996)	// permitting use of gatherStrided until we have a replacement.
 #endif
 
+#if PX_CHECKED
+bool checkInputFloats(PxU32 nb, const float* values, const char* file, PxU32 line, const char* errorMsg)
+{
+	while(nb--)
+	{
+		if(!PxIsFinite(*values++))
+			return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, file, line, errorMsg);
+	}
+	return true;
+}
+#endif
+
 bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc,const PxCookingParams& params,PxTriangleMeshCookingResult::Enum* condition, bool validate)
 {
 	//convert and clean the input mesh
@@ -805,12 +821,8 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc,const PxCook
 
 #if PX_CHECKED
 	// PT: check all input vertices are valid
-	for(PxU32 i=0;i<desc.points.count;i++)
-	{
-		const PxVec3& p = verts[i];
-		if(!PxIsFinite(p.x) || !PxIsFinite(p.y) || !PxIsFinite(p.z))
-			return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "input mesh contains corrupted vertex data");
-	}
+	if(!checkInputFloats(desc.points.count*3, &verts->x, PX_FL, "input mesh contains corrupted vertex data"))
+		return false;
 #endif
 
 	//for trigs index stride conversion and eventual reordering is also needed, I don't think flexicopy can do that for us.
@@ -933,11 +945,8 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc,const PxCook
 
 #if PX_CHECKED
 		// SN: check all input sdf values are valid
-		for (PxU32 i = 0; i < sdfDesc.sdf.count; ++i)
-		{
-			if (!PxIsFinite(sdf[i]))
-				return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "input sdf contains corrupted data");
-		}
+		if(!checkInputFloats(sdfDesc.sdf.count, sdf, PX_FL, "input sdf contains corrupted data"))
+			return false;
 #endif
 	}
 

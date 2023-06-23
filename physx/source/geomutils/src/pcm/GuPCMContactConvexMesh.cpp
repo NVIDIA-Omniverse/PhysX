@@ -201,13 +201,13 @@ bool Gu::pcmContactConvexMesh(GU_CONTACT_METHOD_ARGS)
 	if(idtScaleConvex)
 	{
 		SupportLocalImpl<Gu::ConvexHullNoScaleV> convexMap(static_cast<const ConvexHullNoScaleV&>(convexHull), convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, true);
-		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh,transform0,transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 	else
 	{
 		SupportLocalImpl<Gu::ConvexHullV> convexMap(convexHull, convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, false);
-		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh,transform0,transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 }
@@ -244,7 +244,7 @@ bool Gu::pcmContactBoxMesh(GU_CONTACT_METHOD_ARGS)
 	PCMPolygonalBox polyBox(shapeBox.halfExtents);
 	polyBox.getPolygonalData(&polyData);
 
-	Mat33V identity =  M33Identity();
+	const Mat33V identity = M33Identity();
 	SupportLocalImpl<BoxV> boxMap(boxV, boxTransform, identity, identity, true);
 
 	return Gu::PCMContactConvexMesh(polyData, &boxMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, idtScaling,  meshScaling, 

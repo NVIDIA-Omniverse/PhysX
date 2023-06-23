@@ -25,7 +25,6 @@
 // Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
-     
 
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
@@ -133,8 +132,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 	const Vec4V vrelY = V4Sub(linVelT10, linVelT11);
 	const Vec4V vrelZ = V4Sub(linVelT20, linVelT21);
 
-
-
 	//Load up masses and invInertia
 
 	const Vec4V invMass0 = V4Merge(FLoad(descs[0].data0->invMass), FLoad(descs[1].data0->invMass), FLoad(descs[2].data0->invMass),
@@ -216,7 +213,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 	Vec4V bodyFrame0pX, bodyFrame0pY, bodyFrame0pZ;
 	PX_TRANSPOSE_44_34(bodyFrame00p4, bodyFrame01p4, bodyFrame02p4, bodyFrame03p4, bodyFrame0pX, bodyFrame0pY, bodyFrame0pZ);
 
-	
 	const Vec3V bodyFrame10p = V3LoadU(descs[0].bodyFrame1.p);
 	const Vec3V bodyFrame11p = V3LoadU(descs[1].bodyFrame1.p);
 	const Vec3V bodyFrame12p = V3LoadU(descs[2].bodyFrame1.p);
@@ -230,12 +226,10 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 	Vec4V bodyFrame1pX, bodyFrame1pY, bodyFrame1pZ;
 	PX_TRANSPOSE_44_34(bodyFrame10p4, bodyFrame11p4, bodyFrame12p4, bodyFrame13p4, bodyFrame1pX, bodyFrame1pY, bodyFrame1pZ);
 
-	
 	PxPrefetchLine(c.contactID);
 	PxPrefetchLine(c.contactID, 128);
 
 	PxU32 frictionIndex0 = 0, frictionIndex1 = 0, frictionIndex2 = 0, frictionIndex3 = 0;
-
 
 	PxU32 maxPatches = PxMax(descs[0].numFrictionPatches, PxMax(descs[1].numFrictionPatches, PxMax(descs[2].numFrictionPatches, descs[3].numFrictionPatches)));
 	PxU32 maxContacts = numContactPoints4;
@@ -252,30 +246,28 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 		const bool hasFinished2 = i >= descs[2].numFrictionPatches;
 		const bool hasFinished3 = i >= descs[3].numFrictionPatches;
 
-
 		frictionIndex0 = hasFinished0 ? frictionIndex0 : descs[0].startFrictionPatchIndex + i;
 		frictionIndex1 = hasFinished1 ? frictionIndex1 : descs[1].startFrictionPatchIndex + i;
 		frictionIndex2 = hasFinished2 ? frictionIndex2 : descs[2].startFrictionPatchIndex + i;
 		frictionIndex3 = hasFinished3 ? frictionIndex3 : descs[3].startFrictionPatchIndex + i;
 
-		PxU32 clampedContacts0 = hasFinished0 ? 0 : c.frictionPatchContactCounts[frictionIndex0];
-		PxU32 clampedContacts1 = hasFinished1 ? 0 : c.frictionPatchContactCounts[frictionIndex1];
-		PxU32 clampedContacts2 = hasFinished2 ? 0 : c.frictionPatchContactCounts[frictionIndex2];
-		PxU32 clampedContacts3 = hasFinished3 ? 0 : c.frictionPatchContactCounts[frictionIndex3];
+		const PxU32 clampedContacts0 = hasFinished0 ? 0 : c.frictionPatchContactCounts[frictionIndex0];
+		const PxU32 clampedContacts1 = hasFinished1 ? 0 : c.frictionPatchContactCounts[frictionIndex1];
+		const PxU32 clampedContacts2 = hasFinished2 ? 0 : c.frictionPatchContactCounts[frictionIndex2];
+		const PxU32 clampedContacts3 = hasFinished3 ? 0 : c.frictionPatchContactCounts[frictionIndex3];
 
-		PxU32 clampedFric0 = clampedContacts0 * numFrictionPerPoint;
-		PxU32 clampedFric1 = clampedContacts1 * numFrictionPerPoint;
-		PxU32 clampedFric2 = clampedContacts2 * numFrictionPerPoint;
-		PxU32 clampedFric3 = clampedContacts3 * numFrictionPerPoint;
-
+		const PxU32 clampedFric0 = clampedContacts0 * numFrictionPerPoint;
+		const PxU32 clampedFric1 = clampedContacts1 * numFrictionPerPoint;
+		const PxU32 clampedFric2 = clampedContacts2 * numFrictionPerPoint;
+		const PxU32 clampedFric3 = clampedContacts3 * numFrictionPerPoint;
 
 		const PxU32 numContacts = PxMax(clampedContacts0, PxMax(clampedContacts1, PxMax(clampedContacts2, clampedContacts3)));
 		const PxU32 numFrictions = PxMax(clampedFric0, PxMax(clampedFric1, PxMax(clampedFric2, clampedFric3)));
 
-		PxU32 firstPatch0 = c.correlationListHeads[frictionIndex0];
-		PxU32 firstPatch1 = c.correlationListHeads[frictionIndex1];
-		PxU32 firstPatch2 = c.correlationListHeads[frictionIndex2];
-		PxU32 firstPatch3 = c.correlationListHeads[frictionIndex3];
+		const PxU32 firstPatch0 = c.correlationListHeads[frictionIndex0];
+		const PxU32 firstPatch1 = c.correlationListHeads[frictionIndex1];
+		const PxU32 firstPatch2 = c.correlationListHeads[frictionIndex2];
+		const PxU32 firstPatch3 = c.correlationListHeads[frictionIndex3];
 
 		const PxContactPoint* contactBase0 = descs[0].contacts + c.contactPatches[firstPatch0].start;
 		const PxContactPoint* contactBase1 = descs[1].contacts + c.contactPatches[firstPatch1].start;
@@ -296,7 +288,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 
 		SolverFrictionHeader4* PX_RESTRICT fricHeader = reinterpret_cast<SolverFrictionHeader4*>(ptr2);
 		ptr2 += sizeof(SolverFrictionHeader4) + sizeof(Vec4V) * numContacts;
-
 
 		header->numNormalConstr0 = PxTo8(clampedContacts0);
 		header->numNormalConstr1 = PxTo8(clampedContacts1);
@@ -353,9 +344,8 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 		const Vec4V invMassNorLenSq0 = V4Mul(invMass0_dom0fV, normalLenSq);
 		const Vec4V invMassNorLenSq1 = V4Mul(invMass1_dom1fV, normalLenSq);		
 
-
 		//Calculate friction directions
-		const BoolV cond =V4IsGrtr(orthoThreshold, V4Abs(normalX));
+		const BoolV cond = V4IsGrtr(orthoThreshold, V4Abs(normalX));
 
 		const Vec4V t0FallbackX = V4Sel(cond, zero, V4Neg(normalY));
 		const Vec4V t0FallbackY = V4Sel(cond, V4Neg(normalZ), normalX);
@@ -388,7 +378,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 		const Vec4V tFallbackX[2] = {t0X, t1X};
 		const Vec4V tFallbackY[2] = {t0Y, t1Y};
 		const Vec4V tFallbackZ[2] = {t0Z, t1Z};
-
 
 		//For all correlation heads - need to pull this out I think
 
@@ -504,7 +493,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 					Vec4V unitResponse = V4Add(invMassNorLenSq0, dotDelAngVel0);
 					Vec4V vrel = V4Add(linNorVel0, dotRaXnAngVel0);
 
-
 					//The dynamic-only parts - need to if-statement these up. A branch here shouldn't cost us too much
 					if(isDynamic)
 					{
@@ -525,7 +513,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 						const Vec4V delAngVel1Y = V4MulAdd(invInertia1Z1, rbXnZ, v0PlusV1b1);
 						const Vec4V delAngVel1Z = V4MulAdd(invInertia1Z2, rbXnZ, v0PlusV1b2);
 
-
 						//V3Dot(raXn, delAngVel0)
 						
 						const Vec4V dotDelAngVel1 = V4MulAdd(delAngVel1Z, delAngVel1Z, V4MulAdd(delAngVel1Y, delAngVel1Y, V4Mul(delAngVel1X, delAngVel1X)));
@@ -543,7 +530,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 						dynamicContact->rbXnX = delAngVel1X;
 						dynamicContact->rbXnY = delAngVel1Y;
 						dynamicContact->rbXnZ = delAngVel1Z;
-
 					}
 
 					const Vec4V velMultiplier = V4Sel(V4IsGrtr(unitResponse, zero), V4Recip(unitResponse), zero);
@@ -701,8 +687,6 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 	return true;
 }
 
-
-
 //The persistent friction patch correlation/allocation will already have happenned as this is per-pair.
 //This function just computes the size of the combined solve data.
 void computeBlockStreamByteSizesCoulomb4(PxSolverContactDesc* descs,
@@ -757,7 +741,6 @@ void computeBlockStreamByteSizesCoulomb4(PxSolverContactDesc* descs,
 
 	_numContactPoints4 = totalContacts;
 
-
 	//OK, we have a given number of friction patches, contact points and friction constraints so we can calculate how much memory we need
 
 	const bool isStatic = (((descs[0].bodyState1 | descs[1].bodyState1 | descs[2].bodyState1 | descs[3].bodyState1) & PxSolverContactDesc::eDYNAMIC_BODY) == 0);
@@ -767,10 +750,9 @@ void computeBlockStreamByteSizesCoulomb4(PxSolverContactDesc* descs,
 	const PxU32 constraintSize = isStatic ? ((sizeof(SolverContact4Base) + sizeof(Vec4V)) * totalContacts) + ( sizeof(SolverFriction4Base) * totalFriction) : 
 		((sizeof(SolverContact4Dynamic) + sizeof(Vec4V)) * totalContacts) + (sizeof(SolverFriction4Dynamic) * totalFriction);
 
-	_solverConstraintByteSize =  ((constraintSize + headerSize + 0x0f) & ~0x0f);
+	_solverConstraintByteSize = ((constraintSize + headerSize + 0x0f) & ~0x0f);
 	PX_ASSERT(0 == (_solverConstraintByteSize & 0x0f));
 }
-
 
 static SolverConstraintPrepState::Enum reserveBlockStreamsCoulomb4(PxSolverContactDesc* descs, ThreadContext& threadContext, const CorrelationBuffer& c,
 						PxU8*& solverConstraint, const PxU32 numFrictionPerContactPoint,
@@ -862,7 +844,6 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb2D(
 		frictionOffsetThreshold, correlationDistance, constraintAllocator, PxFrictionType::eTWO_DIRECTIONAL);
 }
 
-
 SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb(
 								PxsContactManagerOutput** outputs,
 								 ThreadContext& threadContext,
@@ -951,7 +932,6 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb(
 		invMassScale1[a] *= blockDesc.invMassScales.linear1;
 		invInertiaScale0[a] *= blockDesc.invMassScales.angular0;
 		invInertiaScale1[a] *= blockDesc.invMassScales.angular1;
-
 	}
 
 	//OK, now we need to work out how much memory to allocate, allocate it and then block-create the constraints...
@@ -991,14 +971,12 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb(
 	const Vec4V iMassScale1 = V4LoadA(invMassScale1); 
 	const Vec4V iInertiaScale1 = V4LoadA(invInertiaScale1);
 
-
 	bool hasFriction = setupFinalizeSolverConstraintsCoulomb4(blockDescs, solverConstraint, 
 											invDtF32, bounceThresholdF32, c, numFrictionPerPoint, numContactPoints4, solverConstraintByteSize,
 											iMassScale0, iInertiaScale0, iMassScale1, iInertiaScale1);
 
 	*(reinterpret_cast<PxU32*>(solverConstraint + solverConstraintByteSize)) = 0;
 	*(reinterpret_cast<PxU32*>(solverConstraint + solverConstraintByteSize + 4)) = hasFriction ? 0xFFFFFFFF : 0;
-
 
 	return SolverConstraintPrepState::eSUCCESS;
 }

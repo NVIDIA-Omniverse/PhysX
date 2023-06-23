@@ -79,8 +79,6 @@ Handles to the created object instances will be stored in a PxVehiclePvdObjectHa
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If rbodyParams is NULL, omnipvd will not reflect rigid body parameters.
 \note If rbodyState is NULL, omnipvd will not reflect rigid body state.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 \note PxVehiclePvdRigidBodyRegister should be called once for each vehicle instance.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
@@ -89,7 +87,7 @@ Handles to the created object instances will be stored in a PxVehiclePvdObjectHa
 void PxVehiclePvdRigidBodyRegister
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write the parameters and state of the rigid body of a vehicle instance to omnipvd.
@@ -100,7 +98,7 @@ void PxVehiclePvdRigidBodyRegister
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If rbodyParams is NULL but a non-NULL value was used in PxVehiclePvdRigidBodyRegister(), the rigid body parameters will not be updated in omnipvd.
 \note If rbodyState is NULL but a non-NULL value was used in PxVehiclePvdRigidBodyRegister(), the rigid body state will not be updated in omnipvd.
-\note omniWriter must be non-NULL and must be the same instance used in PxVehiclePvdRigidBodyRegister().
+\note omniWriter must be the same instance used in PxVehiclePvdRigidBodyRegister().
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdRigidBodyRegister
@@ -108,7 +106,7 @@ void PxVehiclePvdRigidBodyRegister
 void PxVehiclePvdRigidBodyWrite
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect the suspension state calculation parameters of a vehicle instance.
@@ -117,8 +115,6 @@ void PxVehiclePvdRigidBodyWrite
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If suspStateCalcParams is NULL, omnipvd will not reflect the suspension state calculation parameters.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdSuspensionStateCalculationParamsWrite
@@ -126,7 +122,7 @@ void PxVehiclePvdRigidBodyWrite
 void PxVehiclePvdSuspensionStateCalculationParamsRegister
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write the parameters and state of the rigid body of a vehicle instance to omnipvd.
@@ -136,7 +132,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsRegister
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If suspStateCalcParams is NULL but a non-NULL value was used in void PxVehiclePvdSuspensionStateCalculationParamsRegister(), 
 the suspension state calculation parameters will not be updated in omnipvd.
-\note omniWriter must be non-NULL and must be the same instance used in PxVehiclePvdSuspensionStateCalculationParamsRegister().
+\note omniWriter must be the same instance used in PxVehiclePvdSuspensionStateCalculationParamsRegister().
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdSuspensionStateCalculationParamsRegister
@@ -144,7 +140,7 @@ the suspension state calculation parameters will not be updated in omnipvd.
 void PxVehiclePvdSuspensionStateCalculationParamsWrite
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect the brake and steer command response parameters of a vehicle instance.
@@ -159,8 +155,6 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 \note If steerResponseParams is NULL, omnipvd will not reflect the steer command response parameters.
 \note If brakeResponseStates is empty, omnipvd will not reflect any brake command response state.
 \note If steerResponseStates is empty, omnipvd will not reflect any steer command response state.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdCommandResponseWrite
@@ -171,7 +165,7 @@ void PxVehiclePvdCommandResponseRegister
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write brake and steer command response parameters to omnipvd.
@@ -191,7 +185,7 @@ the steer command parameters will not be updated in omnipvd.
 the brake response states will not be updated in omnipvd.
 \note If steerResponseStates is empty but a non-empty array was used in PxVehiclePvdCommandResponseRegister(), 
 the steer response states will not be updated in omnipvd. 
-\note omniWriter must be non-NULL and must be the same instance used in PxVehiclePvdCommandResponseRegister().
+\note omniWriter must be the same instance used in PxVehiclePvdCommandResponseRegister().
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdCommandResponseRegister
@@ -203,7 +197,7 @@ void PxVehiclePvdCommandResponseWrite
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect wheel attachment data such as tires, suspensions and wheels.
@@ -232,8 +226,6 @@ void PxVehiclePvdCommandResponseWrite
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any array is empty, the corresponding data will not be reflected in omnipvd.
 \note Each array must either be empty or contain an entry for each wheel present in axleDesc.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdWheelAttachmentsWrite
@@ -260,7 +252,7 @@ void PxVehiclePvdWheelAttachmentsRegister
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& attributeHandles, 
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write wheel attachment data such as tire, suspension and wheel data to omnipvd.
@@ -289,7 +281,6 @@ void PxVehiclePvdWheelAttachmentsRegister
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any array is empty but the corresponding argument in PxVehiclePvdWheelAttachmentsRegister was not empty, the corresponding data will not be updated in omnipvd.
 \note Each array must either be empty or contain an entry for each wheel present in axleDesc.
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdWheelAttachmentsRegister
@@ -316,7 +307,7 @@ void PxVehiclePvdWheelAttachmentsWrite
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect the antiroll bars of a vehicle instance.
@@ -327,8 +318,6 @@ void PxVehiclePvdWheelAttachmentsWrite
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If antiRollForceParams is empty, the corresponding data will not be reflected in omnipvd.
 \note If antiRollTorque is NULL, the corresponding data will not be reflected in omnipvd.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdAntiRollsWrite
@@ -336,7 +325,7 @@ void PxVehiclePvdWheelAttachmentsWrite
 void PxVehiclePvdAntiRollsRegister
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams, const PxVehicleAntiRollTorque* antiRollTorque,
  const PxVehiclePvdAttributeHandles& attributeHandles, 
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write antiroll data to omnipvd.
@@ -347,7 +336,6 @@ void PxVehiclePvdAntiRollsRegister
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If antiRollForceParams is empty but the corresponding argument was not empty, the corresponding data will not be updated in omnipvd.
 \note If antiRollTorque is NULL but the corresponding argument was not NULL, the corresponding data will not be updated in omnipvd.
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdAntiRollsRegister
@@ -355,7 +343,7 @@ void PxVehiclePvdAntiRollsRegister
 void PxVehiclePvdAntiRollsWrite
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams, const PxVehicleAntiRollTorque* antiRollTorque,
  const PxVehiclePvdAttributeHandles& attributeHandles, 
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect the direct drivetrain of a vehicle instance.
@@ -370,8 +358,6 @@ void PxVehiclePvdAntiRollsWrite
 \note If transmissionCommandState is NULL, the corresponding data will not be reflected in omnipvd.
 \note If directDriveThrottleResponseParams is NULL, the corresponding data will not be reflected in omnipvd.
 \note If directDriveThrottleResponseState is empty, the corresponding data will not be reflected in omnipvd. 
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdDirectDrivetrainWrite
@@ -381,7 +367,7 @@ void PxVehiclePvdDirectDrivetrainRegister
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write direct drivetrain data to omnipvd.
@@ -397,7 +383,6 @@ void PxVehiclePvdDirectDrivetrainRegister
 \note If transmissionCommandState is NULL but the corresponding entry in PxVehiclePvdDirectDrivetrainRegister() was not NULL, the corresponding data will not be updated in omnipvd.
 \note If directDriveThrottleResponseParams is NULL but the corresponding entry in PxVehiclePvdDirectDrivetrainRegister() was not NULL, the corresponding data will not be updated in omnipvd.
 \note If directDriveThrottleResponseState is empty but the corresponding entry in PxVehiclePvdDirectDrivetrainRegister() was not empty, the corresponding data will not be updated in omnipvd.
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdDirectDrivetrainRegister
@@ -408,7 +393,7 @@ void PxVehiclePvdDirectDrivetrainWrite
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register object instances in omnipvd that will be used to reflect the engine drivetrain of a vehicle instance.
@@ -432,8 +417,6 @@ void PxVehiclePvdDirectDrivetrainWrite
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any pointer is NULL, the corresponding data will not be reflected in omnipvd.
-\note objectHandles must be non-NULL
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdEngineDrivetrainWrite
@@ -455,7 +438,7 @@ void PxVehiclePvdEngineDrivetrainRegister
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write engine drivetrain data of a vehicle instance to omnipvd.
@@ -479,7 +462,6 @@ void PxVehiclePvdEngineDrivetrainRegister
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any pointer is NULL and the corresponding argument in PxVehiclePvdEngineDrivetrainRegister() was not NULL, the corresponding data will not be reflected in omnipvd.
-\note omniWriter must be non-NULL
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdEngineDrivetrainRegister
@@ -501,7 +483,7 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register per wheel attachment data that involves the vehicle's integration with a PhysX scene.
@@ -519,8 +501,6 @@ void PxVehiclePvdEngineDrivetrainWrite
 \note If physxActor is NULL,  the corresponding data will not be reflected in omnipvd. 
 \note If physxRoadGeometryQueryParams is NULL,  the corresponding data will not be reflected in omnipvd. 
 \note Each array must either be empty or contain an entry for each wheel present in axleDesc.
-\note objectHandles must be non-NULL.
-\note omniWriter must be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdPhysXWheelAttachmentWrite
@@ -533,7 +513,7 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>&  physxRoadGeomState,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write to omnipvd the per wheel attachment data that involves the vehicle's integration with a PhysX scene.
@@ -551,7 +531,6 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
 \note If physxActor is NULL but the corresponding argument in PxVehiclePvdPhysXWheelAttachmentRegister was not NULL,  the corresponding data will not be reflected in omnipvd.
 \note If physxRoadGeometryQueryParams is NULL but the corresponding argument in PxVehiclePvdPhysXWheelAttachmentRegister was not NULL,  the corresponding data will not be reflected in omnipvd.
 \note Each array must either be empty or contain an entry for each wheel present in axleDesc.
-\note omniWriter must be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdPhysXWheelAttachmentWrite
@@ -564,7 +543,7 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomState,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates, 
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Register the PxRigidActor instance that represents the vehicle's rigid body in a PhysX scene.
@@ -573,8 +552,6 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If physxActor is NULL, the corresponding data will not be reflected in omnipvd.
-\note objectHandles must be non-NULL.
-\note omniWriter must be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdPhysXRigidActorWrite
@@ -582,7 +559,7 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
 void PxVehiclePvdPhysXRigidActorRegister
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter);
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 /**
 \brief Write the PxRigidActor instance to omnipvd.
@@ -591,8 +568,6 @@ void PxVehiclePvdPhysXRigidActorRegister
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If physxActor is NULL and the corresponding argument in PxVehiclePvdPhysXRigidActorRegister was not NULL, the corresponding data will not be updated in omnipvd.
-\note objectHandles must be non-NULL.
-\note omniWriter must be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdPhysXRigidActorRegister
@@ -600,7 +575,7 @@ void PxVehiclePvdPhysXRigidActorRegister
 void PxVehiclePvdPhysXRigidActorWrite
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& attributeHandles,
- const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter* omniWriter);
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 
 #if !PX_DOXYGEN
 } // namespace vehicle2

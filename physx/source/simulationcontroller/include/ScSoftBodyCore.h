@@ -29,6 +29,8 @@
 #ifndef SC_SOFT_BODY_CORE_H
 #define SC_SOFT_BODY_CORE_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "PxSoftBody.h"
 #include "DySoftBodyCore.h"
 #include "foundation/PxAssert.h"
@@ -37,11 +39,8 @@
 #include "PxFiltering.h"
 #include "ScRigidCore.h" //KS - needed for ShapeChangeNotifyFlags. Move to a shared header
 
-
 namespace physx
 {
-
-	
 	namespace Sc
 	{
 		class SoftBodySim;
@@ -51,21 +50,10 @@ namespace physx
 
 		class SoftBodyCore : public ActorCore
 		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
-
-			//---------------------------------------------------------------------------------
-			// Construction, destruction & initialization
-			//---------------------------------------------------------------------------------
-
 			// PX_SERIALIZATION
 		public:
 			SoftBodyCore(const PxEMPTY) : ActorCore(PxEmpty){}
-			static		void							getBinaryMetaData(PxOutputStream& stream);
+			static		void			getBinaryMetaData(PxOutputStream& stream);
 			//~PX_SERIALIZATION
 			SoftBodyCore();
 			~SoftBodyCore();
@@ -116,7 +104,6 @@ namespace physx
 			PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
 			void						removeRigidAttachment(Sc::BodyCore* core, PxU32 handle);
 
-
 			void						addTetRigidFilter(Sc::BodyCore* core, PxU32 tetIdx);
 			void						removeTetRigidFilter(Sc::BodyCore* core, PxU32 tetIdx);
 
@@ -129,16 +116,19 @@ namespace physx
 			void						removeSoftBodyFilters(Sc::SoftBodyCore& core, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 
 			PxU32						addSoftBodyAttachment(Sc::SoftBodyCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-										PxConeLimitedConstraint* constraint);
+										PxConeLimitedConstraint* constraint, PxReal constraintOffset);
 			void						removeSoftBodyAttachment(Sc::SoftBodyCore& core, PxU32 handle);
 
 			void						addClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, PxU32 tetIdx);
 			void						removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, PxU32 tetIdx);
 
-			PxU32						addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint);
+			PxU32						addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
+										PxConeLimitedConstraint* constraint, PxReal constraintOffset);
 			void						removeClothAttachment(Sc::FEMClothCore& core,  PxU32 handle);
 
-			PxU32						getGpuSoftBodyIndex();
+			PxU32						getGpuSoftBodyIndex()	const;
+
+			void						setKinematicTargets(const PxVec4* positions, PxSoftBodyFlags flags);
 			//---------------------------------------------------------------------------------
 			// Internal API
 			//---------------------------------------------------------------------------------
@@ -149,12 +139,6 @@ namespace physx
 			PX_FORCE_INLINE	const Dy::SoftBodyCore&	getCore() const { return mCore; }
 
 			PX_FORCE_INLINE	Dy::SoftBodyCore& getCore() { return mCore; }
-
-			static PX_FORCE_INLINE SoftBodyCore&	getSoftBodyCore(SoftBodyCore& core)
-			{
-				size_t offset = PX_OFFSET_OF_RT(SoftBodyCore, mCore);
-				return *reinterpret_cast<SoftBodyCore*>(reinterpret_cast<PxU8*>(&core) - offset);
-			}
 
 			void								setSimulationFilterData(const PxFilterData& data);
 		
@@ -175,14 +159,10 @@ namespace physx
 			Dy::SoftBodyCore					mCore;
 			PxFilterData						mFilterData;
 			PxU64								mGpuMemStat;
-
-
 		};
 
-
-
 	} // namespace Sc
-
 }
+#endif
 
 #endif

@@ -81,13 +81,6 @@ namespace Gu {
 	PX_ALIGN_PREFIX(16)
 	struct RTreePage
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		static const RTreeValue MN, MX;
 
 		RTreeValue minx[RTREE_N]; // [min=MX, max=MN] is used as a sentinel range for empty bounds
@@ -117,12 +110,6 @@ namespace Gu {
 	PX_ALIGN_PREFIX(16)
 	struct RTree
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 		// PX_SERIALIZATION
 		RTree(const PxEMPTY);
 		void	exportExtraData(PxSerializationContext&);

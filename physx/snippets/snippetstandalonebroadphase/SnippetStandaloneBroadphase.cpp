@@ -29,7 +29,7 @@
 // ****************************************************************************
 // This snippet illustrates how to use a standalone broadphase.
 // It creates a small custom scene (no PxScene) and creates a broadphase for the
-// scene objects. These objects are they updated each frame and rendered in red
+// scene objects. These objects are then updated each frame and rendered in red
 // when they touch another object, or green if they don't. Use the P and O keys
 // to pause and step the simulation one frame, to visually check the results.
 // ****************************************************************************

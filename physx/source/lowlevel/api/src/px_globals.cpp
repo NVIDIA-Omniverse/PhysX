@@ -63,6 +63,7 @@ namespace physx
 {
 	//forward declare stuff from PxPhysXGpuModuleLoader.cpp
 	void PxLoadPhysxGPUModule(const char* appGUID);
+	void PxUnloadPhysxGPUModule();
 	typedef physx::PxPhysXGpu* (PxCreatePhysXGpu_FUNC)();
 	extern PxCreatePhysXGpu_FUNC* g_PxCreatePhysXGpu_Func;
 
@@ -88,6 +89,7 @@ namespace physx
 	void PxvReleasePhysXGpu(PxPhysXGpu* gpu)
 	{
 		PX_ASSERT(gpu==gPxPhysXGpu);
+		PxUnloadPhysxGPUModule();
 		PX_RELEASE(gpu);
 		gPxPhysXGpu = NULL;
 	}
@@ -136,7 +138,8 @@ template<> void PxsFEMSoftBodyMaterialCore::getBinaryMetaData(PxOutputStream& st
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, poissons,				0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, dynamicFriction,		0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, damping,				0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, dampingScale,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxU16,  dampingScale,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxU16,  materialModel,         0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, deformThreshold,		0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, deformLowLimitRatio,	0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMSoftBodyMaterialCore, PxReal, deformHighLimitRatio,	0)
@@ -155,9 +158,6 @@ template<> void PxsFEMClothMaterialCore::getBinaryMetaData(PxOutputStream& strea
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxReal, poissons,				0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxReal, dynamicFriction,		0)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxReal, thickness,			0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxReal, elasticityDamping,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxReal, bendingDamping,		0)
-	PX_DEF_BIN_METADATA_ITEMS(stream, PxsFEMClothMaterialCore, PxReal, padding,				PxMetaDataFlag::ePADDING, 2)
 	
 	// MaterialCore
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsFEMClothMaterialCore, PxFEMClothMaterial,	mMaterial,		PxMetaDataFlag::ePTR)
@@ -189,18 +189,6 @@ template<> void PxsPBDMaterialCore::getBinaryMetaData(PxOutputStream& stream)
 	// MaterialCore
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsPBDMaterialCore, PxPBDMaterial, mMaterial, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsPBDMaterialCore, PxU16, mMaterialIndex, PxMetaDataFlag::eHANDLE)
-}
-
-template<> void PxsCustomMaterialCore::getBinaryMetaData(PxOutputStream& stream)
-{
-	PX_DEF_BIN_METADATA_CLASS(stream, PxsCustomMaterialCore)
-
-	// MaterialData
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsCustomMaterialCore, void, userData, PxMetaDataFlag::ePTR)
-	
-	// MaterialCore
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsCustomMaterialCore, PxPBDMaterial, mMaterial, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsCustomMaterialCore, PxU16, mMaterialIndex, PxMetaDataFlag::eHANDLE)
 }
 
 template<> void PxsFLIPMaterialCore::getBinaryMetaData(PxOutputStream& stream)

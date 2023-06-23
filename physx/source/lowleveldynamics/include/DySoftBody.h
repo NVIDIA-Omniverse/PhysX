@@ -120,9 +120,9 @@ namespace physx
 			PX_FORCE_INLINE const SoftBodyCore& getCore() const { return mCore; }
 			PX_FORCE_INLINE SoftBodyCore& getCore() { return mCore; }
 
-			PX_FORCE_INLINE PxU16 getIterationCounts() { return mCore.solverIterationCounts; }
+			PX_FORCE_INLINE PxU16 getIterationCounts() const { return mCore.solverIterationCounts; }
 
-			PX_FORCE_INLINE PxU32 getGpuSoftBodyIndex() { return mGpuRemapId;  }
+			PX_FORCE_INLINE PxU32 getGpuSoftBodyIndex() const { return mGpuRemapId;  }
 
 			//These variables are used in the constraint partition
 			PxU16 maxSolverFrictionProgress;

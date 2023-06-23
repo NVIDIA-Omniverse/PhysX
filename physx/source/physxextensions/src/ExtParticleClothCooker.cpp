@@ -274,24 +274,26 @@ void PxParticleClothCookerImpl::cookConstraints(const PxParticleClothConstraint*
 	//Add all edges to Edges
 	for(PxU32 i = 0; i<mTriangleIndexCount; i+=3)
 	{
-		//Get vertices
-		PxVec3 vA = mVertices[mTriangleIndices[i + 0]].getXYZ();
-		PxVec3 vB = mVertices[mTriangleIndices[i + 1]].getXYZ();
-		PxVec3 vC = mVertices[mTriangleIndices[i + 2]].getXYZ();
-
-		//check which edge is the longest
-		float len1 = (vA - vB).magnitude();
-		float len2 = (vC - vA).magnitude();
-		float len3 = (vC - vB).magnitude();
-		int longest = MaxArg(len1,PxMax(len2,len3),1, MaxArg(len2, len3, 2, 3));
-
-		//Store edges
+		//Get vertex indices
 		PxU32 v0 = mTriangleIndices[i + 0];
 		PxU32 v1 = mTriangleIndices[i + 1];
 		PxU32 v2 = mTriangleIndices[i + 2];
-		edgeSet.insert(Edge(v0, v1, i, 0xffffffff, longest == 1, false));
-		edgeSet.insert(Edge(v1, v2, i, 0xffffffff, longest == 2, false));
-		edgeSet.insert(Edge(v2, v0, i, 0xffffffff, longest == 3, false));
+
+		//Get vertex points
+		PxVec3 p0 = mVertices[v0].getXYZ();
+		PxVec3 p1 = mVertices[v1].getXYZ();
+		PxVec3 p2 = mVertices[v2].getXYZ();
+
+		//check which edge is the longest
+		float len0 = (p0 - p1).magnitude();
+		float len1 = (p1 - p2).magnitude();
+		float len2 = (p2 - p0).magnitude();
+		int longest = MaxArg(len0, PxMax(len1,len2), 0, MaxArg(len1, len2, 1, 2));
+
+		//Store edges
+		edgeSet.insert(Edge(v0, v1, i, 0xffffffff, longest == 0, false));
+		edgeSet.insert(Edge(v1, v2, i, 0xffffffff, longest == 1, false));
+		edgeSet.insert(Edge(v2, v0, i, 0xffffffff, longest == 2, false));
 
 		//Add triangle to mTriangleIndexBuffer and increment trianglesPerVertex values
 		addTriangle(trianglesPerVertex,i);
@@ -391,7 +393,7 @@ void PxParticleClothCookerImpl::cookConstraints(const PxParticleClothConstraint*
 	gatherAdjacencies(adjacencyIndices, adjacencies, mVertexCount, uniqueEdges, !(mConstraintTypeFlags & PxParticleClothConstraint::eTYPE_DIAGONAL_BENDING_CONSTRAINT));
 
 	//Maximum angle we consider to be parallel for the bending constraints
-	const float maxCosAngle = cosf(mBendingConstraintMaxAngle / 360.0f * PxTwoPi);
+	const float maxCosAngle = PxCos(mBendingConstraintMaxAngle);
 
 	for(PxU32 i = 0; i<mVertexCount; i++)
 	{
@@ -411,10 +413,10 @@ void PxParticleClothCookerImpl::cookConstraints(const PxParticleClothConstraint*
 			{
 				PxVec3 b = mVertices[adjacencies[adjB]].getXYZ();
 				PxVec3 dir2 = (b - center).getNormalized();
-				float cosAngle = dir1.dot(dir2);
-				if(cosAngle > bestCosAngle)
+				float cosAngleAbs = PxAbs(dir1.dot(dir2));
+				if(cosAngleAbs > bestCosAngle)
 				{
-					bestCosAngle = cosAngle;
+					bestCosAngle = cosAngleAbs;
 					bestAdjB = adjB;
 				}
 			}

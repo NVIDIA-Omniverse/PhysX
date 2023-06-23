@@ -51,6 +51,7 @@
 #include "GuBounds.h"
 #include "GuConvexMesh.h"
 #include "geometry/PxGeometryQuery.h"
+#include "PxsIslandSim.h"
 
 // PT: this one currently makes these UTs fail
 // [  FAILED  ] CCDReportTest.CCD_soakTest_mesh
@@ -303,18 +304,50 @@ static float computeBoundsWithCCDThreshold(PxVec3p& origin, PxVec3p& extent, con
 	return computeCCDThreshold(geometry);
 }
 
+static PX_FORCE_INLINE void trTr(PxTransform& out, const PxTransform& a, const PxTransform& b)
+{
+	// PT:: tag: scalar transform*transform
+	out = a * b;
+}
+
+static PX_FORCE_INLINE void trInvTr(PxTransform& out, const PxTransform& a, const PxTransform& b, const PxTransform& c)
+{
+	// PT:: tag: scalar transform*transform
+	out = a * b.getInverse() * c;
+}
+
 // PT: TODO: refactor with ShapeSim version (SIMD), simplify code when shape local pose = idt
-static PX_INLINE PxTransform getShapeAbsPose(const PxsShapeCore* shapeCore, const PxsRigidCore* rigidCore, PxU32 isDynamic)
+static PX_INLINE void getShapeAbsPose(PxTransform& out, const PxsShapeCore* shapeCore, const PxsRigidCore* rigidCore, const void* isDynamic)
 {
 	if(isDynamic)
 	{
 		const PxsBodyCore* PX_RESTRICT bodyCore = static_cast<const PxsBodyCore*>(rigidCore);
-		return bodyCore->body2World * bodyCore->getBody2Actor().getInverse() *shapeCore->getTransform();
+		trInvTr(out, bodyCore->body2World, bodyCore->getBody2Actor(), shapeCore->getTransform());
 	}
 	else 
-	{
-		return rigidCore->body2World * shapeCore->getTransform();
-	}
+		trTr(out, rigidCore->body2World, shapeCore->getTransform());
+}
+
+// \brief Returns the world-space pose for this shape
+// \param[in] atom The rigid body that this CCD shape is associated with
+static void getAbsPose(PxTransform32& out, const PxsCCDShape* ccdShape, const PxsRigidBody* atom)
+{
+	// PT: TODO: refactor with ShapeSim version (SIMD) - or with redundant getShapeAbsPose() above in this same file!
+	// PT: TODO: simplify code when shape local pose = idt
+	if(atom)
+		trInvTr(out, atom->getPose(), atom->getCore().getBody2Actor(), ccdShape->mShapeCore->getTransform());
+	else
+		trTr(out, ccdShape->mRigidCore->body2World, ccdShape->mShapeCore->getTransform());
+}
+
+// \brief Returns the world-space previous pose for this shape
+// \param[in] atom The rigid body that this CCD shape is associated with
+static void getLastCCDAbsPose(PxTransform32& out, const PxsCCDShape* ccdShape, const PxsRigidBody* atom)
+{
+	// PT: TODO: refactor with ShapeSim version (SIMD)
+	// PT: TODO: simplify code when shape local pose = idt
+	// PT:: tag: scalar transform*transform
+	trInvTr(out, atom->getLastCCDTransform(), atom->getCore().getBody2Actor(), ccdShape->mShapeCore->getTransform());
 }
 
 PxsCCDContext::PxsCCDContext(PxsContext* context, Dy::ThresholdStream& thresholdStream, PxvNphaseImplementationContext& nPhaseContext, PxReal ccdThreshold) :
@@ -336,23 +369,6 @@ PxsCCDContext::PxsCCDContext(PxsContext* context, Dy::ThresholdStream& threshold
 
 PxsCCDContext::~PxsCCDContext()
 {
-}
-
-PxTransform PxsCCDShape::getAbsPose(const PxsRigidBody* atom) const
-{
-	// PT: TODO: refactor with ShapeSim version (SIMD) - or with redundant getShapeAbsPose() above in this same file!
-	// PT: TODO: simplify code when shape local pose = idt
-	if(atom)
-		return atom->getPose() * atom->getCore().getBody2Actor().getInverse() * mShapeCore->getTransform();
-	else
-		return mRigidCore->body2World * mShapeCore->getTransform();
-}
-
-PxTransform PxsCCDShape::getLastCCDAbsPose(const PxsRigidBody* atom) const
-{
-	// PT: TODO: refactor with ShapeSim version (SIMD)
-	// PT: TODO: simplify code when shape local pose = idt
-	return atom->getLastCCDTransform() * atom->getCore().getBody2Actor().getInverse() * mShapeCore->getTransform();
 }
 
 PxReal PxsCCDPair::sweepFindToi(PxcNpThreadContext& context, PxReal dt, PxU32 pass, PxReal ccdThreshold)
@@ -379,16 +395,11 @@ PxReal PxsCCDPair::sweepFindToi(PxcNpThreadContext& context, PxReal dt, PxU32 pa
 		atom1 = mBa0;
 	}
 	
-	PX_ALIGN(16, PxTransform tm0);
-	PX_ALIGN(16, PxTransform tm1);
-	PX_ALIGN(16, PxTransform lastTm0);
-	PX_ALIGN(16, PxTransform lastTm1);
+	const PxTransform32 tm0(ccdShape0->mCurrentTransform);
+	const PxTransform32 lastTm0(ccdShape0->mPrevTransform);
 
-	tm0 = ccdShape0->mCurrentTransform;
-	lastTm0 = ccdShape0->mPrevTransform;
-
-	tm1 = ccdShape1->mCurrentTransform;
-	lastTm1 = ccdShape1->mPrevTransform;
+	const PxTransform32 tm1(ccdShape1->mCurrentTransform);
+	const PxTransform32 lastTm1(ccdShape1->mPrevTransform);
 
 	const PxVec3 trA = tm0.p - lastTm0.p;
 	const PxVec3 trB = tm1.p - lastTm1.p;
@@ -522,49 +533,37 @@ PxReal PxsCCDPair::sweepFindToi(PxcNpThreadContext& context, PxReal dt, PxU32 pa
 	return toi;
 }
 
+static void updateShape(PxsRigidBody* body, PxsCCDShape* shape)
+{
+	if(body)
+	{
+		//If the CCD shape's update count doesn't match the body's update count, this shape needs its transforms and bounds re-calculated
+		if(body->mCCD->mUpdateCount != shape->mUpdateCount)
+		{
+			PxTransform32 tm;
+			getAbsPose(tm, shape, body);
+
+			PxTransform32 lastTm;
+			getLastCCDAbsPose(lastTm, shape, body);
+
+			const PxVec3 trA = tm.p - lastTm.p;
+
+			PxVec3p origin, extents;
+			computeBoundsWithCCDThreshold(origin, extents, shape->mShapeCore->mGeometry.getGeometry(), tm);
+
+			shape->mCenter = origin - trA;
+			shape->mExtents = extents;
+			shape->mPrevTransform = lastTm;
+			shape->mCurrentTransform = tm;
+			shape->mUpdateCount = body->mCCD->mUpdateCount;
+		}
+	}
+}
+
 void PxsCCDPair::updateShapes()
 {
-	if(mBa0)
-	{
-		//If the CCD shape's update count doesn't match the body's update count, this shape needs its transforms and bounds re-calculated
-		if(mBa0->mCCD->mUpdateCount != mCCDShape0->mUpdateCount)
-		{
-			const PxTransform tm0 = mCCDShape0->getAbsPose(mBa0);
-			const PxTransform lastTm0 = mCCDShape0->getLastCCDAbsPose(mBa0);
-
-			const PxVec3 trA = tm0.p - lastTm0.p;
-
-			PxVec3p origin, extents;
-			computeBoundsWithCCDThreshold(origin, extents, mCCDShape0->mShapeCore->mGeometry.getGeometry(), tm0);
-
-			mCCDShape0->mCenter = origin - trA;
-			mCCDShape0->mExtents = extents;
-			mCCDShape0->mPrevTransform = lastTm0;
-			mCCDShape0->mCurrentTransform = tm0;
-			mCCDShape0->mUpdateCount = mBa0->mCCD->mUpdateCount;
-		}
-	}
-
-	if(mBa1)
-	{
-		//If the CCD shape's update count doesn't match the body's update count, this shape needs its transforms and bounds re-calculated
-		if(mBa1->mCCD->mUpdateCount != mCCDShape1->mUpdateCount)
-		{
-			const PxTransform tm1 = mCCDShape1->getAbsPose(mBa1);
-			const PxTransform lastTm1 = mCCDShape1->getLastCCDAbsPose(mBa1);
-
-			const PxVec3 trB = tm1.p - lastTm1.p;
-
-			PxVec3p origin, extents;
-			computeBoundsWithCCDThreshold(origin, extents, mCCDShape1->mShapeCore->mGeometry.getGeometry(), tm1);
-
-			mCCDShape1->mCenter = origin - trB;
-			mCCDShape1->mExtents = extents;
-			mCCDShape1->mPrevTransform = lastTm1;
-			mCCDShape1->mCurrentTransform = tm1;
-			mCCDShape1->mUpdateCount = mBa1->mCCD->mUpdateCount;
-		}
-	}
+	updateShape(mBa0, mCCDShape0);
+	updateShape(mBa1, mCCDShape1);
 }
 
 PxReal PxsCCDPair::sweepEstimateToi(PxReal ccdThreshold)
@@ -798,7 +797,7 @@ bool PxsCCDPair::sweepAdvanceToToi(PxReal dt, bool clipTrajectoryToToi)
 				}
 
 				//const PxVec3 fricJ = -vPerp.getNormalized() * (fricResponse/impulseDivisor);
-				const PxVec3 fricJ =  tDir * (fricResponse);
+				const PxVec3 fricJ = tDir * (fricResponse);
 				j = jImp * mMinToiNormal + fricJ;
 			}
 			else
@@ -1106,10 +1105,10 @@ public:
 						PxContactPatch* patch = reinterpret_cast<PxContactPatch*>(dataBuffer);
 						PxModifiableContact* point = reinterpret_cast<PxModifiableContact*>(patch + 1);
 
-						patch->mMassModification.mInvInertiaScale0 = 1.f;
-						patch->mMassModification.mInvInertiaScale1 = 1.f;
-						patch->mMassModification.mInvMassScale0 = 1.f;
-						patch->mMassModification.mInvMassScale1 = 1.f;
+						patch->mMassModification.linear0 = 1.f;
+						patch->mMassModification.linear1 = 1.f;
+						patch->mMassModification.angular0 = 1.f;
+						patch->mMassModification.angular1 = 1.f;
 
 						patch->normal = pair.mMinToiNormal;
 
@@ -1422,6 +1421,55 @@ static PX_FORCE_INLINE bool pairNeedsCCD(const PxsContactManager* cm)
 	}
 }
 
+static PxsCCDShape* processShape(
+	PxVec3& tr, PxReal& threshold, PxsCCDShape* ccdShape,
+	const PxsRigidCore* const rc, const PxsShapeCore* const sc, const PxsRigidBody* const ba,
+	const PxsContactManager* const cm, IG::IslandSim& islandSim, PxsCCDShapeArray& mCCDShapes, PxHashMap<PxsRigidShapePair, PxsCCDShape*>& mMap, bool flag)
+{
+	if(ccdShape == NULL)
+	{
+		//If we hadn't already created ccdShape, create one
+		ccdShape = &mCCDShapes.pushBack();
+		ccdShape->mRigidCore = rc;
+		ccdShape->mShapeCore = sc;
+		ccdShape->mGeometry = &sc->mGeometry.getGeometry();
+
+		mMap.insert(PxsRigidShapePair(rc, sc), ccdShape);
+
+		PxTransform32 tm;
+		getAbsPose(tm, ccdShape, ba);
+
+		PxTransform32 oldTm;
+		if(ba)
+			getLastCCDAbsPose(oldTm, ccdShape, ba);
+		else
+			oldTm = tm;
+
+		tr = tm.p - oldTm.p;
+
+		PxVec3p origin, extents;
+		//Compute the shape's bounds and CCD threshold
+		threshold = computeBoundsWithCCDThreshold(origin, extents, sc->mGeometry.getGeometry(), tm);
+
+		//Set up the CCD shape
+		ccdShape->mCenter = origin - tr;
+		ccdShape->mExtents = extents;
+		ccdShape->mFastMovingThreshold = threshold;
+		ccdShape->mPrevTransform = oldTm;
+		ccdShape->mCurrentTransform = tm;
+		ccdShape->mUpdateCount = 0;
+		ccdShape->mNodeIndex = flag ? islandSim.getNodeIndex2(cm->getWorkUnit().mEdgeIndex)
+									: islandSim.getNodeIndex1(cm->getWorkUnit().mEdgeIndex);
+	}
+	else
+	{
+		//We had already created the shape, so extract the threshold and translation components
+		threshold = ccdShape->mFastMovingThreshold;
+		tr = ccdShape->mCurrentTransform.p - ccdShape->mPrevTransform.p;
+	}
+	return ccdShape;
+}
+
 void PxsCCDContext::updateCCD(PxReal dt, PxBaseTask* continuation, IG::IslandSim& islandSim, bool disableResweep, PxI32 numFastMovingShapes)
 {
 	//Flag to run a slightly less-accurate version of CCD that will ensure that objects don't tunnel through the static world but is not as reliable for dynamic-dynamic collisions
@@ -1505,75 +1553,8 @@ void PxsCCDContext::updateCCD(PxReal dt, PxBaseTask* continuation, IG::IslandSim
 				PxVec3 trA(0.0f);
 				PxVec3 trB(0.0f);
 
-				if(ccdShape0 == NULL)
-				{
-					//If we hadn't already created ccdShape, create one
-					ccdShape0 = &mCCDShapes.pushBack();
-					mMap.insert(PxsRigidShapePair(rc0, sc0), ccdShape0);
-
-					ccdShape0->mRigidCore = rc0;
-					ccdShape0->mShapeCore = sc0;
-					ccdShape0->mGeometry = &sc0->mGeometry.getGeometry();
-
-					const PxTransform tm0 = ccdShape0->getAbsPose(ba0);
-					const PxTransform oldTm0 = ba0 ? ccdShape0->getLastCCDAbsPose(ba0) : tm0;
-
-					trA = tm0.p - oldTm0.p;
-
-					PxVec3p origin, extents;
-					//Compute the shape's bounds and CCD threshold
-					threshold0 = computeBoundsWithCCDThreshold(origin, extents, sc0->mGeometry.getGeometry(), tm0);
-
-					//Set up the CCD shape
-					ccdShape0->mCenter = origin - trA;
-					ccdShape0->mExtents = extents;
-					ccdShape0->mFastMovingThreshold = threshold0;
-					ccdShape0->mPrevTransform = oldTm0;
-					ccdShape0->mCurrentTransform = tm0;
-					ccdShape0->mUpdateCount = 0;
-					ccdShape0->mNodeIndex = islandSim.getNodeIndex1(cm->getWorkUnit().mEdgeIndex);
-				}
-				else
-				{
-					//We had already created the shape, so extract the threshold and translation components
-					threshold0 = ccdShape0->mFastMovingThreshold;
-					trA = ccdShape0->mCurrentTransform.p - ccdShape0->mPrevTransform.p;
-				}
-
-				if(ccdShape1 == NULL)
-				{
-					//If the CCD shape was not already constructed, create it
-					ccdShape1 = &mCCDShapes.pushBack();
-					ccdShape1->mRigidCore = rc1;
-					ccdShape1->mShapeCore = sc1;
-					ccdShape1->mGeometry = &sc1->mGeometry.getGeometry();
-
-					mMap.insert(PxsRigidShapePair(rc1, sc1), ccdShape1);
-
-					const PxTransform tm1 = ccdShape1->getAbsPose(ba1);
-					const PxTransform oldTm1 = ba1 ? ccdShape1->getLastCCDAbsPose(ba1) : tm1;
-
-					trB = tm1.p - oldTm1.p;
-
-					PxVec3p origin, extents;
-					//Compute the shape's bounds and CCD threshold
-					threshold1 = computeBoundsWithCCDThreshold(origin, extents, sc1->mGeometry.getGeometry(), tm1);
-
-					//Set up the CCD shape
-					ccdShape1->mCenter = origin - trB;
-					ccdShape1->mExtents = extents;
-					ccdShape1->mFastMovingThreshold = threshold1;
-					ccdShape1->mPrevTransform = oldTm1;
-					ccdShape1->mCurrentTransform = tm1;
-					ccdShape1->mUpdateCount = 0;
-					ccdShape1->mNodeIndex = islandSim.getNodeIndex2(cm->getWorkUnit().mEdgeIndex);
-				}
-				else
-				{
-					//CCD shape already constructed so just extract thresholds and trB components
-					threshold1 = ccdShape1->mFastMovingThreshold;
-					trB = ccdShape1->mCurrentTransform.p - ccdShape1->mPrevTransform.p;
-				}
+				ccdShape0 = processShape(trA, threshold0, ccdShape0, rc0, sc0, ba0, cm, islandSim, mCCDShapes, mMap, false);
+				ccdShape1 = processShape(trB, threshold1, ccdShape1, rc1, sc1, ba1, cm, islandSim, mCCDShapes, mMap, true);
 
 				{
 					//Initialize the CCD bodies
@@ -2147,8 +2128,8 @@ void PxsCCDContext::runCCDModifiableContact(PxModifiableContact* PX_RESTRICT con
 		p.actor[1] = rigid1 != NULL ? gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(rigidCore1) 
 									: gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(rigidCore1);
 
-		p.transform[0] = getShapeAbsPose(shapeCore0, rigidCore0, PxU32(rigid0 != NULL));
-		p.transform[1] = getShapeAbsPose(shapeCore1, rigidCore1, PxU32(rigid1 != NULL));
+		getShapeAbsPose(p.transform[0], shapeCore0, rigidCore0, rigid0);
+		getShapeAbsPose(p.transform[1], shapeCore1, rigidCore1, rigid1);
 
 		static_cast<PxcContactSet&>(p.contacts) = 
 			PxcContactSet(contactCount, contacts);

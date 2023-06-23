@@ -142,14 +142,12 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 
 		Ext::InertiaTensorComputer it(false);
 
-		switch(shapes[i]->getGeometryType())
+		const PxGeometry& geom = shapes[i]->getGeometry();
+		switch(geom.getType())
 		{
 		case PxGeometryType::eSPHERE : 
 			{
-				PxSphereGeometry g;
-				bool ok = shapes[i]->getSphereGeometry(g);
-				PX_ASSERT(ok);
-				PX_UNUSED(ok);
+				const PxSphereGeometry& g = static_cast<const PxSphereGeometry&>(geom);
 				PxTransform temp(shapes[i]->getLocalPose());
 
 				it.setSphere(g.radius, &temp);
@@ -158,10 +156,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 
 		case PxGeometryType::eBOX : 
 			{
-				PxBoxGeometry g;
-				bool ok = shapes[i]->getBoxGeometry(g);
-				PX_ASSERT(ok);
-				PX_UNUSED(ok);
+				const PxBoxGeometry& g = static_cast<const PxBoxGeometry&>(geom);
 				PxTransform temp(shapes[i]->getLocalPose());
 
 				it.setBox(g.halfExtents, &temp);
@@ -170,10 +165,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 
 		case PxGeometryType::eCAPSULE : 
 			{
-				PxCapsuleGeometry g;
-				bool ok = shapes[i]->getCapsuleGeometry(g);
-				PX_ASSERT(ok);
-				PX_UNUSED(ok);
+				const PxCapsuleGeometry& g = static_cast<const PxCapsuleGeometry&>(geom);
 				PxTransform temp(shapes[i]->getLocalPose());
 
 				it.setCapsule(0, g.radius, g.halfHeight, &temp);
@@ -182,10 +174,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 
 		case PxGeometryType::eCONVEXMESH : 
 			{
-				PxConvexMeshGeometry g;
-				bool ok = shapes[i]->getConvexMeshGeometry(g);
-				PX_ASSERT(ok);
-				PX_UNUSED(ok);
+				const PxConvexMeshGeometry& g = static_cast<const PxConvexMeshGeometry&>(geom);
 				PxConvexMesh& convMesh = *g.convexMesh;
 
 				PxReal convMass;
@@ -214,10 +203,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 			break;
 		case PxGeometryType::eTRIANGLEMESH:
 			{
-				PxTriangleMeshGeometry g;
-				bool ok = shapes[i]->getTriangleMeshGeometry(g);
-				PX_ASSERT(ok);
-				PX_UNUSED(ok);
+				const PxTriangleMeshGeometry& g = static_cast<const PxTriangleMeshGeometry&>(geom);
 
 				PxReal mass;
 				PxMat33 inertia;
@@ -509,6 +495,7 @@ void PxRigidBodyExt::computeVelocityDeltaFromImpulse(const PxRigidBody& body, co
 	{
 		const PxTransform globalPose = body.getGlobalPose();
 		const PxTransform cmLocalPose = body.getCMassLocalPose();
+		// PT:: tag: scalar transform*transform
 		const PxTransform body2World = globalPose*cmLocalPose;
 		const PxMat33Padded M(body2World.q);
 

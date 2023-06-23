@@ -38,16 +38,16 @@ namespace physx
 {
 namespace Ext
 {
-	PxF64 computeWindingNumber(const PxArray<Gu::BVHNode>& tree, const Vec3& q, PxF64 beta, const PxHashMap<PxU32, ClusterApproximationF64>& clusters,
-		const PxArray<Triangle>& triangles, const PxArray<Vec3>& points)
+	PxF64 computeWindingNumber(const PxArray<Gu::BVHNode>& tree, const PxVec3d& q, PxF64 beta, const PxHashMap<PxU32, ClusterApproximationF64>& clusters,
+		const PxArray<Triangle>& triangles, const PxArray<PxVec3d>& points)
 	{
-		return Gu::computeWindingNumber<PxF64, Vec3>(tree.begin(), q, beta, clusters, reinterpret_cast<const PxU32*>(triangles.begin()), points.begin());
+		return Gu::computeWindingNumber<PxF64, PxVec3d>(tree.begin(), q, beta, clusters, reinterpret_cast<const PxU32*>(triangles.begin()), points.begin());
 	}
 
 	void precomputeClusterInformation(PxArray<Gu::BVHNode>& tree, const PxArray<Triangle>& triangles,
-		const PxArray<Vec3>& points, PxHashMap<PxU32, ClusterApproximationF64>& result, PxI32 rootNodeIndex)
+		const PxArray<PxVec3d>& points, PxHashMap<PxU32, ClusterApproximationF64>& result, PxI32 rootNodeIndex)
 	{
-		Gu::precomputeClusterInformation<PxF64, Vec3>(tree.begin(), reinterpret_cast<const PxU32*>(triangles.begin()), triangles.size(), points.begin(), result, rootNodeIndex);
+		Gu::precomputeClusterInformation<PxF64, PxVec3d>(tree.begin(), reinterpret_cast<const PxU32*>(triangles.begin()), triangles.size(), points.begin(), result, rootNodeIndex);
 	}
 }
 }

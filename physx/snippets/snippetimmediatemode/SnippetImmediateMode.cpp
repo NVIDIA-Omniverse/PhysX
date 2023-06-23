@@ -175,7 +175,7 @@ public:
 	{
 	}
 
-	virtual bool recordContacts(const PxContactPoint* contactPoints, const PxU32 nbContacts, const PxU32 index)
+	virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 index)
 	{
 		PX_UNUSED(index);
 		{

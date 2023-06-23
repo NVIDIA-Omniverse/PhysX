@@ -204,34 +204,6 @@ public:
 	virtual PxReal					getDamping()	const	= 0;
 
 	/**
-	\brief Set the contact distance for the min & max distance limits.
-
-	This is similar to the PxJointLimitParameters::contactDistance parameter for regular limits.
-
-	The two most common values are 0 and infinite. Infinite means the internal constraints are
-	always created, resulting in the best simulation quality but slower performance. Zero means
-	the internal constraints are only created when the limits are violated, resulting in best
-	performance but worse simulation quality.
-
-	<b>Default</b> 0.0f
-	<b>Range</b> [0, PX_MAX_F32)
-
-	\param[in] contactDistance	The contact distance
-
-	@see PxJointLimitParameters::contactDistance getContactDistance()
-	*/
-	virtual void					setContactDistance(PxReal contactDistance)	= 0;
-
-	/**
-	\brief Get the contact distance.
-
-	\return the contact distance
-
-	@see PxJointLimitParameters::contactDistance setContactDistance()
-	*/
-	virtual PxReal					getContactDistance()	const	= 0;
-
-	/**
 	\brief Set the flags specific to the Distance Joint.
 
 	<b>Default</b> PxDistanceJointFlag::eMAX_DISTANCE_ENABLED

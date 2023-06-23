@@ -38,14 +38,14 @@ namespace Ext
 	using Triangle = Gu::IndexedTriangleT<PxI32>;
 	using Triangle16 = Gu::IndexedTriangleT<PxI16>;
 	
-	typedef Gu::ClusterApproximationT<PxF64, Vec3> ClusterApproximationF64;
-	typedef Gu::SecondOrderClusterApproximationT<PxF64, Vec3> SecondOrderClusterApproximationF64;
+	typedef Gu::ClusterApproximationT<PxF64, PxVec3d> ClusterApproximationF64;
+	typedef Gu::SecondOrderClusterApproximationT<PxF64, PxVec3d> SecondOrderClusterApproximationF64;
 	
-	PxF64 computeWindingNumber(const PxArray<Gu::BVHNode>& tree, const Vec3& q, PxF64 beta, const PxHashMap<PxU32, ClusterApproximationF64>& clusters,
-		const PxArray<Triangle>& triangles, const PxArray<Vec3>& points);
+	PxF64 computeWindingNumber(const PxArray<Gu::BVHNode>& tree, const PxVec3d& q, PxF64 beta, const PxHashMap<PxU32, ClusterApproximationF64>& clusters,
+		const PxArray<Triangle>& triangles, const PxArray<PxVec3d>& points);
 
 	void precomputeClusterInformation(PxArray<Gu::BVHNode>& tree, const PxArray<Triangle>& triangles,
-		const PxArray<Vec3>& points, PxHashMap<PxU32, ClusterApproximationF64>& result, PxI32 rootNodeIndex = 0);
+		const PxArray<PxVec3d>& points, PxHashMap<PxU32, ClusterApproximationF64>& result, PxI32 rootNodeIndex = 0);
 }
 }
 

@@ -34,11 +34,8 @@ using namespace physx;
 Sc::ElementInteractionMarker::~ElementInteractionMarker()
 {
 	if(isRegistered())
-	{
-		Scene& scene = getScene();
-		scene.unregisterInteraction(this);
-		scene.getNPhaseCore()->unregisterInteraction(this);
-	}
+		getScene().unregisterInteraction(this);
+
 	unregisterFromActors();
 }
 

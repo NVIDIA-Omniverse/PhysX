@@ -124,31 +124,31 @@ void PxSetJointGlobalFrame(PxJoint& joint, const PxVec3* wsAnchor, const PxVec3*
 
 #if PX_SUPPORT_OMNI_PVD
 
-void physx::Ext::omniPvdCreateJoint(PxJoint* joint)
-{
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_CREATE(joint, j)
+void physx::Ext::omniPvdSetBaseJointParams(PxJoint& joint, PxJointConcreteType::Enum cType)
+{	
+	PxJoint& j = static_cast<PxJoint&>(joint);
 	PxRigidActor* actors[2]; j.getActors(actors[0], actors[1]);
-	OMNI_PVD_SET(joint, actor0, j, actors[0])
-	OMNI_PVD_SET(joint, actor1, j, actors[1])
+	OMNI_PVD_SET(PxJoint, actor0, j, actors[0])
+	OMNI_PVD_SET(PxJoint, actor1, j, actors[1])
 	PxTransform actor0LocalPose = j.getLocalPose(PxJointActorIndex::eACTOR0);
-	OMNI_PVD_SET(joint, actor0LocalPose, j, actor0LocalPose)
+	OMNI_PVD_SET(PxJoint, actor0LocalPose, j, actor0LocalPose)
 	PxTransform actor1LocalPose = j.getLocalPose(PxJointActorIndex::eACTOR1);
-	OMNI_PVD_SET(joint, actor1LocalPose, j, actor1LocalPose)
+	OMNI_PVD_SET(PxJoint, actor1LocalPose, j, actor1LocalPose)
 	PxReal breakForce, breakTorque; j.getBreakForce(breakForce, breakTorque);
-	OMNI_PVD_SET(joint, breakForce, j, breakForce)
-	OMNI_PVD_SET(joint, breakTorque, j, breakTorque)
-	OMNI_PVD_SET(joint, constraintFlags, j, j.getConstraintFlags())
-	OMNI_PVD_SET(joint, invMassScale0, j, j.getInvMassScale0())
-	OMNI_PVD_SET(joint, invInertiaScale0, j, j.getInvInertiaScale0())
-	OMNI_PVD_SET(joint, invMassScale1, j, j.getInvMassScale1())
-	OMNI_PVD_SET(joint, invInertiaScale1, j, j.getInvInertiaScale1())
+	OMNI_PVD_SET(PxJoint, breakForce, j, breakForce)
+	OMNI_PVD_SET(PxJoint, breakTorque, j, breakTorque)
+	OMNI_PVD_SET(PxJoint, constraintFlags, j, j.getConstraintFlags())
+	OMNI_PVD_SET(PxJoint, invMassScale0, j, j.getInvMassScale0())
+	OMNI_PVD_SET(PxJoint, invInertiaScale0, j, j.getInvInertiaScale0())
+	OMNI_PVD_SET(PxJoint, invMassScale1, j, j.getInvMassScale1())
+	OMNI_PVD_SET(PxJoint, invInertiaScale1, j, j.getInvInertiaScale1())
 	const char* name = j.getName() ? j.getName() : "";
 	PxU32 nameLen = PxU32(strlen(name)) + 1;
-	OMNI_PVD_SETB(joint, name, j, name, nameLen)
+	OMNI_PVD_SETB(PxJoint, name, j, name, nameLen)
 	const char* typeName = j.getConcreteTypeName();
 	PxU32 typeNameLen = PxU32(strlen(typeName)) + 1;
-	OMNI_PVD_SETB(joint, concreteTypeName, j, typeName, typeNameLen)
+	OMNI_PVD_SETB(PxJoint, concreteTypeName, j, typeName, typeNameLen)
+	OMNI_PVD_SET(PxJoint, type, j, cType)
 }
 
 #endif

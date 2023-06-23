@@ -2,12 +2,7 @@
 @call :CLEAN_EXIT
 @echo off
 
-pushd %~dp0
-set PHYSX_ROOT_DIR=%CD%
-popd
-SET PHYSX_ROOT_DIR=%PHYSX_ROOT_DIR:\=/%
-
-call "%PHYSX_ROOT_DIR%\buildtools\packman\packman" init
+call "%~dp0\buildtools\packman\packman" init
 set "PYTHONPATH=%PM_MODULE_DIR%;%PYTHONPATH%"
 
 IF %1.==. GOTO ADDITIONAL_PARAMS_MISSING
@@ -73,7 +68,7 @@ if exist "%Install2022Dir%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.t
 )
 
 :ADDITIONAL_PARAMS_MISSING
-call "%~dp0buildtools\packman\python" %PHYSX_ROOT_DIR%/buildtools/cmake_generate_projects.py %1
+call "%~dp0buildtools\packman\python" "%~dp0buildtools\cmake_generate_projects.py" %1
 if %ERRORLEVEL% neq 0 (
   set /p DUMMY=Hit ENTER to continue...
   exit /b %errorlevel%

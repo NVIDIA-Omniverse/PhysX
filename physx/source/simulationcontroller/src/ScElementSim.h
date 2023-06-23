@@ -29,13 +29,13 @@
 #ifndef SC_ELEMENT_SIM_H
 #define SC_ELEMENT_SIM_H
 
-#include "foundation/PxUserAllocated.h"
 #include "PxFiltering.h"
 #include "PxvConfig.h"
 #include "ScActorSim.h"
 #include "ScInteraction.h"
 #include "BpAABBManager.h"
 #include "ScObjectIDTracker.h"
+#include "ScScene.h"
 
 namespace physx
 {
@@ -43,10 +43,8 @@ namespace Sc
 {
 	class ElementSimInteraction;
 
-	/*
-	A ElementSim is a part of a ActorSim. It contributes to the activation framework by adding its 
-	interactions to the actor. */
-	class ElementSim : public PxUserAllocated
+	// A ElementSim is a part of a ActorSim. It contributes to the activation framework by adding its interactions to the actor.
+	class ElementSim
 	{
 		PX_NOCOPY(ElementSim)
 
@@ -83,8 +81,12 @@ namespace Sc
 		public:
 
 		// Get an iterator to the interactions connected to the element
-		PX_FORCE_INLINE	ElementInteractionIterator getElemInteractions()	const	{ return ElementInteractionIterator(*this, mActor.getActorInteractionCount(), mActor.getActorInteractions()); }
-		PX_FORCE_INLINE	ElementInteractionReverseIterator getElemInteractionsReverse()	const	{ return ElementInteractionReverseIterator(*this, mActor.getActorInteractionCount(), mActor.getActorInteractions()); }
+		// PT: this may seem strange at first glance since the "element interactions" appear to use the "actor interactions". The thing that makes this work is hidden
+		// inside the iterator implementation: it does parse all the actor interactions indeed, but filters out the ones that do not contain "this", i.e. the desired element.
+		// So this is inefficient (parsing potentially many more interactions than needed, imagine in a large compound) but it works, and the iterator has a point - it isn't
+		// just the same as parsing the actor's array.
+		PX_FORCE_INLINE	ElementInteractionIterator			getElemInteractions()			const	{ return ElementInteractionIterator(*this, mActor.getActorInteractionCount(), mActor.getActorInteractions());			}
+		PX_FORCE_INLINE	ElementInteractionReverseIterator	getElemInteractionsReverse()	const	{ return ElementInteractionReverseIterator(*this, mActor.getActorInteractionCount(), mActor.getActorInteractions());	}
 
 		PX_FORCE_INLINE	ActorSim&				getActor()					const	{ return mActor; }
 
@@ -93,12 +95,8 @@ namespace Sc
 		PX_FORCE_INLINE PxU32					getElementID()				const	{ return mElementID;	}
 		PX_FORCE_INLINE bool					isInBroadPhase()			const	{ return mInBroadPhase;	}
 
-		//PX_FORCE_INLINE Bp::ElementType::Enum	getElementType()			const { return mType; }
-		
 						void					addToAABBMgr(PxReal contactDistance, Bp::FilterGroup::Enum group, Bp::ElementType::Enum type);
 						bool					removeFromAABBMgr();
-
-						void					setElementInteractionsDirty(InteractionDirtyFlag::Enum flag, PxU8 interactionFlag);
 
 		PX_FORCE_INLINE	void					initID()
 												{
@@ -114,9 +112,8 @@ namespace Sc
 	protected:
 						ActorSim&				mActor;
 
-						PxU32					mElementID : 31;
+						PxU32					mElementID : 31;	// PT: ID provided by Sc::Scene::mElementIDPool
 						PxU32					mInBroadPhase : 1;
-						//Bp::ElementType::Enum   mType;
 	public:
 						PxU32					mShapeArrayIndex;
 	};

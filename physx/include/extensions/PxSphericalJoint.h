@@ -151,39 +151,6 @@ public:
 	virtual PxSphericalJointFlags	getSphericalJointFlags()	const	= 0;
 
 	/**
-	\brief Set the linear tolerance threshold for projection. Projection is enabled if PxConstraintFlag::ePROJECTION
-	is set for the joint.
-
-	If the joint separates by more than this distance along its locked degrees of freedom, the solver 
-	will move the bodies to close the distance.
-
-	Setting a very small tolerance may result in simulation jitter or other artifacts.
-
-	Sometimes it is not possible to project (for example when the joints form a cycle).
-
-	<b>Range:</b> [0, PX_MAX_F32)<br>
-	<b>Default:</b> 1e10f
-
-	\param[in] tolerance the linear tolerance threshold
-
-	@see getProjectionLinearTolerance() PxJoint::setConstraintFlags() PxConstraintFlag::ePROJECTION
-
-	@deprecated
-	*/
-	PX_DEPRECATED	virtual void				setProjectionLinearTolerance(PxReal tolerance)	= 0;
-
-	/**
-	\brief Get the linear tolerance threshold for projection.
-
-	\return the linear tolerance threshold
-
-	@see setProjectionLinearTolerance()
-
-	@deprecated
-	*/
-	PX_DEPRECATED	virtual PxReal				getProjectionLinearTolerance()	const	= 0;
-
-	/**
 	\brief Returns string name of PxSphericalJoint, used for serialization
 	*/
 	virtual	const char*			getConcreteTypeName() const { return "PxSphericalJoint"; }

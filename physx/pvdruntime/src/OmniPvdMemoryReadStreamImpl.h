@@ -39,8 +39,8 @@ public:
 	OmniPvdMemoryReadStreamImpl();
 	~OmniPvdMemoryReadStreamImpl();
 
-	uint64_t OMNI_PVD_CALL readBytes(uint8_t* destination, const uint64_t nbrBytes);
-	uint64_t OMNI_PVD_CALL skipBytes(const uint64_t nbrBytes);
+	uint64_t OMNI_PVD_CALL readBytes(uint8_t* destination, uint64_t nbrBytes);
+	uint64_t OMNI_PVD_CALL skipBytes(uint64_t nbrBytes);
 	bool OMNI_PVD_CALL openStream();
 	bool OMNI_PVD_CALL closeStream();
 

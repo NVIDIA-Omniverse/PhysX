@@ -95,8 +95,8 @@ static void addInstance(const PxTransform& transform, PxTriangleMesh* mesh)
 	dyn->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD, true);
 
 	PxShape* shape = PxRigidActorExt::createExclusiveShape(*dyn, geom, *gMaterial);
-	shape->setContactOffset(0.1f);
-	shape->setRestOffset(0.02f);
+	shape->setContactOffset(0.05f);
+	shape->setRestOffset(0.0f);
 
 	PxRigidBodyExt::updateMassAndInertia(*dyn, 100.f);
 
@@ -114,7 +114,7 @@ static void createBowls(PxCookingParams& params)
 	
 	PxReal maxEdgeLength = 1;
 
-	createBowl(triVerts, triIndices, PxVec3(0, 4.5, 0), 5.0f, maxEdgeLength);
+	createBowl(triVerts, triIndices, PxVec3(0, 4.5, 0), 6.0f, maxEdgeLength);
 	PxTriangleMesh* mesh = createMesh(params, triVerts, triIndices, 0.05f);
 	
 	PxQuat rotate(PxIdentity);

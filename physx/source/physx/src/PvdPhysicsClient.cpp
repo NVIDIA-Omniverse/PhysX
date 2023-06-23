@@ -28,6 +28,7 @@
 
 // PX_DUMMY_SYMBOL
 
+#include "foundation/PxPreprocessor.h"
 #if PX_SUPPORT_PVD
 
 #include "pvd/PxPvdTransport.h"

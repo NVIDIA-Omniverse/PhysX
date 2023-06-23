@@ -39,12 +39,6 @@ typedef NpRigidBodyTemplate<PxRigidDynamic> NpRigidDynamicT;
 
 class NpRigidDynamic : public NpRigidDynamicT
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 // PX_SERIALIZATION
 									NpRigidDynamic(PxBaseFlags baseFlags) : NpRigidDynamicT(baseFlags) {}
@@ -75,6 +69,7 @@ public:
 	PX_FORCE_INLINE		PxTransform			getGlobalPoseFast() const
 	{
 		const Sc::BodyCore& body = getCore();
+		// PT:: tag: scalar transform*transform
 		return body.getBody2World() * body.getBody2Actor().getInverse();
 	}
 	virtual		PxTransform			getGlobalPose() const	PX_OVERRIDE

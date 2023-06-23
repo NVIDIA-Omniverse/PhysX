@@ -70,7 +70,7 @@ typedef union UnionM128
 		return m128;
 	}
 
-	operator const __m128() const
+	operator __m128() const
 	{
 		return m128;
 	}

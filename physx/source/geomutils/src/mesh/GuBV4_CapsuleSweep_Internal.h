@@ -297,7 +297,7 @@ static bool /*__fastcall*/ triCapsuleSweep(CapsuleSweepParams* PX_RESTRICT param
 	return false;
 }
 
-#include "GuDistanceSegmentTriangleSIMD.h"
+#include "GuDistanceSegmentTriangle.h"
 
 namespace
 {

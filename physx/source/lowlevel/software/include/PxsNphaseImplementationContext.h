@@ -72,107 +72,98 @@ private:
 	PX_NOCOPY(PxsContactManagers)
 };
 
-class PxsNphaseImplementationContext: public PxvNphaseImplementationContextUsableAsFallback
+class PxsNphaseImplementationContext : public PxvNphaseImplementationContextUsableAsFallback
 {
 public:
-	static PxsNphaseImplementationContext*	create(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator);
-
-											PxsNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* callback, PxU32 index = 0) :
+											PxsNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* callback, PxU32 index, bool gpu) :
 											PxvNphaseImplementationContextUsableAsFallback	(context), 
 											mNarrowPhasePairs								(index, callback), 
 											mNewNarrowPhasePairs							(index, callback),
 											mModifyCallback									(NULL),
-											mIslandSim(islandSim)							{}
+											mIslandSim										(islandSim),
+											mGPU											(gpu)
+											{}
 
-	virtual void							destroy();
+	// PxvNphaseImplementationContext
+	virtual void							destroy()	PX_OVERRIDE;
 	virtual void							updateContactManager(PxReal dt, bool hasBoundsArrayChanged, bool hasContactDistanceChanged, PxBaseTask* continuation, 
-																PxBaseTask* firstPassContinuation, Cm::FanoutTask* updateBoundAndShape);
-	virtual void							postBroadPhaseUpdateContactManager(PxBaseTask*) {}
-	virtual void							secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation);
-
-	virtual void							registerContactManager(PxsContactManager* cm, Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches);
+																PxBaseTask* firstPassContinuation, Cm::FanoutTask* updateBoundAndShape)	PX_OVERRIDE;
+	virtual void							postBroadPhaseUpdateContactManager(PxBaseTask*) PX_OVERRIDE	{}
+	virtual void							secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation)	PX_OVERRIDE;
+	virtual void							fetchUpdateContactManager() PX_OVERRIDE	{}
+	virtual void							registerContactManager(PxsContactManager* cm, Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches)	PX_OVERRIDE;
 //	virtual void							registerContactManagers(PxsContactManager** cm, Sc::ShapeInteraction** shapeInteractions, PxU32 nbContactManagers, PxU32 maxContactManagerId);
-	virtual void							unregisterContactManager(PxsContactManager* cm);
-	virtual void							unregisterContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs);
+	virtual void							unregisterContactManager(PxsContactManager* cm)	PX_OVERRIDE;
+	virtual void							refreshContactManager(PxsContactManager* cm)	PX_OVERRIDE;
 
-	virtual void							refreshContactManager(PxsContactManager* cm);
-	virtual void							refreshContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs);
+	virtual void							registerShape(const PxNodeIndex& /*nodeIndex*/, const PxsShapeCore& /*shapeCore*/, const PxU32 /*transformCacheID*/, PxActor* /*actor*/, const bool /*isFemCloth*/) PX_OVERRIDE	{}
+	virtual void							unregisterShape(const PxsShapeCore& /*shapeCore*/, const PxU32 /*transformCacheID*/, const bool /*isFemCloth*/)		PX_OVERRIDE			{}
 
-	virtual void							registerShape(const PxNodeIndex& /*nodeIndex*/, const PxsShapeCore& /*shapeCore*/, const PxU32 /*transformCacheID*/, PxActor* /*actor*/, const bool /*isFemCloth*/) {}
-	virtual void							unregisterShape(const PxsShapeCore& /*shapeCore*/, const PxU32 /*transformCacheID*/, const bool /*isFemCloth*/)									{}
+	virtual void							registerAggregate(const PxU32 /*transformCacheID*/)		PX_OVERRIDE	{}
 
-	virtual void							registerAggregate(const PxU32 /*transformCacheID*/)		{}
-	
-	virtual void							updateShapeMaterial(const PxsShapeCore&)				{}
-	virtual void							updateShapeContactOffset(const PxsShapeCore&)			{}
+	virtual void							registerMaterial(const PxsMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsMaterialCore&)					PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsMaterialCore&)				PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsMaterialCore&)				{}
-	virtual void							updateMaterial(const PxsMaterialCore&)					{}
-	virtual void							unregisterMaterial(const PxsMaterialCore&)				{}
+	virtual void							registerMaterial(const PxsFEMSoftBodyMaterialCore&)		PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsFEMSoftBodyMaterialCore&)		PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsFEMSoftBodyMaterialCore&)	PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsFEMSoftBodyMaterialCore&)		{}
-	virtual void							updateMaterial(const PxsFEMSoftBodyMaterialCore&)		{}
-	virtual void							unregisterMaterial(const PxsFEMSoftBodyMaterialCore&)	{}
+	virtual void							registerMaterial(const PxsFEMClothMaterialCore&)		PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsFEMClothMaterialCore&)			PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsFEMClothMaterialCore&)		PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsFEMClothMaterialCore&)		{}
-	virtual void							updateMaterial(const PxsFEMClothMaterialCore&)			{}
-	virtual void							unregisterMaterial(const PxsFEMClothMaterialCore&)		{}
+	virtual void							registerMaterial(const PxsPBDMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsPBDMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsPBDMaterialCore&)			PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsPBDMaterialCore&)				{}
-	virtual void							updateMaterial(const PxsPBDMaterialCore&)				{}
-	virtual void							unregisterMaterial(const PxsPBDMaterialCore&)			{}
+	virtual void							registerMaterial(const PxsFLIPMaterialCore&)			PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsFLIPMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsFLIPMaterialCore&)			PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsFLIPMaterialCore&)			{}
-	virtual void							updateMaterial(const PxsFLIPMaterialCore&)				{}
-	virtual void							unregisterMaterial(const PxsFLIPMaterialCore&)			{}
+	virtual void							registerMaterial(const PxsMPMMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							updateMaterial(const PxsMPMMaterialCore&)				PX_OVERRIDE	{}
+	virtual void							unregisterMaterial(const PxsMPMMaterialCore&)			PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsMPMMaterialCore&)				{}
-	virtual void							updateMaterial(const PxsMPMMaterialCore&)				{}
-	virtual void							unregisterMaterial(const PxsMPMMaterialCore&)			{}
+	virtual void							updateShapeMaterial(const PxsShapeCore&)				PX_OVERRIDE	{}
 
-	virtual void							registerMaterial(const PxsCustomMaterialCore&)			{}
-	virtual void							updateMaterial(const PxsCustomMaterialCore&)			{}
-	virtual void							unregisterMaterial(const PxsCustomMaterialCore&)		{}
+	virtual void							startNarrowPhaseTasks()									PX_OVERRIDE	{}
 
-	virtual void							appendContactManagers();
-	virtual void							appendContactManagersFallback(PxsContactManagerOutput* cmOutputs);
+	virtual void							appendContactManagers()	PX_OVERRIDE;
 
-	virtual void							removeContactManagersFallback(PxsContactManagerOutput* cmOutputs);
+	virtual PxsContactManagerOutput&		getNewContactManagerOutput(PxU32 npIndex)	PX_OVERRIDE;
 
-	virtual void							setContactModifyCallback(PxContactModifyCallback* callback) { mModifyCallback = callback; }
+	virtual PxsContactManagerOutputIterator getContactManagerOutputs()	PX_OVERRIDE;
+	virtual void							setContactModifyCallback(PxContactModifyCallback* callback) PX_OVERRIDE	{ mModifyCallback = callback; }
 
-	virtual PxsContactManagerOutputIterator getContactManagerOutputs();
+	virtual void							acquireContext()	PX_OVERRIDE	{}
+	virtual void							releaseContext()	PX_OVERRIDE	{}
+	virtual void							preallocateNewBuffers(PxU32 /*nbNewPairs*/, PxU32 /*maxIndex*/) PX_OVERRIDE	{ /*TODO - implement if it's useful to do so*/}
+	virtual void							lock()		PX_OVERRIDE	{ mContactManagerMutex.lock();		}
+	virtual void							unlock()	PX_OVERRIDE	{ mContactManagerMutex.unlock();	}
 
-	virtual PxsContactManagerOutput&		getNewContactManagerOutput(PxU32 npIndex);
+	virtual PxsContactManagerOutputCounts*	getFoundPatchOutputCounts()	PX_OVERRIDE	{ return mCmFoundLostOutputCounts.begin(); }
+	virtual PxsContactManager**				getFoundPatchManagers()		PX_OVERRIDE	{ return mCmFoundLost.begin(); }
+	virtual PxU32							getNbFoundPatchManagers()	PX_OVERRIDE	{ return mCmFoundLost.size(); }
 
-	virtual void							acquireContext(){}
-	virtual void							releaseContext(){}
-	virtual void							preallocateNewBuffers(PxU32 /*nbNewPairs*/, PxU32 /*maxIndex*/) { /*TODO - implement if it's useful to do so*/}
+	virtual PxsContactManagerOutput*		getGPUContactManagerOutputBase()	PX_OVERRIDE	{ return NULL; }
+	virtual PxReal*							getGPURestDistances()				PX_OVERRIDE	{ return NULL; }
+	virtual Sc::ShapeInteraction**			getGPUShapeInteractions()			PX_OVERRIDE	{ return NULL; }
+	virtual PxsTorsionalFrictionData*		getGPUTorsionalData()				PX_OVERRIDE	{ return NULL; }
+	//~PxvNphaseImplementationContext
 
-	virtual PxsContactManagerOutputCounts*	getFoundPatchOutputCounts() { return mCmFoundLostOutputCounts.begin(); }
-	virtual PxsContactManager**				getFoundPatchManagers() { return mCmFoundLost.begin(); }
-	virtual PxU32							getNbFoundPatchManagers() { return mCmFoundLost.size(); }
+	// PxvNphaseImplementationFallback
+	virtual	void							processContactManager(PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation)	PX_OVERRIDE;
+	virtual	void							processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation)	PX_OVERRIDE;
+	virtual void							unregisterContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs)	PX_OVERRIDE;
+	virtual void							refreshContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs)	PX_OVERRIDE;
+	virtual void							appendContactManagersFallback(PxsContactManagerOutput* cmOutputs)	PX_OVERRIDE;
+	virtual void							removeContactManagersFallback(PxsContactManagerOutput* cmOutputs)	PX_OVERRIDE;
+	virtual Sc::ShapeInteraction**			getShapeInteractions()	PX_OVERRIDE	{ return mNarrowPhasePairs.mShapeInteractions.begin();		}
+	virtual PxReal*							getRestDistances()		PX_OVERRIDE	{ return mNarrowPhasePairs.mRestDistances.begin();			}
+	virtual PxsTorsionalFrictionData*		getTorsionalData()		PX_OVERRIDE	{ return mNarrowPhasePairs.mTorsionalProperties.begin();	}
+	//~PxvNphaseImplementationFallback
 
-			void							processContactManager(PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation);
-			void							processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation);
-			void							fetchUpdateContactManager() {}
-
-			void							appendNewLostPairs();
-
-			void							startNarrowPhaseTasks() {}
-
-	virtual void							lock()		{ mContactManagerMutex.lock();		}
-	virtual void							unlock()	{ mContactManagerMutex.unlock();	}
-
-	virtual Sc::ShapeInteraction**			getShapeInteractions()	{ return mNarrowPhasePairs.mShapeInteractions.begin();	}
-	virtual PxReal*							getRestDistances()		{ return mNarrowPhasePairs.mRestDistances.begin();		}
-	virtual PxsTorsionalFrictionData*		getTorsionalData()		{ return mNarrowPhasePairs.mTorsionalProperties.begin(); }
-
-	virtual PxsContactManagerOutput*		getGPUContactManagerOutputBase()	{ return NULL; }
-	virtual PxReal*							getGPURestDistances()				{ return NULL; }
-	virtual Sc::ShapeInteraction**			getGPUShapeInteractions()			{ return NULL; }
-	virtual PxsTorsionalFrictionData*		getGPUTorsionalData()				{ return NULL; }
-	
 			PxArray<PxU32>					mRemovedContactManagers;
 			PxsContactManagers				mNarrowPhasePairs;
 			PxsContactManagers				mNewNarrowPhasePairs;
@@ -187,6 +178,9 @@ public:
 
 			PxArray<PxsContactManagerOutputCounts> mCmFoundLostOutputCounts;
 			PxArray<PxsContactManager*>		mCmFoundLost;
+
+			const bool						mGPU;
+
 private:
 			void							unregisterContactManagerInternal(PxU32 npIndex, PxsContactManagers& managers, PxsContactManagerOutput* cmOutputs);
 
@@ -195,6 +189,8 @@ private:
 				unregisterContactManagerInternal(index, cms, cms.mOutputContactManagers.begin());
 				cms.mOutputContactManagers.forceSize_Unsafe(cms.mOutputContactManagers.size()-1);
 			}
+
+			void							appendNewLostPairs();
 
 	PX_NOCOPY(PxsNphaseImplementationContext)
 };

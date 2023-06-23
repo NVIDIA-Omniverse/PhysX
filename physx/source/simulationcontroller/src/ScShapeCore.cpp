@@ -165,7 +165,7 @@ static PxHeightFieldGeometryLL extendForLL(const PxHeightFieldGeometry& hlGeom)
 
 ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const PxU16* materialIndices, PxU16 materialCount, bool isExclusive,
 	PxShapeCoreFlag::Enum softOrClothFlags) :
-	mSimAndIsExclusive		(NULL)
+	mExclusiveSim(NULL)
 {
 	mCore.mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
 	if(isExclusive)
@@ -184,8 +184,6 @@ ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const 
 	mCore.mMinTorsionalPatchRadius	= 0.0f;
 	mCore.mShapeFlags				= shapeFlags;
 
-	mSimAndIsExclusive	= reinterpret_cast<ShapeSim*>(size_t(isExclusive ? 1 : 0));
-
 	setMaterialIndices(materialIndices, materialCount);
 }
 
@@ -193,7 +191,7 @@ ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const 
 ShapeCore::ShapeCore(const PxEMPTY) : 
 	mSimulationFilterData	(PxEmpty),
 	mCore					(PxEmpty),
-	mSimAndIsExclusive		(NULL)
+	mExclusiveSim			(NULL)
 { 
 	mCore.mShapeCoreFlags.clear(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY);
 }
@@ -308,11 +306,10 @@ void ShapeCore::setContactOffset(const PxReal offset)
 {
 	mCore.mContactOffset = offset;
 
-	ShapeSim* sim = getSim();
-
-	if (sim)
+	ShapeSim* exclusiveSim = getExclusiveSim();
+	if (exclusiveSim)
 	{
-		sim->getScene().updateContactDistance(sim->getElementID(), offset);
+		exclusiveSim->getScene().updateContactDistance(exclusiveSim->getElementID(), offset);
 	}
 }
 
@@ -401,6 +398,11 @@ void ShapeCore::resolveReferences(PxDeserializationContext& context)
 	case PxGeometryType::eINVALID:
 	break;
 	}	
+}
+
+PxU32 ShapeCore::getInternalShapeIndex(PxsSimulationController& simulationController) const
+{
+	return simulationController.getInternalShapeIndex(getCore());
 }
 
 //~PX_SERIALIZATION

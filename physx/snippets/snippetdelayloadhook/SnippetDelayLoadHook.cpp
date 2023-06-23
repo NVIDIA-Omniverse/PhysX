@@ -134,7 +134,7 @@ bool loadPhysicsExplicitely()
 
 	// get the function pointers
 	s_PxCreateFoundation_Func = (PxCreateFoundation_FUNC*)GetProcAddress(foundationLibrary, "PxCreateFoundation");
-	s_PxCreatePhysics_Func = (PxCreatePhysics_FUNC*)GetProcAddress(physxLibrary, "PxCreateBasePhysics");
+	s_PxCreatePhysics_Func = (PxCreatePhysics_FUNC*)GetProcAddress(physxLibrary, "PxCreatePhysics");
 	s_PxSetPhysXDelayLoadHook_Func = (PxSetPhysXDelayLoadHook_FUNC*)GetProcAddress(physxLibrary, "PxSetPhysXDelayLoadHook");
 	s_PxSetPhysXCommonDelayLoadHook_Func = (PxSetPhysXCommonDelayLoadHook_FUNC*)GetProcAddress(commonLibrary, "PxSetPhysXCommonDelayLoadHook");
 

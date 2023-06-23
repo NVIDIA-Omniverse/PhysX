@@ -190,7 +190,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxVisualizationParameter.h"
 #include "PxPruningStructure.h"
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-#include "PxCustomParticleSystem.h"
 #include "PxFEMCloth.h"
 #include "PxFEMClothMaterial.h"
 #include "PxFLIPParticleSystem.h"

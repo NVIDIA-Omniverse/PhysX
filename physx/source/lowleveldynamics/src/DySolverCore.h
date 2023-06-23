@@ -32,11 +32,10 @@
 #include "PxvConfig.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxThread.h"
-
+#include "DyPGS.h"
 
 namespace physx
 {
-
 struct PxSolverBody;
 struct PxSolverBodyData;
 struct PxSolverConstraintDesc;
@@ -45,23 +44,12 @@ struct PxConstraintBatchHeader;
 namespace Dy
 {
 struct ThresholdStreamElement;
-	
-
 struct ArticulationSolverDesc;
-class Articulation;
-struct SolverContext;
-
-typedef void (*WriteBackMethod)(const PxSolverConstraintDesc& desc, SolverContext& cache, PxSolverBodyData& sbd0, PxSolverBodyData& sbd1);
-typedef void (*SolveMethod)(const PxSolverConstraintDesc& desc, SolverContext& cache);
-typedef void (*SolveBlockMethod)(const PxSolverConstraintDesc* desc, const PxU32 constraintCount, SolverContext& cache);
-typedef void (*SolveWriteBackBlockMethod)(const PxSolverConstraintDesc* desc, const PxU32 constraintCount, SolverContext& cache);
-typedef void (*WriteBackBlockMethod)(const PxSolverConstraintDesc* desc, const PxU32 constraintCount, SolverContext& cache);
 
 #define PX_PROFILE_SOLVE_STALLS 0
 #if PX_PROFILE_SOLVE_STALLS
 #if PX_WINDOWS
-#include <windows.h>
-
+#include "foundation/windows/PxWindowsInclude.h"
 
 PX_FORCE_INLINE PxU64 readTimer()
 {
@@ -74,7 +62,6 @@ PX_FORCE_INLINE PxU64 readTimer()
 
 #endif
 #endif
-
 
 #define YIELD_THREADS 1
 
@@ -114,7 +101,6 @@ PX_INLINE void WaitForProgressCount(volatile PxI32* pGlobalIndex, const PxI32 ta
 #endif
 }
 
-
 #if PX_PROFILE_SOLVE_STALLS
 PX_INLINE void WaitForProgressCount(volatile PxI32* pGlobalIndex, const PxI32 targetIndex, PxU64& stallTime)
 {
@@ -150,7 +136,6 @@ PX_INLINE void WaitForProgressCount(volatile PxI32* pGlobalIndex, const PxI32 ta
 #endif
 #define WAIT_FOR_PROGRESS_NO_TIMER(pGlobalIndex, targetIndex) if(*pGlobalIndex < targetIndex) WaitForProgressCount(pGlobalIndex, targetIndex)
 
-
 struct SolverIslandParams
 {
 	//Default friction model params
@@ -174,17 +159,16 @@ struct SolverIslandParams
 
 	//Shared state progress counters
 	PxI32 constraintIndex;
-	PxI32 constraintIndex2;
+	PxI32 constraintIndexCompleted;
 	PxI32 bodyListIndex;
-	PxI32 bodyListIndex2;
+	PxI32 bodyListIndexCompleted;
 	PxI32 articSolveIndex;
-	PxI32 articSolveIndex2;
+	PxI32 articSolveIndexCompleted;
 	PxI32 bodyIntegrationListIndex;
 	PxI32 numObjectsIntegrated;
 
 	PxReal dt;
 	PxReal invDt;
-
 
 	//Additional 1d/2d friction model params
 	PxSolverConstraintDesc* PX_RESTRICT frictionConstraintList;
@@ -208,10 +192,8 @@ struct SolverIslandParams
 	Cm::SpatialVectorF* deltaV;
 };
 
-
 /*!
 Interface to constraint solver cores
-
 */    
 class SolverCore
 {
@@ -224,17 +206,12 @@ public:
 	the solution forces are saved in a vector.
 
 	state should not be stored, this function is safe to call from multiple threads.
-
-	Returns the total number of constraints that should be solved across all threads. Used for synchronization outside of this method
 	*/
-
-	virtual PxI32 solveVParallelAndWriteBack
+	virtual void solveVParallelAndWriteBack
 		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const = 0;
-
 
 	virtual void solveV_Blocks
 		(SolverIslandParams& params) const = 0;
-
 
 	virtual void writeBackV
 		(const PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxU32 constraintListSize, PxConstraintBatchHeader* contactConstraintBatches, const PxU32 numConstraintBatches,

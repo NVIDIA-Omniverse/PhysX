@@ -39,7 +39,6 @@
 #include "PxMPMParticleSystem.h"
 #endif
 #include "PxParticleSolverType.h"
-#include "PxCustomParticleSystemSolverCallback.h"
 #include "PxSparseGridParams.h"
 
 namespace physx
@@ -66,11 +65,6 @@ public:
 	PxU16					solverIterationCounts;
 
 	PxSparseGridParams		sparseGridParams;
-			
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	PxFLIPParams			flipParams;
-	PxMPMParams				mpmParams;
-#endif
 
 	PxReal					restOffset;
 	PxReal					particleContactOffset;
@@ -83,8 +77,6 @@ public:
 
 	PxReal					maxDepenetrationVelocity;
 	PxReal					maxVelocity;
-
-	PxVec3					periodicBoundary;
 
 	PxParticleFlags			mFlags;
 			
@@ -236,7 +228,6 @@ public:
 	bool							mParticleAndDiffuseBufferUpdate;
 
 	PxParticleSystemCallback* mCallback;
-	PxCustomParticleSystemSolverCallback*	mSolverCallback;
 
 	ParticleSystemCore()
 	{
@@ -269,6 +260,13 @@ public:
 			mParticleAndDiffuseBuffers[i]->onParticleSystemDestroy();
 		}
 	}
+
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+	//Leave these members at the end to remain binary compatible with public builds
+	PxFLIPParams			flipParams;
+	PxMPMParams				mpmParams;
+#endif
+
 };
 
 } // namespace Dy

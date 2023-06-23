@@ -33,7 +33,11 @@
 */
 
 #include "foundation/PxTransform.h"
+#include "foundation/PxUserAllocated.h"
 #include "PxSoftBody.h"
+#include "PxSoftBodyFlag.h"
+#include "cudamanager/PxCudaContextManager.h"
+#include "cudamanager/PxCudaTypes.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -46,7 +50,7 @@ class PxInsertionCallback;
 class PxSoftBodyMesh;
 
 /**
-\brief utility functions for use with PxSoftBody and subclasses
+\brief Utility functions for use with PxSoftBody and subclasses
 */
 class PxSoftBodyExt
 {
@@ -54,39 +58,39 @@ public:
 	/** 
 	\brief Computes the SoftBody's vertex masses from the provided density and the volume of the tetrahedra
 
-	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassCPU() and getSimVelocityInvMassCPU()
+	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()
 
-	The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh's position and velocity buffer. 
-	Performance optimizations are the reason why the mass inverse is stored in two locations.
+	The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh's position buffer. 
 
 	\param[in] softBody The soft body which will get its mass updated
 	\param[in] density The density to used to calculate the mass from the body's volume
 	\param[in] maxInvMassRatio Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
 
-	@see PxSoftBody PxSoftBody::getSimPositionInvMassCPU() PxSoftBody::getSimVelocityInvMassCPU()
+	@see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
 	*/
-	static void updateMass(PxSoftBody& softBody, const PxReal density, const PxReal maxInvMassRatio);
+	static void updateMass(PxSoftBody& softBody, const PxReal density, const PxReal maxInvMassRatio, PxVec4* simPositionsPinned);
 
 	/**
 	\brief Computes the SoftBody's vertex masses such that the sum of all masses is equal to the provided mass
 
-	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassCPU() and getSimVelocityInvMassCPU()
+	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD()) and getSimVelocityBufferD()
 
-	The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh's position and velocity buffer.
-	Performance optimizations are the reason why the mass inverse is stored in two locations.
+	The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh's position buffer.
 
 	\param[in] softBody The soft body which will get its mass updated
 	\param[in] mass The SoftBody's mass
 	\param[in] maxInvMassRatio Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh
-	
-	@see PxSoftBody PxSoftBody::getSimPositionInvMassCPU() PxSoftBody::getSimVelocityInvMassCPU()
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
+
+	@see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
 	*/
-	static void setMass(PxSoftBody& softBody, const PxReal mass, const PxReal maxInvMassRatio);
+	static void setMass(PxSoftBody& softBody, const PxReal mass, const PxReal maxInvMassRatio, PxVec4* simPositionsPinned);
 
 	/**
 	\brief Transforms a SoftBody
 
-	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassCPU() and getSimVelocityInvMassCPU()
+	The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()
 
 	Applies a transformation to the simulation mesh's positions an velocities. Velocities only get rotated and scaled (translation is not applicable to direction vectors).
 	It does not modify the body's mass. 
@@ -95,32 +99,58 @@ public:
 	\param[in] softBody The soft body which is transformed
 	\param[in] transform The transform to apply
 	\param[in] scale A scaling factor
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
+	\param[in] simVelocitiesPinned A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh.
+	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
+	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
 	
-	@see PxSoftBody PxSoftBody::getSimPositionInvMassCPU() PxSoftBody::getSimVelocityInvMassCPU()
+	@see PxSoftBody
 	*/
-	static void transform(PxSoftBody& softBody, const PxTransform& transform, const PxReal scale);
+	static void transform(PxSoftBody& softBody, const PxTransform& transform, const PxReal scale, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned);
 
 	/**
 	\brief Updates the collision mesh's vertex positions to match the simulation mesh's transformation and scale.
 	
-	The buffer affected by this operation can be obtained from the SoftBody using the method getPositionInvMassCPU()
+	The buffer affected by this operation can be obtained from the SoftBody using the method getPositionInvMassBufferD()
 
 	\param[in] softBody The soft body which will get its collision mesh vertices updated
-	
-	@see PxSoftBody PxSoftBody::getPositionInvMassCPU()
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
+	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
+
+	@see PxSoftBody
 	*/
-	static void updateEmbeddedCollisionMesh(PxSoftBody& softBody);
+	static void updateEmbeddedCollisionMesh(PxSoftBody& softBody, PxVec4* simPositionsPinned, PxVec4* collPositionsPinned);
 
 	/**
 	\brief Uploads prepared SoftBody data to the GPU. It ensures that the embedded collision mesh matches the simulation mesh's transformation and scale.
 
 	\param[in] softBody The soft body which will perform the data upload
 	\param[in] flags Specifies which buffers the data transfer should include
-	\param[in] flush If set to true, the upload will get processed immediately, otherwise it will take place before the data is needed for calculations on the GPU
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
+	\param[in] simVelocitiesPinned A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh.
+	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
+	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
+	\param[in] stream A cuda stream to perform the copies.
+	
+	@see PxSoftBody
+	@deprecated Use copyToDevice() instead.
+	*/
+	PX_DEPRECATED static void commit(PxSoftBody& softBody, PxSoftBodyDataFlags flags, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned, CUstream stream = CUstream(0));
+
+	/**
+	\brief Uploads prepared SoftBody data to the GPU. It ensures that the embedded collision mesh matches the simulation mesh's transformation and scale.
+
+	\param[in] softBody The soft body which will perform the data upload
+	\param[in] flags Specifies which buffers the data transfer should include
+	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
+	\param[in] simVelocitiesPinned A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh.
+	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
+	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
+	\param[in] stream A cuda stream to perform the copies.
 	
 	@see PxSoftBody
 	*/
-	static void commit(PxSoftBody& softBody, PxSoftBodyDataFlags flags, bool flush = false);
+	static void copyToDevice(PxSoftBody& softBody, PxSoftBodyDataFlags flags, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned, CUstream stream = CUstream(0));
 
 	/**
 	\brief Creates a full SoftBody mesh matching the shape given as input. Uses a voxel mesh for FEM simulation and a surface-matching mesh for collision detection. 
@@ -187,6 +217,33 @@ public:
 	static PxSoftBody* createSoftBodyBox(const PxTransform& transform, const PxVec3& boxDimensions, const PxFEMSoftBodyMaterial& material,
 		PxCudaContextManager& cudaContextManager, PxReal maxEdgeLength = -1.0f, PxReal density = 100.0f, PxU32 solverIterationCount = 30, 
 		const PxFEMParameters& femParams = PxFEMParameters(), PxU32 numVoxelsAlongLongestAABBAxis = 10, PxReal scale = 1.0f);
+
+	/**
+	\brief allocates and initializes pinned host memory buffers from an actor with shape.
+
+	\param[in] softBody A PxSoftBody that has a valid shape attached to it.
+	\param[in] cudaContextManager The PxCudaContextManager of the scene this soft body will be simulated in
+    \param[in] simPositionInvMassPinned A reference to a pointer for the return value of the simPositionInvMassPinned buffer, will be set by this function.
+    \param[in] simVelocityPinned A reference to a pointer for the return value of the simVelocityPinned buffer, will be set by this function.
+    \param[in] collPositionInvMassPinned A reference to a pointer for the return value of the collPositionInvMassPinned buffer, will be set by this function.
+    \param[in] restPositionPinned A reference to a pointer for the return value of the restPositionPinned buffer, will be set by this function.
+
+	@see PxSoftBody
+	 */
+	static void allocateAndInitializeHostMirror(PxSoftBody& softBody, PxCudaContextManager* cudaContextManager, PxVec4*& simPositionInvMassPinned, PxVec4*& simVelocityPinned, PxVec4*& collPositionInvMassPinned, PxVec4*& restPositionPinned);
+	
+	/**
+	\brief Given a set of points and a set of tetrahedra, it finds the equilibrium state of the softbody. Every input point is either fixed or can move freely.
+
+	\param[in] verticesOriginal Mesh vertex positions in undeformed original state.
+	\param[in] verticesDeformed Mesh vertex positions in new deformed state. Only fixed vertices must have their final location, all other locations will get updated by the method.
+	\param[in] nbVertices The number of vertices.
+	\param[in] tetrahedra The tetrahedra.
+	\param[in] nbTetraheda The number of tetrahedra.
+	\param[in] vertexIsFixed Optional input that specifies which vertex is fixed and which one can move to relax the tension. If not provided, vertices from verticesOriginal which have a .w value of 0 will be considered fixed.
+	\param[in] numIterations The number of stress relaxation iterations to run.
+	*/
+	static void relaxSoftBodyMesh(const PxVec4* verticesOriginal, PxVec4* verticesDeformed, PxU32 nbVertices, const PxU32* tetrahedra, PxU32 nbTetraheda, const bool* vertexIsFixed = NULL, PxU32 numIterations = 200);
 };
 
 #if !PX_DOXYGEN

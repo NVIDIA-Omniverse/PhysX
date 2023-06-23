@@ -48,7 +48,8 @@ SOURCE_GROUP(include\\windows FILES ${PHYSXFOUNDATION_PLATFORM_HEADERS})
 
 
 SET(PHYSXFOUNDATION_RESOURCE_FILE
-	${PHYSX_SOURCE_DIR}/compiler/resource_${RESOURCE_LIBPATH_SUFFIX}/PhysXFoundation.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/PhysXFoundation.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
 )
 SOURCE_GROUP(resource FILES ${PHYSXFOUNDATION_RESOURCE_FILE})
 

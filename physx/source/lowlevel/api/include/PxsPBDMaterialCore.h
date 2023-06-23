@@ -34,16 +34,6 @@
 
 namespace physx
 {
-	//Technically, this doesn't need the PxsParticleMaterialData types, but this allows us
-	//to have a common base and opens the scope for rigid-particle interactions.
-	struct PxsCustomMaterialData : public PxsParticleMaterialData
-	{	
-		PxsCustomMaterialData()					{}	// PT: TODO: ctor leaves things uninitialized, is that by design?
-		PxsCustomMaterialData(const PxEMPTY)	{}
-
-		void*		userData;				//24
-	};
-
 	struct PxsPBDMaterialData : public PxsParticleMaterialData
 	{
 		PxsPBDMaterialData()				{}	// PT: TODO: ctor leaves things uninitialized, is that by design?
@@ -62,7 +52,6 @@ namespace physx
 	};
 
 	typedef MaterialCoreT<PxsPBDMaterialData, PxPBDMaterial>		PxsPBDMaterialCore;
-	typedef MaterialCoreT<PxsCustomMaterialData, PxCustomMaterial>	PxsCustomMaterialCore;
 
 } //namespace phyxs
 

@@ -86,7 +86,6 @@ ParticleSystemShapeCore::ParticleSystemShapeCore()
 	mLLCore.solverIterationCounts = (1 << 8) | 4;
 
 	mLLCore.mWind = PxVec3(0.f);
-	mLLCore.periodicBoundary = PxVec3(0.f);
 
 	//mLLCore.mNumUpdateSprings = 0;
 

@@ -30,20 +30,6 @@ project(PVDRuntime C CXX)
 
 set(PVDRuntimeBuilt 1 CACHE INTERNAL "PVDRuntimeBuilt")
 
-IF(NOT DEFINED CMAKEMODULES_VERSION)
-	SET(CMAKEMODULES_PATH $ENV{PM_CMakeModules_PATH} CACHE INTERNAL "Path to CMakeModules")
-	SET(CMAKEMODULES_NAME $ENV{PM_CMakeModules_NAME} CACHE INTERNAL "CMakeModules name")
-	SET(CMAKEMODULES_VERSION $ENV{PM_CMakeModules_VERSION} CACHE INTERNAL "CMakeModules version from generation batch")
-
-	#TODO: More elegance
-	IF(NOT EXISTS ${CMAKEMODULES_PATH})
-		MESSAGE(FATAL_ERROR "Could not find ${CMAKEMODULES_PATH}")
-	ENDIF()
-
-ENDIF()
-
-SET(CMAKE_MODULE_PATH ${CMAKEMODULES_PATH})
-
 # This is required to be defined by external callers!
 IF(NOT DEFINED PHYSX_ROOT_DIR)
 	MESSAGE(FATAL_ERROR "PHYSX_ROOT_DIR variable wasn't set.")

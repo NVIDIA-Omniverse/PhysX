@@ -155,10 +155,6 @@ class PvdMetaDataBinding
 	void sendAllProperties(PvdDataStream& inStream, const PxMPMParticleSystem& inObj);
 	void destroyInstance(PvdDataStream& inStream, const PxMPMParticleSystem& inObj, const PxScene& ownerScene);
 
-	void createInstance(PvdDataStream& inStream, const PxCustomParticleSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
-	void sendAllProperties(PvdDataStream& inStream, const PxCustomParticleSystem& inObj);
-	void destroyInstance(PvdDataStream& inStream, const PxCustomParticleSystem& inObj, const PxScene& ownerScene);
-
 	void createInstance(PvdDataStream& inStream, const PxHairSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
 	void sendAllProperties(PvdDataStream& inStream, const PxHairSystem& inObj);
 	void destroyInstance(PvdDataStream& inStream, const PxHairSystem& inObj, const PxScene& ownerScene);

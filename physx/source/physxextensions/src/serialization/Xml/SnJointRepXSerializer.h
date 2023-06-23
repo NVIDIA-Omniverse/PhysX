@@ -45,7 +45,7 @@ namespace physx
 	class MemoryBuffer;
 	
 	template<typename TJointType>
-	struct PxJointRepXSerializer : public RepXSerializerImpl<TJointType>
+	struct PX_DEPRECATED PxJointRepXSerializer : public RepXSerializerImpl<TJointType>
 	{
 		PxJointRepXSerializer(PxAllocatorCallback& inAllocator) : RepXSerializerImpl<TJointType>(inAllocator) {}
 		virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection);
@@ -55,13 +55,13 @@ namespace physx
 
 #if PX_SUPPORT_EXTERN_TEMPLATE
 	// explicit template instantiations declarations
-	extern template struct PxJointRepXSerializer<PxD6Joint>;
-	extern template struct PxJointRepXSerializer<PxDistanceJoint>;
-	extern template struct PxJointRepXSerializer<PxContactJoint>;
-	extern template struct PxJointRepXSerializer<PxFixedJoint>;
-	extern template struct PxJointRepXSerializer<PxPrismaticJoint>;
-	extern template struct PxJointRepXSerializer<PxRevoluteJoint>;
-	extern template struct PxJointRepXSerializer<PxSphericalJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxD6Joint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxDistanceJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxContactJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxFixedJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxPrismaticJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxRevoluteJoint>;
+	extern template struct PX_DEPRECATED PxJointRepXSerializer<PxSphericalJoint>;
 #endif
 
 #if !PX_DOXYGEN

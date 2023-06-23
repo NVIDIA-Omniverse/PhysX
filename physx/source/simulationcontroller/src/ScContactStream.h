@@ -309,6 +309,7 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxCo
 		const BodySim& bs = static_cast<const BodySim&>(rs);
 		const BodyCore& bc = bs.getBodyCore();
 		const PxTransform& src = (!isCCDPass && useCurrentTransform) ? bc.getBody2World() : bs.getLowLevelBody().getLastCCDTransform();
+		// PT:: tag: scalar transform*transform
 		cpPose->globalPose[index] = src * bc.getBody2Actor().getInverse();
 	}
 	else

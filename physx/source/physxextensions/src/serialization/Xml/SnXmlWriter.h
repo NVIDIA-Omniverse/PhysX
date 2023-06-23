@@ -38,7 +38,7 @@ namespace physx {
 	/** 
 	 *	Writer used by extensions to write elements to a file or database
 	 */
-	class XmlWriter
+	class PX_DEPRECATED XmlWriter
 	{
 	protected:
 		virtual ~XmlWriter(){}

@@ -32,7 +32,7 @@ using namespace physx;
 using namespace Gu;
 using namespace aos;
 
-bool physx::Gu::contains(aos::Vec3V* verts, const PxU32 numVerts, const aos::Vec3VArg p, const aos::Vec3VArg min, const aos::Vec3VArg max)
+bool physx::Gu::contains(aos::Vec3V* verts, PxU32 numVerts, const aos::Vec3VArg p, const aos::Vec3VArg min, const aos::Vec3VArg max)
 {
 	const BoolV tempCon = BOr(V3IsGrtr(min, p), V3IsGrtr(p, max));
 	const BoolV con = BOr(BGetX(tempCon), BGetY(tempCon));
@@ -102,7 +102,7 @@ bool physx::Gu::contains(aos::Vec3V* verts, const PxU32 numVerts, const aos::Vec
 	return intersectionPoints> 0;
 }
 
-PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal* map, const aos::Vec3VArg normal, PxI32& polyIndex2)
+PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal, PxI32& polyIndex2)
 {
 	//normal is in shape space, need to transform the vertex space
 	const Vec3V n = M33TrnspsMulV3(map->vertex2Shape, normal);
@@ -133,6 +133,8 @@ PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal
 	PxU32 closestEdge = 0xffffffff;
 	FloatV maxDpSq = FMul(minProj, minProj);
 
+	FloatV maxDpSq2 = FLoad(-10.0f);
+
 	for (PxU32 i = 0; i < numEdges; ++i)//, inc = VecI32V_Add(inc, vOne))
 	{
 		const PxU32 index = i * 2;
@@ -148,6 +150,15 @@ PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal
 		//Test normal of current edge - squared test is valid if dp and maxDp both >= 0
 		const FloatV dp = V3Dot(edgeNormal, nnormal);//edgeNormal.dot(normal);
 		const FloatV sqDp = FMul(dp, dp);
+
+		if(f0==closestFaceIndex || f1==closestFaceIndex)
+		{
+			if(BAllEqTTTT(FIsGrtrOrEq(sqDp, maxDpSq2)))
+			{
+				maxDpSq2 = sqDp;
+				polyIndex2 = f0==closestFaceIndex ? PxI32(f1) : PxI32(f0);
+			}
+		}
 
 		const BoolV con0 = FIsGrtrOrEq(dp, zero);
 		const BoolV con1 = FIsGrtr(sqDp, FMul(maxDpSq, enMagSq));
@@ -187,8 +198,8 @@ PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal
 	return closestFaceIndex;
 }
 
-PxU32 physx::Gu::getWitnessPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal* map, const aos::Vec3VArg normal,
-	const aos::Vec3VArg closest, const PxReal tolerance)
+PxU32 physx::Gu::getWitnessPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal,
+	const aos::Vec3VArg closest, PxReal tolerance)
 {
 	PxReal pd[256];
 	//first pass : calculate the smallest distance from the closest point to the polygon face

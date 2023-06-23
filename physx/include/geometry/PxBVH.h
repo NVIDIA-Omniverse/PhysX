@@ -63,43 +63,6 @@ class PxBVH : public PxBase
 {
 public:
 
-	/**
-	\brief Raycast test against a BVH.
-
-	\param[in] origin		The origin of the ray.
-	\param[in] unitDir		Normalized direction of the ray.
-	\param[in] maxDist		Maximum ray length, has to be in the [0, inf) range
-	\param[in] maxHits		Max number of returned hits = size of 'rayHits' buffer
-	\param[out] rayHits		Raycast hits information, bounds indices 
-	\return Number of hits  
-	@deprecated
-	*/
-	PX_DEPRECATED	virtual PxU32	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT rayHits) const = 0;
-
-	/**
-	\brief Sweep test against a BVH.
-
-	\param[in] aabb			The axis aligned bounding box to sweep
-	\param[in] unitDir		Normalized direction of the sweep.
-	\param[in] maxDist		Maximum sweep length, has to be in the [0, inf) range
-	\param[in] maxHits		Max number of returned hits = size of 'sweepHits' buffer
-	\param[out] sweepHits	Sweep hits information, bounds indices 
-	\return Number of hits 
-	@deprecated
-	*/
-	PX_DEPRECATED	virtual PxU32	sweep(const PxBounds3& aabb, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT sweepHits) const = 0;
-
-	/**
-	\brief AABB overlap test against a BVH.
-
-	\param[in] aabb			The axis aligned bounding box		
-	\param[in] maxHits		Max number of returned hits = size of 'overlapHits' buffer
-	\param[out] overlapHits	Overlap hits information, bounds indices 
-	\return Number of hits 
-	@deprecated
-	*/
-	PX_DEPRECATED	virtual PxU32	overlap(const PxBounds3& aabb, PxU32 maxHits, PxU32* PX_RESTRICT overlapHits) const = 0;
-
 	struct RaycastCallback
 	{
 						RaycastCallback()	{}
@@ -313,13 +276,6 @@ protected:
 	@see PxBVH PxReportCallback
 	*/
 	PX_C_EXPORT PX_PHYSX_COMMON_API bool PX_CALL_CONV PxFindOverlap(PxReportCallback<PxGeomIndexPair>& callback, const PxBVH& bvh0, const PxBVH& bvh1);
-
-//! @cond
-	/**
-	 * @deprecated
-	 */
-	typedef PX_DEPRECATED PxBVH PxBVHStructure;
-//! @endcond
 
 #if !PX_DOXYGEN
 } // namespace physx

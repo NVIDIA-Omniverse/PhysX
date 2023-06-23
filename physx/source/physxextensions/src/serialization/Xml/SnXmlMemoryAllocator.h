@@ -33,7 +33,7 @@
 
 namespace physx { 
 
-	class XmlMemoryAllocator
+	class PX_DEPRECATED XmlMemoryAllocator
 	{
 	protected:
 		virtual ~XmlMemoryAllocator(){}
@@ -98,7 +98,7 @@ namespace physx {
 		}
 	};
 	
-	struct XmlMemoryAllocatorImpl : public XmlMemoryAllocator
+	struct PX_DEPRECATED XmlMemoryAllocatorImpl : public XmlMemoryAllocator
 	{
 		Sn::TMemoryPoolManager mManager;
 

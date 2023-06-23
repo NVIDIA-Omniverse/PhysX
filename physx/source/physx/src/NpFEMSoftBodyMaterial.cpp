@@ -43,7 +43,7 @@ NpFEMSoftBodyMaterial::NpFEMSoftBodyMaterial(const PxsFEMSoftBodyMaterialCore& d
 
 NpFEMSoftBodyMaterial::~NpFEMSoftBodyMaterial()
 {
-	NpPhysics::getInstance().removeFEMSoftBodyMaterialFromTable(*this);
+	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
 
 // PX_SERIALIZATION
@@ -56,7 +56,7 @@ void NpFEMSoftBodyMaterial::resolveReferences(PxDeserializationContext&)
 	// Maybe not the best place to do it but it has to be done before the shapes resolve material indices
 	// since the material index translation table is needed there. This requires that the materials have
 	// been added to the table already.
-	NpPhysics::getInstance().addFEMMaterial(this);
+	NpPhysics::getInstance().addMaterial(this);
 }
 
 void NpFEMSoftBodyMaterial::onRefCountZero()
@@ -100,7 +100,7 @@ PxU32 NpFEMSoftBodyMaterial::getReferenceCount() const
 
 PX_INLINE void NpFEMSoftBodyMaterial::updateMaterial()
 {
-	NpPhysics::getInstance().updateFEMSoftBodyMaterial(*this);
+	NpPhysics::getInstance().updateMaterial(*this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -168,15 +168,29 @@ PxReal NpFEMSoftBodyMaterial::getDamping() const
 
 void NpFEMSoftBodyMaterial::setDampingScale(PxReal x)
 {
-	PX_CHECK_AND_RETURN(x >= 0.f && x<= 1.f, "PxMaterial::setDampingScale: invalid float");
-	mMaterial.dampingScale = x;
+	PX_CHECK_AND_RETURN(x >= 0.f && x<= 1.f, "PxMaterial::setDampingScale: invalid float, must be in [0.0, 1.0] range.");
+	mMaterial.dampingScale = toUniformU16(x);
 
 	updateMaterial();
 }
 
 PxReal NpFEMSoftBodyMaterial::getDampingScale() const
 {
-	return mMaterial.dampingScale;
+	return toUniformReal(mMaterial.dampingScale);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void NpFEMSoftBodyMaterial::setMaterialModel(PxFEMSoftBodyMaterialModel::Enum model)
+{
+	mMaterial.materialModel = PxU16(model);
+
+	updateMaterial();
+}
+
+PxFEMSoftBodyMaterialModel::Enum NpFEMSoftBodyMaterial::getMaterialModel() const
+{
+	return PxFEMSoftBodyMaterialModel::Enum(mMaterial.materialModel);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

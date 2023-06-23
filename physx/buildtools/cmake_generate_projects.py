@@ -21,10 +21,10 @@ def cmakeExt():
 
 def filterPreset(presetName):
     winPresetFilter = ['win','switch','crosscompile']
-    if sys.platform == 'win32':        
+    if sys.platform == 'win32':
         if any(presetName.find(elem) != -1 for elem in winPresetFilter):
             return True
-    else:        
+    else:
         if all(presetName.find(elem) == -1 for elem in winPresetFilter):
             return True
     return False
@@ -53,12 +53,12 @@ def noPresetProvided():
                 print('(' + str(counter) + ') ' + presetXml.get('name') +
                     '.user <--- ' + presetXml.get('comment'))
                 presetList.append(presetXml.get('name') + '.user')
-            counter = counter + 1            
+            counter = counter + 1
     # Fix Python 2.x.
-    try: 
+    try:
     	input = raw_input
-    except NameError: 
-    	pass    
+    except NameError:
+    	pass
     mode = int(eval(input('Enter preset number: ')))
     return presetList[mode]
 
@@ -117,34 +117,33 @@ class CMakePreset:
 
     def getCMakeSwitches(self):
         outString = ''
+        # We need gpuProjectsFound flag to avoid issues when we have both
+        # PX_GENERATE_GPU_PROJECTS and PX_GENERATE_GPU_PROJECTS_ONLY switches
+        gpuProjectsFound = False  # initialize flag
         for cmakeSwitch in self.cmakeSwitches:
             outString = outString + ' ' + cmakeSwitch
-            if cmakeSwitch.find('PX_GENERATE_GPU_PROJECTS') != -1:
+            if not gpuProjectsFound and cmakeSwitch.find('PX_GENERATE_GPU_PROJECTS') != -1:
+                gpuProjectsFound = True  # set flag to True when keyword found
                 if os.environ.get('PM_CUDA_PATH') is not None:
-                    outString = outString + ' -DCUDA_TOOLKIT_ROOT_DIR=' + \
-                        os.environ['PM_CUDA_PATH']
-                if self.compiler == 'vc15':
-                    print('VS15CL:' + os.environ['VS150CLPATH'])
-                    outString = outString + ' -DCUDA_HOST_COMPILER=' + \
-                        os.environ['VS150CLPATH']
-                if self.compiler == 'vc16':
-                    print('VS16CL:' + os.environ['VS160CLPATH'])
-                    outString = outString + ' -DCUDA_HOST_COMPILER=' + \
-                        os.environ['VS160CLPATH']
-                if self.compiler == 'vc17':
-                    print('VS17CL:' + os.environ['VS170CLPATH'])
-                    outString = outString + ' -DCUDA_HOST_COMPILER=' + \
-                        os.environ['VS170CLPATH']
-
+                    outString = outString + ' -DCUDAToolkit_ROOT_DIR=' + \
+                            os.environ['PM_CUDA_PATH']
+                    if self.compiler in ['vc15', 'vc16', 'vc17']:
+                        outString = outString + ' -T cuda=' + os.environ['PM_CUDA_PATH']
+                    # TODO: Need to do the same for gcc (aarch64) when we package it with Packman
+                    elif self.compiler == 'clang':
+                        if os.environ.get('PM_clang_PATH') is not None:
+                            outString = outString + ' -DCMAKE_CUDA_HOST_COMPILER=' + \
+                                os.environ['PM_clang_PATH'] + '/bin/clang++'
         return outString
 
     def getCMakeParams(self):
         outString = ''
         for cmakeParam in self.cmakeParams:
-            outString = outString + ' ' + cmakeParam
+            outString = outString + ' ' + cmakeParam # + ' --trace'
         return outString
 
     def getPlatformCMakeParams(self):
+        cmake_modules_root = os.environ['PHYSX_ROOT_DIR'] + '/source/compiler/cmake/modules'
         outString = ' '
         if self.compiler == 'vc15':
             outString = outString + '-G \"Visual Studio 15 2017\"'
@@ -167,8 +166,7 @@ class CMakePreset:
         elif self.targetPlatform == 'switch64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=switch'
             outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
-                os.environ['PM_CMakeModules_PATH'] + \
-                '/switch/NX64Toolchain.txt'
+                cmake_modules_root + '/switch/NX64Toolchain.txt'
             outString = outString + ' -DCMAKE_GENERATOR_PLATFORM=NX64'
             return outString
         elif self.targetPlatform == 'linux':
@@ -176,8 +174,8 @@ class CMakePreset:
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
             if self.compiler == 'clang-crosscompile':
                 outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
-                    os.environ['PM_CMakeModules_PATH'] + \
-                    '/linux/LinuxCrossToolchain.x86_64-unknown-linux-gnu.cmake'
+                    cmake_modules_root + '/linux/LinuxCrossToolchain.x86_64-unknown-linux-gnu.cmake'
+                outString = outString + ' -DCMAKE_MAKE_PROGRAM=' + os.environ.get('PM_MinGW_PATH') + '/bin/mingw32-make.exe'
             elif self.compiler == 'clang':
                 if os.environ.get('PM_clang_PATH') is not None:
                     outString = outString + ' -DCMAKE_C_COMPILER=' + \
@@ -193,12 +191,13 @@ class CMakePreset:
             outString = outString + ' -DPX_OUTPUT_ARCH=arm'
             if self.compiler == 'clang-crosscompile':
                 outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
-                    os.environ['PM_CMakeModules_PATH'] + \
-                    '/linux/LinuxCrossToolchain.aarch64-unknown-linux-gnueabihf.cmake'
+                    cmake_modules_root + '/linux/LinuxCrossToolchain.aarch64-unknown-linux-gnueabihf.cmake'
+                outString = outString + ' -DCMAKE_MAKE_PROGRAM=' + os.environ.get('PM_MinGW_PATH') + '/bin/mingw32-make.exe'
             elif self.compiler == 'gcc':
+                # TODO: To change so it uses Packman's compiler. Then add it as
+                # host compiler for CUDA above.
                 outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=\"' + \
-                    os.environ['PM_CMakeModules_PATH'] + \
-                    '/linux/LinuxAarch64.cmake\"'
+                    cmake_modules_root + '/linux/LinuxAarch64.cmake\"'
             return outString
         elif self.targetPlatform == 'mac64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
@@ -232,7 +231,6 @@ def cleanupCompilerDir(compilerDirName):
 def presetProvided(pName):
     parsedPreset = CMakePreset(pName)
 
-    print('PM_CMakeModules_PATH: ' + os.environ['PM_CMakeModules_PATH'])
     print('PM_PATHS: ' + os.environ['PM_PATHS'])
 
     if os.environ.get('PM_cmake_PATH') is not None:
@@ -284,6 +282,8 @@ def main():
     if (sys.version_info[0] < 3) or (sys.version_info[0] == 3 and sys.version_info[1] < 5):
         print("You are using Python {}. You must use Python 3.5 and up. Please read README.md for requirements.").format(sys.version)
         exit()
+    physx_root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    os.environ['PHYSX_ROOT_DIR'] = physx_root_dir.replace("\\", "/")
     if len(sys.argv) != 2:
         presetName = noPresetProvided()
         if sys.platform == 'win32':
@@ -293,7 +293,7 @@ def main():
             # TODO: catch exception and add capture errors
         else:
             print('Running generate_projects.sh ' + presetName)
-            # TODO: once we have Python 3.7.2 for linux, add the text=True instead of universal_newlines 
+            # TODO: once we have Python 3.7.2 for linux, add the text=True instead of universal_newlines
             cmd = './generate_projects.sh {}'.format(presetName)
             result = subprocess.run(['bash', './generate_projects.sh', presetName], cwd=os.environ['PHYSX_ROOT_DIR'], check=True, universal_newlines=True)
             # TODO: catch exception and add capture errors

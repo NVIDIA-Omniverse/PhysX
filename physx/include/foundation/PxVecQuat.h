@@ -225,7 +225,6 @@ PX_FORCE_INLINE Vec3V QuatTransform(const QuatV q, const Vec3V p, const Vec3V v)
 
 PX_FORCE_INLINE Vec3V QuatRotateInv(const QuatV q, const Vec3V v)
 {
-
 	//	const PxVec3 qv(x,y,z);
 	//	return (v*(w*w-0.5f) - (qv.cross(v))*w + qv*(qv.dot(v)))*2;
 
@@ -244,18 +243,18 @@ PX_FORCE_INLINE Vec3V QuatRotateInv(const QuatV q, const Vec3V v)
 
 PX_FORCE_INLINE QuatV QuatMul(const QuatV a, const QuatV b)
 {
-	const Vec3V imagA = Vec3V_From_Vec4V(a);
-	const Vec3V imagB = Vec3V_From_Vec4V(b);
+	const Vec4V imagA = a;
+	const Vec4V imagB = b;
 	const FloatV rA = V4GetW(a);
 	const FloatV rB = V4GetW(b);
 
-	const FloatV real = FSub(FMul(rA, rB), V3Dot(imagA, imagB));
-	const Vec3V v0 = V3Scale(imagA, rB);
-	const Vec3V v1 = V3Scale(imagB, rA);
-	const Vec3V v2 = V3Cross(imagA, imagB);
-	const Vec3V imag = V3Add(V3Add(v0, v1), v2);
+	const FloatV real = FSub(FMul(rA, rB), V4Dot3(imagA, imagB));
+	const Vec4V v0 = V4Scale(imagA, rB);
+	const Vec4V v1 = V4Scale(imagB, rA);
+	const Vec4V v2 = V4Cross(imagA, imagB);
+	const Vec4V imag = V4Add(V4Add(v0, v1), v2);
 
-	return V4SetW(Vec4V_From_Vec3V(imag), real);
+	return V4SetW(imag, real);
 }
 
 PX_FORCE_INLINE QuatV QuatAdd(const QuatV a, const QuatV b)

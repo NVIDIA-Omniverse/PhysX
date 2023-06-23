@@ -34,34 +34,18 @@
 
 namespace physx
 {
-	PX_ALIGN_PREFIX(16) struct PxsFEMClothMaterialAuxData
-	{
-		// derived quantities (computed internally)
-		float	lambda;					//4
-		float	mu;						//8
-		float	padding[2];				//16
-	}PX_ALIGN_SUFFIX(16);
-
 	PX_ALIGN_PREFIX(16) struct PxsFEMClothMaterialData
 	{
 		PxReal	youngs;					//4
 		PxReal	poissons;				//8
 		PxReal	dynamicFriction;		//12
 		PxReal	thickness;				//16
-		PxReal	elasticityDamping;		//20
-		PxReal	bendingDamping;			//24
-		PxReal	padding[2];				//32
-	
-		PX_CUDA_CALLABLE PxsFEMClothMaterialData() :
-			youngs				(1.e+6f),
-			poissons			(0.45f),
-			dynamicFriction		(0.0f),
-			thickness			(0.0f),
-			elasticityDamping	(0.0f),
-			bendingDamping		(0.0f)
-		{}
 
-		PxsFEMClothMaterialData(const PxEMPTY) {}
+		PX_CUDA_CALLABLE PxsFEMClothMaterialData()
+	    : youngs(1.e+6f), poissons(0.45f), dynamicFriction(0.0f), thickness(0.0f)
+	    {}
+
+	    PxsFEMClothMaterialData(const PxEMPTY) {}
 
 	}PX_ALIGN_SUFFIX(16);
 

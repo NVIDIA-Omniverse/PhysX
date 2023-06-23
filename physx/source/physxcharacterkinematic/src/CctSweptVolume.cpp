@@ -55,7 +55,7 @@ void Cct::computeTemporalBox(PxExtendedBounds3& _box, float radius, float height
 	{
 		PxExtendedBounds3 destBox;
 		PxExtendedVec3 tmp = center;
-		tmp += direction;
+		add(tmp, direction);
 		setCenterExtents(destBox, tmp, extents);
 		add(box, destBox);
 	}
@@ -64,7 +64,7 @@ void Cct::computeTemporalBox(PxExtendedBounds3& _box, float radius, float height
 	{
 		PxExtendedBounds3 destBox;
 		PxExtendedVec3 tmp = center;
-		tmp -= upDirection * maxJumpHeight;
+		sub(tmp, upDirection * maxJumpHeight);
 		setCenterExtents(destBox, tmp, extents);
 		add(box, destBox);
 	}

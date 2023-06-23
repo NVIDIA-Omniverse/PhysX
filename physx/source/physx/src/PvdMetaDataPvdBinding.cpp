@@ -1102,23 +1102,21 @@ static void sendGeometry(PvdMetaDataBinding& metaBind, PvdDataStream& inStream, 
 
 static void setGeometry(PvdMetaDataBinding& metaBind, PvdDataStream& inStream, const PxShape& inObj, PsPvd* pvd)
 {
-	switch(inObj.getGeometryType())
+	const PxGeometry& geom = inObj.getGeometry();
+	switch(geom.getType())
 	{
-#define SEND_PVD_GEOM_TYPE(enumType, geomType, valueType)				\
-	case PxGeometryType::enumType:                                      \
-	{                                                                   \
-		Px##geomType geom;                                              \
-		inObj.get##geomType(geom);                                      \
-		sendGeometry<valueType>(metaBind, inStream, inObj, geom, pvd);  \
-	}                                                                   \
+#define SEND_PVD_GEOM_TYPE(enumType, geomType, valueType)                           \
+	case PxGeometryType::enumType:                                                  \
+	{                                                                               \
+		Px##geomType geomT = static_cast<const Px##geomType&>(geom);                \
+		sendGeometry<valueType>(metaBind, inStream, inObj, geomT, pvd);             \
+	}                                                                               \
 	break;
 		SEND_PVD_GEOM_TYPE(eSPHERE, SphereGeometry, PxSphereGeometryGeneratedValues);
 	// Plane geometries don't have any properties, so this avoids using a property
 	// struct for them.
 	case PxGeometryType::ePLANE:
 	{
-		PxPlaneGeometry geom;
-		inObj.getPlaneGeometry(geom);
 		const void* geomInst = (reinterpret_cast<const PxU8*>(&inObj)) + 4;
 		inStream.createInstance(getPvdNamespacedNameForType<PxPlaneGeometry>(), geomInst);
 		inStream.setPropertyValue(&inObj, "Geometry", geomInst);
@@ -1205,11 +1203,11 @@ void PvdMetaDataBinding::releaseAndRecreateGeometry(PvdDataStream& inStream, con
 {
 	const void* geomInst = (reinterpret_cast<const PxU8*>(&inObj)) + 4;
 	inStream.destroyInstance(geomInst);
+	const PxGeometry& geom = inObj.getGeometry();
 	// Quick fix for HF modify, PxConvexMesh and PxTriangleMesh need recook, they should always be new if modified
-	if(inObj.getGeometryType() == PxGeometryType::eHEIGHTFIELD)
+	if(geom.getType() == PxGeometryType::eHEIGHTFIELD)
 	{
-		PxHeightFieldGeometry hfGeom;
-		inObj.getHeightFieldGeometry(hfGeom);
+		const PxHeightFieldGeometry& hfGeom = static_cast<const PxHeightFieldGeometry&>(geom);
 		if(inStream.isInstanceValid(hfGeom.heightField))
 			sendAllProperties(inStream, *hfGeom.heightField);
 	}
@@ -1540,28 +1538,6 @@ void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxMPMP
 }
 
 void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxMPMParticleSystem& inObj, const PxScene& ownerScene)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-}
-
-void PvdMetaDataBinding::createInstance(PvdDataStream& inStream, const PxCustomParticleSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-	PX_UNUSED(ownerPhysics);
-	PX_UNUSED(pvd);
-}
-
-void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxCustomParticleSystem& inObj)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-}
-
-void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxCustomParticleSystem& inObj, const PxScene& ownerScene)
 {
 	PX_UNUSED(inStream);
 	PX_UNUSED(inObj);

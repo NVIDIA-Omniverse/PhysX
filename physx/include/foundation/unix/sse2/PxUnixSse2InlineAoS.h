@@ -924,7 +924,7 @@ PX_FORCE_INLINE PxU32 FInBounds(const FloatV a, const FloatV min, const FloatV m
 {
 	ASSERT_ISVALIDFLOATV(a);
 	ASSERT_ISVALIDFLOATV(min);
-	ASSERT_ISVALIDFLOATV(max)
+	ASSERT_ISVALIDFLOATV(max);
 	const BoolV c = BAnd(FIsGrtrOrEq(a, min), FIsGrtrOrEq(max, a));
 	return BAllEqTTTT(c);
 }
@@ -997,7 +997,7 @@ PX_FORCE_INLINE FloatV V3GetX(const Vec3V f)
 
 PX_FORCE_INLINE FloatV V3GetY(const Vec3V f)
 {
-	ASSERT_ISVALIDVEC3V(f)
+	ASSERT_ISVALIDVEC3V(f);
 	return _mm_shuffle_ps(f, f, _MM_SHUFFLE(1, 1, 1, 1));
 }
 
@@ -1041,7 +1041,7 @@ PX_FORCE_INLINE Vec3V V3ColY(const Vec3V a, const Vec3V b, const Vec3V c)
 {
 	ASSERT_ISVALIDVEC3V(a);
 	ASSERT_ISVALIDVEC3V(b);
-	ASSERT_ISVALIDVEC3V(c)
+	ASSERT_ISVALIDVEC3V(c);
 	Vec3V r = _mm_shuffle_ps(a, c, _MM_SHUFFLE(3, 1, 3, 1));
 	return V3SetY(r, V3GetY(b));
 }
@@ -1635,7 +1635,7 @@ PX_FORCE_INLINE PxU32 V3OutOfBounds(const Vec3V a, const Vec3V bounds)
 PX_FORCE_INLINE PxU32 V3InBounds(const Vec3V a, const Vec3V bounds)
 {
 	ASSERT_ISVALIDVEC3V(a);
-	ASSERT_ISVALIDVEC3V(bounds)
+	ASSERT_ISVALIDVEC3V(bounds);
 	return V3InBounds(a, V3Neg(bounds), bounds);
 }
 

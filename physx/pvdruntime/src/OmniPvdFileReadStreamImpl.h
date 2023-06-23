@@ -42,8 +42,8 @@ public:
 	void OMNI_PVD_CALL setFileName(const char *fileName);
 	bool OMNI_PVD_CALL openFile();
 	bool OMNI_PVD_CALL closeFile();
-	uint64_t OMNI_PVD_CALL readBytes(uint8_t* bytes, const uint64_t nbrBytes);
-	uint64_t OMNI_PVD_CALL skipBytes(const uint64_t nbrBytes);
+	uint64_t OMNI_PVD_CALL readBytes(uint8_t* bytes, uint64_t nbrBytes);
+	uint64_t OMNI_PVD_CALL skipBytes(uint64_t nbrBytes);
 	bool OMNI_PVD_CALL openStream();
 	bool OMNI_PVD_CALL closeStream();
 

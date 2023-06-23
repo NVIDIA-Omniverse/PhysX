@@ -90,20 +90,12 @@ extern PxvOffsetTable gPxvOffsetTable;
 /*!
 Initialize low-level implementation.
 */
-
 void PxvInit(const PxvOffsetTable& offsetTable);
-
 
 /*!
 Shut down low-level implementation.
 */
 void PxvTerm();
-
-/*!
-Initialize low-level implementation.
-*/
-
-void PxvRegisterHeightFields();
 
 #if PX_SUPPORT_GPU_PHYSX
 class PxPhysXGpu* PxvGetPhysXGpu(bool createIfNeeded);

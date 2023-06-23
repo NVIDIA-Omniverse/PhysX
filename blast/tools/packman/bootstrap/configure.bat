@@ -12,7 +12,7 @@
 :: See the License for the specific language governing permissions and
 :: limitations under the License.
 
-set PM_PACKMAN_VERSION=6.46
+set PM_PACKMAN_VERSION=6.56
 
 :: Specify where packman command is rooted
 set PM_INSTALL_PATH=%~dp0..
@@ -138,7 +138,7 @@ if %errorlevel% neq 0 (
 del "%TARGET%"
 
 :ENSURE_7ZA
-set PM_7Za_VERSION=16.02.4
+set PM_7Za_VERSION=22.01-1
 set PM_7Za_PATH=%PM_PACKAGES_ROOT%\7za\%PM_7ZA_VERSION%
 if exist "%PM_7Za_PATH%" goto END
 set PM_7Za_PATH=%PM_PACKAGES_ROOT%\chk\7za\%PM_7ZA_VERSION%

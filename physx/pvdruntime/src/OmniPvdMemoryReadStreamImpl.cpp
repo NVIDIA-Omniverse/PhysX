@@ -42,7 +42,7 @@ uint64_t OMNI_PVD_CALL OmniPvdMemoryReadStreamImpl::readBytes(uint8_t* destinati
 	return mMemoryStream->readBytes(destination, nbrBytes);
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdMemoryReadStreamImpl::skipBytes(const uint64_t nbrBytes)
+uint64_t OMNI_PVD_CALL OmniPvdMemoryReadStreamImpl::skipBytes(uint64_t nbrBytes)
 {
 	return mMemoryStream->skipBytes(nbrBytes);
 }

@@ -56,23 +56,21 @@ namespace vehicle2
 \brief Create the attribute handles necessary to reflect vehicles in omnipvd.
 \param[in] allocator is used to allocate the memory used to store the attribute handles.
 \param[in] omniWriter is used to register the attribute handles with omnipvd.
-\note omniWriter must be a valid pointer to an instance of OmniPvdWriter.
 @see PxVehicleSimulationContext
 @see PxVehiclePVDComponent
 @see PxVehiclePvdAttributesRelease
 */
 PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate
-(PxAllocatorCallback& allocator, OmniPvdWriter* omniWriter);
+(PxAllocatorCallback& allocator, OmniPvdWriter& omniWriter);
 
 /**
 \brief Destory the attribute handles created by PxVehiclePvdAttributesCreate().
 \param[in] allocator must be the instance used by PxVehiclePvdObjectCreate().
-\param[in] omniWriter must point to the same OmniPvdWriter instance used for the complementary call to PxVehiclePvdAttributesCreate(). 
 \param[in] attributeHandles is the PxVehiclePvdAttributeHandles created by PxVehiclePvdAttributesCreate().
 @see PxVehiclePvdAttributesCreate
 */
 void PxVehiclePvdAttributesRelease
-(PxAllocatorCallback& allocator, OmniPvdWriter* omniWriter, PxVehiclePvdAttributeHandles* attributeHandles);
+(PxAllocatorCallback& allocator, PxVehiclePvdAttributeHandles& attributeHandles);
 
 /**
 \brief Create omnipvd objects that will be used to reflect an individual veicle in omnipvd.
@@ -80,8 +78,6 @@ void PxVehiclePvdAttributesRelease
 \param[in] nbAntirolls must be greater than or equal to the number of antiroll bars on the vehicle.
 \param[in] maxNbPhysxMaterialFrictions must be greater than or equal to the number of PxPhysXMaterialFriction instances associated with any wheel of the vehicle.
 \param[in] contextHandle is typically used to associated vehicles with a particular scene or group.
-\param[in] attributeHandles is the PxVehiclePvdAttributeHandles instance returned by PxVehiclePvdAttributesCreate()
-\param[in] omniWriter is used to register the attribute handles with omnipvd.
 \param[in] allocator is used to allocate the memory used to store handles to the created omnipvd objects.
 \note PxVehiclePvdObjectCreate() must be called after PxVehiclePvdAttributesCreate().
 @see PxVehicleAxleDescription
@@ -92,19 +88,16 @@ void PxVehiclePvdAttributesRelease
 */
 PxVehiclePvdObjectHandles* PxVehiclePvdObjectCreate
 (const PxU32 nbWheels, const PxU32 nbAntirolls, const PxU32 maxNbPhysxMaterialFrictions,
- const PxU64 contextHandle, const PxVehiclePvdAttributeHandles& attributeHandles, 
- OmniPvdWriter* omniWriter, PxAllocatorCallback& allocator);
+ const PxU64 contextHandle, PxAllocatorCallback& allocator);
 
 /**
 \brief Destroy the PxVehiclePvdObjectHandles instance created by PxVehiclePvdObjectCreate().
-\param[in] attributeHandles is the PxVehiclePvdAttributeHandles created by PxVehiclePvdAttributesCreate().
 \param[in] omniWriter is used to register the attribute handles with omnipvd.
 \param[in] allocator must be the instance used by PxVehiclePvdObjectCreate().
 \param[in] objectHandles is the PxVehiclePvdObjectHandles that was created by PxVehiclePvdObjectCreate().
 */
 void PxVehiclePvdObjectRelease
-(const PxVehiclePvdAttributeHandles& attributeHandles, 
- OmniPvdWriter* omniWriter, PxAllocatorCallback& allocator, PxVehiclePvdObjectHandles* objectHandles);
+(OmniPvdWriter& omniWriter, PxAllocatorCallback& allocator, PxVehiclePvdObjectHandles& objectHandles);
 
 #if !PX_DOXYGEN
 } // namespace vehicle2

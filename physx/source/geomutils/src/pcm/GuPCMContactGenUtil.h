@@ -50,7 +50,7 @@ namespace Gu
 		EDGE
 	};
 
-	bool contains(aos::Vec3V* verts, const PxU32 numVerts, const aos::Vec3VArg p, const aos::Vec3VArg min, const aos::Vec3VArg max);
+	bool contains(aos::Vec3V* verts, PxU32 numVerts, const aos::Vec3VArg p, const aos::Vec3VArg min, const aos::Vec3VArg max);
 
 	PX_FORCE_INLINE aos::FloatV signed2DTriArea(const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c)
 	{
@@ -64,9 +64,9 @@ namespace Gu
 		return FSub(t0, t1);
 	}
 
-	PxI32 getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal* map, const aos::Vec3VArg normal, PxI32& polyIndex2);
+	PxI32 getPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal, PxI32& polyIndex2);
 
-	PX_FORCE_INLINE PxI32 getPolygonIndex(const Gu::PolygonalData& polyData, SupportLocal* map, const aos::Vec3VArg normal)
+	PX_FORCE_INLINE PxI32 getPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal)
 	{
 		using namespace aos;
 
@@ -74,8 +74,8 @@ namespace Gu
 		return getPolygonIndex(polyData, map, normal, index2);
 	}
 
-	PxU32 getWitnessPolygonIndex(	const Gu::PolygonalData& polyData, SupportLocal* map, const aos::Vec3VArg normal,
-									const aos::Vec3VArg closest, const PxReal tolerance);
+	PxU32 getWitnessPolygonIndex(	const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal,
+									const aos::Vec3VArg closest, PxReal tolerance);
 
 }//Gu
 }//physx

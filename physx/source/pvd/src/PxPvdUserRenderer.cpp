@@ -184,25 +184,25 @@ struct UserRenderer : public PvdUserRenderer
 	}
 
 	// Constraint visualization routines
-	virtual void visualizeJointFrames(const PxTransform& parent, const PxTransform& child)
+	virtual void visualizeJointFrames(const PxTransform& parent, const PxTransform& child)	PX_OVERRIDE
 	{
 		handleEvent(JointFramesRenderEvent(parent, child));
 	}
-	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, float value, bool active)
+	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, float value)	PX_OVERRIDE
 	{
-		handleEvent(LinearLimitRenderEvent(t0, t1, value, active));
+		handleEvent(LinearLimitRenderEvent(t0, t1, value, true));
 	}
-	virtual void visualizeAngularLimit(const PxTransform& t0, float lower, float upper, bool active)
+	virtual void visualizeAngularLimit(const PxTransform& t0, float lower, float upper)	PX_OVERRIDE
 	{
-		handleEvent(AngularLimitRenderEvent(t0, lower, upper, active));
+		handleEvent(AngularLimitRenderEvent(t0, lower, upper, true));
 	}
-	virtual void visualizeLimitCone(const PxTransform& t, float tanQSwingY, float tanQSwingZ, bool active)
+	virtual void visualizeLimitCone(const PxTransform& t, float tanQSwingY, float tanQSwingZ)	PX_OVERRIDE
 	{
-		handleEvent(LimitConeRenderEvent(t, tanQSwingY, tanQSwingZ, active));
+		handleEvent(LimitConeRenderEvent(t, tanQSwingY, tanQSwingZ, true));
 	}
-	virtual void visualizeDoubleCone(const PxTransform& t, float angle, bool active)
+	virtual void visualizeDoubleCone(const PxTransform& t, float angle)	PX_OVERRIDE
 	{
-		handleEvent(DoubleConeRenderEvent(t, angle, active));
+		handleEvent(DoubleConeRenderEvent(t, angle, true));
 	}
 	// Clear the immedate buffer.
 	virtual void flushRenderEvents()

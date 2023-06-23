@@ -7291,10 +7291,11 @@ static const PxSweepBuffer* vehicleWheels4SuspensionSweeps
 		vehActor->getShapes(&wheelShape, 1, PxU32(wheelShapeIds[j]));
 
 		PxGeometryHolder suspGeometry;
-		if (PxGeometryType::eCONVEXMESH == wheelShape->getGeometryType())
+		const PxGeometry& geom = wheelShape->getGeometry();
+		const PxGeometryType::Enum geomType = geom.getType();
+		if (PxGeometryType::eCONVEXMESH == geomType)
 		{
-			PxConvexMeshGeometry convMeshGeom;
-			wheelShape->getConvexMeshGeometry(convMeshGeom);
+			PxConvexMeshGeometry convMeshGeom = static_cast<const PxConvexMeshGeometry&>(geom);
 			convMeshGeom.scale.scale = convMeshGeom.scale.scale.multiply(
 				PxVec3(
 					PxAbs(sideAxis.x*sweepWidthScale + (upAxis.x + forwardAxis.x)*sweepRadiusScale),
@@ -7303,19 +7304,17 @@ static const PxSweepBuffer* vehicleWheels4SuspensionSweeps
 			);
 			suspGeometry.storeAny(convMeshGeom);
 		}
-		else if (PxGeometryType::eCAPSULE == wheelShape->getGeometryType())
+		else if (PxGeometryType::eCAPSULE == geomType)
 		{
-			PxCapsuleGeometry capsuleGeom;
-			wheelShape->getCapsuleGeometry(capsuleGeom);
+			PxCapsuleGeometry capsuleGeom = static_cast<const PxCapsuleGeometry&>(geom);
 			capsuleGeom.halfHeight *= sweepWidthScale;
 			capsuleGeom.radius *= sweepRadiusScale;
 			suspGeometry.storeAny(capsuleGeom);
 		}
 		else
 		{
-			PX_ASSERT(PxGeometryType::eSPHERE == wheelShape->getGeometryType());
-			PxSphereGeometry sphereGeom;
-			wheelShape->getSphereGeometry(sphereGeom);
+			PX_ASSERT(PxGeometryType::eSPHERE == geomType);
+			PxSphereGeometry sphereGeom = static_cast<const PxSphereGeometry&>(geom);
 			sphereGeom.radius *= sweepRadiusScale;
 			suspGeometry.storeAny(sphereGeom);
 		}

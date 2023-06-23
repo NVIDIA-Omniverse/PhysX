@@ -37,7 +37,7 @@ OmniPvdMemoryWriteStreamImpl::~OmniPvdMemoryWriteStreamImpl()
 {
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdMemoryWriteStreamImpl::writeBytes(const uint8_t* source, const uint64_t nbrBytes)
+uint64_t OMNI_PVD_CALL OmniPvdMemoryWriteStreamImpl::writeBytes(const uint8_t* source, uint64_t nbrBytes)
 {
 	return mMemoryStream->writeBytes(source, nbrBytes);
 }

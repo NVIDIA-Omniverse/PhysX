@@ -119,7 +119,7 @@ static void releaseVertexBuffer()
 	}
 }
 
-static void renderSoftBodyGeometry(const PxTetrahedronMesh& mesh, const PxArray<PxVec4>& deformedPositionsInvMass)
+static void renderSoftBodyGeometry(const PxTetrahedronMesh& mesh, const PxVec4* deformedPositionsInvMass)
 {
 	const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {0,3,2}, {1,2,3} };
 
@@ -459,7 +459,7 @@ static void defaultMouseCallback(int button, int state, int x, int y)
 static void defaultKeyboardCallback(unsigned char key, int x, int y)
 {
 	if(key==27)
-		exit(0);
+		glutLeaveMainLoop();
 
 	if (key == 110) //n
 		gWireFrame = !gWireFrame;
@@ -671,9 +671,7 @@ void setupDefault(const char* name, Camera* camera, KeyboardCallback kbcb, Rende
 	setupDefaultRenderState();
 	enableVSync(true);
 
-#if PX_LINUX_FAMILY
-	glutSetOption( GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS );
-#endif
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
 
 	gUserExitCB = excb;
@@ -761,7 +759,7 @@ void print(const char* text)
 const PxVec3 shadowDir(0.0f, -0.7071067f, -0.7071067f);
 const PxReal shadowMat[] = { 1,0,0,0, -shadowDir.x / shadowDir.y,0,-shadowDir.z / shadowDir.y,0, 0,0,1,0, 0,0,0,1 };
 
-void renderSoftBody(PxSoftBody* softBody, const PxArray<PxVec4>& deformedPositionsInvMass, bool shadows, const PxVec3& color)
+void renderSoftBody(PxSoftBody* softBody, const PxVec4* deformedPositionsInvMass, bool shadows, const PxVec3& color)
 {
 	PxShape* shape = softBody->getShape();
 

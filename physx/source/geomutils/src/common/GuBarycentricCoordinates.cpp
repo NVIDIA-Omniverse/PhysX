@@ -26,7 +26,6 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
 #include "GuBarycentricCoordinates.h"
 
 using namespace physx;
@@ -65,15 +64,12 @@ void Gu::barycentricCoordinates(const aos::Vec3VArg p, const aos::Vec3VArg a, co
 	const FloatV zero = FZero();
 	const FloatV denom = FSel(FIsEq(totalArea, zero), zero, FRecip(totalArea));
 	v = FMul(vb, denom);
-	w = FMul(vc, denom);
-	
+	w = FMul(vc, denom);	
 }
 
-/*
-	v0 = b - a;
-	v1 = c - a;
-	v2 = p - a;
-*/
+//	v0 = b - a;
+//	v1 = c - a;
+//	v2 = p - a;
 void Gu::barycentricCoordinates(const Vec3VArg v0, const Vec3VArg v1, const Vec3VArg v2, FloatV& v, FloatV& w)
 {
 	const FloatV d00 = V3Dot(v0, v0);

@@ -41,9 +41,6 @@ namespace Sc
 	public:
 		PX_INLINE		ElementInteractionMarker(ElementSim& element0, ElementSim& element1, bool createParallel/* = false*/);
 						~ElementInteractionMarker();
-
-				bool	onActivate_(void*)	{ return false;	}
-				bool	onDeactivate_()		{ return true;	}
 	};
 
 } // namespace Sc
@@ -54,11 +51,10 @@ PX_INLINE Sc::ElementInteractionMarker::ElementInteractionMarker(ElementSim& ele
 {
 	if(!createParallel)
 	{
-		bool active = registerInActors();
-		PX_UNUSED(active);
-		PX_ASSERT(!active);
-		getScene().registerInteraction(this, false);
-		getScene().getNPhaseCore()->registerInteraction(this);
+		// PT: no call to onActivate() here, interaction markers are always inactive
+		registerInActors();
+		Scene& scene = getScene();
+		scene.registerInteraction(this, false);
 	}
 }
 

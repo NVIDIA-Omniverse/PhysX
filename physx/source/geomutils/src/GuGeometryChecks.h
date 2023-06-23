@@ -88,7 +88,9 @@ namespace physx
 	}
 }
 
+#if !defined(__CUDACC__)
 // the shape structure relies on punning capsules and spheres 
 PX_COMPILE_TIME_ASSERT(PX_OFFSET_OF(physx::PxCapsuleGeometry, radius) == PX_OFFSET_OF(physx::PxSphereGeometry, radius));
+#endif
 
 #endif

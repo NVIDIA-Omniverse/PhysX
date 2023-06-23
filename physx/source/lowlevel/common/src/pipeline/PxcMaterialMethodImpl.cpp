@@ -86,7 +86,7 @@ static void PxcGetMaterialMesh(const PxsShapeCore* shape, const PxU32 index, Pxc
 		for(PxU32 i=0; i<count; i++)
 		{
 			PxContactPoint& contact = contactBuffer.contacts[i];
-			const PxU32 localMaterialIndex = eaMaterialIndices[contact.internalFaceIndex1];//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
+			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
 			(&materialInfo[i].mMaterialIndex0)[index] = indices[localMaterialIndex];
 		}
 	}
@@ -111,7 +111,7 @@ static void PxcGetMaterialShapeMesh(const PxsShapeCore* shape0, const PxsShapeCo
 			PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = materialIndex0;
 
-			const PxU32 localMaterialIndex = eaMaterialIndices[contact.internalFaceIndex1];//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
+			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
 			materialInfo[i].mMaterialIndex1 = indices[localMaterialIndex];
 		}
 	}
@@ -137,7 +137,7 @@ static void PxcGetMaterialSoftBodyMesh(const PxsShapeCore* shape0, const PxsShap
 			PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = materialIndex0;
 
-			const PxU32 localMaterialIndex = eaMaterialIndices[contact.internalFaceIndex1];//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
+			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
 																						   //contact.featureIndex1 = shapeMesh.materials.indices[localMaterialIndex];
 			materialInfo[i].mMaterialIndex1 = indices[localMaterialIndex];
 		}

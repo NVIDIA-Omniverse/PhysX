@@ -410,9 +410,9 @@ bool Gu::sweepBoxTriangles(GU_SWEEP_TRIANGLES_FUNC_PARAMS(PxBoxGeometry))
 	{
 		const PxU32 triangleIndex = getTriangleIndex(ii, idx);
 
-		const Vec3V localV0 =  V3LoadU(triangles[triangleIndex].verts[0]);
-		const Vec3V localV1 =  V3LoadU(triangles[triangleIndex].verts[1]);
-		const Vec3V localV2 =  V3LoadU(triangles[triangleIndex].verts[2]);
+		const Vec3V localV0 = V3LoadU(triangles[triangleIndex].verts[0]);
+		const Vec3V localV1 = V3LoadU(triangles[triangleIndex].verts[1]);
+		const Vec3V localV2 = V3LoadU(triangles[triangleIndex].verts[2]);
 
 		const Vec3V triV0 = worldToBoxV.transform(localV0);
 		const Vec3V triV1 = worldToBoxV.transform(localV1);
@@ -572,53 +572,6 @@ static bool sweepConvex_InvalidGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 	return false;
 }
 
-static bool sweepCapsule_HeightfieldUnregistered(GU_CAPSULE_SWEEP_FUNC_PARAMS)
-{
-	PX_UNUSED(threadContext);
-	PX_UNUSED(capsuleGeom_);
-	PX_UNUSED(capsulePose_);
-	PX_UNUSED(geom);
-	PX_UNUSED(pose);
-	PX_UNUSED(lss);
-	PX_UNUSED(unitDir);
-	PX_UNUSED(distance);
-	PX_UNUSED(sweepHit);
-	PX_UNUSED(hitFlags);
-	PX_UNUSED(inflation);
-	return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Height Field Sweep test called with height fields unregistered ");
-}
-
-static bool sweepBox_HeightfieldUnregistered(GU_BOX_SWEEP_FUNC_PARAMS)
-{
-	PX_UNUSED(threadContext);
-	PX_UNUSED(boxPose_);
-	PX_UNUSED(boxGeom_);
-	PX_UNUSED(geom);
-	PX_UNUSED(pose);
-	PX_UNUSED(box);
-	PX_UNUSED(unitDir);
-	PX_UNUSED(distance);
-	PX_UNUSED(sweepHit);
-	PX_UNUSED(hitFlags);
-	PX_UNUSED(inflation);
-	return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Height Field Sweep test called with height fields unregistered ");
-}
-
-static bool sweepConvex_HeightfieldUnregistered(GU_CONVEX_SWEEP_FUNC_PARAMS)
-{
-	PX_UNUSED(threadContext);
-	PX_UNUSED(geom);
-	PX_UNUSED(pose);
-	PX_UNUSED(convexGeom);
-	PX_UNUSED(convexPose);
-	PX_UNUSED(unitDir);
-	PX_UNUSED(distance);
-	PX_UNUSED(sweepHit);
-	PX_UNUSED(hitFlags);
-	PX_UNUSED(inflation);
-	return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Height Field Sweep test called with height fields unregistered ");
-}
-
 static bool sweepCapsule_CustomGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 {
 	PX_UNUSED(lss);
@@ -653,7 +606,7 @@ Gu::GeomSweepFuncs gGeomSweepFuncs =
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_MeshGeom,
-		sweepCapsule_HeightfieldUnregistered,
+		sweepCapsule_HeightFieldGeom,
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_CustomGeom
 	},
@@ -666,7 +619,7 @@ Gu::GeomSweepFuncs gGeomSweepFuncs =
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_MeshGeom ,
-		sweepCapsule_HeightfieldUnregistered,
+		sweepCapsule_HeightFieldGeom,
 		sweepCapsule_InvalidGeom,
 		sweepCapsule_CustomGeom
 	},
@@ -679,7 +632,7 @@ Gu::GeomSweepFuncs gGeomSweepFuncs =
 		sweepBox_InvalidGeom,
 		sweepBox_InvalidGeom,
 		sweepBox_MeshGeom,		
-		sweepBox_HeightfieldUnregistered,
+		sweepBox_HeightFieldGeom,
 		sweepBox_InvalidGeom,
 		sweepBox_CustomGeom
 	},
@@ -692,7 +645,7 @@ Gu::GeomSweepFuncs gGeomSweepFuncs =
 		sweepBox_InvalidGeom,
 		sweepBox_InvalidGeom,
 		sweepBox_MeshGeom,		
-		sweepBox_HeightfieldUnregistered,
+		sweepBox_HeightFieldGeom_Precise,
 		sweepBox_InvalidGeom,
 		sweepBox_CustomGeom
 	},
@@ -705,7 +658,7 @@ Gu::GeomSweepFuncs gGeomSweepFuncs =
 		sweepConvex_InvalidGeom,	// 5
 		sweepConvex_InvalidGeom,	// 6
 		sweepConvex_MeshGeom,		// 7			
-		sweepConvex_HeightfieldUnregistered,	// 8
+		sweepConvex_HeightFieldGeom,// 8
 		sweepConvex_InvalidGeom,	// 9
 		sweepConvex_CustomGeom		// 10
 	}
@@ -716,11 +669,3 @@ PX_PHYSX_COMMON_API const GeomSweepFuncs& Gu::getSweepFuncTable()
 	return gGeomSweepFuncs;
 }
 
-void registerHeightFields_Sweeps()
-{
-	gGeomSweepFuncs.capsuleMap[PxGeometryType::eHEIGHTFIELD] = sweepCapsule_HeightFieldGeom;
-	gGeomSweepFuncs.preciseCapsuleMap[PxGeometryType::eHEIGHTFIELD] = sweepCapsule_HeightFieldGeom;
-	gGeomSweepFuncs.boxMap[PxGeometryType::eHEIGHTFIELD] = sweepBox_HeightFieldGeom;
-	gGeomSweepFuncs.preciseBoxMap[PxGeometryType::eHEIGHTFIELD] = sweepBox_HeightFieldGeom_Precise;
-	gGeomSweepFuncs.convexMap[PxGeometryType::eHEIGHTFIELD] = sweepConvex_HeightFieldGeom;
-}

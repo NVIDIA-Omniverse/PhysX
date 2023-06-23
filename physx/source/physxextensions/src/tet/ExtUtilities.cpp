@@ -35,7 +35,12 @@ namespace Ext
 {
 	using namespace Gu;
 	
-	void buildTree(const PxU32* triangles, const PxU32 numTriangles, const Vec3* points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement)
+	static PxVec3 toFloat(const PxVec3d& p)
+	{
+		return PxVec3(PxReal(p.x), PxReal(p.y), PxReal(p.z));
+	}
+
+	void buildTree(const PxU32* triangles, const PxU32 numTriangles, const PxVec3d* points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement)
 	{
 		//Computes a bounding box for every triangle in triangles
 		AABBTreeBounds boxes;
@@ -44,9 +49,9 @@ namespace Ext
 		{
 			const PxU32* tri = &triangles[3 * i];
 			PxBounds3 box = PxBounds3::empty();
-			box.include(points[tri[0]].toFloat());
-			box.include(points[tri[1]].toFloat());
-			box.include(points[tri[2]].toFloat());
+			box.include(toFloat(points[tri[0]]));
+			box.include(toFloat(points[tri[1]]));
+			box.include(toFloat(points[tri[2]]));
 			box.fattenFast(enlargement);
 			boxes.getBounds()[i] = box;
 		}

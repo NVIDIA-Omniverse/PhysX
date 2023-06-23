@@ -71,8 +71,6 @@ namespace physx
 		virtual ~PxInsertionCallback()		{}
 	};
 
-	typedef PxInsertionCallback PxPhysicsInsertionCallback;
-
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

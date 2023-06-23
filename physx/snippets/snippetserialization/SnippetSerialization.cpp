@@ -29,6 +29,8 @@
 // ****************************************************************************
 // This snippet illustrates the use of binary and xml serialization
 //
+// Note: RepX/Xml serialization has been DEPRECATED.
+//
 // It creates a chain of boxes and serializes them as two collections: 
 // a collection with shared objects and a collection with actors and joints
 // which can be instantiated multiple times.
@@ -56,7 +58,6 @@ static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
 static PxFoundation*			gFoundation = NULL;
 static PxPhysics*				gPhysics	= NULL;
-static PxCooking*				gCooking	= NULL;
 static PxDefaultCpuDispatcher*	gDispatcher = NULL;
 static PxScene*					gScene		= NULL;
 static PxPvd*					gPvd        = NULL;
@@ -148,7 +149,7 @@ void serializeObjects(PxOutputStream& sharedStream, PxOutputStream& actorStream)
 /**
 Deserialize shared data and use resulting collection to deserialize and instance actor collections
 */
-void deserializeObjects(PxInputData& sharedData, PxInputData& actorData)
+void deserializeObjects(PxInputData& sharedData, PxInputData& actorData, const PxCookingParams& params)
 {
 	PxSerializationRegistry* sr = PxSerialization::createSerializationRegistry(*gPhysics);
 
@@ -162,7 +163,7 @@ void deserializeObjects(PxInputData& sharedData, PxInputData& actorData)
 		}
 		else
 		{
-			sharedCollection = PxSerialization::createCollectionFromXml(sharedData, *gCooking, *sr);
+			sharedCollection = PxSerialization::createCollectionFromXml(sharedData, params, *sr);
 		}
 	}
 
@@ -187,7 +188,7 @@ void deserializeObjects(PxInputData& sharedData, PxInputData& actorData)
 		}
 		else
 		{
-			collection = PxSerialization::createCollectionFromXml(actorData, *gCooking, *sr, sharedCollection);
+			collection = PxSerialization::createCollectionFromXml(actorData, params, *sr, sharedCollection);
 		}
 
 		for (PxU32 o = 0; o < collection->getNbObjects(); o++)
@@ -224,7 +225,6 @@ void initPhysics()
 	gPvd->connect(*transport,PxPvdInstrumentationFlag::eALL);
 
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
-	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));	
 	PxInitExtensions(*gPhysics, gPvd);
 	
 	PxU32 numCores = SnippetUtils::getNbPhysicalCores();
@@ -260,7 +260,6 @@ void cleanupPhysics()
 	PxCloseExtensions();
 
 	PX_RELEASE(gPhysics);	// releases all objects	
-	PX_RELEASE(gCooking);
 	if(gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
@@ -290,7 +289,11 @@ int snippetMain(int, const char*const*)
 	// Alternatively PxDefaultFileInputData could be used 
 	PxDefaultMemoryInputData sharedInputStream(sharedOutputStream.getData(), sharedOutputStream.getSize());
 	PxDefaultMemoryInputData actorInputStream(actorOutputStream.getData(), actorOutputStream.getSize());
-	deserializeObjects(sharedInputStream, actorInputStream);
+
+	PxTolerancesScale scale;
+	const PxCookingParams params(scale);
+
+	deserializeObjects(sharedInputStream, actorInputStream, params);
 #ifdef RENDER_SNIPPET
 	extern void renderLoop();
 	renderLoop();

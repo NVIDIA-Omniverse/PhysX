@@ -33,32 +33,30 @@
 #include "CmTask.h"
 #include "DyVArticulation.h"
 
-
 #define IG_SANITY_CHECKS 0
 
-namespace physx
-{
-namespace IG
-{
-	ThirdPassTask::ThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager, IslandSim& islandSim) : Cm::Task(contextID), mIslandManager(islandManager), mIslandSim(islandSim)
-	{
-	}
+using namespace physx;
+using namespace IG;
 
-	PostThirdPassTask::PostThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager) : Cm::Task(contextID), mIslandManager(islandManager)
-	{
-	}
+ThirdPassTask::ThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager, IslandSim& islandSim) : Cm::Task(contextID), mIslandManager(islandManager), mIslandSim(islandSim)
+{
+}
 
-	SimpleIslandManager::SimpleIslandManager(bool useEnhancedDeterminism, PxU64 contextID) : 
-		mDestroyedNodes				("mDestroyedNodes"), 
-		mDestroyedEdges				("mDestroyedEdges"), 
-		mFirstPartitionEdges		("mFirstPartitionEdges"), 
-		mDestroyedPartitionEdges	("IslandSim::mDestroyedPartitionEdges"), 
-		mIslandManager				(&mFirstPartitionEdges, mEdgeNodeIndices, &mDestroyedPartitionEdges, contextID),
-		mSpeculativeIslandManager	(NULL, mEdgeNodeIndices, NULL, contextID),
-		mSpeculativeThirdPassTask	(contextID, *this, mSpeculativeIslandManager),
-		mAccurateThirdPassTask		(contextID, *this, mIslandManager),
-		mPostThirdPassTask			(contextID, *this),
-		mContextID					(contextID)
+PostThirdPassTask::PostThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager) : Cm::Task(contextID), mIslandManager(islandManager)
+{
+}
+
+SimpleIslandManager::SimpleIslandManager(bool useEnhancedDeterminism, PxU64 contextID) : 
+	mDestroyedNodes				("mDestroyedNodes"), 
+	mDestroyedEdges				("mDestroyedEdges"), 
+	mFirstPartitionEdges		("mFirstPartitionEdges"), 
+	mDestroyedPartitionEdges	("IslandSim::mDestroyedPartitionEdges"), 
+	mIslandManager				(&mFirstPartitionEdges, mEdgeNodeIndices, &mDestroyedPartitionEdges, contextID),
+	mSpeculativeIslandManager	(NULL, mEdgeNodeIndices, NULL, contextID),
+	mSpeculativeThirdPassTask	(contextID, *this, mSpeculativeIslandManager),
+	mAccurateThirdPassTask		(contextID, *this, mIslandManager),
+	mPostThirdPassTask			(contextID, *this),
+	mContextID					(contextID)
 {
 	mFirstPartitionEdges.resize(1024);
 	mMaxDirtyNodesPerFrame = useEnhancedDeterminism ? 0xFFFFFFFF : 1000u;
@@ -70,8 +68,8 @@ SimpleIslandManager::~SimpleIslandManager()
 
 PxNodeIndex SimpleIslandManager::addRigidBody(PxsRigidBody* body, bool isKinematic, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
 	mIslandManager.addRigidBody(body, isKinematic, isActive, nodeIndex);
 	mSpeculativeIslandManager.addRigidBody(body, isKinematic, isActive, nodeIndex);
 	return nodeIndex;
@@ -83,20 +81,20 @@ void SimpleIslandManager::removeNode(const PxNodeIndex index)
 	mDestroyedNodes.pushBack(index);
 }
 
-PxNodeIndex SimpleIslandManager::addArticulation(Sc::ArticulationSim* articulation, Dy::FeatherstoneArticulation* llArtic, bool isActive)
+PxNodeIndex SimpleIslandManager::addArticulation(Dy::FeatherstoneArticulation* llArtic, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
-	mIslandManager.addArticulation(articulation, llArtic, isActive, nodeIndex);
-	mSpeculativeIslandManager.addArticulation(articulation, llArtic, isActive, nodeIndex);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
+	mIslandManager.addArticulation(llArtic, isActive, nodeIndex);
+	mSpeculativeIslandManager.addArticulation(llArtic, isActive, nodeIndex);
 	return nodeIndex;
 }
 
 #if PX_SUPPORT_GPU_PHYSX
 PxNodeIndex SimpleIslandManager::addSoftBody(Dy::SoftBody* llSoftBody, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
 	mIslandManager.addSoftBody(llSoftBody, isActive, nodeIndex);
 	mSpeculativeIslandManager.addSoftBody(llSoftBody, isActive, nodeIndex);
 	return nodeIndex;
@@ -104,8 +102,8 @@ PxNodeIndex SimpleIslandManager::addSoftBody(Dy::SoftBody* llSoftBody, bool isAc
 
 PxNodeIndex SimpleIslandManager::addFEMCloth(Dy::FEMCloth* llFEMCloth, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
 	mIslandManager.addFEMCloth(llFEMCloth, isActive, nodeIndex);
 	mSpeculativeIslandManager.addFEMCloth(llFEMCloth, isActive, nodeIndex);
 	return nodeIndex;
@@ -113,8 +111,8 @@ PxNodeIndex SimpleIslandManager::addFEMCloth(Dy::FEMCloth* llFEMCloth, bool isAc
 
 PxNodeIndex SimpleIslandManager::addParticleSystem(Dy::ParticleSystem* llParticleSystem, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
 	mIslandManager.addParticleSystem(llParticleSystem, isActive, nodeIndex);
 	mSpeculativeIslandManager.addParticleSystem(llParticleSystem, isActive, nodeIndex);
 	return nodeIndex;
@@ -122,20 +120,19 @@ PxNodeIndex SimpleIslandManager::addParticleSystem(Dy::ParticleSystem* llParticl
 
 PxNodeIndex SimpleIslandManager::addHairSystem(Dy::HairSystem* llHairSystem, bool isActive)
 {
-	PxU32 handle = mNodeHandles.getHandle();
-	PxNodeIndex nodeIndex(handle);
+	const PxU32 handle = mNodeHandles.getHandle();
+	const PxNodeIndex nodeIndex(handle);
 	mIslandManager.addHairSystem(llHairSystem, isActive, nodeIndex);
 	mSpeculativeIslandManager.addHairSystem(llHairSystem, isActive, nodeIndex);
 	return nodeIndex;
 }
 #endif //PX_SUPPORT_GPU_PHYSX
 
-EdgeIndex SimpleIslandManager::addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction,
-	Edge::EdgeType edgeType)
+EdgeIndex SimpleIslandManager::addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction, Edge::EdgeType edgeType)
 {
-	EdgeIndex handle = mEdgeHandles.getHandle();
+	const EdgeIndex handle = mEdgeHandles.getHandle();
 
-	PxU32 nodeIds = 2 * handle;
+	const PxU32 nodeIds = 2 * handle;
 	if (mEdgeNodeIndices.size() == nodeIds)
 	{
 		PX_PROFILE_ZONE("ReserveEdges", getContextId());
@@ -156,13 +153,10 @@ EdgeIndex SimpleIslandManager::addContactManager(PxsContactManager* manager, PxN
 		manager->getWorkUnit().mEdgeIndex = handle;
 
 	if (mConnectedMap.size() == handle)
-	{
 		mConnectedMap.resize(2 * (handle + 1));
-	}
+
 	if (mFirstPartitionEdges.capacity() == handle)
-	{
 		mFirstPartitionEdges.resize(2 * (handle + 1));
-	}
 
 	mConnectedMap.reset(handle);
 	return handle;
@@ -170,9 +164,9 @@ EdgeIndex SimpleIslandManager::addContactManager(PxsContactManager* manager, PxN
 
 EdgeIndex SimpleIslandManager::addConstraint(Dy::Constraint* constraint, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, Sc::Interaction* interaction)
 {
-	EdgeIndex handle = mEdgeHandles.getHandle();
+	const EdgeIndex handle = mEdgeHandles.getHandle();
 
-	PxU32 nodeIds = 2 * handle;
+	const PxU32 nodeIds = 2 * handle;
 	if (mEdgeNodeIndices.size() == nodeIds)
 	{
 		const PxU32 newSize = nodeIds + 2048;
@@ -191,14 +185,11 @@ EdgeIndex SimpleIslandManager::addConstraint(Dy::Constraint* constraint, PxNodeI
 	mIslandManager.addConstraint(constraint, nodeHandle1, nodeHandle2, handle);
 	mSpeculativeIslandManager.addConstraint(constraint, nodeHandle1, nodeHandle2, handle);
 	if(mConnectedMap.size() == handle)
-	{
 		mConnectedMap.resize(2*(mConnectedMap.size()+1));
-	}
 
 	if (mFirstPartitionEdges.capacity() == handle)
-	{
 		mFirstPartitionEdges.resize(2 * (mFirstPartitionEdges.capacity() + 1));
-	}
+
 	mConnectedMap.set(handle);
 	return handle;
 }
@@ -263,9 +254,8 @@ void SimpleIslandManager::secondPassIslandGen()
 	mIslandManager.processLostEdges(mDestroyedNodes, false, false, mMaxDirtyNodesPerFrame);
 
 	for(PxU32 a = 0; a < mDestroyedNodes.size(); ++a)
-	{
 		mNodeHandles.freeHandle(mDestroyedNodes[a].index());
-	}
+
 	mDestroyedNodes.clear();
 	//mDestroyedEdges.clear();
 }
@@ -301,15 +291,13 @@ void ThirdPassTask::runInternal()
 void PostThirdPassTask::runInternal()
 {
 	for (PxU32 a = 0; a < mIslandManager.mDestroyedNodes.size(); ++a)
-	{
 		mIslandManager.mNodeHandles.freeHandle(mIslandManager.mDestroyedNodes[a].index());
-	}
+
 	mIslandManager.mDestroyedNodes.clear();
 
 	for (PxU32 a = 0; a < mIslandManager.mDestroyedEdges.size(); ++a)
-	{
 		mIslandManager.mEdgeHandles.freeHandle(mIslandManager.mDestroyedEdges[a]);
-	}
+
 	mIslandManager.mDestroyedEdges.clear();
 
 	PX_ASSERT(mIslandManager.validateDeactivations());
@@ -317,7 +305,6 @@ void PostThirdPassTask::runInternal()
 
 void SimpleIslandManager::thirdPassIslandGen(PxBaseTask* continuation)
 {
-
 	mIslandManager.clearDeactivations();
 
 	mPostThirdPassTask.setContinuation(continuation);
@@ -336,8 +323,6 @@ void SimpleIslandManager::thirdPassIslandGen(PxBaseTask* continuation)
 
 	//mIslandManager.removeDestroyedEdges();
 	//mIslandManager.processLostEdges(mDestroyedNodes, true, true);
-
-	
 }
 
 bool SimpleIslandManager::checkInternalConsistency()
@@ -406,7 +391,3 @@ void SimpleIslandManager::setDynamic(PxNodeIndex nodeIndex)
 	mIslandManager.setDynamic(nodeIndex); 
 	mSpeculativeIslandManager.setDynamic(nodeIndex);
 }
-
-}
-}
-

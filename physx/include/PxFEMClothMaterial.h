@@ -65,40 +65,6 @@ namespace physx
 		*/
 		virtual		PxReal			getThickness() const = 0;
 
-		/**
-		\brief Sets the elasticity damping for the internal cloth solver.
-
-		\param[in] damping The elasticity damping term. <b>Range:</b> [0.0, Inf)
-
-		@see getElasticityDamping()
-		*/
-		virtual		void			setElasticityDamping(PxReal damping) = 0;
-
-		/**
-		\brief Retrieves the elasticity damping term.
-		\return The elasticity damping term.
-
-		@see setElasticityDamping()
-		*/
-		virtual		PxReal			getElasticityDamping() const = 0;
-
-		/**
-		\brief Sets the bending coefficient for bending constraints.
-
-		\param[in] damping The bending coefficient. <b>Range:</b> [0.0, Inf)
-
-		@see getBendingDamping()
-		*/
-		virtual		void			setBendingDamping(PxReal damping) = 0;
-
-		/**
-		\brief Retrieves the bending coefficient for bending constraints.
-		\return The bending coefficient.
-
-		@see setBendingDamping()
-		*/
-		virtual		PxReal			getBendingDamping() const = 0;
-
 		virtual		const char*		getConcreteTypeName() const { return "PxFEMClothMaterial"; }
 
 	protected:

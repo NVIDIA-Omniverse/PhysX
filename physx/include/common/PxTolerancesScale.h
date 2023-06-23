@@ -78,7 +78,7 @@ public:
 	\param[in]	defaultLength	Default length
 	\param[in]	defaultSpeed	Default speed
 	*/
-	PX_INLINE PxTolerancesScale(float defaultLength=1.0f, float defaultSpeed=10.0f);
+	PX_INLINE explicit PxTolerancesScale(float defaultLength=1.0f, float defaultSpeed=10.0f);
 
 	/**
 	\brief Returns true if the descriptor is valid.

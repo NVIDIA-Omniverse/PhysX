@@ -50,7 +50,7 @@ public:
 	 * @param nbrBytes The requested number of bytes to write
 	 * @return The actual number of bytes written
 	 */
-	virtual uint64_t OMNI_PVD_CALL writeBytes(const uint8_t* bytes, const uint64_t nbrBytes) = 0;
+	virtual uint64_t OMNI_PVD_CALL writeBytes(const uint8_t* bytes, uint64_t nbrBytes) = 0;
 
 	/**
 	 * @brief Flushes the writes

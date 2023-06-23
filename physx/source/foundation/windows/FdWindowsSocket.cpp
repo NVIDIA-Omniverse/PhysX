@@ -116,10 +116,6 @@ void SocketImpl::setBlockingInternal(SOCKET socket, bool blocking)
 	ioctlsocket(socket, FIONBIO, (u_long*)&mode);
 }
 
-#ifdef PX_VC11
-#pragma warning(push)
-#pragma warning(disable : 4548) // for FD_SET on vc11 only
-#endif
 bool SocketImpl::connect(const char* host, uint16_t port, uint32_t timeout)
 {
 	if(!mSocketLayerIntialized)
@@ -152,26 +148,32 @@ bool SocketImpl::connect(const char* host, uint16_t port, uint32_t timeout)
 	setBlockingInternal(mSocket, false);
 
 	::connect(mSocket, (sockaddr*)&socketAddress, sizeof(socketAddress));
-	// Setup select function call to monitor the connect call.
-	fd_set writefs;
-	fd_set exceptfs;
-	FD_ZERO(&writefs);
-	FD_ZERO(&exceptfs);
-#pragma warning(push)
-#pragma warning(disable : 4127 4548)
-	FD_SET(mSocket, &writefs);
-	FD_SET(mSocket, &exceptfs);
-#pragma warning(pop)
-	timeval timeout_;
-	timeout_.tv_sec = long(timeout / 1000);
-	timeout_.tv_usec = long(((timeout % 1000) * 1000));
-	int selret = ::select(1, NULL, &writefs, &exceptfs, &timeout_);
-	int excepted = FD_ISSET(mSocket, &exceptfs);
-	int canWrite = FD_ISSET(mSocket, &writefs);
-	if(selret != 1 || excepted || !canWrite)
+
+	// Setup poll function call to monitor the connect call.
+	// By querying for POLLOUT we're checking if the socket is
+	// ready for writing.
+	WSAPOLLFD pfd;
+	pfd.fd = mSocket;
+	pfd.events = POLLOUT;
+	const int pollResult = WSAPoll(&pfd, 1, timeout /*milliseconds*/);
+
+	const bool pollTimeout = (pollResult == 0);
+	const bool pollError = (pollResult == SOCKET_ERROR); // an error inside poll happened. Can check error with `WSAGetLastError`.
+	if(pollTimeout || pollError)
 	{
 		disconnect();
 		return false;
+	}
+	else
+	{
+		PX_ASSERT(pollResult == 1);
+		// check that event was precisely POLLOUT and not anything else (e.g., errors, hang-up)
+		bool test = (pfd.revents & POLLOUT) && !(pfd.revents & (~POLLOUT));
+		if(!test)
+		{
+			disconnect();
+			return false;
+		}
 	}
 
 	setBlockingInternal(mSocket, mIsBlocking);
@@ -181,9 +183,6 @@ bool SocketImpl::connect(const char* host, uint16_t port, uint32_t timeout)
 	mHost = host;
 	return true;
 }
-#ifdef PX_VC11
-#pragma warning(pop)
-#endif
 
 bool SocketImpl::listen(uint16_t port)
 {

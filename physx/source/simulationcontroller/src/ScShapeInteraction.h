@@ -42,6 +42,12 @@
 
 namespace physx
 {
+static PX_FORCE_INLINE bool isParticleSystem(const PxActorType::Enum actorType)
+{
+	return actorType == PxActorType::ePBD_PARTICLESYSTEM || actorType == PxActorType::eFLIP_PARTICLESYSTEM
+		|| actorType == PxActorType::eMPM_PARTICLESYSTEM;
+}
+
 class PxsContactManagerOutputIterator;
 namespace Sc
 {
@@ -89,12 +95,10 @@ namespace Sc
 												~ShapeInteraction();
 
 		// Submits to contact stream
-						void					processUserNotification(PxU32 contactEvent, PxU16 infoFlags, bool touchLost, const PxU32 ccdPass, const bool useCurrentTransform, 
+						void					processUserNotification(PxU32 contactEvent, PxU16 infoFlags, bool touchLost, PxU32 ccdPass, bool useCurrentTransform, 
 												PxsContactManagerOutputIterator& outputs);  // ccdPass is 0 for discrete collision and then 1,2,... for the CCD passes
-
 						void					processUserNotificationSync();
-
-						void					processUserNotificationAsync(PxU32 contactEvent, PxU16 infoFlags, bool touchLost, const PxU32 ccdPass, const bool useCurrentTransform,
+						void					processUserNotificationAsync(PxU32 contactEvent, PxU16 infoFlags, bool touchLost, PxU32 ccdPass, bool useCurrentTransform,
 																			PxsContactManagerOutputIterator& outputs, ContactReportAllocationManager* alloc = NULL);  // ccdPass is 0 for discrete collision and then 1,2,... for the CCD passes
 
 						void					visualize(	PxRenderOutput&, PxsContactManagerOutputIterator&,
@@ -103,15 +107,15 @@ namespace Sc
 
 						PxU32					getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& patchCount, const PxReal*& impulses, PxU32 startOffset, PxsContactManagerOutputIterator& outputs);
 
-						bool					managerLostTouch(const PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
-						void					managerNewTouch(const PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
+						bool					managerLostTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
+						void					managerNewTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
 
 		PX_FORCE_INLINE	void					adjustCountersOnLostTouch();
 		PX_FORCE_INLINE	void					adjustCountersOnNewTouch();
 
-		PX_FORCE_INLINE	void					sendCCDRetouch(const PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
+		PX_FORCE_INLINE	void					sendCCDRetouch(PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
 						void					setContactReportPostSolverVelocity(ContactStreamManager& cs);
-		PX_FORCE_INLINE	void					sendLostTouchReport(bool shapeVolumeRemoved, const PxU32 ccdPass, PxsContactManagerOutputIterator& ouptuts);
+		PX_FORCE_INLINE	void					sendLostTouchReport(bool shapeVolumeRemoved, PxU32 ccdPass, PxsContactManagerOutputIterator& ouptuts);
 						void					resetManagerCachedState()	const;
 	
 		PX_FORCE_INLINE	ActorPair*				getActorPair()				const	{ return mActorPair;							}
@@ -133,8 +137,8 @@ namespace Sc
 
 		PX_FORCE_INLINE	PxIntBool				hasKnownTouchState() const;
 
-						bool					onActivate_(void* data);
-						bool					onDeactivate_();
+						bool					onActivate(void* data);
+						bool					onDeactivate();
 
 						void					updateState(const PxU8 externalDirtyFlags);
 
@@ -188,7 +192,7 @@ namespace Sc
 
 // PT: TODO: is there a reason for force-inlining all that stuff?
 
-PX_FORCE_INLINE void Sc::ShapeInteraction::sendLostTouchReport(bool shapeVolumeRemoved, const PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
+PX_FORCE_INLINE void Sc::ShapeInteraction::sendLostTouchReport(bool shapeVolumeRemoved, PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
 {
 	PX_ASSERT(hasTouch());
 	PX_ASSERT(isReportPair());
@@ -201,10 +205,8 @@ PX_FORCE_INLINE void Sc::ShapeInteraction::sendLostTouchReport(bool shapeVolumeR
 		return;
 
 	PxU16 infoFlag = 0;
-	if (mActorPair->getTouchCount() == 1)  // this code assumes that the actor pair touch count does get decremented afterwards
-	{
+	if(mActorPair->getTouchCount() == 1)  // this code assumes that the actor pair touch count does get decremented afterwards
 		infoFlag |= PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH;
-	}
 
 	//Lost touch is processed after solver, so we should use the previous transform to update the pose for objects if user request eCONTACT_EVENT_POSE
 	const bool useCurrentTransform = false;
@@ -308,7 +310,11 @@ PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 	ActorSim& bodySim1 = shape1.getActor();
 
 	// the first shape always belongs to a dynamic body or soft body
+#if PX_SUPPORT_GPU_PHYSX
 	PX_ASSERT(bodySim0.isDynamicRigid() || bodySim0.isSoftBody() || bodySim0.isFEMCloth() || bodySim0.isParticleSystem() || bodySim0.isHairSystem());
+#else
+	PX_ASSERT(bodySim0.isDynamicRigid());
+#endif
 	
 	const IG::IslandSim& islandSim = getScene().getSimpleIslandManager()->getSpeculativeIslandSim();
 
@@ -318,7 +324,7 @@ PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 		(!bodySim1.isStaticRigid() && islandSim.getNode(bodySim1.getNodeIndex()).isActive()));
 }
 
-PX_FORCE_INLINE void Sc::ShapeInteraction::sendCCDRetouch(const PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
+PX_FORCE_INLINE void Sc::ShapeInteraction::sendCCDRetouch(PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
 {
 	const PxU32 pairFlags = getPairFlags();
 	if (pairFlags & PxPairFlag::eNOTIFY_TOUCH_CCD)

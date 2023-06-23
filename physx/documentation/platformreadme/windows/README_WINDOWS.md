@@ -7,12 +7,13 @@
 
 ## Required packages to generate projects:
 
+* Windows OS + headers for at least Win7 (`_WIN32_WINNT = 0x0601`)
 * CMake, minimum version 3.21
 * Python, minimum version 3.5
 
 ## PhysX GPU Acceleration:
 
-* Requires CUDA 11.0 compatible display driver and CUDA ARCH 3.0 compatible GPU
+* Requires CUDA 11.8 compatible display driver. The corresponding driver version can be found [here](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions).
 
 ## Generating solutions for Visual Studio:
 

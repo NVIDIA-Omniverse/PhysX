@@ -26,7 +26,7 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
+#include "foundation/PxPreprocessor.h"
 #if PX_SUPPORT_OMNI_PVD
 #include "OmniPvdPxSampler.h"
 #include "common/PxProfileZone.h"
@@ -124,12 +124,12 @@ bool OmniPvdStreamContainer::initOmniPvd()
 
 	PxPhysics& physicsRef = static_cast<PxPhysics&>(NpPhysics::getInstance());
 
-	OMNI_PVD_CREATE(physics, physicsRef);
+	OMNI_PVD_CREATE(PxPhysics, physicsRef);
 	const physx::PxTolerancesScale tolScale = physicsRef.getTolerancesScale();
 	PxF32 scale[2];
 	scale[0] = tolScale.length;
 	scale[1] = tolScale.speed;
-	OMNI_PVD_SETB(physics, tolerancesScale, physicsRef, scale, sizeof(PxF32) * 2);
+	OMNI_PVD_SETB(PxPhysics, tolerancesScale, physicsRef, scale, sizeof(PxF32) * 2);
 
 	return true;
 }
@@ -138,26 +138,24 @@ bool OmniPvdStreamContainer::initOmniPvd()
 static unsigned sizeOfOmniPvdTypes[32];
 
 //create a class for each SDK type and attribute -- the primary thing is to allocate handle storage, the rest is just fluff.
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) OmniPvdClassHandle OmniPvdPxSampler::classHandle_##c;
-#define OMNI_PVD_CLASS(c, classT) OmniPvdClassHandle OmniPvdPxSampler::classHandle_##c;
-#define OMNI_PVD_ENUM(c, classT) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##c##_##a;
+#define OMNI_PVD_CLASS(classT) OmniPvdClassHandle OmniPvdPxSampler::classHandle_##classT;
+#define OMNI_PVD_ENUM(classT) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##classT##_##a;
 
 //enum values don't need to save their handle, since they are const/immutable:
-#define OMNI_PVD_ENUM_VALUE(c, a, v)	
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##c##_##a;
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##c##_##a;
+#define OMNI_PVD_ENUM_VALUE(classT, a)	
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##classT##_##a;
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) OmniPvdAttributeHandle OmniPvdPxSampler::attributeHandle_##classT##_##a;
 
 
 #include "OmniPvdTypes.h"
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 #undef OMNI_PVD_ATTRIBUTE_FLAG
 
 void OmniPvdStreamContainer::registerClasses()
@@ -166,118 +164,134 @@ void OmniPvdStreamContainer::registerClasses()
 	if (mWriter)
 	{
 //register all SDK classes and attributes:
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) OmniPvdPxSampler::classHandle_##c = mWriter->registerClass(#classStr);
-#define OMNI_PVD_CLASS(c, classT) OmniPvdPxSampler::classHandle_##c = mWriter->registerClass(#classT);
-#define OMNI_PVD_ENUM(c, classT) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OmniPvdPxSampler::classHandle_##c = mWriter->registerClass(#classT, OmniPvdPxSampler::classHandle_##baseClass);
-#define OMNI_PVD_ENUM_VALUE(c, a, v)				mWriter->registerEnumValue(OmniPvdPxSampler::classHandle_##c, #a, v);
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT)	OmniPvdPxSampler::attributeHandle_##c##_##a = mWriter->registerSetAttribute(OmniPvdPxSampler::classHandle_##c, #a, OmniPvdDataTypeEnum::eOBJECT_HANDLE);
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) PX_ASSERT((n == 0) || (sizeof(attrT) == sizeOfOmniPvdTypes[t] * n)); OmniPvdPxSampler::attributeHandle_##c##_##a = mWriter->registerAttribute(OmniPvdPxSampler::classHandle_##c, #a, t, n);
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) OmniPvdPxSampler::attributeHandle_##c##_##a = mWriter->registerFlagsAttribute(OmniPvdPxSampler::classHandle_##c, OmniPvdPxSampler::classHandle_##enumClass, #a);
+#define OMNI_PVD_CLASS(classT) OmniPvdPxSampler::classHandle_##classT = mWriter->registerClass(#classT);
+#define OMNI_PVD_ENUM(classT) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OmniPvdPxSampler::classHandle_##classT = mWriter->registerClass(#classT, OmniPvdPxSampler::classHandle_##baseClass);
+#define OMNI_PVD_ENUM_VALUE(classT, a) mWriter->registerEnumValue(OmniPvdPxSampler::classHandle_##classT, #a, classT::a);
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT)	OmniPvdPxSampler::attributeHandle_##classT##_##a = mWriter->registerUniqueListAttribute(OmniPvdPxSampler::classHandle_##classT, #a, OmniPvdDataType::eOBJECT_HANDLE);
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) PX_ASSERT((n == 0) || (sizeof(attrT) == sizeOfOmniPvdTypes[t] * n)); OmniPvdPxSampler::attributeHandle_##classT##_##a = mWriter->registerAttribute(OmniPvdPxSampler::classHandle_##classT, #a, t, n);
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) OmniPvdPxSampler::attributeHandle_##classT##_##a = mWriter->registerFlagsAttribute(OmniPvdPxSampler::classHandle_##classT, #a, OmniPvdPxSampler::classHandle_##enumClassT);
 #include "OmniPvdTypes.h"
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 #undef OMNI_PVD_ATTRIBUTE_FLAG
 
 		mClassesRegistered = true;
 	}
 }
 
-
-
 //instance any templates that are not used in this compilation unit so that code gets generated anyways
 
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) \
+#define OMNI_PVD_CLASS(classT) \
 template void OmniPvdPxSampler::createObject <classT>(OmniPvdClassHandle, classT const &);\
 template void OmniPvdPxSampler::destroyObject<classT>(classT const &);
 
-#define OMNI_PVD_CLASS(c, classT) \
-template void OmniPvdPxSampler::createObject <classT>(OmniPvdClassHandle, classT const &);\
-template void OmniPvdPxSampler::destroyObject<classT>(classT const &);
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OMNI_PVD_CLASS(classT)
 
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OMNI_PVD_CLASS(c, classT)
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT) \
+template void OmniPvdPxSampler::addToUniqueList<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );\
+template void OmniPvdPxSampler::removeFromUniqueList<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );
 
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT) \
-template void OmniPvdPxSampler::addToSet<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );\
-template void OmniPvdPxSampler::removeFromSet<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );
-
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) \
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) \
 template void OmniPvdPxSampler::setAttribute<classT, attrT>(OmniPvdAttributeHandle, const classT&, attrT const &); \
 template void OmniPvdPxSampler::setAttributeBytes<classT, attrT>(OmniPvdAttributeHandle, const classT&, attrT const *, unsigned);
 
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) \
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) \
 template void OmniPvdPxSampler::setAttribute<classT, attrT>(OmniPvdAttributeHandle, classT const &, attrT const &);
 
-#define OMNI_PVD_ENUM(c, enumT)
-#define OMNI_PVD_ENUM_VALUE(c, a, v)
+#define OMNI_PVD_ENUM(classT)
+#define OMNI_PVD_ENUM_VALUE(classT, a)
 
 #include "OmniPvdTypes.h"
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 //end instance templates
 
-void streamActorName(physx::PxActor & a, const char* name)
+
+int streamStringLength(const char* name)
 {
 #if PX_SUPPORT_OMNI_PVD
 	if (NpPhysics::getInstance().mOmniPvdSampler == NULL)
 	{
-		return;
+		return 0;
 	}
 	if (name == NULL)
 	{
-		return;
+		return 0;
 	}
 	int len = static_cast<int>(strlen(name));
 	if (len > 0)
 	{
-		len += 1;
-		OMNI_PVD_SETB(actor, name, a, name, len); // copies over the trailing zero too
+		return len;
+	}
+	else
+	{
+		return 0;
+	}
+#else
+	return 0;
+#endif
+}
+
+void streamActorName(physx::PxActor & a, const char* name)
+{
+#if PX_SUPPORT_OMNI_PVD
+	int strLen = streamStringLength(name);
+	if (strLen)
+	{
+		OMNI_PVD_SETB(PxActor, name, a, name, strLen + 1); // copies over the trailing zero too
 	}
 #endif
 }
 
-void streamSphere(const physx::PxGeometry& g)
+void streamSceneName(physx::PxScene & s, const char* name)
 {
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geomsphere, g);
-	OMNI_PVD_SET(geomsphere, radius, g, gh.sphere().radius);
+#if PX_SUPPORT_OMNI_PVD
+	int strLen = streamStringLength(name);
+	if (strLen)
+	{
+		OMNI_PVD_SETB(PxScene, name, s, name, strLen + 1); // copies over the trailing zero too
+	}
+#endif
 }
 
-void streamCapsule(const physx::PxGeometry& g)
+void streamSphere(const physx::PxSphereGeometry& g)
 {
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geomcapsule, g);
-	OMNI_PVD_SET(geomcapsule, halfHeight, g, gh.capsule().halfHeight);
-	OMNI_PVD_SET(geomcapsule, radius, g, gh.capsule().radius);
+	OMNI_PVD_CREATE(PxSphereGeometry, g);
+	OMNI_PVD_SET(PxSphereGeometry, radius, g, g.radius);
 }
 
-void streamBox(const physx::PxGeometry& g)
+void streamCapsule(const physx::PxCapsuleGeometry& g)
 {
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geombox, g);
-	OMNI_PVD_SET(geombox, halfExtents, g, gh.box().halfExtents);
+	OMNI_PVD_CREATE(PxCapsuleGeometry, g);
+	OMNI_PVD_SET(PxCapsuleGeometry, halfHeight, g, g.halfHeight);
+	OMNI_PVD_SET(PxCapsuleGeometry, radius, g, g.radius);
 }
 
-void streamPlane(const physx::PxGeometry& g)
+void streamBox(const physx::PxBoxGeometry& g)
 {
-	OMNI_PVD_CREATE(geomplane, g);
+	OMNI_PVD_CREATE(PxBoxGeometry, g);
+	OMNI_PVD_SET(PxBoxGeometry, halfExtents, g, g.halfExtents);
+}
+
+void streamPlane(const physx::PxPlaneGeometry& g)
+{
+	OMNI_PVD_CREATE(PxPlaneGeometry, g);
 }
 
 void streamConvexMesh(const physx::PxConvexMesh* mesh)
 {		
 	if (samplerInternals->addSharedMeshIfNotSeen(mesh, OmniPvdSharedMeshEnum::eOmniPvdConvexMesh))
 	{
-		OMNI_PVD_CREATE(convexmesh, *mesh);
+		OMNI_PVD_CREATE(PxConvexMesh, *mesh);
 
 		const physx::PxU32 nbPolys = mesh->getNbPolygons();
 		const physx::PxU8* polygons = mesh->getIndexBuffer();
@@ -323,29 +337,27 @@ void streamConvexMesh(const physx::PxConvexMesh* mesh)
 			}
 		}
 
-		OMNI_PVD_SETB(convexmesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
-		OMNI_PVD_SETB(convexmesh, tris, *mesh, tmpIndices, sizeof(int) * 3 * totalTris);
+		OMNI_PVD_SETB(PxConvexMesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
+		OMNI_PVD_SETB(PxConvexMesh, tris, *mesh, tmpIndices, sizeof(int) * 3 * totalTris);
 		PX_FREE(tmpVerts);
 		PX_FREE(tmpIndices);
 	}
 }
 
-void streamConvexMeshGeometry(const physx::PxGeometry& g)
+void streamConvexMeshGeometry(const physx::PxConvexMeshGeometry& g)
 {		
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geomconvexmesh, g);
-	OMNI_PVD_SET(geomconvexmesh, scale, g, gh.convexMesh().scale.scale);
-	const physx::PxConvexMeshGeometry& geometry = gh.convexMesh();
-	physx::PxConvexMesh const* mesh = geometry.convexMesh;
+	OMNI_PVD_CREATE(PxConvexMeshGeometry, g);
+	OMNI_PVD_SET(PxConvexMeshGeometry, scale, g, g.scale.scale);
+	physx::PxConvexMesh const* mesh = g.convexMesh;
 	streamConvexMesh(mesh);
-	OMNI_PVD_SET(geomconvexmesh, convexMesh, g, mesh);
+	OMNI_PVD_SET(PxConvexMeshGeometry, convexMesh, g, mesh);
 }
 
 void streamHeightField(const physx::PxHeightField* hf)
 {
 	if (samplerInternals->addSharedMeshIfNotSeen(hf, OmniPvdSharedMeshEnum::eOmniPvdHeightField))
 	{
-		OMNI_PVD_CREATE(heightfield, *hf);
+		OMNI_PVD_CREATE(PxHeightField, *hf);
 		const physx::PxU32 nbCols = hf->getNbColumns();
 		const physx::PxU32 nbRows = hf->getNbRows();
 		const physx::PxU32 nbVerts = nbRows * nbCols;
@@ -398,57 +410,58 @@ void streamHeightField(const physx::PxHeightField* hf)
 			}
 		}
 		PX_FREE(sampleBuffer);
-		OMNI_PVD_SETB(heightfield, verts, *hf, tmpVerts, sizeof(float) * 3 * nbVerts);
-		OMNI_PVD_SETB(heightfield, tris, *hf, tmpIndices, sizeof(int) * 3 * nbFaces);
+		OMNI_PVD_SETB(PxHeightField, verts, *hf, tmpVerts, sizeof(float) * 3 * nbVerts);
+		OMNI_PVD_SETB(PxHeightField, tris, *hf, tmpIndices, sizeof(int) * 3 * nbFaces);
 		PX_FREE(tmpVerts);
 		PX_FREE(tmpIndices);
 	}
 }
 
-void streamHeightFieldGeometry(const physx::PxGeometry& g)
+void streamHeightFieldGeometry(const physx::PxHeightFieldGeometry& g)
 {
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geomheightfield, g);
-	const physx::PxHeightFieldGeometry& geometry = gh.heightField();
+	OMNI_PVD_CREATE(PxHeightFieldGeometry, g);
 
 	float vertScale[3];
-	vertScale[0] = geometry.rowScale;
-	vertScale[1] = geometry.heightScale;
-	vertScale[2] = geometry.columnScale;
-	OMNI_PVD_SET(geomheightfield, scale, g, vertScale);
+	vertScale[0] = g.rowScale;
+	vertScale[1] = g.heightScale;
+	vertScale[2] = g.columnScale;
+	OMNI_PVD_SET(PxHeightFieldGeometry, scale, g, vertScale);
 
-	physx::PxHeightField const * hf = geometry.heightField;
+	physx::PxHeightField const * hf = g.heightField;
 	streamHeightField(hf);
-	OMNI_PVD_SET(geomheightfield, heightField, g, hf);
+	OMNI_PVD_SET(PxHeightFieldGeometry, heightField, g, hf);
+}
+
+void streamRigidActorTForm(const PxRigidActor &ra)
+{
+	PxTransform t = ra.getGlobalPose();
+	OMNI_PVD_SET(PxRigidActor, translation, ra, t.p);
+	OMNI_PVD_SET(PxRigidActor, rotation, ra, t.q);
 }
 
 void streamRigidStatic(const physx::PxRigidStatic* rs)
 {
 	const PxActor& a = *rs;
-	OMNI_PVD_CREATE(actor, a);
-	OMNI_PVD_SET(actor, type, a, PxActorType::eRIGID_STATIC);
-	PxTransform t = rs->getGlobalPose();
-	OMNI_PVD_SET(actor, translation, a, t.p);
-	OMNI_PVD_SET(actor, rotation, a, t.q);
+	OMNI_PVD_CREATE(PxRigidStatic, a);
+	OMNI_PVD_SET(PxActor, type, a, PxActorType::eRIGID_STATIC);
+	streamRigidActorTForm(*rs);
 }
 
 void streamRigidDynamic(const physx::PxRigidDynamic* rd)
 {
 	const PxActor& a = *rd;
-	OMNI_PVD_CREATE(actor, a);
-	OMNI_PVD_SET(actor, type, a, PxActorType::eRIGID_DYNAMIC);
-	PxTransform t = rd->getGlobalPose();
-	OMNI_PVD_SET(actor, translation, a, t.p);
-	OMNI_PVD_SET(actor, rotation, a, t.q);
+	OMNI_PVD_CREATE(PxRigidDynamic, a);
+	OMNI_PVD_SET(PxActor, type, a, PxActorType::eRIGID_DYNAMIC);
+	streamRigidActorTForm(*rd);
 	//OMNI_PVD_SET(actor, isSleeping, a, rd->isSleeping()); // Seems to throw errors since you cannot call isSleeping before a body is part of a scene
-	OMNI_PVD_SET(actor, sleepThreshold, a, rd->getSleepThreshold());
-	OMNI_PVD_SET(actor, wakeCounter, a, rd->getWakeCounter());
-	OMNI_PVD_SET(actor, stabilizationThreshold, a, rd->getStabilizationThreshold());
+	OMNI_PVD_SET(PxRigidDynamic, sleepThreshold, a, rd->getSleepThreshold());
+	OMNI_PVD_SET(PxRigidDynamic, wakeCounter, a, rd->getWakeCounter());
+	OMNI_PVD_SET(PxRigidDynamic, stabilizationThreshold, a, rd->getStabilizationThreshold());
 	PxU32 positionIters, velocityIters; rd->getSolverIterationCounts(positionIters, velocityIters);
-	OMNI_PVD_SET(actor, positionIterations, a, positionIters);
-	OMNI_PVD_SET(actor, velocityIterations, a, velocityIters);
-	OMNI_PVD_SET(actor, rigidDynamicLockFlags, a, rd->getRigidDynamicLockFlags());
-	OMNI_PVD_SET(actor, contactReportThreshold, a, rd->getContactReportThreshold());
+	OMNI_PVD_SET(PxRigidDynamic, positionIterations, a, positionIters);
+	OMNI_PVD_SET(PxRigidDynamic, velocityIterations, a, velocityIters);
+	OMNI_PVD_SET(PxRigidDynamic, rigidDynamicLockFlags, a, rd->getRigidDynamicLockFlags());
+	OMNI_PVD_SET(PxRigidDynamic, contactReportThreshold, a, rd->getContactReportThreshold());
 }
 
 void streamArticulationJoint(const physx::PxArticulationJointReducedCoordinate* joint)
@@ -498,151 +511,196 @@ void streamArticulationJoint(const physx::PxArticulationJointReducedCoordinate* 
 	for (PxU32 ax = 0; ax < 6; ++ax)
 		drivevelocitys[ax] = jointRef.getDriveVelocity(static_cast<PxArticulationAxis::Enum>(ax));
 
-	OMNI_PVD_CREATE(articulationjoint, jointRef);
-	OMNI_PVD_SET(articulationjoint, type, jointRef, jointType);
-	OMNI_PVD_SET(articulationjoint, parentLink, jointRef, parentPxLinkPtr);
-	OMNI_PVD_SET(articulationjoint, childLink, jointRef, childPxLinkPtr);
-	OMNI_PVD_SETB(articulationjoint, motion, jointRef, motions, sizeof(motions));
-	OMNI_PVD_SETB(articulationjoint, armature, jointRef, armatures, sizeof(armatures));
-	OMNI_PVD_SET(articulationjoint, frictionCoefficient, jointRef, coefficient);
-	OMNI_PVD_SET(articulationjoint, maxJointVelocity, jointRef, maxJointV);
-	OMNI_PVD_SETB(articulationjoint, jointPosition, jointRef, positions, sizeof(positions));
-	OMNI_PVD_SETB(articulationjoint, jointVelocity, jointRef, velocitys, sizeof(velocitys));
-	OMNI_PVD_SETB(articulationjoint, concreteTypeName, jointRef, concreteTypeName, concreteTypeNameLen);
-	OMNI_PVD_SETB(articulationjoint, limitLow, jointRef, lowlimits, sizeof(lowlimits));
-	OMNI_PVD_SETB(articulationjoint, limitHigh, jointRef, highlimits, sizeof(highlimits));
-	OMNI_PVD_SETB(articulationjoint, driveStiffness, jointRef, stiffnesss, sizeof(stiffnesss));
-	OMNI_PVD_SETB(articulationjoint, driveDamping, jointRef, dampings, sizeof(dampings));
-	OMNI_PVD_SETB(articulationjoint, driveMaxForce, jointRef, maxforces, sizeof(maxforces));
-	OMNI_PVD_SETB(articulationjoint, driveType, jointRef, drivetypes, sizeof(drivetypes));
-	OMNI_PVD_SETB(articulationjoint, driveTarget, jointRef, drivetargets, sizeof(drivetargets));
-	OMNI_PVD_SETB(articulationjoint, driveVelocity, jointRef, drivevelocitys, sizeof(drivevelocitys));
+	OMNI_PVD_CREATE(PxArticulationJointReducedCoordinate, jointRef);
+	OMNI_PVD_SET(PxArticulationJointReducedCoordinate, type, jointRef, jointType);
+	OMNI_PVD_SET(PxArticulationJointReducedCoordinate, parentLink, jointRef, parentPxLinkPtr);
+	OMNI_PVD_SET(PxArticulationJointReducedCoordinate, childLink, jointRef, childPxLinkPtr);
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, motion, jointRef, motions, sizeof(motions));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, armature, jointRef, armatures, sizeof(armatures));
+	OMNI_PVD_SET(PxArticulationJointReducedCoordinate, frictionCoefficient, jointRef, coefficient);
+	OMNI_PVD_SET(PxArticulationJointReducedCoordinate, maxJointVelocity, jointRef, maxJointV);
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointPosition, jointRef, positions, sizeof(positions));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointVelocity, jointRef, velocitys, sizeof(velocitys));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, concreteTypeName, jointRef, concreteTypeName, concreteTypeNameLen);
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitLow, jointRef, lowlimits, sizeof(lowlimits));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitHigh, jointRef, highlimits, sizeof(highlimits));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveStiffness, jointRef, stiffnesss, sizeof(stiffnesss));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveDamping, jointRef, dampings, sizeof(dampings));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveMaxForce, jointRef, maxforces, sizeof(maxforces));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveType, jointRef, drivetypes, sizeof(drivetypes));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveTarget, jointRef, drivetargets, sizeof(drivetargets));
+	OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveVelocity, jointRef, drivevelocitys, sizeof(drivevelocitys));
 }
 
 void streamArticulationLink(const physx::PxArticulationLink* al)
 {
 	const PxActor& a = *al;
-	OMNI_PVD_CREATE(actor, a);
-	OMNI_PVD_SET(actor, type, a, PxActorType::eARTICULATION_LINK);
-	OMNI_PVD_SET(actor, articulation, a, &al->getArticulation());
-	OMNI_PVD_SET(actor, CFMScale, a, al->getCfmScale());
-	OMNI_PVD_SET(actor, inboundJointDOF, a, al->getInboundJointDof());
+	OMNI_PVD_CREATE(PxArticulationLink, a);
+	OMNI_PVD_SET(PxActor, type, a, PxActorType::eARTICULATION_LINK);
+	OMNI_PVD_SET(PxArticulationLink, articulation, a, &al->getArticulation());
+	OMNI_PVD_SET(PxArticulationLink, CFMScale, a, al->getCfmScale());
+	OMNI_PVD_SET(PxArticulationLink, inboundJointDOF, a, al->getInboundJointDof());
 }
 
 void streamArticulation(const physx::PxArticulationReducedCoordinate* art)
 {
-	OMNI_PVD_CREATE(articulation, *art);
+	OMNI_PVD_CREATE(PxArticulationReducedCoordinate, *art);
 	PxU32 solverIterations[2]; art->getSolverIterationCounts(solverIterations[0], solverIterations[1]);
-	OMNI_PVD_SET(articulation, positionIterations, *art, solverIterations[0]);
-	OMNI_PVD_SET(articulation, velocityIterations, *art, solverIterations[1]);
-	OMNI_PVD_SET(articulation, isSleeping, *art, false);
-	OMNI_PVD_SET(articulation, sleepThreshold, *art, art->getSleepThreshold());
-	OMNI_PVD_SET(articulation, stabilizationThreshold, *art, art->getStabilizationThreshold());
-	OMNI_PVD_SET(articulation, wakeCounter, *art, art->getWakeCounter());
-	OMNI_PVD_SET(articulation, maxLinVelocity, *art, art->getMaxCOMLinearVelocity());
-	OMNI_PVD_SET(articulation, maxAngVelocity, *art, art->getMaxCOMAngularVelocity());
-	OMNI_PVD_SET(articulation, worldBounds, *art, art->getWorldBounds());
-	OMNI_PVD_SET(articulation, articulationFlags, *art, art->getArticulationFlags());
-	OMNI_PVD_SET(articulation, dofs, *art, art->getDofs());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, positionIterations, *art, solverIterations[0]);
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, velocityIterations, *art, solverIterations[1]);
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, isSleeping, *art, false);
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, sleepThreshold, *art, art->getSleepThreshold());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, stabilizationThreshold, *art, art->getStabilizationThreshold());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, wakeCounter, *art, art->getWakeCounter());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, maxLinearVelocity, *art, art->getMaxCOMLinearVelocity());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, maxAngularVelocity, *art, art->getMaxCOMAngularVelocity());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, worldBounds, *art, art->getWorldBounds());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, articulationFlags, *art, art->getArticulationFlags());
+	OMNI_PVD_SET(PxArticulationReducedCoordinate, dofs, *art, art->getDofs());
 }
 
 void streamAggregate(const physx::PxAggregate* agg)
 {
-	OMNI_PVD_CREATE(aggregate, *agg);
+	OMNI_PVD_CREATE(PxAggregate, *agg);
 	PxU32 actorCount = agg->getNbActors();
 	for (PxU32 i = 0; i < actorCount; ++i)
 	{
 		PxActor* a; agg->getActors(&a, 1, i);
-		OMNI_PVD_ADD(aggregate, actors, *agg, *a);
+		OMNI_PVD_ADD(PxAggregate, actors, *agg, *a);
 	}
-	OMNI_PVD_SET(aggregate, selfCollision, *agg, agg->getSelfCollision());
-	OMNI_PVD_SET(aggregate, maxNbShapes, *agg, agg->getMaxNbShapes());
-	OMNI_PVD_SET(aggregate, scene, *agg, const_cast<physx::PxAggregate*>(agg)->getScene());
-}
-
-void streamSoBo(const physx::PxSoftBody* b)
-{
-	OMNI_PVD_CREATE(actor, *b); // @@@
+	OMNI_PVD_SET(PxAggregate, selfCollision, *agg, agg->getSelfCollision());
+	OMNI_PVD_SET(PxAggregate, maxNbShapes, *agg, agg->getMaxNbShapes());
+	OMNI_PVD_SET(PxAggregate, scene, *agg, const_cast<physx::PxAggregate*>(agg)->getScene());
 }
 
 void streamMPMMaterial(const physx::PxMPMMaterial* m)
 {
-	OMNI_PVD_CREATE(mpmmaterial, *m);
+	OMNI_PVD_CREATE(PxMPMMaterial, *m);
 }
 
 void streamFLIPMaterial(const physx::PxFLIPMaterial* m)
 {
-	OMNI_PVD_CREATE(flipmaterial, *m);
+	OMNI_PVD_CREATE(PxFLIPMaterial, *m);
 }
 
 void streamPBDMaterial(const physx::PxPBDMaterial* m)
 {
-	OMNI_PVD_CREATE(pbdmaterial, *m);
+	OMNI_PVD_CREATE(PxPBDMaterial, *m);
 }
 
 void streamFEMClothMaterial(const physx::PxFEMClothMaterial* m)
 {
-	OMNI_PVD_CREATE(femclothmaterial, *m);
+	OMNI_PVD_CREATE(PxFEMClothMaterial, *m);
 }
 
 void streamFEMSoBoMaterial(const physx::PxFEMSoftBodyMaterial* m)
 {
-	OMNI_PVD_CREATE(femsoftbodymaterial, *m);
+	OMNI_PVD_CREATE(PxFEMSoftBodyMaterial, *m);
 }
 
 void streamMaterial(const physx::PxMaterial* m)
 {
-	OMNI_PVD_CREATE(material, *m);
-	OMNI_PVD_SET(material, flags, *m, m->getFlags());
-	OMNI_PVD_SET(material, frictionCombineMode, *m, m->getFrictionCombineMode());
-	OMNI_PVD_SET(material, restitutionCombineMode, *m, m->getRestitutionCombineMode());
-	OMNI_PVD_SET(material, staticFriction, *m, m->getStaticFriction());
-	OMNI_PVD_SET(material, dynamicFriction, *m, m->getDynamicFriction());
-	OMNI_PVD_SET(material, restitution, *m, m->getRestitution());
+	OMNI_PVD_CREATE(PxMaterial, *m);
+	OMNI_PVD_SET(PxMaterial, flags, *m, m->getFlags());
+	OMNI_PVD_SET(PxMaterial, frictionCombineMode, *m, m->getFrictionCombineMode());
+	OMNI_PVD_SET(PxMaterial, restitutionCombineMode, *m, m->getRestitutionCombineMode());
+	OMNI_PVD_SET(PxMaterial, staticFriction, *m, m->getStaticFriction());
+	OMNI_PVD_SET(PxMaterial, dynamicFriction, *m, m->getDynamicFriction());
+	OMNI_PVD_SET(PxMaterial, restitution, *m, m->getRestitution());
 }
 
-void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxMaterial** mats, physx::PxU32 nbrMaterials)
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxMaterial* const * mats, physx::PxU32 nbrMaterials)
 {
-	OMNI_PVD_SETB(shape, materials, *shapePtr, mats, sizeof(PxMaterial*) * nbrMaterials);
+	OMNI_PVD_SETB(PxShape, materials, *shapePtr, mats, sizeof(PxMaterial*) * nbrMaterials);
 }
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxFEMClothMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxFEMMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxFEMSoftBodyMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxFLIPMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxMPMMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxParticleMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
+void streamShapeMaterials(physx::PxShape* shapePtr, physx::PxPBDMaterial* const * mats, physx::PxU32 nbrMaterials)
+{
+	PX_UNUSED(shapePtr);
+	PX_UNUSED(mats);
+	PX_UNUSED(nbrMaterials);
+}
+
 
 void streamShape(const physx::PxShape* shape)
 {
-	OMNI_PVD_CREATE(shape, *shape);
-	OMNI_PVD_SET(shape, isExclusive, *shape, shape->isExclusive());
-	OMNI_PVD_SET(shape, geom, *shape, &shape->getGeometry());
-	OMNI_PVD_SET(shape, contactOffset, *shape, shape->getContactOffset());
-	OMNI_PVD_SET(shape, restOffset, *shape, shape->getRestOffset());
-	OMNI_PVD_SET(shape, densityForFluid, *shape, shape->getDensityForFluid());
-	OMNI_PVD_SET(shape, torsionalPatchRadius, *shape, shape->getTorsionalPatchRadius());
-	OMNI_PVD_SET(shape, minTorsionalPatchRadius, *shape, shape->getMinTorsionalPatchRadius());
-	OMNI_PVD_SET(shape, shapeFlags, *shape, shape->getFlags());
-	OMNI_PVD_SET(shape, simulationFilterData, *shape, shape->getSimulationFilterData());
-	OMNI_PVD_SET(shape, queryFilterData, *shape, shape->getQueryFilterData());
+	OMNI_PVD_CREATE(PxShape, *shape);
+	OMNI_PVD_SET(PxShape, isExclusive, *shape, shape->isExclusive());
+	OMNI_PVD_SET(PxShape, geom, *shape, &shape->getGeometry());
+	OMNI_PVD_SET(PxShape, contactOffset, *shape, shape->getContactOffset());
+	OMNI_PVD_SET(PxShape, restOffset, *shape, shape->getRestOffset());
+	OMNI_PVD_SET(PxShape, densityForFluid, *shape, shape->getDensityForFluid());
+	OMNI_PVD_SET(PxShape, torsionalPatchRadius, *shape, shape->getTorsionalPatchRadius());
+	OMNI_PVD_SET(PxShape, minTorsionalPatchRadius, *shape, shape->getMinTorsionalPatchRadius());
+	OMNI_PVD_SET(PxShape, shapeFlags, *shape, shape->getFlags());
+	OMNI_PVD_SET(PxShape, simulationFilterData, *shape, shape->getSimulationFilterData());
+	OMNI_PVD_SET(PxShape, queryFilterData, *shape, shape->getQueryFilterData());
 
 	const int nbrMaterials = shape->getNbMaterials();
 	PxMaterial** tmpMaterials = (PxMaterial**)PX_ALLOC(sizeof(PxMaterial*) * nbrMaterials, "tmpMaterials");
 	physx::PxU32 nbrMats = shape->getMaterials(tmpMaterials, nbrMaterials);
-	streamShapeMaterials((PxShape*)shape, tmpMaterials, nbrMats);
+	streamShapeMaterials(const_cast<PxShape*>(shape), tmpMaterials, nbrMats);
 
 	PX_FREE(tmpMaterials);
 }
 
 void streamBVH(const physx::PxBVH* bvh)
 {
-	OMNI_PVD_CREATE(bvh, *bvh);
+	OMNI_PVD_CREATE(PxBVH, *bvh);
 }
 
 void streamSoBoMesh(const physx::PxSoftBodyMesh* mesh)
 {
-	OMNI_PVD_CREATE(softbodymesh, *mesh);
-	OMNI_PVD_SET(softbodymesh, collisionMesh, *mesh, mesh->getCollisionMesh());
-	OMNI_PVD_SET(softbodymesh, simulationMesh, *mesh, mesh->getSimulationMesh());
+	OMNI_PVD_CREATE(PxSoftBodyMesh, *mesh);
+	OMNI_PVD_SET(PxSoftBodyMesh, collisionMesh, *mesh, mesh->getCollisionMesh());
+	OMNI_PVD_SET(PxSoftBodyMesh, simulationMesh, *mesh, mesh->getSimulationMesh());
 }
 
 void streamTetMesh(const physx::PxTetrahedronMesh* mesh)
 {
-	OMNI_PVD_CREATE(tetrahedronmesh, *mesh);
+	OMNI_PVD_CREATE(PxTetrahedronMesh, *mesh);
 	//this gets done at the bottom now
 	const physx::PxU32 tetrahedronCount = mesh->getNbTetrahedrons();
 	const physx::PxU32 has16BitIndices = mesh->getTetrahedronMeshFlags() & physx::PxTetrahedronMeshFlag::e16_BIT_INDICES;
@@ -678,8 +736,8 @@ void streamTetMesh(const physx::PxTetrahedronMesh* mesh)
 			tmpIndices[i] = intIndices[i];
 		}
 	}
-	OMNI_PVD_SETB(tetrahedronmesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
-	OMNI_PVD_SETB(tetrahedronmesh, tets, *mesh, tmpIndices, sizeof(int) * 4 * nbrTets);
+	OMNI_PVD_SETB(PxTetrahedronMesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
+	OMNI_PVD_SETB(PxTetrahedronMesh, tets, *mesh, tmpIndices, sizeof(int) * 4 * nbrTets);
 	PX_FREE(tmpVerts);
 	PX_FREE(tmpIndices);
 }
@@ -688,7 +746,7 @@ void streamTriMesh(const physx::PxTriangleMesh* mesh)
 {
 	if (samplerInternals->addSharedMeshIfNotSeen(mesh, OmniPvdSharedMeshEnum::eOmniPvdTriMesh))
 	{
-		OMNI_PVD_CREATE(trianglemesh, *mesh);
+		OMNI_PVD_CREATE(PxTriangleMesh, *mesh);
 		//this gets done at the bottom now
 		const physx::PxU32 triangleCount = mesh->getNbTriangles();
 		const physx::PxU32 has16BitIndices = mesh->getTriangleMeshFlags() & physx::PxTriangleMeshFlag::e16_BIT_INDICES;
@@ -724,22 +782,20 @@ void streamTriMesh(const physx::PxTriangleMesh* mesh)
 				tmpIndices[i] = intIndices[i];
 			}
 		}
-		OMNI_PVD_SETB(trianglemesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
-		OMNI_PVD_SETB(trianglemesh, tris, *mesh, tmpIndices, sizeof(int) * 3 * nbrTris);
+		OMNI_PVD_SETB(PxTriangleMesh, verts, *mesh, tmpVerts, sizeof(float) * 3 * nbrVerts);
+		OMNI_PVD_SETB(PxTriangleMesh, tris, *mesh, tmpIndices, sizeof(int) * 3 * nbrTris);
 		PX_FREE(tmpVerts);
 		PX_FREE(tmpIndices);
 	}
 }
 
-void streamTriMeshGeometry(const physx::PxGeometry& g)
+void streamTriMeshGeometry(const physx::PxTriangleMeshGeometry& g)
 {
-	PxGeometryHolder gh(g);
-	OMNI_PVD_CREATE(geomtrianglemesh, g);
-	const physx::PxTriangleMeshGeometry& geometry = gh.triangleMesh();
-	physx::PxTriangleMesh const * mesh = geometry.triangleMesh;
-	OMNI_PVD_SET(geomtrianglemesh, scale, g, geometry.scale.scale);
+	OMNI_PVD_CREATE(PxTriangleMeshGeometry, g);
+	physx::PxTriangleMesh const * mesh = g.triangleMesh;
+	OMNI_PVD_SET(PxTriangleMeshGeometry, scale, g, g.scale.scale);
 	streamTriMesh(mesh);
-	OMNI_PVD_SET(geomtrianglemesh, triangleMesh, g, mesh);
+	OMNI_PVD_SET(PxTriangleMeshGeometry, triangleMesh, g, mesh);
 }
 
 void OmniPvdPxSampler::streamSceneContacts(physx::NpScene& scene)
@@ -769,7 +825,7 @@ void OmniPvdPxSampler::streamSceneContacts(physx::NpScene& scene)
 				pairsActors.pushBack(pair->getActor0());
 				pairsActors.pushBack(pair->getActor1());
 				++pairCount;
-				firstContact = false;				
+				firstContact = false;
 			}
 			++pairContactCount;
 			pairsContactPoints.pushBack(contact->point);
@@ -788,28 +844,28 @@ void OmniPvdPxSampler::streamSceneContacts(physx::NpScene& scene)
 
 	if (pairCount == 0) return;
 
-	OMNI_PVD_SET(scene, pairCount, scene, pairCount);
+	OMNI_PVD_SET(PxScene, pairCount, scene, pairCount);
 	PxU32 actorsSize = pairsActors.size() * sizeof(PxActor*);
 	PxActor** actors = actorsSize ? &pairsActors[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsActors, scene, actors, actorsSize);
+	OMNI_PVD_SETB(PxScene, pairsActors, scene, actors, actorsSize);
 	PxU32 contactCountsSize = pairsContactCounts.size() * sizeof(PxU32);
 	PxU32* contactCounts = contactCountsSize ? &pairsContactCounts[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactCounts, scene, contactCounts, contactCountsSize);
+	OMNI_PVD_SETB(PxScene, pairsContactCounts, scene, contactCounts, contactCountsSize);
 	PxU32 contactPointsSize = pairsContactPoints.size() * sizeof(PxVec3);
 	PxReal* contactPoints = contactPointsSize ? &pairsContactPoints[0].x : NULL;
-	OMNI_PVD_SETB(scene, pairsContactPoints, scene, contactPoints, contactPointsSize);
+	OMNI_PVD_SETB(PxScene, pairsContactPoints, scene, contactPoints, contactPointsSize);
 	PxU32 contactNormalsSize = pairsContactNormals.size() * sizeof(PxVec3);
 	PxReal* contactNormals = contactNormalsSize ? &pairsContactNormals[0].x : NULL;
-	OMNI_PVD_SETB(scene, pairsContactNormals, scene, contactNormals, contactNormalsSize);
+	OMNI_PVD_SETB(PxScene, pairsContactNormals, scene, contactNormals, contactNormalsSize);
 	PxU32 contactSeparationsSize = pairsContactSeparations.size() * sizeof(PxReal);
 	PxReal* contactSeparations = contactSeparationsSize ? &pairsContactSeparations[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactSeparations, scene, contactSeparations, contactSeparationsSize);
+	OMNI_PVD_SETB(PxScene, pairsContactSeparations, scene, contactSeparations, contactSeparationsSize);
 	PxU32 contactShapesSize = pairsContactShapes.size() * sizeof(PxShape*);
 	PxShape** contactShapes = contactShapesSize ? &pairsContactShapes[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactShapes, scene, contactShapes, contactShapesSize);
+	OMNI_PVD_SETB(PxScene, pairsContactShapes, scene, contactShapes, contactShapesSize);
 	PxU32 contactFacesIndicesSize = pairsContactFacesIndices.size() * sizeof(PxU32);
 	PxU32* contactFacesIndices = contactFacesIndicesSize ? &pairsContactFacesIndices[0] : NULL;
-	OMNI_PVD_SETB(scene, pairsContactFacesIndices, scene, contactFacesIndices, contactFacesIndicesSize);
+	OMNI_PVD_SETB(PxScene, pairsContactFacesIndices, scene, contactFacesIndices, contactFacesIndicesSize);
 }
 
 OmniPvdPxSampler::OmniPvdPxSampler()
@@ -820,18 +876,18 @@ OmniPvdPxSampler::OmniPvdPxSampler()
 	samplerInternals->mIsSampling = false;
 
 	//TODO: this could be done better
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT8] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT16] = 2;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT8] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT16] = 2;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eFLOAT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eFLOAT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eSTRING] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eOBJECT_HANDLE] = sizeof(uint64_t);
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT8] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT16] = 2;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT8] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT16] = 2;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eFLOAT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eFLOAT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eSTRING] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eOBJECT_HANDLE] = sizeof(uint64_t);
 }
 
 OmniPvdPxSampler::~OmniPvdPxSampler()
@@ -878,37 +934,37 @@ void createGeometry(const physx::PxGeometry & pxGeom)
 	{
 	case physx::PxGeometryType::eSPHERE:
 	{
-		streamSphere(pxGeom);
+		streamSphere((const physx::PxSphereGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eCAPSULE:
 	{
-		streamCapsule(pxGeom);
+		streamCapsule((const physx::PxCapsuleGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eBOX:
 	{
-		streamBox(pxGeom);
+		streamBox((const physx::PxBoxGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eTRIANGLEMESH:
 	{
-		streamTriMeshGeometry(pxGeom);
+		streamTriMeshGeometry((const physx::PxTriangleMeshGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eCONVEXMESH:
 	{
-		streamConvexMeshGeometry(pxGeom);
+		streamConvexMeshGeometry((const physx::PxConvexMeshGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eHEIGHTFIELD:
 	{
-		streamHeightFieldGeometry(pxGeom);
+		streamHeightFieldGeometry((const physx::PxHeightFieldGeometry &)pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::ePLANE:
 	{
-		streamPlane(pxGeom);
+		streamPlane((const physx::PxPlaneGeometry &)pxGeom);
 	}	
 	break;
 	default:
@@ -923,37 +979,37 @@ void destroyGeometry(const physx::PxGeometry & pxGeom)
 	{
 	case physx::PxGeometryType::eSPHERE:
 	{
-		OMNI_PVD_DESTROY(geomsphere, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomSphere, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eCAPSULE:
 	{
-		OMNI_PVD_DESTROY(geomcapsule, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomCapsule, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eBOX:
 	{
-		OMNI_PVD_DESTROY(geombox, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomBox, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eTRIANGLEMESH:
 	{
-		OMNI_PVD_DESTROY(geomtrianglemesh, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomTriangleMesh, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eCONVEXMESH:
 	{
-		OMNI_PVD_DESTROY(geomconvexmesh, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomConvexMesh, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::eHEIGHTFIELD:
 	{
-		OMNI_PVD_DESTROY(geomheightfield, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomHeightField, pxGeom);
 	}
 	break;
 	case physx::PxGeometryType::ePLANE:
 	{
-		OMNI_PVD_DESTROY(geomplane, pxGeom);
+		OMNI_PVD_DESTROY(PxGeomPlane, pxGeom);
 	}	
 	break;
 	default:
@@ -978,84 +1034,80 @@ void OmniPvdPxSampler::onObjectAdd(const physx::PxBase* object)
 	{
 	case physx::PxConcreteType::eHEIGHTFIELD:
 		streamHeightField(static_cast<const physx::PxHeightField*>(object));
-		OMNI_PVD_ADD(physics, heightFields, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxHeightField&>(*object));
+		OMNI_PVD_ADD(PxPhysics, heightFields, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxHeightField&>(*object));
 		break;
 	case physx::PxConcreteType::eCONVEX_MESH:
 		streamConvexMesh(static_cast<const physx::PxConvexMesh*>(object));
-		OMNI_PVD_ADD(physics, convexMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxConvexMesh&>(*object));
+		OMNI_PVD_ADD(PxPhysics, convexMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxConvexMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eTRIANGLE_MESH_BVH33:
 	case physx::PxConcreteType::eTRIANGLE_MESH_BVH34:
 		streamTriMesh(static_cast<const physx::PxTriangleMesh*>(object));
-		OMNI_PVD_ADD(physics, triangleMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTriangleMesh&>(*object));
+		OMNI_PVD_ADD(PxPhysics, triangleMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTriangleMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eTETRAHEDRON_MESH:
 		streamTetMesh(static_cast<const physx::PxTetrahedronMesh*>(object));
-		OMNI_PVD_ADD(physics, tetrahedronMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTetrahedronMesh&>(*object));
+		OMNI_PVD_ADD(PxPhysics, tetrahedronMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTetrahedronMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eSOFTBODY_MESH:
 		streamSoBoMesh(static_cast<const physx::PxSoftBodyMesh*>(object));
-		OMNI_PVD_ADD(physics, softBodyMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxSoftBodyMesh&>(*object));
+		OMNI_PVD_ADD(PxPhysics, softBodyMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxSoftBodyMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eBVH:
 		streamBVH(static_cast<const physx::PxBVH*>(object));
-		OMNI_PVD_ADD(physics, bvhs, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxBVH&>(*object));
+		OMNI_PVD_ADD(PxPhysics, bvhs, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxBVH&>(*object));
 		break;
 	case physx::PxConcreteType::eSHAPE:
 		createGeometry(static_cast<const physx::PxShape*>(object)->getGeometry());
 		streamShape(static_cast<const physx::PxShape*>(object));
-		OMNI_PVD_ADD(physics, shapes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxShape&>(*object));
+		OMNI_PVD_ADD(PxPhysics, shapes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxShape&>(*object));
 		break;
 	case physx::PxConcreteType::eMATERIAL:
 		streamMaterial(static_cast<const physx::PxMaterial*>(object));
-		OMNI_PVD_ADD(physics, materials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMaterial&>(*object));
+		OMNI_PVD_ADD(PxPhysics, materials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eSOFTBODY_MATERIAL:
 		streamFEMSoBoMaterial(static_cast<const physx::PxFEMSoftBodyMaterial*>(object));
-		OMNI_PVD_ADD(physics, FEMSoftBodyMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
+		OMNI_PVD_ADD(PxPhysics, FEMSoftBodyMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eCLOTH_MATERIAL:
 		streamFEMClothMaterial(static_cast<const physx::PxFEMClothMaterial*>(object));
-		OMNI_PVD_ADD(physics, FEMClothMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMClothMaterial&>(*object));
+		OMNI_PVD_ADD(PxPhysics, FEMClothMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMClothMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::ePBD_MATERIAL:
 		streamPBDMaterial(static_cast<const physx::PxPBDMaterial*>(object));
-		OMNI_PVD_ADD(physics, PBDMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxPBDMaterial&>(*object));
+		OMNI_PVD_ADD(PxPhysics, PBDMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxPBDMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eFLIP_MATERIAL:
 		streamFLIPMaterial(static_cast<const physx::PxFLIPMaterial*>(object));
-		OMNI_PVD_ADD(physics, FLIPMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFLIPMaterial&>(*object));
+		OMNI_PVD_ADD(PxPhysics, FLIPMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFLIPMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eMPM_MATERIAL:
 		streamMPMMaterial(static_cast<const physx::PxMPMMaterial*>(object));
-		OMNI_PVD_ADD(physics, MPMMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMPMMaterial&>(*object));
-		break;
-	case physx::PxConcreteType::eSOFT_BODY:
-		streamSoBo(static_cast<const physx::PxSoftBody*>(object));
-		OMNI_PVD_ADD(physics, softBodies, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxActor&>(*object));
+		OMNI_PVD_ADD(PxPhysics, MPMMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMPMMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eAGGREGATE:
 		streamAggregate(static_cast<const physx::PxAggregate*>(object));
-		OMNI_PVD_ADD(physics, aggregates, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxAggregate&>(*object));
+		OMNI_PVD_ADD(PxPhysics, aggregates, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxAggregate&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_REDUCED_COORDINATE:
 		streamArticulation(static_cast<const physx::PxArticulationReducedCoordinate*>(object));
-		OMNI_PVD_ADD(physics, articulations, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
+		OMNI_PVD_ADD(PxPhysics, articulations, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_LINK:
 		streamArticulationLink(static_cast<const physx::PxArticulationLink*>(object));
-		OMNI_PVD_ADD(articulation, links, static_cast<const physx::PxArticulationLink*>(object)->getArticulation(), static_cast<const physx::PxArticulationLink&>(*object));
+		OMNI_PVD_ADD(PxArticulationReducedCoordinate, links, static_cast<const physx::PxArticulationLink*>(object)->getArticulation(), static_cast<const physx::PxArticulationLink&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE:
 		streamArticulationJoint(static_cast<const physx::PxArticulationJointReducedCoordinate*>(object));
 		break;
 	case physx::PxConcreteType::eRIGID_DYNAMIC:
 		streamRigidDynamic(static_cast<const physx::PxRigidDynamic*>(object));
-		OMNI_PVD_ADD(physics, rigidDynamics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidDynamic&>(*object));
+		OMNI_PVD_ADD(PxPhysics, rigidDynamics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidDynamic&>(*object));
 		break;
 	case physx::PxConcreteType::eRIGID_STATIC:
 		streamRigidStatic(static_cast<const physx::PxRigidStatic*>(object));
-		OMNI_PVD_ADD(physics, rigidStatics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidStatic&>(*object));
+		OMNI_PVD_ADD(PxPhysics, rigidStatics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidStatic&>(*object));
 		break;
 	}
 }
@@ -1066,84 +1118,80 @@ void OmniPvdPxSampler::onObjectRemove(const physx::PxBase* object)
 	switch (object->getConcreteType())
 	{
 	case physx::PxConcreteType::eHEIGHTFIELD:
-		OMNI_PVD_REMOVE(physics, heightFields, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxHeightField&>(*object));
-		OMNI_PVD_DESTROY(heightfield, static_cast<const physx::PxHeightField&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, heightFields, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxHeightField&>(*object));
+		OMNI_PVD_DESTROY(PxHeightField, static_cast<const physx::PxHeightField&>(*object));
 		break;
 	case physx::PxConcreteType::eCONVEX_MESH:
-		OMNI_PVD_REMOVE(physics, convexMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxConvexMesh&>(*object));
-		OMNI_PVD_DESTROY(convexmesh, static_cast<const physx::PxConvexMesh&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, convexMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxConvexMesh&>(*object));
+		OMNI_PVD_DESTROY(PxConvexMesh, static_cast<const physx::PxConvexMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eTRIANGLE_MESH_BVH33:
 	case physx::PxConcreteType::eTRIANGLE_MESH_BVH34:
-		OMNI_PVD_REMOVE(physics, triangleMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTriangleMesh&>(*object));
-		OMNI_PVD_DESTROY(trianglemesh, static_cast<const physx::PxTriangleMesh&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, triangleMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTriangleMesh&>(*object));
+		OMNI_PVD_DESTROY(PxTriangleMesh, static_cast<const physx::PxTriangleMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eTETRAHEDRON_MESH:
-		OMNI_PVD_REMOVE(physics, tetrahedronMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTetrahedronMesh&>(*object));
-		OMNI_PVD_DESTROY(tetrahedronmesh, static_cast<const physx::PxTetrahedronMesh&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, tetrahedronMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxTetrahedronMesh&>(*object));
+		OMNI_PVD_DESTROY(PxTetrahedronMesh, static_cast<const physx::PxTetrahedronMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eSOFTBODY_MESH:
-		OMNI_PVD_REMOVE(physics, softBodyMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxSoftBodyMesh&>(*object));
-		OMNI_PVD_DESTROY(softbodymesh, static_cast<const physx::PxSoftBodyMesh&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, softBodyMeshes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxSoftBodyMesh&>(*object));
+		OMNI_PVD_DESTROY(PxSoftBodyMesh, static_cast<const physx::PxSoftBodyMesh&>(*object));
 		break;
 	case physx::PxConcreteType::eBVH:
-		OMNI_PVD_REMOVE(physics, bvhs, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxBVH&>(*object));
-		OMNI_PVD_DESTROY(bvh, static_cast<const physx::PxBVH&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, bvhs, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxBVH&>(*object));
+		OMNI_PVD_DESTROY(PxBVH, static_cast<const physx::PxBVH&>(*object));
 		break;
 	case physx::PxConcreteType::eSHAPE:
-		OMNI_PVD_REMOVE(physics, shapes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxShape&>(*object));
-		OMNI_PVD_DESTROY(shape, static_cast<const physx::PxShape&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, shapes, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxShape&>(*object));
+		OMNI_PVD_DESTROY(PxShape, static_cast<const physx::PxShape&>(*object));
 		destroyGeometry(static_cast<const physx::PxShape&>(*object).getGeometry());
 		break;
 	case physx::PxConcreteType::eMATERIAL:
-		OMNI_PVD_REMOVE(physics, materials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMaterial&>(*object));
-		OMNI_PVD_DESTROY(material, static_cast<const physx::PxMaterial&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, materials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxMaterial, static_cast<const physx::PxMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eSOFTBODY_MATERIAL:
-		OMNI_PVD_REMOVE(physics, FEMSoftBodyMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
-		OMNI_PVD_DESTROY(femsoftbodymaterial, static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, FEMSoftBodyMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxFEMSoftBodyMaterial, static_cast<const physx::PxFEMSoftBodyMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eCLOTH_MATERIAL:
-		OMNI_PVD_REMOVE(physics, FEMClothMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMClothMaterial&>(*object));
-		OMNI_PVD_DESTROY(femclothmaterial, static_cast<const physx::PxFEMClothMaterial&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, FEMClothMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFEMClothMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxFEMClothMaterial, static_cast<const physx::PxFEMClothMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::ePBD_MATERIAL:
-		OMNI_PVD_REMOVE(physics, PBDMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxPBDMaterial&>(*object));
-		OMNI_PVD_DESTROY(pbdmaterial, static_cast<const physx::PxPBDMaterial&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, PBDMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxPBDMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxPBDMaterial, static_cast<const physx::PxPBDMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eFLIP_MATERIAL:
-		OMNI_PVD_REMOVE(physics, FLIPMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFLIPMaterial&>(*object));
-		OMNI_PVD_DESTROY(flipmaterial, static_cast<const physx::PxFLIPMaterial&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, FLIPMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxFLIPMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxFLIPMaterial, static_cast<const physx::PxFLIPMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eMPM_MATERIAL:
-		OMNI_PVD_REMOVE(physics, MPMMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMPMMaterial&>(*object));
-		OMNI_PVD_DESTROY(mpmmaterial, static_cast<const physx::PxMPMMaterial&>(*object));
-		break;
-	case physx::PxConcreteType::eSOFT_BODY:
-		OMNI_PVD_REMOVE(physics, softBodies, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxSoftBody&>(*object));
-		OMNI_PVD_DESTROY(actor, static_cast<const physx::PxSoftBody&>(*object)); // @@@
+		OMNI_PVD_REMOVE(PxPhysics, MPMMaterials, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxMPMMaterial&>(*object));
+		OMNI_PVD_DESTROY(PxMPMMaterial, static_cast<const physx::PxMPMMaterial&>(*object));
 		break;
 	case physx::PxConcreteType::eAGGREGATE:
-		OMNI_PVD_REMOVE(physics, aggregates, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxAggregate&>(*object));
-		OMNI_PVD_DESTROY(aggregate, static_cast<const physx::PxAggregate&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, aggregates, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxAggregate&>(*object));
+		OMNI_PVD_DESTROY(PxAggregate, static_cast<const physx::PxAggregate&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_REDUCED_COORDINATE:
-		OMNI_PVD_REMOVE(physics, articulations, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
-		OMNI_PVD_DESTROY(articulation, static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, articulations, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
+		OMNI_PVD_DESTROY(PxArticulationReducedCoordinate, static_cast<const physx::PxArticulationReducedCoordinate&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_LINK:
-		OMNI_PVD_DESTROY(actor, static_cast<const physx::PxArticulationLink&>(*object));
+		OMNI_PVD_DESTROY(PxActor, static_cast<const physx::PxArticulationLink&>(*object));
 		break;
 	case physx::PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE:
-		OMNI_PVD_DESTROY(articulationjoint, static_cast<const physx::PxArticulationJointReducedCoordinate&>(*object));
+		OMNI_PVD_DESTROY(PxArticulationJointReducedCoordinate, static_cast<const physx::PxArticulationJointReducedCoordinate&>(*object));
 		break;
 	case physx::PxConcreteType::eRIGID_DYNAMIC:
-		OMNI_PVD_REMOVE(physics, rigidDynamics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidDynamic&>(*object));
-		OMNI_PVD_DESTROY(actor, static_cast<const physx::PxRigidDynamic&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, rigidDynamics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidDynamic&>(*object));
+		OMNI_PVD_DESTROY(PxActor, static_cast<const physx::PxRigidDynamic&>(*object));
 		break;
 	case physx::PxConcreteType::eRIGID_STATIC:
-		OMNI_PVD_REMOVE(physics, rigidStatics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidStatic&>(*object));
-		OMNI_PVD_DESTROY(actor, static_cast<const physx::PxRigidStatic&>(*object));
+		OMNI_PVD_REMOVE(PxPhysics, rigidStatics, static_cast<PxPhysics&>(NpPhysics::getInstance()), static_cast<const physx::PxRigidStatic&>(*object));
+		OMNI_PVD_DESTROY(PxActor, static_cast<const physx::PxRigidStatic&>(*object));
 		break;
 	}
 }
@@ -1195,24 +1243,24 @@ template <typename ClassType> void OmniPvdPxSampler::destroyObject(ClassType con
 
 template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::setAttribute(OmniPvdAttributeHandle ah, const ClassType & objectId, const AttributeType & value)
 {
-	samplerInternals->mPvdStream.mWriter->setAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&value, sizeof(AttributeType));
+	samplerInternals->mPvdStream.mWriter->setAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&value, sizeof(AttributeType));
 }
 
 template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::setAttributeBytes(OmniPvdAttributeHandle ah, ClassType const & objectId, const AttributeType * value, unsigned nBytes)
 {
-	samplerInternals->mPvdStream.mWriter->setAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)value, nBytes);
+	samplerInternals->mPvdStream.mWriter->setAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)value, nBytes);
 }
 
-template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::addToSet(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
+template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::addToUniqueList(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
 {
 	const AttributeType * atp = &value;
-	samplerInternals->mPvdStream.mWriter->addToSetAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp));
+	samplerInternals->mPvdStream.mWriter->addToUniqueListAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp));
 }
 
-template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::removeFromSet(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
+template <typename ClassType, typename AttributeType> void OmniPvdPxSampler::removeFromUniqueList(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
 {
 	const AttributeType * atp = &value;
-	samplerInternals->mPvdStream.mWriter->removeFromSetAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp) );
+	samplerInternals->mPvdStream.mWriter->removeFromUniqueListAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

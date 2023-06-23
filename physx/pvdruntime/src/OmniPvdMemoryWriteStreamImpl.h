@@ -38,7 +38,7 @@ class OmniPvdMemoryWriteStreamImpl : public OmniPvdWriteStream
 public:
 	OmniPvdMemoryWriteStreamImpl();
 	~OmniPvdMemoryWriteStreamImpl();	
-	uint64_t OMNI_PVD_CALL writeBytes(const uint8_t* source, const uint64_t nbrBytes);
+	uint64_t OMNI_PVD_CALL writeBytes(const uint8_t* source, uint64_t nbrBytes);
 	bool OMNI_PVD_CALL flush();
 	bool OMNI_PVD_CALL openStream();
 	bool OMNI_PVD_CALL closeStream();

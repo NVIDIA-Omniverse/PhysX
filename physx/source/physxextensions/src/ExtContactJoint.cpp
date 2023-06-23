@@ -55,9 +55,8 @@ void ContactJoint::setContact(const PxVec3& contact)
 	PX_CHECK_AND_RETURN(contact.isFinite(), "PxContactJoint::setContact: invalid parameter");
 	data().contact = contact;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, contactPoint, static_cast<PxJoint&>(*this), getContact())
-#endif
+
+	OMNI_PVD_SET(PxContactJoint, point, static_cast<PxContactJoint&>(*this), getContact())
 }
 
 PxVec3 ContactJoint::getContactNormal() const
@@ -70,9 +69,8 @@ void ContactJoint::setContactNormal(const PxVec3& normal)
 	PX_CHECK_AND_RETURN(normal.isFinite(), "PxContactJoint::setContactNormal: invalid parameter");
 	data().normal = normal;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, contactNormal, static_cast<PxJoint&>(*this), getContactNormal())
-#endif
+
+	OMNI_PVD_SET(PxContactJoint, normal, static_cast<PxContactJoint&>(*this), getContactNormal())
 }
 
 PxReal ContactJoint::getPenetration() const
@@ -85,9 +83,8 @@ void ContactJoint::setPenetration(PxReal penetration)
 	PX_CHECK_AND_RETURN(PxIsFinite(penetration), "ContactJoint::setPenetration: invalid parameter");
 	data().penetration = penetration;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, contactPenetration, static_cast<PxJoint&>(*this), getPenetration())
-#endif
+
+	OMNI_PVD_SET(PxContactJoint, penetration, static_cast<PxContactJoint&>(*this), getPenetration())
 }
 
 PxReal ContactJoint::getRestitution() const
@@ -100,9 +97,8 @@ void ContactJoint::setRestitution(const PxReal restitution)
 	PX_CHECK_AND_RETURN(PxIsFinite(restitution) && restitution >= 0.f && restitution <= 1.f, "ContactJoint::setRestitution: invalid parameter");
 	data().restitution = restitution;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, contactRestitution, static_cast<PxJoint&>(*this), getRestitution())
-#endif
+
+	OMNI_PVD_SET(PxContactJoint, restitution, static_cast<PxContactJoint&>(*this), getRestitution())
 }
 
 PxReal ContactJoint::getBounceThreshold() const
@@ -115,9 +111,8 @@ void ContactJoint::setBounceThreshold(const PxReal bounceThreshold)
 	PX_CHECK_AND_RETURN(PxIsFinite(bounceThreshold) && bounceThreshold > 0.f, "ContactJoint::setBounceThreshold: invalid parameter");
 	data().bounceThreshold = bounceThreshold;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, contactBounceThreshold, static_cast<PxJoint&>(*this), getBounceThreshold())
-#endif
+
+	OMNI_PVD_SET(PxContactJoint, bounceThreshold, static_cast<PxContactJoint&>(*this), getBounceThreshold())
 }
 
 void ContactJoint::computeJacobians(PxJacobianRow* jacobian) const
@@ -153,11 +148,6 @@ void ContactJoint::computeJacobians(PxJacobianRow* jacobian) const
 PxU32 ContactJoint::getNbJacobianRows() const
 {
 	return 1;
-}
-
-static void ContactJointProject(const void* /*constantBlock*/, PxTransform& /*bodyAToWorld*/, PxTransform& /*bodyBToWorld*/, bool /*projectToA*/)
-{
-	// Not required
 }
 
 static void ContactJointVisualize(PxConstraintVisualizer& /*viz*/, const void* /*constantBlock*/, const PxTransform& /*body0Transform*/, const PxTransform& /*body1Transform*/, PxU32 /*flags*/)
@@ -211,7 +201,7 @@ static PxU32 ContactJointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gContactJointShaders = { ContactJointSolverPrep, ContactJointProject, ContactJointVisualize, PxConstraintFlag::Enum(0) };
+static PxConstraintShaderTable gContactJointShaders = { ContactJointSolverPrep, ContactJointVisualize, PxConstraintFlag::Enum(0) };
 
 PxConstraintSolverPrep ContactJoint::getPrep()	const	{ return gContactJointShaders.solverPrep; }
 
@@ -237,13 +227,15 @@ void ContactJoint::resolveReferences(PxDeserializationContext& context)
 template<>
 void physx::Ext::omniPvdInitJoint<ContactJoint>(ContactJoint* joint)
 {
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_SET(joint, type, j, PxJointConcreteType::eCONTACT)
-	OMNI_PVD_SET(joint, contactPoint, j, joint->getContact())
-	OMNI_PVD_SET(joint, contactNormal, j, joint->getContactNormal())
-	OMNI_PVD_SET(joint, contactPenetration, j, joint->getPenetration())
-	OMNI_PVD_SET(joint, contactRestitution, j, joint->getRestitution())
-	OMNI_PVD_SET(joint, contactBounceThreshold, j, joint->getBounceThreshold())
+	PxContactJoint& j = static_cast<PxContactJoint&>(*joint);
+	OMNI_PVD_CREATE(PxContactJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eCONTACT);
+	
+	OMNI_PVD_SET(PxContactJoint, point, j, joint->getContact())
+	OMNI_PVD_SET(PxContactJoint, normal, j, joint->getContactNormal())
+	OMNI_PVD_SET(PxContactJoint, penetration, j, joint->getPenetration())
+	OMNI_PVD_SET(PxContactJoint, restitution, j, joint->getRestitution())
+	OMNI_PVD_SET(PxContactJoint, bounceThreshold, j, joint->getBounceThreshold())
 }
 
 #endif

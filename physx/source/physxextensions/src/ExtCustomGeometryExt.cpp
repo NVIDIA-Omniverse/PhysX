@@ -185,7 +185,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	{
 		PxContactBuffer* contactBuffer;
 		ContactRecorder(PxContactBuffer& _contactBuffer) : contactBuffer(&_contactBuffer) {}
-		virtual bool recordContacts(const PxContactPoint* contactPoints, const PxU32 nbContacts, const PxU32 /*index*/)
+		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/)
 		{
 			for (PxU32 i = 0; i < nbContacts; ++i)
 				contactBuffer->contact(contactPoints[i]);
@@ -217,10 +217,15 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 		if (PxGjkQueryExt::generateContacts(*this, geomSupport, pose0, pose1, contactDistance, toleranceLength, contactBuffer))
 		{
 			PxGeometryHolder substituteGeom; PxTransform preTransform;
-			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, PxGeometryQuery::getWorldBounds(geom1, pose1).getCenter()))
+
+			PxBounds3 bounds;
+			PxGeometryQuery::computeGeomBounds(bounds, geom1, pose1, 0.0f, 1.01f);
+
+			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, bounds.getCenter()))
 			{
 				const PxGeometry* pGeom0 = &substituteGeom.any();
 				const PxGeometry* pGeom1 = &geom1;
+				// PT:: tag: scalar transform*transform
 				PxTransform pose = pose0.transform(preTransform);
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
@@ -248,6 +253,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			{
 				const PxGeometry* pGeom0 = &substituteGeom.any();
 				const PxGeometry* pGeom1 = &geom1;
+				// PT:: tag: scalar transform*transform
 				PxTransform pose = pose0.transform(preTransform);
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
@@ -279,6 +285,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, pos1))
 				{
 					const PxGeometry& geom = substituteGeom.any();
+					// PT:: tag: scalar transform*transform
 					PxTransform pose = pose0.transform(preTransform);
 					PxGeometryQuery::generateTriangleContacts(geom, pose, tri.verts, triangles[i], contactDistance, meshContactMargin, toleranceLength, contactBuffer);
 				}
@@ -303,12 +310,17 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			if (PxGjkQueryExt::generateContacts(*this, *custom1, pose0, pose1, contactDistance, toleranceLength, contactBuffer))
 			{
 				PxGeometryHolder substituteGeom; PxTransform preTransform;
-				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, PxGeometryQuery::getWorldBounds(geom1, pose1).getCenter()))
+
+				PxBounds3 bounds;
+				PxGeometryQuery::computeGeomBounds(bounds, geom1, pose1, 0.0f, 1.01f);
+
+				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, bounds.getCenter()))
 				{
 					PxU32 oldCount = contactBuffer.count;
 
 					const PxGeometry* pGeom0 = &substituteGeom.any();
 					const PxGeometry* pGeom1 = &geom1;
+					// PT:: tag: scalar transform*transform
 					PxTransform pose = pose0.transform(preTransform);
 					immediate::PxGenerateContacts(&pGeom1, &pGeom0, &pose1, &pose, &contactCache, 1, contactRecorder,
 						contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
@@ -774,6 +786,7 @@ bool PxCustomGeometryExt::ConeCallbacks::useSubstituteGeometry(PxGeometryHolder&
 		PxVec3 axisDir(PxZero); axisDir[axis] = 1.0f;
 		float n1 = -locN[(axis + 1) % 3], n2 = -locN[(axis + 2) % 3];
 		float ang = atan2f(n2, n1);
+		// PT:: tag: scalar transform*transform
 		preTransform = PxTransform(PxQuat(ang, axisDir)) * preTransform;
 		return true;
 	}

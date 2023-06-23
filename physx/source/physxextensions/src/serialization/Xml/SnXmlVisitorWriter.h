@@ -748,7 +748,7 @@ namespace physx { namespace Sn {
 
 		void handleGeomProperty( const PxShapeGeomProperty& inProp )
 		{
-			switch( mObj->getGeometryType() )
+			switch( mObj->getGeometry().getType() )
 			{
 				case PxGeometryType::eSPHERE: writeGeomProperty<PxSphereGeometry>( inProp, "PxSphereGeometry" ); break;
 				case PxGeometryType::ePLANE: writeGeomProperty<PxPlaneGeometry>( inProp, "PxPlaneGeometry" ); break;

@@ -101,9 +101,7 @@ SET(LL_SOFTWARE_HEADERS
 	${LL_SOFTWARE_DIR}/include/PxsContactManager.h
 	${LL_SOFTWARE_DIR}/include/PxsContactManagerState.h
 	${LL_SOFTWARE_DIR}/include/PxsContext.h
-	${LL_SOFTWARE_DIR}/include/PxsDefaultMemoryManager.h
 	${LL_SOFTWARE_DIR}/include/PxsHeapMemoryAllocator.h
-	${LL_SOFTWARE_DIR}/include/PxsIncrementalConstraintPartitioning.h
 	${LL_SOFTWARE_DIR}/include/PxsIslandManagerTypes.h
 	${LL_SOFTWARE_DIR}/include/PxsIslandSim.h
 	${LL_SOFTWARE_DIR}/include/PxsKernelWrangler.h

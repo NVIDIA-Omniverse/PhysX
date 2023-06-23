@@ -22,7 +22,7 @@ else
 	PM_CURL_SILENT="-s -S"
 	PM_WGET_QUIET="--quiet"
 fi
-PM_PACKMAN_VERSION=6.46
+PM_PACKMAN_VERSION=6.56
 
 # This is necessary for newer macOS
 if [ `uname` == 'Darwin' ]; then
@@ -42,9 +42,13 @@ export PM_INSTALL_PATH="$(get_abs_filename "$(dirname "${BASH_SOURCE}")")"
 if [ -z "${PM_PACKAGES_ROOT:-}" ]; then
 	# Set variable temporarily in this process so that the following execution will work
 	if [ `uname` == 'Darwin' ]; then
-		export PM_PACKAGES_ROOT="/Library/Caches/packman"
+		export PM_PACKAGES_ROOT="${HOME}/Library/Application Support/packman-cache"
 	else
-		export PM_PACKAGES_ROOT="/var/tmp/packman"
+		if [ -z "${XDG_CACHE_HOME:-}" ]; then
+			export PM_PACKAGES_ROOT="${HOME}/.cache/packman"
+		else
+			export PM_PACKAGES_ROOT="${XDG_CACHE_HOME}/packman"
+		fi
 	fi
 fi
 
@@ -151,7 +155,7 @@ if [ ! -f "$PM_MODULE" ]; then
 fi
 
 # Ensure 7za package exists:
-PM_7za_VERSION=16.02.4
+PM_7za_VERSION=22.01-1
 export PM_7za_PATH="$PM_PACKAGES_ROOT/7za/$PM_7za_VERSION"
 if [ ! -d "$PM_7za_PATH" ]; then
     export PM_7za_PATH="$PM_PACKAGES_ROOT/chk/7za/$PM_7za_VERSION"

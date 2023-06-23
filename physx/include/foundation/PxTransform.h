@@ -54,11 +54,11 @@ class PxTransformT
 	{
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE explicit PxTransformT(const PxVec3T<Type>& position) : q(PxIdentity), p(position)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE explicit PxTransformT(PxIDENTITY) : q(PxIdentity), p(PxZero)
 	{
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE explicit PxTransformT(PxIDENTITY) : q(PxIdentity), p(PxZero)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE explicit PxTransformT(const PxVec3T<Type>& position) : q(PxIdentity), p(position)
 	{
 	}
 
@@ -67,8 +67,7 @@ class PxTransformT
 		PX_ASSERT(orientation.isSane());
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT(Type x, Type y, Type z, PxQuatT<Type> aQ = PxQuatT<Type>(PxIdentity)) :
-		q(aQ), p(x, y, z)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT(Type x, Type y, Type z, PxQuatT<Type> aQ = PxQuatT<Type>(PxIdentity)) : q(aQ), p(x, y, z)
 	{
 	}
 
@@ -79,13 +78,13 @@ class PxTransformT
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE explicit PxTransformT(const PxMat44T<Type>& m); // defined in PxMat44.h
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE void operator=(const PxTransformT& other)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT(const PxTransformT& other)
 	{
 		p = other.p;
 		q = other.q;
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT(const PxTransformT& other)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void operator=(const PxTransformT& other)
 	{
 		p = other.p;
 		q = other.q;
@@ -116,6 +115,14 @@ class PxTransformT
 	{
 		PX_ASSERT(isFinite());
 		return PxTransformT(q.rotateInv(-p), q.getConjugate());
+	}
+
+	/**
+	\brief return a normalized transform (i.e. one in which the quaternion has unit magnitude)
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT getNormalized() const
+	{
+		return PxTransformT(p, q.getNormalized());
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3T<Type> transform(const PxVec3T<Type>& input) const
@@ -151,6 +158,16 @@ class PxTransformT
 		return PxTransformT(q.rotate(src.p) + p, q * src.q);
 	}
 
+	//! Transform transform from parent (returns compound transform: first src, then this->inverse)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT transformInv(const PxTransformT& src) const
+	{
+		PX_ASSERT(src.isSane());
+		PX_ASSERT(isFinite());
+		// src = [srct, srcr] -> [r^-1*(srct-t), r^-1*srcr]
+		const PxQuatT<Type> qinv = q.getConjugate();
+		return PxTransformT(qinv.rotate(src.p - p), qinv * src.q);
+	}
+
 	/**
 	\brief returns true if finite and q is a unit quaternion
 	*/
@@ -175,24 +192,6 @@ class PxTransformT
 	{
 		return p.isFinite() && q.isFinite();
 	}
-
-	//! Transform transform from parent (returns compound transform: first src, then this->inverse)
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT transformInv(const PxTransformT& src) const
-	{
-		PX_ASSERT(src.isSane());
-		PX_ASSERT(isFinite());
-		// src = [srct, srcr] -> [r^-1*(srct-t), r^-1*srcr]
-		const PxQuatT<Type> qinv = q.getConjugate();
-		return PxTransformT(qinv.rotate(src.p - p), qinv * src.q);
-	}
-
-	/**
-	\brief return a normalized transform (i.e. one in which the quaternion has unit magnitude)
-	*/
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxTransformT getNormalized() const
-	{
-		return PxTransformT(p, q.getNormalized());
-	}
 };
 
 typedef PxTransformT<float>		PxTransform;
@@ -205,9 +204,48 @@ This can be used for safe faster loads & stores, and faster address computations
 (the default PxTransformT often generating imuls for this otherwise). Padding bytes
 can be reused to store useful data if needed.
 */
-struct PX_ALIGN_PREFIX(16) PxTransformPadded
+struct PX_ALIGN_PREFIX(16) PxTransformPadded : PxTransform
 {
-	PxTransform	transform;
+	PX_FORCE_INLINE PxTransformPadded()
+	{
+	}
+
+	PX_FORCE_INLINE PxTransformPadded(const PxTransformPadded& other) : PxTransform(other)
+	{
+	}
+
+	PX_FORCE_INLINE explicit PxTransformPadded(const PxTransform& other) : PxTransform(other)
+	{
+	}
+
+	PX_FORCE_INLINE explicit PxTransformPadded(PxIDENTITY) : PxTransform(PxIdentity)
+	{
+	}
+
+	PX_FORCE_INLINE explicit PxTransformPadded(const PxVec3& position) : PxTransform(position)
+	{
+	}
+
+	PX_FORCE_INLINE explicit PxTransformPadded(const PxQuat& orientation) : PxTransform(orientation)
+	{
+	}
+
+	PX_FORCE_INLINE PxTransformPadded(const PxVec3& p0, const PxQuat& q0) : PxTransform(p0, q0)
+	{
+	}
+
+	PX_FORCE_INLINE void operator=(const PxTransformPadded& other)
+	{
+		p = other.p;
+		q = other.q;
+	}
+
+	PX_FORCE_INLINE void operator=(const PxTransform& other)
+	{
+		p = other.p;
+		q = other.q;
+	}
+
 	PxU32		padding;
 }
 PX_ALIGN_SUFFIX(16);

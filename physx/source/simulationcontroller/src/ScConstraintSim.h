@@ -46,25 +46,18 @@ namespace Sc
 
 	class ConstraintSim : public PxUserAllocated 
 	{
+		PX_NOCOPY(ConstraintSim)
 	public:
 		enum Enum
 		{
-			ePENDING_GROUP_UPDATE		=	(1<<0),	// For constraint projection an island of the bodies connected by constraints is generated.
-													// Schedule generation/update of the island this constraint is a part of.
 			eBREAKABLE					=	(1<<1),	// The constraint can break
 			eCHECK_MAX_FORCE_EXCEEDED	=	(1<<2),	// This constraint will get tested for breakage at the end of the sim step
 			eBROKEN						=	(1<<3)
 		};
-												ConstraintSim(ConstraintCore& core, 
-													RigidCore* r0,
-													RigidCore* r1,
-													Scene& scene);
-
+												ConstraintSim(ConstraintCore& core, RigidCore* r0, RigidCore* r1, Scene& scene);
 												~ConstraintSim();
 
 						void					setBodies(RigidCore* r0, RigidCore* r1);
-
-						void					checkMaxForceExceeded();
 
 						void					setBreakForceLL(PxReal linear, PxReal angular);
 		PX_FORCE_INLINE	void					setMinResponseThresholdLL(PxReal threshold)	{ mLowLevelConstraint.minResponseThreshold = threshold;	}
@@ -80,8 +73,6 @@ namespace Sc
 													return mBodies[i];
 												}
 
-						RigidSim&				getRigid(PxU32 i);
-
 						void					getForce(PxVec3& force, PxVec3& torque);
 
 		PX_FORCE_INLINE	PxU8					readFlag(PxU8 flag)	const	{ return PxU8(mFlags & flag);						}
@@ -91,30 +82,14 @@ namespace Sc
 
 		PX_FORCE_INLINE const ConstraintInteraction*	getInteraction() const { return mInteraction; }
 
-		//------------------------------------ Projection trees -----------------------------------------
 	private:
-		PX_INLINE		BodySim*				getConstraintGroupBody();
-
-	public:
-						bool					hasDynamicBody();
-
-						void					projectPose(BodySim* childBody, PxArray<BodySim*>& projectedBodies);
-		PX_FORCE_INLINE	BodySim*				getOtherBody(BodySim* b)	{ return (b == mBodies[0]) ? mBodies[1] : mBodies[0];	}
-		PX_FORCE_INLINE	BodySim*				getAnyBody()				{ return mBodies[0] ? mBodies[0] : mBodies[1];			}
-
-						bool					needsProjection();
-		//-----------------------------------------------------------------------------------------------
-
-						void					visualize(PxRenderBuffer &out);
-	private:
-						ConstraintSim&			operator=(const ConstraintSim&);
 						bool					createLLConstraint();
 						void					destroyLLConstraint();
-	private:
+
 						Dy::Constraint			mLowLevelConstraint;
 						Scene&					mScene;
 						ConstraintCore&			mCore;
-						ConstraintInteraction*	mInteraction;
+						ConstraintInteraction*	mInteraction;	// PT: why do we have an interaction object here?
 						BodySim*				mBodies[2];
 						PxU8					mFlags;
 	};

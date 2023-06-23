@@ -60,9 +60,6 @@ PxConvexMesh * createPxPhysics_ConvexMeshes( PxPhysics* inObj, PxInputStream & i
 PxU32 getPxPhysics_BVHs( const PxPhysics* inObj, PxBVH ** outBuffer, PxU32 inBufSize ) { return inObj->getBVHs( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_BVHs( const PxPhysics* inObj ) { return inObj->getNbBVHs(  ); }
 PxBVH * createPxPhysics_BVHs( PxPhysics* inObj, PxInputStream & inCreateParam ){ return inObj->createBVH( inCreateParam ); }
-PxU32 getPxPhysics_BVHStructures( const PxPhysics* inObj, PxBVHStructure ** outBuffer, PxU32 inBufSize ) { return inObj->getBVHStructures( outBuffer, inBufSize ); }
-PxU32 getNbPxPhysics_BVHStructures( const PxPhysics* inObj ) { return inObj->getNbBVHStructures(  ); }
-PxBVHStructure * createPxPhysics_BVHStructures( PxPhysics* inObj, PxInputStream & inCreateParam ){ return inObj->createBVHStructure( inCreateParam ); }
 PxU32 getPxPhysics_Scenes( const PxPhysics* inObj, PxScene ** outBuffer, PxU32 inBufSize ) { return inObj->getScenes( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_Scenes( const PxPhysics* inObj ) { return inObj->getNbScenes(  ); }
 PxScene * createPxPhysics_Scenes( PxPhysics* inObj, const PxSceneDesc & inCreateParam ){ return inObj->createScene( inCreateParam ); }
@@ -76,9 +73,6 @@ PxU32 getPxPhysics_FEMClothMaterials( const PxPhysics* inObj, PxFEMClothMaterial
 PxU32 getNbPxPhysics_FEMClothMaterials( const PxPhysics* inObj ) { return inObj->getNbFEMClothMaterials(  ); }
 PxU32 getPxPhysics_PBDMaterials( const PxPhysics* inObj, PxPBDMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getPBDMaterials( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_PBDMaterials( const PxPhysics* inObj ) { return inObj->getNbPBDMaterials(  ); }
-PxU32 getPxPhysics_CustomMaterials( const PxPhysics* inObj, PxCustomMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getCustomMaterials( outBuffer, inBufSize ); }
-PxU32 getNbPxPhysics_CustomMaterials( const PxPhysics* inObj ) { return inObj->getNbCustomMaterials(  ); }
-PxCustomMaterial * createPxPhysics_CustomMaterials( PxPhysics* inObj, void * inCreateParam ){ return inObj->createCustomMaterial( inCreateParam ); }
 PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
 	: TolerancesScale( "TolerancesScale", getPxPhysics_TolerancesScale)
 	, TriangleMeshes( "TriangleMeshes", getPxPhysics_TriangleMeshes, getNbPxPhysics_TriangleMeshes, createPxPhysics_TriangleMeshes )
@@ -86,14 +80,12 @@ PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
 	, HeightFields( "HeightFields", getPxPhysics_HeightFields, getNbPxPhysics_HeightFields, createPxPhysics_HeightFields )
 	, ConvexMeshes( "ConvexMeshes", getPxPhysics_ConvexMeshes, getNbPxPhysics_ConvexMeshes, createPxPhysics_ConvexMeshes )
 	, BVHs( "BVHs", getPxPhysics_BVHs, getNbPxPhysics_BVHs, createPxPhysics_BVHs )
-	, BVHStructures( "BVHStructures", getPxPhysics_BVHStructures, getNbPxPhysics_BVHStructures, createPxPhysics_BVHStructures )
 	, Scenes( "Scenes", getPxPhysics_Scenes, getNbPxPhysics_Scenes, createPxPhysics_Scenes )
 	, Shapes( "Shapes", getPxPhysics_Shapes, getNbPxPhysics_Shapes )
 	, Materials( "Materials", getPxPhysics_Materials, getNbPxPhysics_Materials )
 	, FEMSoftBodyMaterials( "FEMSoftBodyMaterials", getPxPhysics_FEMSoftBodyMaterials, getNbPxPhysics_FEMSoftBodyMaterials )
 	, FEMClothMaterials( "FEMClothMaterials", getPxPhysics_FEMClothMaterials, getNbPxPhysics_FEMClothMaterials )
 	, PBDMaterials( "PBDMaterials", getPxPhysics_PBDMaterials, getNbPxPhysics_PBDMaterials )
-	, CustomMaterials( "CustomMaterials", getPxPhysics_CustomMaterials, getNbPxPhysics_CustomMaterials, createPxPhysics_CustomMaterials )
 {}
 PX_PHYSX_CORE_API PxPhysicsGeneratedValues::PxPhysicsGeneratedValues( const PxPhysics* inSource )
 		:TolerancesScale( getPxPhysics_TolerancesScale( inSource ) )
@@ -181,16 +173,20 @@ void setPxFEMSoftBodyMaterial_Damping( PxFEMSoftBodyMaterial* inObj, PxReal inAr
 PxReal getPxFEMSoftBodyMaterial_Damping( const PxFEMSoftBodyMaterial* inObj ) { return inObj->getDamping(); }
 void setPxFEMSoftBodyMaterial_DampingScale( PxFEMSoftBodyMaterial* inObj, PxReal inArg){ inObj->setDampingScale( inArg ); }
 PxReal getPxFEMSoftBodyMaterial_DampingScale( const PxFEMSoftBodyMaterial* inObj ) { return inObj->getDampingScale(); }
+void setPxFEMSoftBodyMaterial_MaterialModel( PxFEMSoftBodyMaterial* inObj, PxFEMSoftBodyMaterialModel::Enum inArg){ inObj->setMaterialModel( inArg ); }
+PxFEMSoftBodyMaterialModel::Enum getPxFEMSoftBodyMaterial_MaterialModel( const PxFEMSoftBodyMaterial* inObj ) { return inObj->getMaterialModel(); }
 const char * getPxFEMSoftBodyMaterial_ConcreteTypeName( const PxFEMSoftBodyMaterial* inObj ) { return inObj->getConcreteTypeName(); }
 PX_PHYSX_CORE_API PxFEMSoftBodyMaterialGeneratedInfo::PxFEMSoftBodyMaterialGeneratedInfo()
 	: Damping( "Damping", setPxFEMSoftBodyMaterial_Damping, getPxFEMSoftBodyMaterial_Damping)
 	, DampingScale( "DampingScale", setPxFEMSoftBodyMaterial_DampingScale, getPxFEMSoftBodyMaterial_DampingScale)
+	, MaterialModel( "MaterialModel", setPxFEMSoftBodyMaterial_MaterialModel, getPxFEMSoftBodyMaterial_MaterialModel)
 	, ConcreteTypeName( "ConcreteTypeName", getPxFEMSoftBodyMaterial_ConcreteTypeName)
 {}
 PX_PHYSX_CORE_API PxFEMSoftBodyMaterialGeneratedValues::PxFEMSoftBodyMaterialGeneratedValues( const PxFEMSoftBodyMaterial* inSource )
 		:PxFEMMaterialGeneratedValues( inSource )
 		,Damping( getPxFEMSoftBodyMaterial_Damping( inSource ) )
 		,DampingScale( getPxFEMSoftBodyMaterial_DampingScale( inSource ) )
+		,MaterialModel( getPxFEMSoftBodyMaterial_MaterialModel( inSource ) )
 		,ConcreteTypeName( getPxFEMSoftBodyMaterial_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -654,7 +650,6 @@ PX_PHYSX_CORE_API PxConstraintGeneratedValues::PxConstraintGeneratedValues( cons
 	getPxConstraint_Actors( inSource, Actors[0], Actors[1] );
 	getPxConstraint_BreakForce( inSource, BreakForce[0], BreakForce[1] );
 }
-PxGeometryType::Enum getPxShape_GeometryType( const PxShape* inObj ) { return inObj->getGeometryType(); }
 void setPxShape_LocalPose( PxShape* inObj, const PxTransform & inArg){ inObj->setLocalPose( inArg ); }
 PxTransform getPxShape_LocalPose( const PxShape* inObj ) { return inObj->getLocalPose(); }
 void setPxShape_SimulationFilterData( PxShape* inObj, const PxFilterData & inArg){ inObj->setSimulationFilterData( inArg ); }
@@ -673,6 +668,7 @@ void setPxShape_TorsionalPatchRadius( PxShape* inObj, PxReal inArg){ inObj->setT
 PxReal getPxShape_TorsionalPatchRadius( const PxShape* inObj ) { return inObj->getTorsionalPatchRadius(); }
 void setPxShape_MinTorsionalPatchRadius( PxShape* inObj, PxReal inArg){ inObj->setMinTorsionalPatchRadius( inArg ); }
 PxReal getPxShape_MinTorsionalPatchRadius( const PxShape* inObj ) { return inObj->getMinTorsionalPatchRadius(); }
+PxU32 getPxShape_InternalShapeIndex( const PxShape* inObj ) { return inObj->getInternalShapeIndex(); }
 void setPxShape_Flags( PxShape* inObj, PxShapeFlags inArg){ inObj->setFlags( inArg ); }
 PxShapeFlags getPxShape_Flags( const PxShape* inObj ) { return inObj->getFlags(); }
 _Bool getPxShape_IsExclusive( const PxShape* inObj ) { return inObj->isExclusive(); }
@@ -682,8 +678,7 @@ const char * getPxShape_ConcreteTypeName( const PxShape* inObj ) { return inObj-
 inline void * getPxShapeUserData( const PxShape* inOwner ) { return inOwner->userData; }
 inline void setPxShapeUserData( PxShape* inOwner, void * inData) { inOwner->userData = inData; }
 PX_PHYSX_CORE_API PxShapeGeneratedInfo::PxShapeGeneratedInfo()
-	: GeometryType( "GeometryType", getPxShape_GeometryType)
-	, LocalPose( "LocalPose", setPxShape_LocalPose, getPxShape_LocalPose)
+	: LocalPose( "LocalPose", setPxShape_LocalPose, getPxShape_LocalPose)
 	, SimulationFilterData( "SimulationFilterData", setPxShape_SimulationFilterData, getPxShape_SimulationFilterData)
 	, QueryFilterData( "QueryFilterData", setPxShape_QueryFilterData, getPxShape_QueryFilterData)
 	, Materials( "Materials", getPxShape_Materials, getNbPxShape_Materials )
@@ -692,6 +687,7 @@ PX_PHYSX_CORE_API PxShapeGeneratedInfo::PxShapeGeneratedInfo()
 	, DensityForFluid( "DensityForFluid", setPxShape_DensityForFluid, getPxShape_DensityForFluid)
 	, TorsionalPatchRadius( "TorsionalPatchRadius", setPxShape_TorsionalPatchRadius, getPxShape_TorsionalPatchRadius)
 	, MinTorsionalPatchRadius( "MinTorsionalPatchRadius", setPxShape_MinTorsionalPatchRadius, getPxShape_MinTorsionalPatchRadius)
+	, InternalShapeIndex( "InternalShapeIndex", getPxShape_InternalShapeIndex)
 	, Flags( "Flags", setPxShape_Flags, getPxShape_Flags)
 	, IsExclusive( "IsExclusive", getPxShape_IsExclusive)
 	, Name( "Name", setPxShape_Name, getPxShape_Name)
@@ -700,7 +696,6 @@ PX_PHYSX_CORE_API PxShapeGeneratedInfo::PxShapeGeneratedInfo()
 {}
 PX_PHYSX_CORE_API PxShapeGeneratedValues::PxShapeGeneratedValues( const PxShape* inSource )
 		:PxRefCountedGeneratedValues( inSource )
-		,GeometryType( getPxShape_GeometryType( inSource ) )
 		,LocalPose( getPxShape_LocalPose( inSource ) )
 		,SimulationFilterData( getPxShape_SimulationFilterData( inSource ) )
 		,QueryFilterData( getPxShape_QueryFilterData( inSource ) )
@@ -709,6 +704,7 @@ PX_PHYSX_CORE_API PxShapeGeneratedValues::PxShapeGeneratedValues( const PxShape*
 		,DensityForFluid( getPxShape_DensityForFluid( inSource ) )
 		,TorsionalPatchRadius( getPxShape_TorsionalPatchRadius( inSource ) )
 		,MinTorsionalPatchRadius( getPxShape_MinTorsionalPatchRadius( inSource ) )
+		,InternalShapeIndex( getPxShape_InternalShapeIndex( inSource ) )
 		,Flags( getPxShape_Flags( inSource ) )
 		,IsExclusive( getPxShape_IsExclusive( inSource ) )
 		,Name( getPxShape_Name( inSource ) )
@@ -923,6 +919,8 @@ PxSceneFlags getPxScene_Flags( const PxScene* inObj ) { return inObj->getFlags()
 void setPxScene_Limits( PxScene* inObj, const PxSceneLimits & inArg){ inObj->setLimits( inArg ); }
 PxSceneLimits getPxScene_Limits( const PxScene* inObj ) { return inObj->getLimits(); }
 PxU32 getPxScene_Timestamp( const PxScene* inObj ) { return inObj->getTimestamp(); }
+void setPxScene_Name( PxScene* inObj, const char * inArg){ inObj->setName( inArg ); }
+const char * getPxScene_Name( const PxScene* inObj ) { return inObj->getName(); }
 PxU32 getPxScene_Actors( const PxScene* inObj, PxActorTypeFlags inFilter, PxActor ** outBuffer, PxU32 inBufSize ) { return inObj->getActors( inFilter, outBuffer, inBufSize ); }
 PxU32 getNbPxScene_Actors( const PxScene* inObj, PxActorTypeFlags inFilter ) { return inObj->getNbActors( inFilter ); }
 PxU32 getPxScene_SoftBodies( const PxScene* inObj, PxSoftBody ** outBuffer, PxU32 inBufSize ) { return inObj->getSoftBodies( outBuffer, inBufSize ); }
@@ -987,6 +985,7 @@ PX_PHYSX_CORE_API PxSceneGeneratedInfo::PxSceneGeneratedInfo()
 	: Flags( "Flags", getPxScene_Flags)
 	, Limits( "Limits", setPxScene_Limits, getPxScene_Limits)
 	, Timestamp( "Timestamp", getPxScene_Timestamp)
+	, Name( "Name", setPxScene_Name, getPxScene_Name)
 	, Actors( "Actors", getPxScene_Actors, getNbPxScene_Actors )
 	, SoftBodies( "SoftBodies", getPxScene_SoftBodies, getNbPxScene_SoftBodies )
 	, Articulations( "Articulations", getPxScene_Articulations, getNbPxScene_Articulations )
@@ -1031,6 +1030,7 @@ PX_PHYSX_CORE_API PxSceneGeneratedValues::PxSceneGeneratedValues( const PxScene*
 		,Flags( getPxScene_Flags( inSource ) )
 		,Limits( getPxScene_Limits( inSource ) )
 		,Timestamp( getPxScene_Timestamp( inSource ) )
+		,Name( getPxScene_Name( inSource ) )
 		,CpuDispatcher( getPxScene_CpuDispatcher( inSource ) )
 		,CudaContextManager( getPxScene_CudaContextManager( inSource ) )
 		,SimulationEventCallback( getPxScene_SimulationEventCallback( inSource ) )

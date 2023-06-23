@@ -109,7 +109,7 @@ namespace Snippets
 	void	initFPS();
 	void	showFPS(int updateIntervalMS = 30, const char* info = NULL);
 
-	void	renderSoftBody(physx::PxSoftBody* softBody, const physx::PxArray<physx::PxVec4>& deformedPositionsInvMass, bool shadows, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f));
+	void	renderSoftBody(physx::PxSoftBody* softBody, const physx::PxVec4* deformedPositionsInvMass, bool shadows, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f));
 	void	renderActors(physx::PxRigidActor** actors, const physx::PxU32 numActors, bool shadows = false, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f), TriggerRender* cb = NULL, bool changeColorForSleepingActors = true, bool wireframePass=true);
 //	void	renderGeoms(const physx::PxU32 nbGeoms, const physx::PxGeometry* geoms, const physx::PxTransform* poses, bool shadows, const physx::PxVec3& color);
 	void	renderGeoms(const physx::PxU32 nbGeoms, const physx::PxGeometryHolder* geoms, const physx::PxTransform* poses, bool shadows, const physx::PxVec3& color);

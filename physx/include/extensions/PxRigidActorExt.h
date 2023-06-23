@@ -42,7 +42,6 @@ namespace physx
 #endif
 
 class PxBVH;
-class PxCooking;
 
 /**
 \brief utility functions for use with PxRigidActor and subclasses

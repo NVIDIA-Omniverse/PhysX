@@ -76,6 +76,13 @@ namespace physx
 		*/
 		virtual void					release() = 0;
 
+		/**
+		\brief Get the inverse mass of each vertex of the tetrahedron mesh.
+
+		\return PxReal* A pointer to an array of inverse mass for each vertex of the tetrahedron mesh. Size: number of vertices * sizeof(PxReal).
+		 */
+		virtual PxReal*					getGridModelInvMass() = 0;
+
 	protected:
 		PX_INLINE						PxSoftBodyAuxData(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags) {}
 		PX_INLINE						PxSoftBodyAuxData(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}

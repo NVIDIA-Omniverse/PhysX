@@ -40,23 +40,21 @@ using namespace physx;
 using namespace Gu;
 using namespace aos;
 
-static bool fullContactsGenerationCapsuleConvex(const CapsuleV& capsule, const ConvexHullV& convexHull,  const PxMatTransformV& aToB, const PxTransformV& transf0,const PxTransformV& transf1,
-								PersistentContact* manifoldContacts, PxContactBuffer& contactBuffer, const bool idtScale, PersistentContactManifold& manifold, Vec3VArg normal, 
-								const Vec3VArg closest, const PxReal tolerance, const FloatVArg contactDist, const bool doOverlapTest, PxRenderOutput* renderOutput, const PxReal toleranceLength)
+static bool fullContactsGenerationCapsuleConvex(const CapsuleV& capsule, const ConvexHullV& convexHull, const PxMatTransformV& aToB, const PxTransformV& transf0,const PxTransformV& transf1,
+												PersistentContact* manifoldContacts, PxContactBuffer& contactBuffer, bool idtScale, PersistentContactManifold& manifold, Vec3VArg normal, 
+												const Vec3VArg closest, PxReal tolerance, const FloatVArg contactDist, bool doOverlapTest, PxRenderOutput* renderOutput, PxReal toleranceLength)
 {
-
 	PX_UNUSED(renderOutput);
 	Gu::PolygonalData polyData;
 	getPCMConvexData(convexHull,idtScale, polyData);
 
-	PxU8 buff[sizeof(SupportLocalImpl<ConvexHullV>)];
+	PX_ALIGN(16, PxU8 buff[sizeof(SupportLocalImpl<ConvexHullV>)]);
 	SupportLocal* map = (idtScale ? static_cast<SupportLocal*>(PX_PLACEMENT_NEW(buff, SupportLocalImpl<ConvexHullNoScaleV>)(static_cast<const ConvexHullNoScaleV&>(convexHull), transf1, convexHull.vertex2Shape, convexHull.shape2Vertex, idtScale)) : 
 	static_cast<SupportLocal*>(PX_PLACEMENT_NEW(buff, SupportLocalImpl<ConvexHullV>)(convexHull, transf1, convexHull.vertex2Shape, convexHull.shape2Vertex, idtScale)));
 
 	PxU32 numContacts = 0;
 	if (generateFullContactManifold(capsule, polyData, map, aToB, manifoldContacts, numContacts, contactDist, normal, closest, tolerance, doOverlapTest, toleranceLength))
 	{
-
 		if (numContacts > 0)
 		{
 			manifold.addBatchManifoldContacts2(manifoldContacts, numContacts);
@@ -125,7 +123,6 @@ bool Gu::pcmContactCapsuleConvex(GU_CONTACT_METHOD_ARGS)
 
 	GjkStatus status = manifold.mNumContacts > 0 ? GJK_UNDEFINED : GJK_NON_INTERSECT;
 
-	PX_UNUSED(bLostContacts);
 	if(bLostContacts || manifold.invalidate_SphereCapsule(curRTrans, minMargin))
 	{
 		const bool idtScale = shapeConvex.scale.isIdentity();
@@ -208,15 +205,12 @@ bool Gu::pcmContactCapsuleConvex(GU_CONTACT_METHOD_ARGS)
 
 					//Add contact to manifold
 					manifold.addManifoldPoint2(localPointA, output.closestB, localNormalPen, replaceBreakingThreshold);
-					
-
 				}
 				else
 				{
 					doOverlapTest = true;   
 				}
 			}
-
 		
 			if(initialContacts == 0 || bLostContacts || doOverlapTest)
 			{

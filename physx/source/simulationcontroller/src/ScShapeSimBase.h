@@ -36,8 +36,8 @@ namespace physx
 {
 	namespace Sc
 	{
-
 		PX_FORCE_INLINE PxU32 isBroadPhase(PxShapeFlags flags) { return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSIMULATION_SHAPE); }
+
 		class ShapeCore;
 
 		// PT: TODO: ShapeSimBase is bonkers:
@@ -52,14 +52,8 @@ namespace physx
 
 		class ShapeSimBase : public ElementSim
 		{
-			ShapeSimBase &operator=(const ShapeSimBase &);
+			PX_NOCOPY(ShapeSimBase)
 		public:
-
-			// passing in a pointer for the shape to output its bounds allows us not to have to compute them twice.
-			// A neater way to do this would be to ask the AABB Manager for the bounds after the shape has been 
-			// constructed, but there is currently no spec for what the AABBMgr is allowed to do with the bounds, 
-			// hence better not to assume anything.
-
 													ShapeSimBase(ActorSim& owner, const ShapeCore* core) :
 														ElementSim	(owner),
 														mSqBoundsId	(PX_INVALID_U32),
@@ -136,7 +130,7 @@ namespace physx
 
 		PX_FORCE_INLINE void ShapeSimBase::setCore(const ShapeCore* core)
 		{
-			mLLShape.mShapeCore = const_cast<PxsShapeCore*>(&core->getCore());
+			mLLShape.mShapeCore = core ? const_cast<PxsShapeCore*>(&core->getCore()) : NULL;
 		}
 		PX_FORCE_INLINE const ShapeCore& ShapeSimBase::getCore() const
 		{

@@ -73,9 +73,6 @@ void cleanup()
 
 void exitCallback(void)
 {
-#if PX_WINDOWS
-		cleanup();
-#endif
 }
 }
 
@@ -88,8 +85,6 @@ void renderLoop()
 	initPhysics(true);
 	glutMainLoop();
 	
-#if PX_LINUX_FAMILY
 	cleanup();
-#endif
 }
 #endif

@@ -37,29 +37,50 @@ namespace physx
 {
 #endif
 	
-	/**
-	\brief These flags determine what data is read or written to the gpu softbody.
+/**
+\brief Identifies the buffers of a PxSoftBody.
 
-	@see PxScene::copySoftBodyData, PxScene::applySoftBodyData
-	*/
-	class PxSoftBodyDataFlag
+@see PxSoftBody::markDirty()
+*/
+struct PxSoftBodyDataFlag
+{
+	enum Enum
 	{
-	public:
-		enum Enum
-		{
-			eTET_INDICES = 0,			//!< The collision mesh tetrahedron indices (quadruples of int32)
-			eTET_STRESS = 1,			//!< The collision mesh cauchy stress tensors (float 3x3 matrices)
-			eTET_STRESSCOEFF = 2,		//!< The collision mesh tetrahedron von Mises stress (float scalar)
-			eTET_REST_POSES = 3,		//!< The collision mesh tetrahedron rest poses (float 3x3 matrices)
-			eTET_ROTATIONS = 4,			//!< The collision mesh tetrahedron orientations (quaternions, quadruples of float)
-			eTET_POSITION_INV_MASS = 5,	//!< The collision mesh vertex positions and their inverted mass in the 4th component (quadruples of float)
-			eSIM_TET_INDICES = 6,		//!< The simulation mesh tetrahedron indices (quadruples of int32)
-			eSIM_VELOCITY_INV_MASS = 7,	//!< The simulation mesh vertex velocities and their inverted mass in the 4th component (quadruples of float)
-			eSIM_POSITION_INV_MASS = 8,	//!< The simulation mesh vertex positions and their inverted mass in the 4th component (quadruples of float)
-			eSIM_KINEMATIC_TARGET = 9	//!< The simulation mesh kinematic target positions
-		};
+		eNONE = 0,
+
+		ePOSITION_INVMASS = 1 << 0,             //!< The collision mesh's positions
+		eSIM_POSITION_INVMASS = 1 << 1,         //!< The simulation mesh's positions and inverse masses
+		eSIM_VELOCITY = 1 << 2,                 //!< The simulation mesh's velocities
+		eREST_POSITION_INVMASS = 1 << 3,        //!< The collision mesh's rest positions
+
+		eALL = ePOSITION_INVMASS | eSIM_POSITION_INVMASS | eSIM_VELOCITY | eREST_POSITION_INVMASS
 	};
-	
+};
+
+typedef PxFlags<PxSoftBodyDataFlag::Enum, PxU32> PxSoftBodyDataFlags;
+
+/**
+\brief These flags determine what data is read or written when using PxScene::copySoftBodyData()
+or PxScene::applySoftBodyData.
+
+@see PxScene::copySoftBodyData, PxScene::applySoftBodyData
+*/
+class PxSoftBodyGpuDataFlag
+{
+public:
+	enum Enum
+	{
+		eTET_INDICES = 0,			//!< The collision mesh tetrahedron indices (quadruples of int32)
+		eTET_REST_POSES = 1,		//!< The collision mesh tetrahedron rest poses (float 3x3 matrices)
+		eTET_ROTATIONS = 2,			//!< The collision mesh tetrahedron orientations (quaternions, quadruples of float)
+		eTET_POSITION_INV_MASS = 3,	//!< The collision mesh vertex positions and their inverted mass in the 4th component (quadruples of float)
+		eSIM_TET_INDICES = 4,		//!< The simulation mesh tetrahedron indices (quadruples of int32)
+		eSIM_TET_ROTATIONS = 5,		//!< The simulation mesh tetrahedron orientations (quaternions, quadruples of float)
+		eSIM_VELOCITY_INV_MASS = 6,	//!< The simulation mesh vertex velocities and their inverted mass in the 4th component (quadruples of float)
+		eSIM_POSITION_INV_MASS = 7  //!< The simulation mesh vertex positions and their inverted mass in the 4th component (quadruples of float)
+	};
+};
+
 #if !PX_DOXYGEN
 }
 #endif

@@ -47,13 +47,6 @@ namespace Gu
 
 	struct HullPolygonData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		// PT: this structure won't be allocated with PX_NEW because polygons aren't allocated alone (with a dedicated alloc).
 		// Instead they are part of a unique allocation/buffer containing all data for the ConvexHullData class (polygons, followed by
 		// hull vertices, edge data, etc). As a result, ctors for embedded classes like PxPlane won't be called.
@@ -85,12 +78,6 @@ namespace Gu
 // TEST_INTERNAL_OBJECTS
 	struct InternalObjectsData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 		PxReal	mRadius;
 		PxReal	mExtents[3];
 
@@ -107,13 +94,6 @@ namespace Gu
 
 	struct ConvexHullData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		// PT: WARNING: bounds must be followed by at least 32bits of data for safe SIMD loading
 		CenterExtents		mAABB;				//!< bounds TODO: compute this on the fly from first 6 vertices in the vertex array.  We'll of course need to sort the most extreme ones to the front.
 		PxVec3				mCenterOfMass;		//in local space of mesh!

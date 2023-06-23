@@ -241,7 +241,7 @@ public:
 	PX_INLINE		void				scSetFlags(PxRigidBodyFlags f)
 										{
 											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbidden());
-											mCore.setFlags(RigidActorTemplateClass::getNpScene() ? RigidActorTemplateClass::getNpScene()->getScScene().getSimStateDataPool() : NULL, f);
+											mCore.setFlags(f);
 											UPDATE_PVD_PROPERTY_BODY
 										}
 
@@ -249,7 +249,7 @@ public:
 										{
 											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbiddenExceptSplitSim());
 
-											mCore.addSpatialAcceleration(RigidActorTemplateClass::getNpScene()->getScScene().getSimStateDataPool(), linAcc, angAcc);
+											mCore.addSpatialAcceleration(linAcc, angAcc);
 											//Spatial acceleration isn't sent to PVD.
 										}
 
@@ -257,7 +257,7 @@ public:
 										{
 											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbiddenExceptSplitSim());
 
-											mCore.setSpatialAcceleration(RigidActorTemplateClass::getNpScene()->getScScene().getSimStateDataPool(), linAcc, angAcc);
+											mCore.setSpatialAcceleration(linAcc, angAcc);
 											//Spatial acceleration isn't sent to PVD.
 										}
 
@@ -273,7 +273,7 @@ public:
 										{
 											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbiddenExceptSplitSim());
 
-											mCore.addSpatialVelocity(RigidActorTemplateClass::getNpScene()->getScScene().getSimStateDataPool(), linVelDelta, angVelDelta);
+											mCore.addSpatialVelocity(linVelDelta, angVelDelta);
 											UPDATE_PVD_PROPERTY_BODY
 										}
 
@@ -335,10 +335,11 @@ namespace
 {
 	PX_FORCE_INLINE static bool hasNegativeMass(const PxShape& shape)
 	{
-		const PxGeometryType::Enum t = shape.getGeometryType();
+		const PxGeometry& geom = shape.getGeometry();
+		const PxGeometryType::Enum t = geom.getType();
 		if (t == PxGeometryType::eTRIANGLEMESH)
 		{
-			const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(shape.getGeometry());
+			const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
 			const Gu::TriangleMesh* mesh = static_cast<const Gu::TriangleMesh*>(triGeom.triangleMesh);
 			return mesh->getSdfDataFast().mSdf != NULL && mesh->getMass() < 0.f;
 		}
@@ -354,7 +355,7 @@ namespace
 
 	PX_FORCE_INLINE static bool isSimGeom(const PxShape& shape)
 	{
-		const PxGeometryType::Enum t = shape.getGeometryType();
+		const PxGeometryType::Enum t = shape.getGeometry().getType();
 		return t != PxGeometryType::ePLANE && t != PxGeometryType::eHEIGHTFIELD && t != PxGeometryType::eTETRAHEDRONMESH &&
 			(t != PxGeometryType::eTRIANGLEMESH || isDynamicMesh(shape.getGeometry()));
 	}
@@ -395,10 +396,7 @@ void NpRigidBodyTemplate<APIClass>::setCMassLocalPoseInternal(const PxTransform&
 
 	RigidActorTemplateClass::updateShaderComs();
 
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, cMassLocalPose, *actor, body2Actor)
-#endif
+	OMNI_PVD_SET(PxRigidBody, cMassLocalPose, static_cast<PxRigidBody&>(*this), body2Actor)
 }
 
 template<class APIClass>
@@ -424,10 +422,7 @@ void NpRigidBodyTemplate<APIClass>::setMass(PxReal mass)
 
 	UPDATE_PVD_PROPERTY_BODY
 
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, mass, *actor, mass)
-#endif
+	OMNI_PVD_SET(PxRigidBody, mass, static_cast<PxRigidBody&>(*this), mass)
 }
 
 template<class APIClass>
@@ -461,10 +456,7 @@ void NpRigidBodyTemplate<APIClass>::setMassSpaceInertiaTensor(const PxVec3& m)
 	mCore.setInverseInertia(invertDiagInertia(m));
 	UPDATE_PVD_PROPERTY_BODY
 
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, massSpaceInertiaTensor, *actor, m)
-#endif
+	OMNI_PVD_SET(PxRigidBody, massSpaceInertiaTensor, static_cast<PxRigidBody&>(*this), m)
 }
 
 template<class APIClass>
@@ -713,10 +705,8 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 	}
 
 	scSetFlags(filteredNewFlags);
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, rigidBodyFlags, *actor, filteredNewFlags)
-#endif
+
+	OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*this), filteredNewFlags)
 
 	// PT: the SQ update should be done after the scSetFlags() call
 	if(mustUpdateSQ)
@@ -760,10 +750,7 @@ void NpRigidBodyTemplate<APIClass>::setMinCCDAdvanceCoefficient(PxReal minCCDAdv
 
 	mCore.setCCDAdvanceCoefficient(minCCDAdvanceCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, minAdvancedCCDCoefficient, *actor, minCCDAdvanceCoefficient)
-#endif
+	OMNI_PVD_SET(PxRigidBody, minAdvancedCCDCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
 
 }
 
@@ -785,10 +772,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxDepenetrationVelocity(PxReal maxDepenV
 
 	mCore.setMaxPenetrationBias(-maxDepenVel);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, maxDepenetrationVelocity, *actor, maxDepenVel)
-#endif
+	OMNI_PVD_SET(PxRigidBody, maxDepenetrationVelocity, static_cast<PxRigidBody&>(*this), maxDepenVel)
 }
 
 template<class APIClass>
@@ -809,10 +793,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxContactImpulse(const PxReal maxImpulse
 
 	mCore.setMaxContactImpulse(maxImpulse);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-		PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, maxContactImpulse, *actor, maxImpulse)
-#endif
+	OMNI_PVD_SET(PxRigidBody, maxContactImpulse, static_cast<PxRigidBody&>(*this), maxImpulse)
 }
 
 template<class APIClass>
@@ -833,10 +814,7 @@ void NpRigidBodyTemplate<APIClass>::setContactSlopCoefficient(const PxReal conta
 
 	mCore.setOffsetSlop(contactSlopCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, contactSlopCoefficient, *actor, contactSlopCoefficient)
-#endif
+	OMNI_PVD_SET(PxRigidBody, contactSlopCoefficient, static_cast<PxRigidBody&>(*this), contactSlopCoefficient)
 }
 
 template<class APIClass>
@@ -865,10 +843,7 @@ void NpRigidBodyTemplate<APIClass>::setLinearDamping(PxReal linearDamping)
 
 	mCore.setLinearDamping(linearDamping);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, linearDamping, *actor, linearDamping)
-#endif
+	OMNI_PVD_SET(PxRigidBody, linearDamping, static_cast<PxRigidBody&>(*this), linearDamping)
 }
 
 template<class APIClass>
@@ -891,10 +866,7 @@ void NpRigidBodyTemplate<APIClass>::setAngularDamping(PxReal angularDamping)
 
 	mCore.setAngularDamping(angularDamping);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-		PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, angularDamping, *actor, angularDamping)
-#endif
+	OMNI_PVD_SET(PxRigidBody, angularDamping, static_cast<PxRigidBody&>(*this), angularDamping)
 }
 
 template<class APIClass>
@@ -912,15 +884,12 @@ void NpRigidBodyTemplate<APIClass>::setMaxAngularVelocity(PxReal maxAngularVeloc
 	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(PxIsFinite(maxAngularVelocity), "PxRigidBody::setMaxAngularVelocity(): invalid float");
 	PX_CHECK_AND_RETURN(maxAngularVelocity>=0.0f, "PxRigidBody::setMaxAngularVelocity(): threshold must be non-negative!");
-
+	PX_CHECK_AND_RETURN(maxAngularVelocity <= PxReal(1.00000003e+16f), "PxRigidBody::setMaxAngularVelocity(): maxAngularVelocity*maxAngularVelocity must be less than 1e16");
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidBody::setMaxAngularVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setMaxAngVelSq(maxAngularVelocity * maxAngularVelocity);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, maxAngularVelocity, *actor, maxAngularVelocity)
-#endif
+	OMNI_PVD_SET(PxRigidBody, maxAngularVelocity, static_cast<PxRigidBody&>(*this), maxAngularVelocity)
 }
 
 template<class APIClass>
@@ -938,15 +907,13 @@ void NpRigidBodyTemplate<APIClass>::setMaxLinearVelocity(PxReal maxLinearVelocit
 	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(PxIsFinite(maxLinearVelocity), "PxRigidBody::setMaxLinearVelocity(): invalid float");
 	PX_CHECK_AND_RETURN(maxLinearVelocity >= 0.0f, "PxRigidBody::setMaxLinearVelocity(): threshold must be non-negative!");
+	PX_CHECK_AND_RETURN(maxLinearVelocity <= PxReal(1.00000003e+16), "PxRigidBody::setMaxLinearVelocity(): maxLinearVelocity*maxLinearVelocity must be less than 1e16");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidBody::setMaxLinearVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setMaxLinVelSq(maxLinearVelocity * maxLinearVelocity);
 	UPDATE_PVD_PROPERTY_BODY
-#if PX_SUPPORT_OMNI_PVD
-	PxActor* actor = static_cast<PxActor*>(this);
-	OMNI_PVD_SET(actor, maxLinearVelocity, *actor, maxLinearVelocity)
-#endif
+	OMNI_PVD_SET(PxRigidBody, maxLinearVelocity, static_cast<PxRigidBody&>(*this), maxLinearVelocity)
 }
 
 template<class APIClass>

@@ -42,12 +42,6 @@ class NpScene;
 
 class NpShape : public PxShape, public NpBase
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 // PX_SERIALIZATION
 												NpShape(PxBaseFlags baseFlags);
@@ -102,6 +96,7 @@ public:
 	virtual			PxReal						getTorsionalPatchRadius() const	PX_OVERRIDE;
 	virtual			void						setMinTorsionalPatchRadius(PxReal)	PX_OVERRIDE;
 	virtual			PxReal						getMinTorsionalPatchRadius() const	PX_OVERRIDE;
+	virtual			PxU32						getInternalShapeIndex() const	PX_OVERRIDE;
 	virtual			void						setFlag(PxShapeFlag::Enum flag, bool value)	PX_OVERRIDE;
 	virtual			void						setFlags(PxShapeFlags inFlags)	PX_OVERRIDE;
 	virtual			PxShapeFlags				getFlags() const	PX_OVERRIDE;
@@ -125,7 +120,7 @@ public:
 	PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryTypeFast()	const	{ return mCore.getGeometryType();							}
 	PX_FORCE_INLINE	const PxFilterData&			getQueryFilterDataFast() const	{ return mQueryFilterData;									}
 
-	PX_FORCE_INLINE PxU32						getActorCount()			const	{ return mFreeSlot & ACTOR_COUNT_MASK;												}
+	PX_FORCE_INLINE PxU32						getActorCount()			const	{ return mFreeSlot;																	}
 	PX_FORCE_INLINE bool						isExclusiveFast()		const	{ return mCore.getCore().mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE);		}
 
 	PX_FORCE_INLINE	const Sc::ShapeCore&		getCore()				const	{ return mCore;	}
@@ -144,9 +139,11 @@ public:
 												}
 
 					void						releaseInternal();	// PT: it's "internal" but called by the NpFactory
-					template <typename PxMaterialType>
-	static PX_INLINE bool						checkMaterialSetup(const PxGeometry& geom, const char* errorMsgPrefix, PxMaterialType*const* materials, PxU16 materialCount);
 
+#if PX_CHECKED
+	template <typename PxMaterialType>
+	static			bool						checkMaterialSetup(const PxGeometry& geom, const char* errorMsgPrefix, PxMaterialType*const* materials, PxU16 materialCount);
+#endif
 					void						onActorAttach(PxActor& actor);
 					void						onActorDetach();
 
@@ -181,14 +178,11 @@ public:
 													setBaseIndex(NP_UNUSED_BASE_INDEX);
 												}
 
-	PX_FORCE_INLINE PxRigidActor*				getRigidActor() const { return mActor->is<PxRigidActor>(); }
 private:
-					PxActor*					mActor;
+					PxActor*					mExclusiveShapeActor;
 					Sc::ShapeCore				mCore;
 					PxFilterData				mQueryFilterData;	// Query filter data PT: TODO: consider moving this to SQ structures
 
-					static const PxI32 EXCLUSIVE_MASK = 0x80000000;
-					static const PxI32 ACTOR_COUNT_MASK = 0x7fffffff;		
 private:
 					void						notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlags notifyFlags);
 					void						notifyActorAndUpdatePVD(const PxShapeFlags oldShapeFlags);	// PT: for shape flags change
@@ -247,99 +241,114 @@ private:
 	template<typename PxMaterialType, typename NpMaterialType> void setMaterialsInternal(PxMaterialType* const * materials, PxU16 materialCount);
 };
 
+#if PX_CHECKED
 template <typename PxMaterialType>
-PX_INLINE bool NpShape::checkMaterialSetup(const PxGeometry& geom, const char* errorMsgPrefix, PxMaterialType*const* materials, PxU16 materialCount)
+bool NpShape::checkMaterialSetup(const PxGeometry& geom, const char* errorMsgPrefix, PxMaterialType*const* materials, PxU16 materialCount)
 {
-	for (PxU32 i = 0; i < materialCount; ++i)
+	for(PxU32 i=0; i<materialCount; ++i)
 	{
-		if (!materials[i])
+		if(!materials[i])
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"material pointer %d is NULL!", i);
 			return false;
 		}
 	}
 
-	// check that simple shapes don't get assigned multiple materials
-	if (materialCount > 1 && (geom.getType() != PxGeometryType::eHEIGHTFIELD) && (geom.getType() != PxGeometryType::eTRIANGLEMESH) && (geom.getType() != PxGeometryType::eTETRAHEDRONMESH))
+	if(materialCount > 1)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-			"%s: multiple materials defined for single material geometry!", errorMsgPrefix);
-		return false;
-	}
+		const PxGeometryType::Enum type = geom.getType();
 
-	//  verify we provide all materials required
-	if (materialCount > 1 && (geom.getType() == PxGeometryType::eTRIANGLEMESH))
-	{
-		const PxTriangleMeshGeometry& meshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
-		const PxTriangleMesh& mesh = *meshGeom.triangleMesh;
-
-		// do not allow SDF multi-material tri-meshes:
-		if (mesh.getSDF())
+		//  verify we provide all materials required
+		if(type == PxGeometryType::eTRIANGLEMESH)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-				"%s: multiple materials defined for an SDF triangle-mesh geometry!", errorMsgPrefix);
+			const PxTriangleMeshGeometry& meshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
+			const PxTriangleMesh& mesh = *meshGeom.triangleMesh;
+
+			// do not allow SDF multi-material tri-meshes:
+			if(mesh.getSDF())
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+					"%s: multiple materials defined for an SDF triangle-mesh geometry!", errorMsgPrefix);
+				return false;
+			}
+
+			const Gu::TriangleMesh& tmesh = static_cast<const Gu::TriangleMesh&>(mesh);
+			if(tmesh.hasPerTriangleMaterials())
+			{
+				const PxU32 nbTris = tmesh.getNbTrianglesFast();
+				for(PxU32 i=0; i<nbTris; i++)
+				{
+					const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
+					if(meshMaterialIndex >= materialCount)
+					{
+						PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+							"%s: PxTriangleMesh material indices reference more materials than provided!", errorMsgPrefix);
+						break;
+					}
+				}
+			}
+			else
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+					"%s: multiple materials defined for a triangle-mesh that does not have per-triangle materials!", errorMsgPrefix);
+			}
+		}
+		else if(type == PxGeometryType::eTETRAHEDRONMESH)
+		{
+			const PxTetrahedronMeshGeometry& meshGeom = static_cast<const PxTetrahedronMeshGeometry&>(geom);
+			const PxTetrahedronMesh& mesh = *meshGeom.tetrahedronMesh;
+			PX_UNUSED(mesh);
+			//Need to fill in material
+			/*if (mesh.getTriangleMaterialIndex(0) != 0xffff)
+			{
+				for (PxU32 i = 0; i < mesh.getNbTriangles(); i++)
+				{
+					const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
+					if (meshMaterialIndex >= materialCount)
+					{
+						PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+							"%s: PxTriangleMesh material indices reference more materials than provided!", errorMsgPrefix);
+						break;
+					}
+				}
+			}*/
+		}
+		else if(type == PxGeometryType::eHEIGHTFIELD)
+		{
+			const PxHeightFieldGeometry& meshGeom = static_cast<const PxHeightFieldGeometry&>(geom);
+			const PxHeightField& mesh = *meshGeom.heightField;
+			if (mesh.getTriangleMaterialIndex(0) != 0xffff)
+			{
+				const PxU32 nbTris = mesh.getNbColumns()*mesh.getNbRows() * 2;
+				for (PxU32 i = 0; i < nbTris; i++)
+				{
+					const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
+					if (meshMaterialIndex != PxHeightFieldMaterial::eHOLE && meshMaterialIndex >= materialCount)
+					{
+						PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+							"%s: PxHeightField material indices reference more materials than provided!", errorMsgPrefix);
+						break;
+					}
+				}
+			}
+			else
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+					"%s: multiple materials defined for a heightfield that does not have per-triangle materials!", errorMsgPrefix);
+			}
+		}
+		else
+		{
+			// check that simple shapes don't get assigned multiple materials
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+				"%s: multiple materials defined for single material geometry!", errorMsgPrefix);
 			return false;
 		}
-
-		if (mesh.getTriangleMaterialIndex(0) != 0xffff)
-		{
-			for (PxU32 i = 0; i < mesh.getNbTriangles(); i++)
-			{
-				const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
-				if (meshMaterialIndex >= materialCount)
-				{
-					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-						"%s: PxTriangleMesh material indices reference more materials than provided!", errorMsgPrefix);
-					break;
-				}
-			}
-		}
 	}
-
-	if (materialCount > 1 && (geom.getType() == PxGeometryType::eTETRAHEDRONMESH))
-	{
-		const PxTetrahedronMeshGeometry& meshGeom = static_cast<const PxTetrahedronMeshGeometry&>(geom);
-		const PxTetrahedronMesh& mesh = *meshGeom.tetrahedronMesh;
-		PX_UNUSED(mesh);
-		//Need to fill in material
-		/*if (mesh.getTriangleMaterialIndex(0) != 0xffff)
-		{
-			for (PxU32 i = 0; i < mesh.getNbTriangles(); i++)
-			{
-				const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
-				if (meshMaterialIndex >= materialCount)
-				{
-					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-						"%s: PxTriangleMesh material indices reference more materials than provided!", errorMsgPrefix);
-					break;
-				}
-			}
-		}*/
-	}
-
-	if (materialCount > 1 && (geom.getType() == PxGeometryType::eHEIGHTFIELD))
-	{
-		const PxHeightFieldGeometry& meshGeom = static_cast<const PxHeightFieldGeometry&>(geom);
-		const PxHeightField& mesh = *meshGeom.heightField;
-		if (mesh.getTriangleMaterialIndex(0) != 0xffff)
-		{
-			const PxU32 nbTris = mesh.getNbColumns()*mesh.getNbRows() * 2;
-			for (PxU32 i = 0; i < nbTris; i++)
-			{
-				const PxMaterialTableIndex meshMaterialIndex = mesh.getTriangleMaterialIndex(i);
-				if (meshMaterialIndex != PxHeightFieldMaterial::eHOLE && meshMaterialIndex >= materialCount)
-				{
-					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-						"%s: PxHeightField material indices reference more materials than provided!", errorMsgPrefix);
-					break;
-				}
-			}
-		}
-	}
-
 	return true;
 }
+#endif
 
 }
 

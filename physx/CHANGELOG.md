@@ -1,3 +1,281 @@
+# v5.2.0 & v5.2.1
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu 20.04)
+* Microsoft Windows 10 or later (GPU acceleration: display driver and GPU supporting CUDA 11 / CUDA ARCH 3.0)
+
+### Development
+
+* Microsoft Windows 10 or later
+* Microsoft Visual Studio 2017, 2019, 2022
+
+## General
+
+* PhysX GPU binaries built with CUDA toolkit 11.8.
+	* Added compute capability 8.9 (Ada) and 9.0 (Hopper)
+	* Removed compute capability 5.0 (Maxwell)
+	* Enabled multi-threaded cuda kernel compilation
+	
+### Changed:
+
+* INVALID_FILTER_PAIR_INDEX has been moved out of the public API. It was incorrectly exposed to users.
+* The API for the filter callback changed slightly. The pairID parameter in PxSimulationFilterCallback::pairFound(), PxSimulationFilterCallback::pairLost() and PxSimulationFilterCallback::statusChange() is now a PxU64 instead of a PxU32. The filter callback will now be called from multiple threads.
+* Minimum required Windows OS version was changed from Windows XP to Windows 7
+* Replaced all calls to `select` with calls to `poll` in the socket implementations
+* PxSceneFlag::eENABLE_DIRECT_GPU_API and its predecessor PxSceneFlag::eSUPPRESS_READBACK are now immutable.
+* CmakeModules is no longer an external dependency. It's now included in PhysX source.
+
+### Fixed
+
+* A bug that produced duplicate broadphase pairs and led to rapidly increasing GPU memory consumption was fixed.
+* An immediate mode bug has been fixed. It was happening in the contact generation code, using persistent contacts, and could produce jittering.
+* An indexing error was corrected that caused the CPU PGS solver with point friction to skip velocity and impulse writebacks in some scenarios.
+* A thread synchronization issue was addressed that may have caused nondeterministic behavior in the CPU PGS solver.
+* A crash that appeared when overflowing the maximum amount of aggregate pairs in the GPU broadphase has been fixed.
+* A bug that generated broadphase pairs for removed shapes has been fixed.
+* A crash that occurred when using excessively small contact buffers and/or patch buffers on the GPU. Now, contacts that don't fit into the buffer are dropped, and an error is reported.
+* A bug when running generate_projects.bat if one of the parent directories contain a space.
+
+### Deprecated
+
+* PxSceneFlag::eFORCE_READBACK is deprecated. There is no replacement.
+* PxSceneFlag::eSUPPRESS_READBACK is deprecated. The replacement is PxSceneFlag::eENABLE_DIRECT_GPU_API.
+
+### Removed
+
+* PxBVHStructure has been removed. Use PxBVH.
+* PxBVHStructureDesc has been removed. Use PxBVHDesc.
+* PxPhysics::getBVHStructures() has been removed. Use PxPhysics::getBVHs()
+* PxGetAssertHandler() and PxSetAssertHandler() have been removed.
+* PxMassModificationProps has been removed. Use PxConstraintInvMassScale instead.
+* PxRegisterImmediateArticulations, PxRegisterArticulationsReducedCoordinate, PxRegisterHeightFields, PxCreateBasePhysics have been removed. Articulations and heightfields are now always enabled.
+* PxBuffer has been removed. There is no replacement. The soft body interface now exposes direct access to GPU buffers.
+* GpuExtension library has been removed.
+* The deprecated PxPhysicsInsertionCallback has been removed. Please use PxInsertionCallback instead.
+* The deprecated PxTaskType::Enum entries TT_CPU, TT_NOT_PRESENT and TT_COMPLETED have been removed. These entries were replaced with eCPU, eNOT_PRESENT and eCOMPLETED.
+* These deprecated immediate-mode types have been removed: PxFeatherstoneArticulationJointData, PxFeatherstoneArticulationLinkData, PxFeatherstoneArticulationData, PxMutableLinkData, PxLinkData.
+* The deprecated PxPhysics::createBVHStructure() and PxPhysics::getNbBVHStructures() functions have been removed.
+* A deprecated PxPhysics::createAggregate() function has been removed.
+* Deprecated passthrough functions in PxShape such as `getGeometryType()` and the specialized `get<geomType>Geometry()` were removed. Calls to these functions should be replaced by the accessing the underlying geometry directly with `getGeometry()`.
+* Context creation for CUDA/Graphics interoperability has been deprecated. interopMode has been removed from PxCudaContextManagerDesc.
+* No more Support for Microsoft Visual Studio 2013 and 2015.
+* All 32 bits presets are removed.
+
+## Rigid Body
+
+### Fixed
+
+* A crash involving static or kinematic aggregates used in combination with PxPairFilteringMode::eKILL has been fixed.
+* PxRigidDynamicLockFlags (especially the linear lock flags) did not work properly with PGS. This has been fixed.
+* A rare bug involving GPU aggregates, in which newly created actors could freely move through existing actors, has been fixed.
+* A crash with invalid setups, where multiple materials were set on a shape referencing a triangle mesh that had no per-triangle material indices, has been fixed. Additionally this invalid setup will now trigger an error message.
+* The convex-vs-mesh PCM contact generation is now more robust (CPU/GPU). Some jittering cases have been fixed.
+* The capsule-vs-mesh PCM contact generation is now more robust (GPU). Some jittering cases have been fixed.
+* A bug that produced jittering when contact modification was used has been fixed. It happened mainly for primitives-vs-mesh contacts, in cases where multiple contact patches were involved.
+* A bug in GPU box-box contact generation that caused memory overflows and nondeterministic behavior as a result.
+* A bug in the constraint solver that was using wrong indices to solve friction constraints.
+* A crash in the GPU broadphase with empty aggregates has been fixed.
+* Limited the maximum amount of memory that the SDF debug visualizer uses to avoid out-of-memory errors on high-resolution SDFs.
+* A sufficiently large number of contacts is now generated for a dynamic object with an SDF collider lying on a single, large static triangle represented by a triangle mesh collider.
+* Improved robustness to imperfect input when cooking SDFs; for example, duplicate triangles with opposite winding now produce a correct SDF.
+* Fixed a rare case where the SDF contact generation algorithm could get stuck on SDF singularities and produce incorrect contacts.
+* Resolved a crash that occurred when a sphere primitive collider comes into contact with an SDF collider.
+
+## Articulations
+
+### Added
+
+* A new feature that computes and reports the force applied by a joint to a child link has been added.  The reported force is in the joint's child frame.  A more detailed specification of the reported force may be found in the doxy for the newly added array PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCES. The force may be queried on CPU using the newly added flag PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCES in conjunction with the newly added array PxArticulationCache::linkIncomingJointForce and the pre-existing function PxArticulationReducedCoordinate::copyInternalStateToCache(). The equivalent with the direct GPU API is to use the newly added enumeration PxArticulationGpuDataType::eLINK_INCOMING_JOINT_FORCE in conjunction with the pre-existing function PxScene::copyArticulationData().
+
+### Fixed
+
+* A rare bug involving articulations in aggregates has been fixed. An internal counter was not correctly updated, and could lead to internal asserts and potential crashes.
+* Setting root link transforms or joint positions with the PxScene GPU API could result in incorrect collision behavior if an articulation contained links with no shapes.
+* Incorrect values for link acceleration were reported with PxSceneFlag::eENABLE_GPU_DYNAMICS raised and lowered and with PxSceneFlag::eSUPPRESS_READBACK raised and lowered. This affected PxArticulationReducedCoordinate::getLinkAcceleration(), PxArticulationCache::linkAcceleration and PxScene::copyArticulationData().  This bug has been fixed.
+* Incorrect values for joint acceleration were reported when PxSceneFlag::eENABLE_GPU_DYNAMICS was raised. This affected PxArticulationGpuDataType::eJOINT_ACCELERATION/PxScene::copyArticulationData() with PxSceneFlag::eSUPPRESS_READBACK raised and PxArticulationCacheFlag::eACCELERATION/PxArticulationReducedCoordinate::copyInternalStateToCache()/PxArticulationCache::jointAcceleration with PxSceneFlag::eSUPPRESS_READBACK lowered. This bug has been fixed.
+* Setting a target velocity on a modifiable contact of an articulation link was not working properly. This has been fixed.
+* A crash that appeared when adding an articulation was added and removed from a scene without running a sim step in-between has been fixed.
+* Articulation links with extremely large mass in excess of approximately 1e+7 mass units had a tendency to fall through the ground due to internal threshold guards.  This affected all solver types running on CPU. This has been fixed.
+* A floating-point precision issue resulting in slower-than-expected moving prismatic joints under certain simulation conditions with the TGS solver on GPU has been fixed.
+
+### Deprecated
+
+* PxArticulationSensor has been deprecated. Along with this, PxArticulationCache::sensorForces, PxArticulationCacheFlag::eSENSOR_FORCES, PxArticulationGpuDataType::eSENSOR_FORCE, and PxArticulationSensorFlag have also been deprecated.
+* PxArticulationCache::jointSolverForces has been deprecated. The replacement is PxArticulationCache::linkIncomingJointForces. Along with this, the PxArticulationFlag::eCOMPUTE_JOINT_FORCES is also deprecated.
+
+### Removed
+
+* Deprecated PxArticulationJointReducedCoordinate::setLimit and PxArticulationJointReducedCoordinate::getLimit were removed. Use PxArticulationJointReducedCoordinate::setLimitParams and PxArticulationJointReducedCoordinate::getLimitParams instead.
+* Deprecated PxArticulationJointReducedCoordinate::setDrive and PxArticulationJointReducedCoordinate::getDrive were removed. Use PxArticulationJointReducedCoordinate::setDriveParams and PxArticulationJointReducedCoordinate::getDriveParams instead.
+
+### Changed
+
+* Debug visualization of articulation links (body mass axes) will now show their sleeping state (similar to rigid bodies).
+
+## Joints
+
+### Changed
+
+* The debug visualization color of active limits has changed from red to yellow.
+
+### Removed
+
+* Joint projection has been removed.
+* The joint's "contact distance" parameter has been removed. The limits are now always active.
+
+### Fixed
+
+* The D6 joint's twist drive was using the wrong actor's axis (B instead of A). This has been fixed, and it could affect joint setups in existing scenes. To fix this in existing content it might be enough to flip the joint frames of involved actors, but this may not be possible depending on which other features (joint limits, etc) have been setup for the same joint. In the worst case it might be necessary to re-tune these joints.
+* D6 joints configured to act as fixed joints (i.e. all motions locked) between static actors or world and a floating articulation base link did not constrain the rotational degrees of freedom.
+
+### Deprecated
+
+* PxContactJoint, PxJacobianRow and PxContactJointCreate() have all been marked as deprecated and will be removed in a later release.
+
+## Scene queries
+
+### Removed
+
+* Deprecated PxBVH::raycast(), PxBVH::sweep() and PxBVH::overlap() functions have been removed. Use the new versions with callbacks.
+* A deprecated PxQueryFilterCallback::postFilter() function has been removed. Use the similar function with a different signature.
+* The deprecated PxGeometryQuery::getWorldBounds() function has been removed. Please use PxGeometryQuery::computeGeomBounds() instead.
+* A deprecated PxGeometryQuery::raycast() function has been removed. Please use the other function with the same name but a different signature.
+
+### Fixed
+
+* Overlap queries could still return a non-zero number of hits when all hits got filtered in the post-filter callback (e.g. using PxQueryHitType::eNONE). This has been fixed.
+
+### Added
+
+* PxScene::evaluateSDFDistances() to evaluate sdf distances and gradients at given sample points for a batch of shapes
+
+## Cooking
+
+### Removed
+
+* The deprecated PxCooking class has been removed. Use the standalone "immediate cooking" functions instead (e.g. PxCookBVH, PxCreateBVH...)
+* PxCooking::cookBVHStructure() has been removed. Use PxCooking::cookBVH()
+* PxCooking::createBVHStructure() has been removed. Use PxCooking::createBVH()
+
+### Deprecated
+
+* PxConvexFlag::eGPU_COMPATIBLE has been deprecated. Set PxCookingParams::buildGPUData to true to cook convex meshes that need to be GPU compatible.
+
+### Fixed
+
+* When convex hull cooking hit the polygon limit, the coplanar faces merge step was not run.
+
+## Serialization
+
+### Changed:
+
+* Version mismatch checks etc. when deserializing binary data are now applied in profile and release build configurations too. PxSerialization::createCollectionFromBinary() will return NULL if the checks fail and error messages will get sent.
+
+### Fixed:
+
+* When deserializing materials (any PxBaseMaterial-derived), their userData member was wrongly re-initialized to zero, overwriting the serialized value.
+
+## Pvd
+
+### Changed:
+
+* The OmniPVD API has been reworked to be more consistent and provide less room for confusion. Among the various changes are:
+  * The "Set" attribute type has been renamed to "UniqueList". As a consequence, the OmniPvdWriter methods registerSetAttribute, addToSetAttribute.., removeFromSetAttribute.. have been renamed to registerUniqueListAttribute, addToUniqueListAttribute, removeFromUniqueListAttribute. The enum values eOmniPvdRegisterSetAttribute, eOmniPvdAddToSetAttribute, eOmniPvdRemoveFromSetAttribute have been renamed to eREGISTER_UNIQUE_LIST_ATTRIBUTE, eADD_TO_UNIQUE_LIST_ATTRIBUTE, eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTE.
+  * OmniPvdCommandEnum has been renamed to OmniPvdCommand and all enum values have been renamed too.
+  * OmniPvdDataTypeEnum has been renamed to OmniPvdDataType
+  * OmniPvdAttributeDataType has been removed and its usage in the API methods replaced with OmniPvdDataType::Enum
+  * The OmniPvdWriter methods setAttributeShallow, addToSetAttributeShallow, removeFromSetAttributeShallow have been renamed to setAttribute, addToUniqueListAttribute, removeFromUniqueListAttribute and can be dinstinguished from the more generic versions with the same name by the argument list.
+  * The order of the handleDepth and attributeHandles params has flipped in the OmniPvdWriter methods setAttribute, addToUniqueListAttribute, removeFromUniqueListAttribute (formerly called addToSetAttribute, removeFromSetAttribute) methods.
+  * The order of the enumClassHandle and attributeName parameters has flipped in the OmniPvdWriter::registerFlagsAttribute() method.
+  * OmniPvdReader::getCommandType() has been removed. The information is already available as part of the OmniPvdReader::getNextCommand() method.
+  * The parameters in OmniPvdReader::startReading() have turned from pointers to references.
+  * The stream parameters in OmniPvdWriter::setWriteStream() and OmniPvdReader::setReadStream() have turned from pointers to references.
+  * The input parameters for the following functions have turned from pointers to references: destroyOmniPvdReaderFp, destroyOmniPvdWriterFp, destroyOmniPvdFileReadStreamFp, destroyOmniPvdFileWriteStreamFp, destroyOmniPvdMemoryStreamFp
+  * Various input parameters in the methods of OmniPvdWriter, OmniPvdReadStream, OmniPvdWriteStream have changed from const to non-const.
+  * The returned data pointers of the methods getClassName(), getAttributeName(), getObjectName(), getAttributeDataPointer() of OmniPvdReader are now const.
+* The OmniPVD snippet now aborts in release build configuration since PVD is not available in release.
+* Unit tests can now export single or series of automatically time stamped files, when the omnipvdfile command line parameter is set to a directory
+* Crash bugs in the contact reports fixed
+* OmniPVD now uses the OmniPVD API derived class support to stream debug data
+  * Removes attribute duplication for shared base classes
+  * Removed ambiguity about which class a certain object is part of
+  * No need to have a class type attribute in streamed debug objects, the class is the type
+  * As a consequece greatly simplifies object and class handling in the OmniPVD extension
+
+## Vehicles2
+
+### Fixed:
+
+* When using sweeps for vehicle wheel vs. ground collision detection, PxVehiclePhysXRoadGeometryQueryUpdate() wrongly treated the case of an exactly zero hit distance (wheel touching ground with suspension being exactly at max compression) as no hit.
+* Undesired sleep/wake cycle for vehicles that are not moving while engines are revving. Applying throttle will keep vehicles awake now.
+* Negative suspension jounce (and an assert) could result in certain scenarios where PxVehicleSuspensionStateCalculationParams::limitSuspensionExpansionVelocity was set to true and gravity was pointing in the opposite direction of the suspension travel direction.
+* Various PVD related bugs.
+* If the wheel IDs in PxVehicleAxleDescription::wheelIdsInAxleOrder were shuffled, the wrong road geometry velocity information was used to compute the tire slip speeds.
+* When driving backwards, the thresholdForwardSpeedForWheelAngleIntegration parameter (see PxVehicleSimulationContext) was ignored.
+
+### Changed:
+
+* PxVehiclePhysXRoadGeometryQueryParams has been adjusted to allow for wheel specific filter data. As a consequence, the method PxVehiclePhysXRoadGeometryQueryUpdate() has been adjusted too. See the migration guide for more details.
+* Only the engine drivetrain or direct drivetrain properties are recorded in PVD now (and not both for the same vehicle).
+* All the methods in PxVehiclePvdFunctions.h and PxVehiclePvdHelpers.h have been adjusted to use references to OmniPvdWriter, PxVehiclePvdObjectHandles or PxVehiclePvdAttributeHandles objects instead of pointers to make it even clearer that these parameters are required.
+* The PxVehiclePvdAttributeHandles parameter of the PxVehiclePvdObjectRelease() method has been removed.
+* The PxVehiclePvdAttributeHandles and OmniPvdWriter parameter of the PxVehiclePvdObjectCreate() method have been removed.
+* The OmniPvdWriter parameter of the PxVehiclePvdAttributesRelease() method has been removed.
+
+
+## Soft Body
+
+### Added:
+
+* Kinematic soft body feature
+  * PxSoftBodyFlag::eKINEMATIC and PxSoftBodyFlag::ePARTIALLY_KINEMATIC.
+  * PxSoftBody::setKinematicTargetBufferD function to set kinematic targets based on a device buffer.
+  * PxConfigureSoftBodyKinematicTarget function to prepare kinematic targets for PxSoftBody::setKinematicTargetBufferD.
+  * PxSoftBodyExt::relaxSoftBodyMesh function to repose a tetrahedral mesh from one configuration into another.
+  * Optional outputVertexToInputTriangle, removeDisconnectedPatches parameters for PxTetMaker::simplifyTriangleMesh.
+  * PxTetrahedronMeshExt::createPointsToTetrahedronMap function to associate points to their closest tetrahedon.
+  * A snippet that shows how to set up and use a kinematic soft body.
+* constraintOffset parameter to PxSoftBody::addSoftBodyAttachment and PxSoftBody::addClothAttachment to specify an offset of the PxConeLimitedConstraint with respect to the PxConeLimitedConstraint::mAxis. 
+
+### Removed:
+
+* PxBuffer has been removed. Writing and reading the softbody simulation state is now done directly in GPU buffers. For examples, see SnippetSoftBody.
+
+### Deprecated:
+
+* PxSoftBodyExt::commit() has been deprecated. The replacement is PxSoftBodyExt::copyToDevice().
+
+### Changed:
+
+* Renamed PxFEMSoftBodyMaterialModel::CO_ROTATIONAL, NEO_HOOKEAN to PxFEMSoftBodyMaterialModel::eCO_ROTATIONAL, eNEO_HOOKEAN.
+* PxSoftBodyDataFlag has been renamed to PxSoftBodyGpuDataFlag.
+* Default constructor of PxConeLimitedConstraint initializes PxConeLimitedConstraint::mAngle to -1.0 since 0.0f now indicates a 0.0 cone opening angle.
+* Soft body flags used to copy stress computation were changed. The stress computation can now be performed via the intermediate data that can be copied from the internal buffers.
+
+### Fixed:
+
+* A bug that resulted in changes to PxSoftBodyFlags not being picked up has been fixed.
+* Fixed a case where particles colliding with soft bodies could lead to a crash.
+* Fixed a corner case where the mass of an internal node could become negative.
+* An index bug when rendering tetrahedra in the snippets.
+
+## Particles
+
+### Changed:
+
+* Renamed PxParticleRigidAttachment::mParams to mConeLimitParams
+* Added PxParticleRigidAttachment constructor to initialize with PxConeLimitedConstraint and localPose0.
+* Added PxConeLimitParams constructor to initialize with PxConeLimitedConstraint.
+* Added PxParticleRigidFilterPair constructor to initialize with rigid node ID and particle ID.
+
+### Fixed:
+
+* A crash when using a large number of particles has been fixed.
+* A bug that resulted in changes to PxParticleFlag not being picked up has been fixed.
+
 # v5.1.3
 
 ## General
@@ -9,6 +287,11 @@
 ### Fixed
 
 * Changing the materials of a shape did not work when using GPU dynamics.
+* Fixed exclusive shape binary serialization.
+
+### Deprecated
+
+* RepX/Xml serialization has been deprecated.
 
 ## Rigid Body
 
@@ -35,6 +318,7 @@
 ### Fixed
 
 * The Poisson Sampler will not cause number overflows and crashes anymore when called with parameters that lead to too many samples.
+* PxParticleClothCooker fixes to support shearing and bending constraints. This will change the behavior of newly cooked cloth assets.
 
 ## Pvd
 

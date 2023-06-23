@@ -91,44 +91,6 @@ void NpScene::fetchResultsParticleSystem()
 	mScene.getSimulationController()->syncParticleData();
 }
 
-void NpScene::fireOutOfBoundsCallbacks()
-{
-	PX_PROFILE_ZONE("Sim.fireOutOfBoundsCallbacks", getContextId());
-
-	// Fire broad-phase callbacks
-	{
-		Sc::Scene& scene = mScene;
-		using namespace physx::Sc;
-
-		bool outputWarning = scene.fireOutOfBoundsCallbacks();
-
-		// Aggregates
-		{
-			Bp::AABBManagerBase* aabbManager = scene.getAABBManager();
-
-			PxU32 nbOut1;
-			void** outAgg = aabbManager->getOutOfBoundsAggregates(nbOut1);
-			if(nbOut1)
-			{
-				PxBroadPhaseCallback* cb = scene.getBroadPhaseCallback();
-
-				for(PxU32 i=0;i<nbOut1;i++)
-				{
-					PxAggregate* px = reinterpret_cast<PxAggregate*>(outAgg[i]);
-					if(cb)
-						cb->onObjectOutOfBounds(*px);
-					else
-						outputWarning = true;
-				}
-				aabbManager->clearOutOfBoundsAggregates();
-			}
-		}
-
-		if(outputWarning)
-			outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "At least one object is out of the broadphase bounds. To manage those objects, define a PxBroadPhaseCallback for each used client.");
-	}
-}
-
 // The order of the following operations is important!
 // 1. Mark the simulation as not running internally to allow reading data which should not be read otherwise
 // 2. Fire callbacks with latest state.
@@ -139,14 +101,17 @@ void NpScene::fetchResultsPreContactCallbacks()
 	mScenePvdClient.updateContacts();
 #endif
 
-	mScene.prepareOutOfBoundsCallbacks();
 	mScene.endSimulation();
 
 	setAPIReadToAllowed();
 
 	{
 		PX_PROFILE_ZONE("Sim.fireCallbacksPreSync", getContextId());
-		fireOutOfBoundsCallbacks();		// fire out-of-bounds callbacks
+		{
+			PX_PROFILE_ZONE("Sim.fireOutOfBoundsCallbacks", getContextId());
+			if(mScene.fireOutOfBoundsCallbacks())
+				outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "At least one object is out of the broadphase bounds. To manage those objects, define a PxBroadPhaseCallback for each used client.");
+		}
 		mScene.fireBrokenConstraintCallbacks();
 		mScene.fireTriggerCallbacks();
 	}
@@ -221,9 +186,9 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 	}
 #endif
 
-	{
-		PX_SIMD_GUARD;
+	PX_SIMD_GUARD;
 
+	{
 		// take write check *after* simulation has finished, otherwise 
 		// we will block simulation callbacks from using the API
 		// disallow re-entry to detect callbacks making write calls
@@ -265,21 +230,22 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 				{
 					PxRigidActor* ra = static_cast<PxRigidActor*>(a);
 					PxTransform t = ra->getGlobalPose();
-					OMNI_PVD_SET(actor, translation, *a, t.p)
-					OMNI_PVD_SET(actor, rotation, *a, t.q)
+					OMNI_PVD_SET(PxRigidActor, translation, *ra, t.p)
+					OMNI_PVD_SET(PxRigidActor, rotation, *ra, t.q)
 
 					if (a->getType() == PxActorType::eRIGID_DYNAMIC)
 					{
 						PxRigidDynamic* rdyn = static_cast<PxRigidDynamic*>(a);
+						PxRigidBody& rb = *static_cast<PxRigidBody*>(a);
 						
 						const PxVec3 linVel = rdyn->getLinearVelocity();
-						OMNI_PVD_SET(actor, linearVelocity, *a, linVel)
+						OMNI_PVD_SET(PxRigidBody, linearVelocity, rb, linVel)
 
 						const PxVec3 angVel = rdyn->getAngularVelocity();
-						OMNI_PVD_SET(actor, angularVelocity, *a, angVel)
+						OMNI_PVD_SET(PxRigidBody, angularVelocity, rb, angVel)
 
 						const PxRigidBodyFlags rFlags = rdyn->getRigidBodyFlags();
-						OMNI_PVD_SET(actor, rigidBodyFlags, *a, rFlags)
+						OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, rb, rFlags)
 					}
 					
 				}
@@ -292,14 +258,14 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 					{
 						pxArticulationParentLink = &(pxArticulationJoint->getParentArticulationLink());
 
-						PxArticulationJointReducedCoordinate & jcord = *pxArticulationJoint;
+						PxArticulationJointReducedCoordinate& jcord = *pxArticulationJoint;
 						PxReal vals[6];
 						for (PxU32 ax = 0; ax < 6; ++ax)
 							vals[ax] = jcord.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SETB(articulationjoint, jointPosition, jcord, vals, sizeof(vals));
+						OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointPosition, jcord, vals, sizeof(vals));
 						for (PxU32 ax = 0; ax < 6; ++ax)
 							vals[ax] = jcord.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SETB(articulationjoint, jointVelocity, jcord, vals, sizeof(vals));
+						OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointVelocity, jcord, vals, sizeof(vals));
 					}
 
 					physx::PxTransform TArtLinkLocal;
@@ -312,27 +278,28 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 						//physx::PxTransform TParentGlobal = pxArticulationParentLink->getGlobalPose();
 						physx::PxTransform TParentGlobalInv = pxArticulationParentLink->getGlobalPose().getInverse();
 						physx::PxTransform TArtLinkGlobal = pxArticulationLink->getGlobalPose();
+						// PT:: tag: scalar transform*transform
 						TArtLinkLocal = TParentGlobalInv * TArtLinkGlobal;
 					}
 					else {
 						TArtLinkLocal = pxArticulationLink->getGlobalPose();
-						OMNI_PVD_SET(articulation, worldBounds, pxArticulationLink->getArticulation(), pxArticulationLink->getArticulation().getWorldBounds());
+						OMNI_PVD_SET(PxArticulationReducedCoordinate, worldBounds, pxArticulationLink->getArticulation(), pxArticulationLink->getArticulation().getWorldBounds());
 					}
-					OMNI_PVD_SET(actor, translation, *a, TArtLinkLocal.p)
-					OMNI_PVD_SET(actor, rotation, *a, TArtLinkLocal.q)
+					OMNI_PVD_SET(PxRigidActor, translation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.p)
+					OMNI_PVD_SET(PxRigidActor, rotation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.q)
 					
 					const PxVec3 linVel = pxArticulationLink->getLinearVelocity();
-					OMNI_PVD_SET(actor, linearVelocity, *a, linVel)
+					OMNI_PVD_SET(PxRigidBody, linearVelocity, static_cast<PxRigidBody&>(*a), linVel)
 
 					const PxVec3 angVel = pxArticulationLink->getAngularVelocity();
-					OMNI_PVD_SET(actor, angularVelocity, *a, angVel)
+					OMNI_PVD_SET(PxRigidBody, angularVelocity, static_cast<PxRigidBody&>(*a), angVel)
 
 					const PxRigidBodyFlags rFlags = pxArticulationLink->getRigidBodyFlags();
-					OMNI_PVD_SET(actor, rigidBodyFlags, *a, rFlags)
+					OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*a), rFlags)
 				}
 
 				const PxBounds3 worldBounds = a->getWorldBounds();
-				OMNI_PVD_SET(actor, worldBounds, *a, worldBounds)
+				OMNI_PVD_SET(PxActor, worldBounds, *a, worldBounds)
 
 				// update active actors' joints
 				const PxRigidActor* ra = a->is<PxRigidActor>();
@@ -373,10 +340,7 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 	}
 
 #if PX_SUPPORT_PVD
-	{
-		PX_SIMD_GUARD;
-		mScenePvdClient.frameEnd();
-	}
+	mScenePvdClient.frameEnd();
 #endif
 	return true;
 }

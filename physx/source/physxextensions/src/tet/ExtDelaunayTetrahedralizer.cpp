@@ -43,18 +43,18 @@ namespace Ext
 
 	struct Plane
 	{
-		Vec3 normal;
+		PxVec3d normal;
 		PxF64 planeD;
 
-		PX_FORCE_INLINE Plane(const Vec3& n, PxF64 d) : normal(n), planeD(d)
+		PX_FORCE_INLINE Plane(const PxVec3d& n, PxF64 d) : normal(n), planeD(d)
 		{ }
 
-		PX_FORCE_INLINE Plane(const Vec3& n, const Vec3& pointOnPlane) : normal(n)
+		PX_FORCE_INLINE Plane(const PxVec3d& n, const PxVec3d& pointOnPlane) : normal(n)
 		{
 			planeD = -pointOnPlane.dot(normal);
 		}
 
-		PX_FORCE_INLINE Plane(const Vec3& a, const Vec3& b, const Vec3& c)
+		PX_FORCE_INLINE Plane(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c)
 		{
 			normal = (b - a).cross(c - a);
 			PxF64 norm = normal.magnitude();
@@ -63,18 +63,18 @@ namespace Ext
 			planeD = -a.dot(normal);
 		}
 
-		PX_FORCE_INLINE PxF64 signedDistance(const Vec3& p)
+		PX_FORCE_INLINE PxF64 signedDistance(const PxVec3d& p)
 		{
 			return normal.dot(p) + planeD;
 		}
 
-		PX_FORCE_INLINE PxF64 unsignedDistance(const Vec3& p)
+		PX_FORCE_INLINE PxF64 unsignedDistance(const PxVec3d& p)
 		{
 			return PxAbs(signedDistance(p));
 		}
 	};
 
-	DelaunayTetrahedralizer::DelaunayTetrahedralizer(const Vec3& min, const Vec3& max)
+	DelaunayTetrahedralizer::DelaunayTetrahedralizer(const PxVec3d& min, const PxVec3d& max)
 	{
 		for(PxI32 i = 0; i < 4; ++i)
 			neighbors.pushBack(-1);
@@ -82,10 +82,10 @@ namespace Ext
 		PxF64 radius = 1.1 * 0.5 * (max - min).magnitude();
 
 		PxF64 scaledRadius = 6 * radius;
-		centeredNormalizedPoints.pushBack(Vec3(-scaledRadius, -scaledRadius, -scaledRadius));
-		centeredNormalizedPoints.pushBack(Vec3(scaledRadius, scaledRadius, -scaledRadius));
-		centeredNormalizedPoints.pushBack(Vec3(-scaledRadius, scaledRadius, scaledRadius));
-		centeredNormalizedPoints.pushBack(Vec3(scaledRadius, -scaledRadius, scaledRadius));
+		centeredNormalizedPoints.pushBack(PxVec3d(-scaledRadius, -scaledRadius, -scaledRadius));
+		centeredNormalizedPoints.pushBack(PxVec3d(scaledRadius, scaledRadius, -scaledRadius));
+		centeredNormalizedPoints.pushBack(PxVec3d(-scaledRadius, scaledRadius, scaledRadius));
+		centeredNormalizedPoints.pushBack(PxVec3d(scaledRadius, -scaledRadius, scaledRadius));
 
 		numAdditionalPointsAtBeginning = 4;
 
@@ -210,12 +210,12 @@ namespace Ext
 		}
 	}
 
-	DelaunayTetrahedralizer::DelaunayTetrahedralizer(PxArray<Vec3>& points, PxArray<Tetrahedron>& tets)
+	DelaunayTetrahedralizer::DelaunayTetrahedralizer(PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets)
 	{
 		initialize(points, tets);
 	}
 
-	void DelaunayTetrahedralizer::initialize(PxArray<Vec3>& points, PxArray<Tetrahedron>& tets)
+	void DelaunayTetrahedralizer::initialize(PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets)
 	{
 		clearLockedEdges();
 		clearLockedTriangles();
@@ -233,7 +233,7 @@ namespace Ext
 				unusedTets.pushBack(i);
 	}
 
-	PX_FORCE_INLINE PxF64 inSphere(const Vec3& pa, const Vec3& pb, const Vec3& pc, const Vec3& pd, const Vec3& candidiate)
+	PX_FORCE_INLINE PxF64 inSphere(const PxVec3d& pa, const PxVec3d& pb, const PxVec3d& pc, const PxVec3d& pd, const PxVec3d& candidiate)
 	{
 		PxF64 aex = pa.x - candidiate.x;
 		PxF64 bex = pb.x - candidiate.x;
@@ -269,7 +269,7 @@ namespace Ext
 		return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
 	}
 
-	PX_FORCE_INLINE bool isDelaunay(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& neighbors, PxI32 faceId)
+	PX_FORCE_INLINE bool isDelaunay(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& neighbors, PxI32 faceId)
 	{
 		PxI32 neighborPointer = neighbors[faceId];
 		if (neighborPointer < 0)
@@ -484,7 +484,7 @@ namespace Ext
 		return true;
 	}
 
-	PX_FORCE_INLINE PxF64 orient3D(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d)
+	PX_FORCE_INLINE PxF64 orient3D(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c, const PxVec3d& d)
 	{
 		return (a - d).dot((b - d).cross(c - d));
 	}
@@ -499,7 +499,7 @@ namespace Ext
 		return lockedTriangles.contains(SortedTriangle(triA, triB, triC));
 	}
 
-	void flip(const PxArray<Vec3>& points, PxArray<Tetrahedron>& tets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, PxI32 faceId, PxArray<PxI32>& unusedTets, PxArray<PxI32>& affectedFaces, 
+	void flip(const PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, PxI32 faceId, PxArray<PxI32>& unusedTets, PxArray<PxI32>& affectedFaces, 
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
 		PxI32 neighborPointer = neighbors[faceId];
@@ -561,7 +561,7 @@ namespace Ext
 		}
 	}
 
-	void flip(PxArray<PxI32>& faces, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, const PxArray<Vec3>& points,
+	void flip(PxArray<PxI32>& faces, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, const PxArray<PxVec3d>& points,
 		PxArray<Tetrahedron>& tets, PxArray<PxI32>& unusedTets, PxArray<PxI32>& affectedFaces,
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
@@ -583,7 +583,7 @@ namespace Ext
 		}
 	}
 
-	void insertAndFlip(PxI32 pointToInsert, PxI32 tetId, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, const PxArray<Vec3>& points,
+	void insertAndFlip(PxI32 pointToInsert, PxI32 tetId, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, const PxArray<PxVec3d>& points,
 		PxArray<Tetrahedron>& tets, PxArray<PxI32>& unusedTets, PxArray<PxI32>& affectedFaces,
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
@@ -597,7 +597,7 @@ namespace Ext
 		flip(stack, neighbors, vertexToTet, points, tets, unusedTets, affectedFaces, lockedFaces, lockedEdges);
 	}
 
-	PxI32 searchAll(const Vec3& p, const PxArray<Tetrahedron>& tets, const PxArray<Vec3>& points)
+	PxI32 searchAll(const PxVec3d& p, const PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points)
 	{
 		for (PxU32 i = 0; i < tets.size(); ++i)
 		{
@@ -619,7 +619,7 @@ namespace Ext
 		return -1;
 	}
 
-	bool runDelaunay(const PxArray<Vec3>& points, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, PxArray<PxI32>& unusedTets,
+	bool runDelaunay(const PxArray<PxVec3d>& points, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, PxArray<PxI32>& unusedTets,
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
 		PxI32 tetId = 0;
@@ -627,7 +627,7 @@ namespace Ext
 		PxArray<PxI32> affectedFaces;
 		for (PxI32 i = start; i < end; ++i)
 		{
-			const Vec3 p = points[i];
+			const PxVec3d p = points[i];
 			if (!PxIsFinite(p.x) || !PxIsFinite(p.y) || !PxIsFinite(p.z))
 				continue;
 
@@ -642,7 +642,7 @@ namespace Ext
 			while (!tetLocated)
 			{
 				const Tetrahedron& tet = tets[tetId];
-				const Vec3 center = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
+				const PxVec3d center = (points[tet[0]] + points[tet[1]] + points[tet[2]] + points[tet[3]]) * 0.25;
 
 				PxF64 minDist = DBL_MAX;
 				PxI32 minFaceNr = -1;
@@ -689,7 +689,7 @@ namespace Ext
 		return true;
 	}
 
-	bool DelaunayTetrahedralizer::insertPoints(const PxArray<Vec3>& inPoints, PxI32 start, PxI32 end)
+	bool DelaunayTetrahedralizer::insertPoints(const PxArray<PxVec3d>& inPoints, PxI32 start, PxI32 end)
 	{
 		for (PxI32 i = start; i < end; ++i) 
 		{
@@ -713,7 +713,7 @@ namespace Ext
 		}
 	}
 
-	void DelaunayTetrahedralizer::insertPoints(const PxArray<Vec3>& inPoints, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tetrahedra)
+	void DelaunayTetrahedralizer::insertPoints(const PxArray<PxVec3d>& inPoints, PxI32 start, PxI32 end, PxArray<Tetrahedron>& tetrahedra)
 	{
 		insertPoints(inPoints, start, end);
 		exportTetrahedra(tetrahedra);
@@ -722,7 +722,7 @@ namespace Ext
 	//Code below this line is for tetmesh manipulation and not directly required to generate a Delaunay tetrahedron mesh. It is used to impmrove the quality of a tetrahedral mesh.
 
 	//https://cs.nyu.edu/~panozzo/papers/SLIM-2016.pdf
-	PxF64 evaluateAmipsEnergyPow3(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d)
+	PxF64 evaluateAmipsEnergyPow3(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c, const PxVec3d& d)
 	{
 		PxF64 x1 = a.x + d.x - 2.0 * b.x;
 		PxF64 x2 = a.x + b.x + d.x - 3.0 * c.x;
@@ -761,12 +761,12 @@ namespace Ext
 		return PxF64(PxPow(PxF32(a), PxF32(b)));
 	}
 
-	PX_FORCE_INLINE PxF64 evaluateAmipsEnergy(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d)
+	PX_FORCE_INLINE PxF64 evaluateAmipsEnergy(const PxVec3d& a, const PxVec3d& b, const PxVec3d& c, const PxVec3d& d)
 	{
 		return pow(evaluateAmipsEnergyPow3(a, b, c, d), 1.0 / 3.0);
 	}
 
-	PxF64 maxEnergyPow3(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets)
+	PxF64 maxEnergyPow3(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets)
 	{
 		PxF64 maxEnergy = 0;
 		for (PxU32 i = 0; i < tets.size(); ++i)
@@ -781,12 +781,12 @@ namespace Ext
 		return maxEnergy;
 	}
 
-	PX_FORCE_INLINE PxF64 maxEnergy(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets)
+	PX_FORCE_INLINE PxF64 maxEnergy(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets)
 	{
 		return pow(maxEnergyPow3(points, tets), 1.0 / 3.0);
 	}
 
-	PxF64 maxEnergyPow3(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& tetIds)
+	PxF64 maxEnergyPow3(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& tetIds)
 	{
 		PxF64 maxEnergy = 0;
 		for (PxU32 i = 0; i < tetIds.size(); ++i)
@@ -801,7 +801,7 @@ namespace Ext
 		return maxEnergy;
 	}
 
-	PxF64 minAbsTetVolume(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets)
+	PxF64 minAbsTetVolume(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets)
 	{
 		PxF64 minVol = DBL_MAX;
 		for (PxU32 i = 0; i < tets.size(); ++i) {
@@ -815,7 +815,7 @@ namespace Ext
 		return minVol;
 	}
 
-	PxF64 minTetVolume(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets)
+	PxF64 minTetVolume(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets)
 	{
 		PxF64 minVol = DBL_MAX;
 		for (PxU32 i = 0; i < tets.size(); ++i) {
@@ -829,7 +829,7 @@ namespace Ext
 		return minVol;
 	}
 	
-	PxF64 minTetVolume(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& indices)
+	PxF64 minTetVolume(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& indices)
 	{
 		PxF64 minVol = DBL_MAX;
 		for (PxU32 i = 0; i < indices.size(); ++i) {
@@ -1010,7 +1010,7 @@ namespace Ext
 	}
 
 	//Returns true if the volume of a tet would become negative if a vertex it contains would get replaced by another one 
-	bool tetFlipped(const Tetrahedron& tet, PxI32 vertexToReplace, PxI32 replacement, const PxArray<Vec3>& points, PxF64 volumeChangeThreshold = 0.1)
+	bool tetFlipped(const Tetrahedron& tet, PxI32 vertexToReplace, PxI32 replacement, const PxArray<PxVec3d>& points, PxF64 volumeChangeThreshold = 0.1)
 	{
 		PxF64 volumeBefore = tetVolume(points[tet[0]], points[tet[1]], points[tet[2]], points[tet[3]]);
 
@@ -1044,7 +1044,7 @@ namespace Ext
 	}
 
 	//Returns true if a tetmesh's edge, defined by vertex indices keep and remove, can be collapsed without leading to an invalid tetmesh topology
-	bool canCollapseEdge(PxI32 keep, PxI32 remove, const PxArray<Vec3>& points, 
+	bool canCollapseEdge(PxI32 keep, PxI32 remove, const PxArray<PxVec3d>& points, 
 		const PxArray<PxI32>& tetsConnectedToKeepVertex, const PxArray<PxI32>& tetsConnectedToRemoveVertex, const PxArray<Tetrahedron>& allTet, 
 		PxF64& qualityAfterCollapse, PxF64 volumeChangeThreshold = 0.1, BaseTetAnalyzer* tetAnalyzer = NULL)
 	{
@@ -1281,7 +1281,7 @@ namespace Ext
 	}
 
 	bool removeEdgeByFlip(PxI32 edgeA, PxI32 edgeB, PxArray<PxI32>& faces, PxHashSet<PxI32>& hashset, PxArray<PxI32>& tetIndices,
-		PxArray<Tetrahedron>& tets, PxArray<Vec3>& pts, PxArray<PxI32>& unusedTets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, 
+		PxArray<Tetrahedron>& tets, PxArray<PxVec3d>& pts, PxArray<PxI32>& unusedTets, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet, 
 		BaseTetAnalyzer* qualityAnalyzer = NULL)
 	{
 		//validateNeighborhood(tets, neighbors);
@@ -1298,8 +1298,8 @@ namespace Ext
 
 		PxArray<PxI32> ringCopy(ring);
 
-		const Vec3& a = pts[edgeA];
-		const Vec3& b = pts[edgeB];
+		const PxVec3d& a = pts[edgeA];
+		const PxVec3d& b = pts[edgeB];
 
 		PxArray<Tetrahedron> newTets;
 		newTets.reserve(ring.size() * 2);
@@ -1310,9 +1310,9 @@ namespace Ext
 			PxI32 id = -1;
 			for (PxI32 i = 0; i < PxI32(ring.size()); ++i)
 			{
-				const Vec3& s = pts[ring[(i - 1 + ring.size()) % ring.size()]];
-				const Vec3& middle = pts[ring[i]];
-				const Vec3& e = pts[ring[(i + 1) % ring.size()]];
+				const PxVec3d& s = pts[ring[(i - 1 + ring.size()) % ring.size()]];
+				const PxVec3d& middle = pts[ring[i]];
+				const PxVec3d& e = pts[ring[(i + 1) % ring.size()]];
 				const PxF64 d = (s - e).magnitudeSquared();
 				if (d < shortestDist)
 				{
@@ -1486,7 +1486,7 @@ namespace Ext
 		return true;
 	}
 
-	bool previewFlip(const PxArray<Vec3>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& neighbors, PxI32 faceId, 
+	bool previewFlip(const PxArray<PxVec3d>& points, const PxArray<Tetrahedron>& tets, const PxArray<PxI32>& neighbors, PxI32 faceId, 
 		PxArray<Tetrahedron>& newTets, PxArray<PxI32>& removedTets,
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
@@ -1662,9 +1662,9 @@ namespace Ext
 		PX_ASSERT(false);
 	}
 
-	void DelaunayTetrahedralizer::generateTetmeshEnforcingEdges(const PxArray<Vec3>& trianglePoints, const PxArray<Triangle>& triangles, PxArray<PxArray<PxI32>>& allEdges,
+	void DelaunayTetrahedralizer::generateTetmeshEnforcingEdges(const PxArray<PxVec3d>& trianglePoints, const PxArray<Triangle>& triangles, PxArray<PxArray<PxI32>>& allEdges,
 		PxArray<PxArray<PxI32>>& pointToOriginalTriangle, 
-		PxArray<Vec3>& points, PxArray<Tetrahedron>& finalTets)
+		PxArray<PxVec3d>& points, PxArray<Tetrahedron>& finalTets)
 	{
 		clearLockedEdges();
 		clearLockedTriangles();
@@ -1727,7 +1727,7 @@ namespace Ext
 					PxU32 i = edgeToIndex[e];
 					if (allEdges[i].size() < 10)
 					{
-						Vec3 p = (centeredNormalizedPoints[a] + centeredNormalizedPoints[b]) * 0.5;					
+						PxVec3d p = (centeredNormalizedPoints[a] + centeredNormalizedPoints[b]) * 0.5;					
 						points.pushBack(p);
 						insertPoints(points, points.size() - 1, points.size());
 
@@ -1763,7 +1763,7 @@ namespace Ext
 
 
 	PxI32 optimizeByFlipping(PxArray<PxI32>& faces, PxArray<PxI32>& neighbors, PxArray<PxI32>& vertexToTet,
-		const PxArray<Vec3>& points, PxArray<Tetrahedron>& tets, PxArray<PxI32>& unusedTets, const BaseTetAnalyzer& qualityAnalyzer,
+		const PxArray<PxVec3d>& points, PxArray<Tetrahedron>& tets, PxArray<PxI32>& unusedTets, const BaseTetAnalyzer& qualityAnalyzer,
 		PxArray<PxI32>& affectedFaces,
 		const PxHashSet<SortedTriangle, TriangleHash>& lockedFaces, const PxHashSet<PxU64>& lockedEdges)
 	{
@@ -1964,12 +1964,12 @@ namespace Ext
 		return success;
 	}
 
-	void patternSearchOptimize(PxI32 pointToModify, PxF64 step, PxArray<Vec3>& points, BaseTetAnalyzer& score, const PxArray<PxI32>& tetrahedra, PxF64 minStep)
+	void patternSearchOptimize(PxI32 pointToModify, PxF64 step, PxArray<PxVec3d>& points, BaseTetAnalyzer& score, const PxArray<PxI32>& tetrahedra, PxF64 minStep)
 	{
-		const Vec3 dir[] = { Vec3(1.0, 0.0, 0.0), Vec3(-1.0, 0.0, 0.0), Vec3(0.0, 1.0, 0.0), Vec3(0.0, -1.0, 0.0), Vec3(0.0, 0.0, 1.0), Vec3(0.0, 0.0, -1.0), };
+		const PxVec3d dir[] = { PxVec3d(1.0, 0.0, 0.0), PxVec3d(-1.0, 0.0, 0.0), PxVec3d(0.0, 1.0, 0.0), PxVec3d(0.0, -1.0, 0.0), PxVec3d(0.0, 0.0, 1.0), PxVec3d(0.0, 0.0, -1.0), };
 		const PxI32 oppositeDir[] = { 1, 0, 3, 2, 5, 4 };
 		PxF64 currentScore = score.quality(tetrahedra); // score();
-		Vec3 p = points[pointToModify];
+		PxVec3d p = points[pointToModify];
 		PxI32 skip = -1;
 
 		PxI32 maxIter = 100;
@@ -2080,7 +2080,7 @@ namespace Ext
 		return edgesToSplit.size() > 0;
 	}
 
-	void updateEdges(PxArray<EdgeWithLength>& edges, PxHashSet<PxU64>& tetEdges, const PxArray<Tetrahedron>& tets, const PxArray<Vec3>& points)
+	void updateEdges(PxArray<EdgeWithLength>& edges, PxHashSet<PxU64>& tetEdges, const PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points)
 	{
 		edges.clear();
 		tetEdges.clear();
@@ -2106,7 +2106,7 @@ namespace Ext
 	}
 
 	void optimize(DelaunayTetrahedralizer& del, PxArray<PxArray<PxI32>>& pointToOriginalTriangle, PxI32 numFixPoints,
-		PxArray<Vec3>& optimizedPoints, PxArray<Tetrahedron>& optimizedTets, PxI32 numPasses)
+		PxArray<PxVec3d>& optimizedPoints, PxArray<Tetrahedron>& optimizedTets, PxI32 numPasses)
 	{
 		PxHashSet<PxU64> tetEdges;
 		PxArray<EdgeWithLength> edges;
@@ -2116,7 +2116,7 @@ namespace Ext
 		//MaximizeMinTetVolume qualityAnalyzer(del.points(), del.tetrahedra());
 
 		optimizedTets = PxArray<Tetrahedron>(del.tetrahedra());
-		optimizedPoints = PxArray<Vec3>(del.points());
+		optimizedPoints = PxArray<PxVec3d>(del.points());
 
 		PxF64 minVolBefore = minAbsTetVolume(del.points(), del.tetrahedra());
 		PxF64 maxEnergyBefore = maxEnergy(del.points(), del.tetrahedra());
@@ -2165,12 +2165,12 @@ namespace Ext
 				}
 
 				optimizedTets = PxArray<Tetrahedron>(del.tetrahedra());
-				optimizedPoints = PxArray<Vec3>(del.points());
+				optimizedPoints = PxArray<PxVec3d>(del.points());
 				return;
 			}
 
 			optimizedTets = PxArray<Tetrahedron>(del.tetrahedra());
-			optimizedPoints = PxArray<Vec3>(del.points());
+			optimizedPoints = PxArray<PxVec3d>(del.points());
 
 			minVolBefore = minVol;
 			maxEnergyBefore = energy;

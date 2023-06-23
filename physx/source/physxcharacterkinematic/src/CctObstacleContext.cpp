@@ -529,8 +529,8 @@ const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const Px
 void ObstacleContext::onOriginShift(const PxVec3& shift)
 {
 	for(PxU32 i=0; i < mBoxObstacles.size(); i++)
-		mBoxObstacles[i].mData.mPos -= shift;
+		sub(mBoxObstacles[i].mData.mPos, shift);
 
 	for(PxU32 i=0; i < mCapsuleObstacles.size(); i++)
-		mCapsuleObstacles[i].mData.mPos -= shift;
+		sub(mCapsuleObstacles[i].mData.mPos, shift);
 }

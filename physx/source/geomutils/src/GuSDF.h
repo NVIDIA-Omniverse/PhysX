@@ -261,6 +261,46 @@ namespace physx
 		\param[out] isosurfaceTriangleIndices The triangles of the extracted isosurface
 		*/
 		PX_PHYSX_COMMON_API void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices);
+
+
+		/**
+		\brief A class that allows to efficiently project points onto the surface of a triangle mesh.
+		*/
+		class PxPointOntoTriangleMeshProjector
+		{
+		public:			
+			/**
+			\brief Projects a point onto the surface of a triangle mesh.
+
+			\param[in] point The point to project
+			\return the projected point
+			*/
+			virtual PxVec3 projectPoint(const PxVec3& point) = 0;
+
+			/**
+			\brief Projects a point onto the surface of a triangle mesh.
+
+			\param[in] point The point to project
+			\param[out] closestTriangleIndex The index of the triangle on which the projected point is located
+			\return the projected point
+			*/
+			virtual PxVec3 projectPoint(const PxVec3& point, PxU32& closestTriangleIndex) = 0;
+
+			/**
+			\brief Releases the instance and its data
+			*/
+			virtual void release() = 0;
+		};
+
+		/**
+		\brief Creates a helper class that allows to efficiently project points onto the surface of a triangle mesh.
+
+		\param[in] vertices The triangle mesh's vertices
+		\param[in] triangleIndices The triangle mesh's indices
+		\param[in] numTriangles The number of triangles
+		\return A point onto triangle mesh projector instance. The caller needs to delete the instance once it is not used anymore by calling its release method
+		*/
+		PX_PHYSX_COMMON_API PxPointOntoTriangleMeshProjector* PxCreatePointOntoTriangleMeshProjector(const PxVec3* vertices, const PxU32* triangleIndices, PxU32 numTriangles);
 	}
 }
 

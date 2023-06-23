@@ -128,7 +128,7 @@ public:
 			PxVehicleTireSlipSpeedsUpdate(
 				wheelParams[wheelId], suspensionParams[wheelId],
 				steerResponseStates[wheelId], suspensionStates[wheelId], tireDirectionStates[wheelId],
-				*rigidBodyState, roadGeomStates[i],
+				*rigidBodyState, roadGeomStates[wheelId],
 				context.frame,
 				tireSpeedStates[wheelId]);
 

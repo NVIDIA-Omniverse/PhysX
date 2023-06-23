@@ -99,10 +99,28 @@ PxI32 indexOf(const Triangle& tri, PxI32 node)
 	if (tri[0] == node) return 0;
 	if (tri[1] == node) return 1;
 	if (tri[2] == node) return 2;
-	return -1;
+	return 0xFFFFFFFF;
 }
 
-bool MeshAnalyzer::checkConsistentTriangleOrientation(const Triangle* tris, PxU32 numTriangles, PxArray<bool>& flip, PxHashMap<PxU64, PxI32>& edges)
+bool MeshAnalyzer::checkConsistentTriangleOrientation(const Triangle* tris, PxU32 numTriangles)
+{
+	PxArray<bool> flip;
+	PxHashMap<PxU64, PxI32> edges;
+	PxArray<PxArray<PxU32>> connectedTriangleGroups;
+	if (!buildConsistentTriangleOrientationMap(tris, numTriangles, flip, edges, connectedTriangleGroups))
+		return false;
+
+	for (PxU32 i = 0; i < flip.size(); ++i)
+	{
+		if (flip[i])
+			return false;
+	}
+
+	return true;
+}
+
+bool MeshAnalyzer::buildConsistentTriangleOrientationMap(const Triangle* tris, PxU32 numTriangles, PxArray<bool>& flip,
+	PxHashMap<PxU64, PxI32>& edges, PxArray<PxArray<PxU32>>& connectedTriangleGroups)
 {
 	PxArray<PxI32> adj;
 	if (!buildTriangleAdjacency(tris, numTriangles, adj, edges))
@@ -113,8 +131,6 @@ bool MeshAnalyzer::checkConsistentTriangleOrientation(const Triangle* tris, PxU3
 	done.resize(l, false);
 	flip.clear();
 	flip.resize(l, false);
-
-	PxArray<PxArray<PxI32>> connectedTriangleGroups;
 
 	PxU32 seedIndex = 0;
 	PxArray<PxI32> stack;
@@ -132,7 +148,7 @@ bool MeshAnalyzer::checkConsistentTriangleOrientation(const Triangle* tris, PxU3
 			done[seedIndex] = true;
 			flip[seedIndex] = false;
 			stack.pushBack(seedIndex);
-			PxArray<PxI32> currentGroup;
+			PxArray<PxU32> currentGroup;
 			currentGroup.pushBack(seedIndex);
 			connectedTriangleGroups.pushBack(currentGroup);
 		}
@@ -166,8 +182,8 @@ bool MeshAnalyzer::makeTriOrientationConsistent(Triangle* tris, PxU32 numTriangl
 {
 	PxHashMap<PxU64, PxI32> edges;
 	PxArray<bool> flipTriangle;
-
-	if (!checkConsistentTriangleOrientation(tris, numTriangles, flipTriangle, edges))
+	PxArray<PxArray<PxU32>> connectedTriangleGroups;
+	if (!buildConsistentTriangleOrientationMap(tris, numTriangles, flipTriangle, edges, connectedTriangleGroups))
 		return false;
 
 	for (PxU32 i = 0; i < flipTriangle.size(); ++i)
@@ -179,17 +195,27 @@ bool MeshAnalyzer::makeTriOrientationConsistent(Triangle* tris, PxU32 numTriangl
 	return true;
 }
 
-bool MeshAnalyzer::checkMeshWatertightness(const Triangle* tris, PxU32 numTriangles)
+bool MeshAnalyzer::checkMeshWatertightness(const Triangle* tris, PxU32 numTriangles, bool treatInconsistentWindingAsNonWatertight)
 {
 	PxArray<bool> flip;
 	PxHashMap<PxU64, PxI32> edges;
-	if (!MeshAnalyzer::checkConsistentTriangleOrientation(tris, numTriangles, flip, edges))
+	PxArray<PxArray<PxU32>> connectedTriangleGroups;
+	if (!MeshAnalyzer::buildConsistentTriangleOrientationMap(tris, numTriangles, flip, edges, connectedTriangleGroups))
 		return false;
 
-	for (PxHashMap<PxU64, PxI32>::Iterator iter = edges.getIterator(); !iter.done(); ++iter)
-		if (iter->second >= 0)
+	if (treatInconsistentWindingAsNonWatertight) 
+	{
+		for (PxU32 i = 0; i < flip.size(); ++i)
 		{
-			return false;
+			if (flip[i])
+				return false;
 		}
+	}
+
+	for (PxHashMap<PxU64, PxI32>::Iterator iter = edges.getIterator(); !iter.done(); ++iter)
+	{
+		if (iter->second >= 0)		
+			return false;		
+	}
 	return true;
 }

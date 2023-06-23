@@ -54,12 +54,12 @@ namespace physx
 		if (mFileWriteStream)
 		{
 			mFileWriteStream->closeStream();
-			mLoader->mDestroyOmniPvdFileWriteStream(mFileWriteStream);
+			mLoader->mDestroyOmniPvdFileWriteStream(*mFileWriteStream);
 			mFileWriteStream = NULL;
 		}
 		if (mWriter)
 		{
-			mLoader->mDestroyOmniPvdWriter(mWriter);
+			mLoader->mDestroyOmniPvdWriter(*mWriter);
 			mWriter = NULL;
 		}
 		if (mLoader)

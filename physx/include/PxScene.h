@@ -255,6 +255,29 @@ class PxScene : public PxSceneSQSystem
 	*/
 	virtual	PxU32				getTimestamp()	const	= 0;
 
+	/**
+	\brief Sets a name string for the Scene that can be retrieved with getName().
+
+	This is for debugging and is not used by the SDK. The string is not copied by the SDK,
+	only the pointer is stored.
+
+	\param[in] name String to set the objects name to.
+
+	<b>Default:</b> NULL
+
+	@see getName()
+	*/
+	virtual		void			setName(const char* name) = 0;
+
+	/**
+	\brief Retrieves the name string set with setName().
+
+	\return Name string associated with the Scene.
+
+	@see setName()
+	*/
+	virtual		const char*		getName()			const = 0;
+
 	//@}
 	/************************************************************************************************/
 
@@ -1674,7 +1697,7 @@ class PxScene : public PxSceneSQSystem
 	\param[in] nbCopySoftBodies The number of softbodies to be copied.
 	\param[in] copyEvent User-provided event for the user to sync data
 	*/
-	virtual		void				copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, void* copyEvent = NULL) = 0;
+	virtual		void				copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, void* copyEvent = NULL) = 0;
 
 
 	/**
@@ -1687,11 +1710,12 @@ class PxScene : public PxSceneSQSystem
 	\param[in] nbUpdatedSoftBodies The number of updated softbodies
 	\param[in] applyEvent User-provided event for the softbody stream to wait for data
 	*/
-	virtual		void				applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, void* applyEvent = NULL) = 0;
+	virtual		void				applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, void* applyEvent = NULL) = 0;
 
 	/**
-	\brief Copy contact data from the internal GPU buffer to a user-provided device buffer.
+	\brief Copy rigid body contact data from the internal GPU buffer to a user-provided device buffer.
 
+	\note This function only reports contact data for actor pairs where both actors are either rigid bodies or articulations.
 	\note The contact data contains pointers to internal state and is only valid until the next call to simulate().
 
 	\param[in] data User-provided gpu data buffer, which should be the size of PxGpuContactPair * numContactPairs
@@ -1700,7 +1724,7 @@ class PxScene : public PxSceneSQSystem
 	\param[in] copyEvent User-provided event for the user to sync data
 	*/
 	virtual		void				copyContactData(void* data, const PxU32 maxContactPairs, void* numContactPairs, void* copyEvent = NULL) = 0;
-
+	
 	/**
 	\brief Copy GPU rigid body data from the internal GPU buffer to a user-provided device buffer.
 	\param[in] data User-provided gpu data buffer which should nbCopyActors * sizeof(PxGpuBodyData). The only data it can copy is PxGpuBodyData.
@@ -1720,6 +1744,22 @@ class PxScene : public PxSceneSQSystem
 	\param[in] signalEvent User-provided event for the rigid body stream to signal when the read from the user buffer has completed
 	*/
 	virtual		void				applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, void* waitEvent = NULL, void* signalEvent = NULL) = 0;
+
+
+	/**
+	\brief Evaluate sample point distances on sdf shapes
+	\param[in] sdfShapeIds The shapes ids in a gpu buffer (must be triangle mesh shapes with SDFs) which specify the shapes from which the sdf information is taken
+	\param[in] nbShapes The number of shapes
+	\param[in] localSamplePointsConcatenated User-provided gpu buffer containing the sample point locations for every shape in the shapes local space. The buffer stride is maxPointCount.
+	\param[in] samplePointCountPerShape Gpu buffer containing the number of sample points for every shape
+	\param[in] maxPointCount The maximum value in the array samplePointCountPerShape
+	\param[out] localGradientAndSDFConcatenated The gpu buffer where the evaluated distances and gradients in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. 
+	\param[in] event User-provided event for the user to sync
+	*/
+	virtual		void				evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* localSamplePointsConcatenated,
+														 const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, void* event = NULL) = 0;
+
+
 
 	/**
 	\brief Compute dense Jacobian matrices for specified articulations on the GPU.

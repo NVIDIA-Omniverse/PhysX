@@ -50,12 +50,6 @@ documentation for specific joint types for details.
 */
 class PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief Controls the amount of bounce when the joint hits a limit.
@@ -99,31 +93,11 @@ public:
 	*/
 	PxReal damping;
 
-	/**
-	\brief The distance inside the limit value at which the limit will be considered to be active by the
-	solver. As this value is made larger, the limit becomes active more quickly. It thus becomes less 
-	likely to violate the extents of the limit, but more expensive.
-	
-	The contact distance should be less than the limit angle or distance, and in the case of a pair limit,
-	less than half the distance between the upper and lower bounds. Exceeding this value will result in
-	the limit being active all the time.
-
-	Making this value too small can result in jitter around the limit.
-
-	<b>Default:</b> depends on the joint
-
-	\note This is deprecated in PhysX 5.1
-
-	@see PxPhysics::getTolerancesScale()
-	*/
-	PxReal contactDistance_deprecated;
-
 	PxJointLimitParameters() :
 		restitution		(0.0f),
 		bounceThreshold	(0.0f),
 		stiffness		(0.0f),
-		damping			(0.0f),
-		contactDistance_deprecated	(0.0f)
+		damping			(0.0f)
 	{
 	}
 	
@@ -131,8 +105,7 @@ public:
 		restitution		(p.restitution),
 		bounceThreshold	(p.bounceThreshold),
 		stiffness		(p.stiffness),
-		damping			(p.damping),
-		contactDistance_deprecated	(p.contactDistance_deprecated)
+		damping			(p.damping)
 	{
 	}	
 
@@ -146,8 +119,7 @@ public:
 		return	PxIsFinite(restitution) && restitution >= 0 && restitution <= 1 && 
 			    PxIsFinite(stiffness) && stiffness >= 0 && 
 			    PxIsFinite(damping) && damping >= 0 &&
-				PxIsFinite(bounceThreshold) && bounceThreshold >= 0 &&
-				PxIsFinite(contactDistance_deprecated) && contactDistance_deprecated >= 0;
+				PxIsFinite(bounceThreshold) && bounceThreshold >= 0;
 	}
 
 	PX_INLINE bool isSoft() const
@@ -165,12 +137,6 @@ protected:
 */
 class PxJointLinearLimit : public PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief the extent of the limit. 
@@ -183,16 +149,12 @@ public:
 	/**
 	\brief construct a linear hard limit
 
-	\param[in] scale					A PxTolerancesScale struct. Should be the same as used when creating the PxPhysics object.
-	\param[in] extent					The extent of the limit
-	\param[in] contactDist_deprecated	The distance from the limit at which it becomes active. Default is 0.01f scaled by the tolerance length scale. This is deprecated in PhysX 5.1.
+	\param[in] extent	The extent of the limit
 
-	@see PxJointLimitParameters PxTolerancesScale
+	@see PxJointLimitParameters
 	*/
-	PxJointLinearLimit(const PxTolerancesScale& scale, PxReal extent, PxReal contactDist_deprecated = -1.0f)
-	: value(extent)
+	PxJointLinearLimit(PxReal extent) : value(extent)
 	{
-		PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated == -1.0f ? 0.01f*scale.length : contactDist_deprecated;
 	}
 
 	/**
@@ -201,7 +163,7 @@ public:
 	\param[in] extent the extent of the limit
 	\param[in] spring the stiffness and damping parameters for the limit spring
 
-	@see PxJointLimitParameters PxTolerancesScale
+	@see PxJointLimitParameters
 	*/
 	PxJointLinearLimit(PxReal extent, const PxSpring& spring) : value(extent)
 	{
@@ -228,12 +190,6 @@ public:
 */
 class PxJointLinearLimitPair : public PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief the range of the limit. The upper limit must be no lower than the
@@ -247,18 +203,16 @@ public:
 	/**
 	\brief Construct a linear hard limit pair. The lower distance value must be less than the upper distance value. 
 
-	\param[in] scale					A PxTolerancesScale struct. Should be the same as used when creating the PxPhysics object.
-	\param[in] lowerLimit				The lower distance of the limit
-	\param[in] upperLimit				The upper distance of the limit
-	\param[in] contactDist_deprecated	The distance from the limit at which it becomes active. Default is the lesser of 0.01f scaled by the tolerance length scale, and 0.49 * (upperLimit - lowerLimit). This is deprecated in PhysX 5.1.
+	\param[in] scale		A PxTolerancesScale struct. Should be the same as used when creating the PxPhysics object.
+	\param[in] lowerLimit	The lower distance of the limit
+	\param[in] upperLimit	The upper distance of the limit
 
 	@see PxJointLimitParameters PxTolerancesScale
 	*/
-	PxJointLinearLimitPair(const PxTolerancesScale& scale, PxReal lowerLimit = -PX_MAX_F32/3.0f, PxReal upperLimit = PX_MAX_F32/3.0f, PxReal contactDist_deprecated = -1.0f) :
+	PxJointLinearLimitPair(const PxTolerancesScale& scale, PxReal lowerLimit = -PX_MAX_F32/3.0f, PxReal upperLimit = PX_MAX_F32/3.0f) :
 		upper(upperLimit),
 		lower(lowerLimit)
 	{
-		PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated == -1.0f ? PxMin(scale.length * 0.01f, (upperLimit*0.49f-lowerLimit*0.49f)) : contactDist_deprecated; 
 		bounceThreshold = 2.0f*scale.length;
 	}
 
@@ -269,7 +223,7 @@ public:
 	\param[in] upperLimit	The upper distance of the limit
 	\param[in] spring		The stiffness and damping parameters of the limit spring
 
-	@see PxJointLimitParameters PxTolerancesScale
+	@see PxJointLimitParameters
 	*/
 	PxJointLinearLimitPair(PxReal lowerLimit, PxReal upperLimit, const PxSpring& spring) :
 		upper(upperLimit),
@@ -295,12 +249,6 @@ public:
 
 class PxJointAngularLimitPair : public PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief the range of the limit. The upper limit must be no lower than the lower limit.
@@ -316,17 +264,15 @@ public:
 	
 	The lower value must be less than the upper value. 
 
-	\param[in] lowerLimit				The lower angle of the limit
-	\param[in] upperLimit				The upper angle of the limit
-	\param[in] contactDist_deprecated	The distance from the limit at which it becomes active. Default is the lesser of 0.1 radians, and 0.49 * (upperLimit - lowerLimit). This is deprecated in PhysX 5.1.
+	\param[in] lowerLimit	The lower angle of the limit
+	\param[in] upperLimit	The upper angle of the limit
 
 	@see PxJointLimitParameters
 	*/
-	PxJointAngularLimitPair(PxReal lowerLimit, PxReal upperLimit, PxReal contactDist_deprecated = -1.0f) :
+	PxJointAngularLimitPair(PxReal lowerLimit, PxReal upperLimit) :
 		upper(upperLimit),
 		lower(lowerLimit)
 	{
-		PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated ==-1.0f ? PxMin(0.1f, 0.49f*(upperLimit-lowerLimit)) : contactDist_deprecated;
 		bounceThreshold = 0.5f;
 	}
 
@@ -369,12 +315,6 @@ result in jitter.
 */
 class PxJointLimitCone : public PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief the maximum angle from the Y axis of the constraint frame.
@@ -397,17 +337,15 @@ public:
 	/**
 	\brief Construct a cone hard limit. 
 
-	\param[in] yLimitAngle				The limit angle from the Y-axis of the constraint frame
-	\param[in] zLimitAngle				The limit angle from the Z-axis of the constraint frame
-	\param[in] contactDist_deprecated	The distance from the limit at which it becomes active. Default is the lesser of 0.1 radians, and 0.49 * the lower of the limit angles. This is deprecated in PhysX 5.1.
+	\param[in] yLimitAngle	The limit angle from the Y-axis of the constraint frame
+	\param[in] zLimitAngle	The limit angle from the Z-axis of the constraint frame
 
 	@see PxJointLimitParameters
 	*/
-	PxJointLimitCone(PxReal yLimitAngle, PxReal zLimitAngle, PxReal contactDist_deprecated = -1.0f) :
+	PxJointLimitCone(PxReal yLimitAngle, PxReal zLimitAngle) :
 		yAngle(yLimitAngle),
 		zAngle(zLimitAngle)
 	{
-		PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated == -1.0f ? PxMin(0.1f, PxMin(yLimitAngle, zLimitAngle)*0.49f) : contactDist_deprecated;
 		bounceThreshold = 0.5f;
 	}
 
@@ -448,12 +386,6 @@ public:
 */
 class PxJointLimitPyramid : public PxJointLimitParameters
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 	/**
 	\brief the minimum angle from the Y axis of the constraint frame.
@@ -494,31 +426,19 @@ public:
 	/**
 	\brief Construct a pyramid hard limit. 
 
-	\param[in] yLimitAngleMin			The minimum limit angle from the Y-axis of the constraint frame
-	\param[in] yLimitAngleMax			The maximum limit angle from the Y-axis of the constraint frame
-	\param[in] zLimitAngleMin			The minimum limit angle from the Z-axis of the constraint frame
-	\param[in] zLimitAngleMax			The maximum limit angle from the Z-axis of the constraint frame
-	\param[in] contactDist_deprecated	The distance from the limit at which it becomes active. Default is the lesser of 0.1 radians, and 0.49 * the lower of the limit angles. This is deprecated in PhysX 5.1.
+	\param[in] yLimitAngleMin	The minimum limit angle from the Y-axis of the constraint frame
+	\param[in] yLimitAngleMax	The maximum limit angle from the Y-axis of the constraint frame
+	\param[in] zLimitAngleMin	The minimum limit angle from the Z-axis of the constraint frame
+	\param[in] zLimitAngleMax	The maximum limit angle from the Z-axis of the constraint frame
 
 	@see PxJointLimitParameters
 	*/
-	PxJointLimitPyramid(PxReal yLimitAngleMin, PxReal yLimitAngleMax, PxReal zLimitAngleMin, PxReal zLimitAngleMax, PxReal contactDist_deprecated = -1.0f) :
+	PxJointLimitPyramid(PxReal yLimitAngleMin, PxReal yLimitAngleMax, PxReal zLimitAngleMin, PxReal zLimitAngleMax) :
 		yAngleMin(yLimitAngleMin),
 		yAngleMax(yLimitAngleMax),
 		zAngleMin(zLimitAngleMin),
 		zAngleMax(zLimitAngleMax)
 	{
-		if(contactDist_deprecated == -1.0f)
-		{
-			const PxReal contactDistY = PxMin(0.1f, 0.49f*(yLimitAngleMax - yLimitAngleMin));
-			const PxReal contactDistZ = PxMin(0.1f, 0.49f*(zLimitAngleMax - zLimitAngleMin));
-			PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated == PxMin(contactDistY, contactDistZ);
-		}
-		else
-		{
-			PxJointLimitParameters::contactDistance_deprecated = contactDist_deprecated;
-		}
-
 		bounceThreshold = 0.5f;
 	}
 

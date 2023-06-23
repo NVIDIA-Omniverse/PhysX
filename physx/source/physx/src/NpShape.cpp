@@ -65,11 +65,12 @@ static PX_FORCE_INLINE void decreaseActorCount(PxU32* count)
 
 NpShape::NpShape(const PxGeometry& geometry, PxShapeFlags shapeFlags, const PxU16* materialIndices, PxU16 materialCount, bool isExclusive, PxShapeCoreFlag::Enum flag) :
 	PxShape	(PxConcreteType::eSHAPE, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE),
-	NpBase	(NpType::eSHAPE),
-	mActor	(NULL),
-	mCore	(geometry, shapeFlags, materialIndices, materialCount, isExclusive, flag)
+	NpBase					(NpType::eSHAPE),
+	mExclusiveShapeActor	(NULL),
+	mCore					(geometry, shapeFlags, materialIndices, materialCount, isExclusive, flag)
 {
-	mFreeSlot = isExclusive ? EXCLUSIVE_MASK : 0;
+	//actor count
+	mFreeSlot = 0;
 
 	PX_ASSERT(mCore.getPxShape() == static_cast<PxShape*>(this));
 	PX_ASSERT(!PxShape::userData);
@@ -88,15 +89,17 @@ NpShape::~NpShape()
 
 	if (flags & PxShapeCoreFlag::eCLOTH_SHAPE)
 	{
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
 		for (PxU32 i = 0; i < nbMaterials; i++)
 			RefCountable_decRefCount(*scGetMaterial<NpFEMClothMaterial>(i));
 #endif
 	}
 	else if(flags & PxShapeCoreFlag::eSOFT_BODY_SHAPE)
 	{ 
+#if PX_SUPPORT_GPU_PHYSX
 		for (PxU32 i = 0; i < nbMaterials; i++)
 			RefCountable_decRefCount(*scGetMaterial<NpFEMSoftBodyMaterial>(i));
+#endif
 	}
 	else
 	{
@@ -121,7 +124,8 @@ NpShape::NpShape(PxBaseFlags baseFlags) : PxShape(baseFlags), NpBase(PxEmpty), m
 void NpShape::preExportDataReset()
 {
 	RefCountable_preExportDataReset(*this);
-	mFreeSlot &= EXCLUSIVE_MASK;
+	mExclusiveShapeActor = NULL;
+	mFreeSlot = 0;
 }
 
 void NpShape::exportExtraData(PxSerializationContext& context)
@@ -180,7 +184,8 @@ void NpShape::resolveReferences(PxDeserializationContext& context)
 		}
 	}
 
-	context.translatePxBase(mActor);
+	//we don't resolve mExclusiveShapeActor because it's set to NULL on export.
+	//it's recovered when the actors resolveReferences attaches to the shape
 
 	mCore.resolveReferences(context);	
 
@@ -227,14 +232,14 @@ void NpShape::releaseInternal()
 
 Sc::RigidCore& NpShape::getScRigidObjectExclusive() const
 {
-	const PxType actorType = mActor->getConcreteType();
+	const PxType actorType = mExclusiveShapeActor->getConcreteType();
 
 	if (actorType == PxConcreteType::eRIGID_DYNAMIC)
-		return static_cast<NpRigidDynamic&>(*mActor).getCore();
+		return static_cast<NpRigidDynamic&>(*mExclusiveShapeActor).getCore();
 	else if (actorType == PxConcreteType::eARTICULATION_LINK)
-		return static_cast<NpArticulationLink&>(*mActor).getCore();
+		return static_cast<NpArticulationLink&>(*mExclusiveShapeActor).getCore();
 	else
-		return static_cast<NpRigidStatic&>(*mActor).getCore();
+		return static_cast<NpRigidStatic&>(*mExclusiveShapeActor).getCore();
 }
 
 void NpShape::updateSQ(const char* errorMessage)
@@ -251,7 +256,7 @@ void NpShape::updateSQ(const char* errorMessage)
 		if(shapeManager->getPruningStructure())
 		{
 			outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, errorMessage);
-			shapeManager->getPruningStructure()->invalidate(mActor);
+			shapeManager->getPruningStructure()->invalidate(mExclusiveShapeActor);
 		}
 	}
 }
@@ -325,7 +330,7 @@ const PxGeometry& NpShape::getGeometry() const
 PxRigidActor* NpShape::getActor() const
 {
 	NP_READ_CHECK(getNpScene());
-	return mActor ? mActor->is<PxRigidActor>() : NULL;
+	return mExclusiveShapeActor ? mExclusiveShapeActor->is<PxRigidActor>() : NULL;
 }
 
 void NpShape::setLocalPose(const PxTransform& newShape2Actor)
@@ -342,8 +347,8 @@ void NpShape::setLocalPose(const PxTransform& newShape2Actor)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eSHAPE2BODY);
 
-	OMNI_PVD_SET(shape, translation, static_cast<PxShape &>(*this), normalizedTransform.p)
-	OMNI_PVD_SET(shape, rotation, static_cast<PxShape &>(*this), normalizedTransform.q)
+	OMNI_PVD_SET(PxShape, translation, static_cast<PxShape &>(*this), normalizedTransform.p)
+	OMNI_PVD_SET(PxShape, rotation, static_cast<PxShape &>(*this), normalizedTransform.q)
 	updateSQ("PxShape::setLocalPose: Shape is a part of pruning structure, pruning structure is now invalid!");
 }
 
@@ -367,7 +372,7 @@ void NpShape::setSimulationFilterData(const PxFilterData& data)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eFILTERDATA);
 
-	OMNI_PVD_SET(shape, simulationFilterData, static_cast<PxShape&>(*this), data);
+	OMNI_PVD_SET(PxShape, simulationFilterData, static_cast<PxShape&>(*this), data);
 }
 
 PxFilterData NpShape::getSimulationFilterData() const
@@ -384,7 +389,7 @@ void NpShape::setQueryFilterData(const PxFilterData& data)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxShape::setQueryFilterData() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(shape, queryFilterData, static_cast<PxShape&>(*this), data);
+	OMNI_PVD_SET(PxShape, queryFilterData, static_cast<PxShape&>(*this), data);
 
 	mQueryFilterData = data;
 	UPDATE_PVD_PROPERTY
@@ -425,7 +430,7 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 #endif
 
 #if PX_SUPPORT_OMNI_PVD
-	streamShapeMaterials((physx::PxShape*)this, (physx::PxMaterial**)materials, materialCount);
+	streamShapeMaterials(static_cast<PxShape*>(this), materials, materialCount);
 #endif
 
 	if (ret)
@@ -444,15 +449,16 @@ void NpShape::setMaterials(PxMaterial*const* materials, PxU16 materialCount)
 	PX_CHECK_AND_RETURN(!(mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eCLOTH_SHAPE), "NpShape::setMaterials: cannot set rigid body materials to a cloth shape!");
 	setMaterialsInternal<PxMaterial, NpMaterial>(materials, materialCount);
 }
+
 void NpShape::setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount)
 {
 #if PX_SUPPORT_GPU_PHYSX
 	PX_CHECK_AND_RETURN((mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eSOFT_BODY_SHAPE), "NpShape::setMaterials: can only apply soft body materials to a soft body shape!");
 
 	setMaterialsInternal<PxFEMSoftBodyMaterial, NpFEMSoftBodyMaterial>(materials, materialCount);
-	if (this->mActor)
+	if (this->mExclusiveShapeActor)
 	{
-		static_cast<NpSoftBody*>(mActor)->updateMaterials();
+		static_cast<NpSoftBody*>(mExclusiveShapeActor)->updateMaterials();
 	}
 #else
 	PX_UNUSED(materials);
@@ -463,7 +469,6 @@ void NpShape::setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16
 void NpShape::setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount)
 {
 #if PX_SUPPORT_GPU_PHYSX && PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-
 	PX_CHECK_AND_RETURN((mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eCLOTH_SHAPE), "NpShape::setMaterials: can only apply cloth materials to a cloth shape!");
 
 	setMaterialsInternal<PxFEMClothMaterial, NpFEMClothMaterial>(materials, materialCount);
@@ -485,13 +490,20 @@ PxU32 NpShape::getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 sta
 	return scGetMaterials<PxMaterial, NpMaterial>(userBuffer, bufferSize, startIndex);
 }
 
+#if PX_SUPPORT_GPU_PHYSX
 PxU32 NpShape::getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	NP_READ_CHECK(getNpScene());
 	return scGetMaterials<PxFEMSoftBodyMaterial, NpFEMSoftBodyMaterial>(userBuffer, bufferSize, startIndex);
 }
+#else
+PxU32 NpShape::getSoftBodyMaterials(PxFEMSoftBodyMaterial**, PxU32, PxU32) const
+{
+	return 0;
+}
+#endif
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
 PxU32 NpShape::getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	NP_READ_CHECK(getNpScene());
@@ -508,14 +520,15 @@ PxBaseMaterial* NpShape::getMaterialFromInternalFaceIndex(PxU32 faceIndex) const
 {
 	NP_READ_CHECK(getNpScene());
 
-	bool isHf = (getGeometryType() == PxGeometryType::eHEIGHTFIELD);
-	bool isMesh = (getGeometryType() == PxGeometryType::eTRIANGLEMESH);
+	const PxGeometry& geom = mCore.getGeometry();
+	const PxGeometryType::Enum geomType = geom.getType();
+	bool isHf = (geomType == PxGeometryType::eHEIGHTFIELD);
+	bool isMesh = (geomType == PxGeometryType::eTRIANGLEMESH);
 	
 	// if SDF tri-mesh, where no multi-material setup is allowed, return zero-index material
 	if (isMesh)
 	{
-		PxTriangleMeshGeometry triGeo;
-		getTriangleMeshGeometry(triGeo);
+		const PxTriangleMeshGeometry& triGeo = static_cast<const PxTriangleMeshGeometry&>(geom);
 		if (triGeo.triangleMesh->getSDF())
 		{
 			return getMaterial<PxMaterial, NpMaterial>(0);
@@ -532,15 +545,13 @@ PxBaseMaterial* NpShape::getMaterialFromInternalFaceIndex(PxU32 faceIndex) const
 
 	if(isHf)
 	{
-		PxHeightFieldGeometry hfGeom;
-		getHeightFieldGeometry(hfGeom);
+		const PxHeightFieldGeometry& hfGeom = static_cast<const PxHeightFieldGeometry&>(geom);
 
 		hitMatTableId = hfGeom.heightField->getTriangleMaterialIndex(faceIndex);
 	}
 	else if(isMesh)
 	{
-		PxTriangleMeshGeometry triGeo;
-		getTriangleMeshGeometry(triGeo);
+		const PxTriangleMeshGeometry& triGeo = static_cast<const PxTriangleMeshGeometry&>(geom);
 
 		Gu::TriangleMesh* tm = static_cast<Gu::TriangleMesh*>(triGeo.triangleMesh);
 		if(tm->hasPerTriangleMaterials())
@@ -565,7 +576,7 @@ void NpShape::setContactOffset(PxReal contactOffset)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eCONTACTOFFSET);
 
-	OMNI_PVD_SET(shape, contactOffset, static_cast<PxShape&>(*this), contactOffset)
+	OMNI_PVD_SET(PxShape, contactOffset, static_cast<PxShape&>(*this), contactOffset)
 }
 
 PxReal NpShape::getContactOffset() const
@@ -588,7 +599,7 @@ void NpShape::setRestOffset(PxReal restOffset)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eRESTOFFSET);
 
-	OMNI_PVD_SET(shape, restOffset, static_cast<PxShape&>(*this), restOffset)
+	OMNI_PVD_SET(PxShape, restOffset, static_cast<PxShape&>(*this), restOffset)
 }
 
 PxReal NpShape::getRestOffset() const
@@ -610,7 +621,7 @@ void NpShape::setDensityForFluid(PxReal densityForFluid)
 
 	///notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eRESTOFFSET);
 
-	OMNI_PVD_SET(shape, densityForFluid, static_cast<PxShape &>(*this), densityForFluid);
+	OMNI_PVD_SET(PxShape, densityForFluid, static_cast<PxShape &>(*this), densityForFluid);
 }
 
 PxReal NpShape::getDensityForFluid() const
@@ -631,7 +642,7 @@ void NpShape::setTorsionalPatchRadius(PxReal radius)
 //	const PxShapeFlags oldShapeFlags = mShape.getFlags();
 	mCore.setTorsionalPatchRadius(radius);
 
-	OMNI_PVD_SET(shape, torsionalPatchRadius, static_cast<PxShape &>(*this), radius);
+	OMNI_PVD_SET(PxShape, torsionalPatchRadius, static_cast<PxShape &>(*this), radius);
 
 // shared shapes return NULL. But shared shapes aren't mutable when attached to an actor, so no notification needed.
 //	Sc::RigidCore* rigidCore = NpShapeGetScRigidObjectFromScSLOW();
@@ -659,7 +670,7 @@ void NpShape::setMinTorsionalPatchRadius(PxReal radius)
 //	const PxShapeFlags oldShapeFlags = mShape.getFlags();
 	mCore.setMinTorsionalPatchRadius(radius);
 
-	OMNI_PVD_SET(shape, minTorsionalPatchRadius, static_cast<PxShape &>(*this), radius);
+	OMNI_PVD_SET(PxShape, minTorsionalPatchRadius, static_cast<PxShape &>(*this), radius);
 
 //	Sc::RigidCore* rigidCore = NpShapeGetScRigidObjectFromSbSLOW();
 //	if(rigidCore)
@@ -670,8 +681,20 @@ void NpShape::setMinTorsionalPatchRadius(PxReal radius)
 
 PxReal NpShape::getMinTorsionalPatchRadius() const
 {
-	NP_READ_CHECK(getNpScene());
+	NP_READ_CHECK(getNpScene());	
 	return mCore.getMinTorsionalPatchRadius();
+}
+
+PxU32 NpShape::getInternalShapeIndex() const
+{
+	NP_READ_CHECK(getNpScene());
+	if (getNpScene())
+	{
+		PxsSimulationController* simulationController = getNpScene()->getSimulationController();
+		if (simulationController)
+			return mCore.getInternalShapeIndex(*simulationController);
+	}
+	return PX_INVALID_NODE;
 }
 
 void NpShape::setFlagsInternal(PxShapeFlags inFlags)
@@ -695,15 +718,15 @@ void NpShape::setFlagsInternal(PxShapeFlags inFlags)
 	const bool oldIsSimShape = oldFlags & PxShapeFlag::eSIMULATION_SHAPE;
 	const bool isSimShape = inFlags & PxShapeFlag::eSIMULATION_SHAPE;
 
-	if(mActor)
+	if(mExclusiveShapeActor)
 	{
-		const PxType type = mActor->getConcreteType();
+		const PxType type = mExclusiveShapeActor->getConcreteType();
 
 		// PT: US5732 - support kinematic meshes
 		bool isKinematic = false;
 		if(type==PxConcreteType::eRIGID_DYNAMIC)
 		{
-			PxRigidDynamic* rigidDynamic = static_cast<PxRigidDynamic*>(mActor);
+			PxRigidDynamic* rigidDynamic = static_cast<PxRigidDynamic*>(mExclusiveShapeActor);
 			isKinematic = rigidDynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC;
 		}
 
@@ -747,7 +770,7 @@ void NpShape::setFlagsInternal(PxShapeFlags inFlags)
 		if(shapeManager->getPruningStructure())
 		{
 			outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxShape::setFlag: Shape is a part of pruning structure, pruning structure is now invalid!");
-			shapeManager->getPruningStructure()->invalidate(mActor);
+			shapeManager->getPruningStructure()->invalidate(mExclusiveShapeActor);
 		}
 	}
 }
@@ -767,7 +790,7 @@ void NpShape::setFlag(PxShapeFlag::Enum flag, bool value)
 	
 	setFlagsInternal(shapeFlags);
 
-	OMNI_PVD_SET(shape, shapeFlags, static_cast<PxShape&>(*this), shapeFlags);
+	OMNI_PVD_SET(PxShape, shapeFlags, static_cast<PxShape&>(*this), shapeFlags);
 }
 
 void NpShape::setFlags(PxShapeFlags inFlags)
@@ -782,7 +805,7 @@ void NpShape::setFlags(PxShapeFlags inFlags)
 
 	setFlagsInternal(inFlags);
 
-	OMNI_PVD_SET(shape, shapeFlags, static_cast<PxShape&>(*this), inFlags);
+	OMNI_PVD_SET(PxShape, shapeFlags, static_cast<PxShape&>(*this), inFlags);
 }
 
 PxShapeFlags NpShape::getFlags() const
@@ -801,7 +824,7 @@ void NpShape::onActorAttach(PxActor& actor)
 {
 	RefCountable_incRefCount(*this);
 	if(isExclusiveFast())
-		mActor = &actor;
+		mExclusiveShapeActor = &actor;
 	increaseActorCount(&mFreeSlot);
 }
 
@@ -810,7 +833,7 @@ void NpShape::onActorDetach()
 	PX_ASSERT(getActorCount() > 0);
 	decreaseActorCount(&mFreeSlot);
 	if(isExclusiveFast())
-		mActor = NULL;
+		mExclusiveShapeActor = NULL;
 	RefCountable_decRefCount(*this);
 }
 
@@ -919,20 +942,20 @@ bool NpShape::setMaterialsHelper(PxMaterialType* const* materials, PxU16 materia
 void NpShape::notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlags notifyFlags)
 {
 	// shared shapes return NULL. But shared shapes aren't mutable when attached to an actor, so no notification needed.
-	if(mActor)
+	if(mExclusiveShapeActor)
 	{
 		Sc::RigidCore* rigidCore = getScRigidObjectSLOW();
 		if(rigidCore)
 			rigidCore->onShapeChange(mCore, notifyFlags);
 
 #if PX_SUPPORT_GPU_PHYSX
-		const PxType type = mActor->getConcreteType();
+		const PxType type = mExclusiveShapeActor->getConcreteType();
 	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 		if(type==PxConcreteType::eFEM_CLOTH)
-			static_cast<NpFEMCloth*>(mActor)->getCore().onShapeChange(mCore, notifyFlags);
+			static_cast<NpFEMCloth*>(mExclusiveShapeActor)->getCore().onShapeChange(mCore, notifyFlags);
 	#endif
 		if(type==PxConcreteType::eSOFT_BODY)
-			static_cast<NpSoftBody*>(mActor)->getCore().onShapeChange(mCore, notifyFlags);
+			static_cast<NpSoftBody*>(mExclusiveShapeActor)->getCore().onShapeChange(mCore, notifyFlags);
 #endif
 	}
 

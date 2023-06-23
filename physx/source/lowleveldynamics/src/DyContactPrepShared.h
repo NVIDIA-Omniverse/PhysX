@@ -68,7 +68,6 @@ PX_FORCE_INLINE bool isSeparated(const FrictionPatch& patch, const PxTransform& 
 	return false;
 }
 
-
 inline bool getFrictionPatches(CorrelationBuffer& c,
 						const PxU8* frictionCookie,
 						PxU32 frictionPatchCount,
@@ -76,7 +75,6 @@ inline bool getFrictionPatches(CorrelationBuffer& c,
 						const PxTransform& bodyFrame1,
 						PxReal correlationDistance)
 {
-	PX_UNUSED(correlationDistance);
 	if(frictionCookie == NULL || frictionPatchCount == 0)
 		return true;
 
@@ -99,14 +97,12 @@ inline bool getFrictionPatches(CorrelationBuffer& c,
 			if(patch.anchorCount != 0 && !(patch.materialFlags & PxMaterialFlag::eDISABLE_STRONG_FRICTION))
 			{
 				PX_ASSERT(patch.anchorCount <= 2);
-
-				
+			
 				if(!evaluated)
 				{
 					body1ToBody0 = bodyFrame0.transformInv(bodyFrame1);
 					evaluated = true;
 				}
-
 
 				if(patch.body0Normal.dot(body1ToBody0.rotate(patch.body1Normal)) > PXC_SAME_NORMAL)
 				{
@@ -204,7 +200,7 @@ struct CorrelationListIterator
 	}
 
 	//Returns true if it has another contact pre-loaded. Returns false otherwise
-	PX_FORCE_INLINE bool hasNextContact()
+	PX_FORCE_INLINE bool hasNextContact()	const
 	{
 		return (currPatch != CorrelationBuffer::LIST_END && currContact < buffer.contactPatches[currPatch].count);
 	}
@@ -233,11 +229,10 @@ private:
 
 };
 
-
-	PX_FORCE_INLINE void constructContactConstraint(const Mat33V& invSqrtInertia0, const Mat33V& invSqrtInertia1,  const FloatVArg invMassNorLenSq0, 
+	PX_FORCE_INLINE void constructContactConstraint(const Mat33V& invSqrtInertia0, const Mat33V& invSqrtInertia1, const FloatVArg invMassNorLenSq0, 
 		const FloatVArg invMassNorLenSq1, const FloatVArg angD0, const FloatVArg angD1, const Vec3VArg bodyFrame0p, const Vec3VArg bodyFrame1p,
 		const Vec3VArg normal, const FloatVArg norVel, const VecCrossV& norCross, const Vec3VArg angVel0, const Vec3VArg angVel1,
-		const FloatVArg invDt, const FloatVArg invDtp8, const FloatVArg dt, const FloatVArg restDistance, const FloatVArg maxPenBias,  const FloatVArg restitution,
+		const FloatVArg invDt, const FloatVArg invDtp8, const FloatVArg dt, const FloatVArg restDistance, const FloatVArg maxPenBias, const FloatVArg restitution,
 		const FloatVArg bounceThreshold, const PxContactPoint& contact, SolverContactPoint& solverContact,
 		const FloatVArg ccdMaxSeparation, const Vec3VArg solverOffsetSlop, const FloatVArg damping)
 	{
@@ -267,7 +262,6 @@ private:
 
 		const FloatV vrel = FAdd(norVel, vRelAng);
 
-
 		const Vec3V raXnSqrtInertia = M33MulV3(invSqrtInertia0, raXn);
 		const Vec3V rbXnSqrtInertia = M33MulV3(invSqrtInertia1, rbXn);				
 
@@ -279,11 +273,9 @@ private:
 		const FloatV penetration = FSub(separation, restDistance);
 		const FloatV penetrationInvDt = FMul(penetration, invDt);
 
-		FloatV velMultiplier, scaledBias, impulseMultiplier;
 		const FloatV sumVRel(vrel);
 
 		const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
-
 
 		FloatV targetVelocity = FAdd(cTargetVel, FSel(isGreater2, FMul(FNeg(sumVRel), restitution), zero));
 
@@ -291,6 +283,7 @@ private:
 		targetVelocity = FSub(targetVelocity, vrel);
 
 		FloatV biasedErr, unbiasedErr;
+		FloatV velMultiplier, impulseMultiplier;
 
 		if (FAllGrtr(zero, restitution))
 		{
@@ -302,8 +295,8 @@ private:
 			const FloatV x = FRecip(FScaleAdd(a, unitResponse, FOne()));
 
 			velMultiplier = FMul(x, a);
-			//scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
-			scaledBias = FMul(x, b);
+			//FloatV scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
+			const FloatV scaledBias = FMul(x, b);
 			impulseMultiplier = FSub(FOne(), x);
 
 			unbiasedErr = biasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(scaledBias));
@@ -314,23 +307,18 @@ private:
 
 			const FloatV penetrationInvDtPt8 = FMax(maxPenBias, FMul(penetration, invDtp8));
 
-			scaledBias = FMul(velMultiplier, penetrationInvDtPt8);
+			FloatV scaledBias = FMul(velMultiplier, penetrationInvDtPt8);
 
 			const BoolV ccdSeparationCondition = FIsGrtrOrEq(ccdMaxSeparation, penetration);
 
 			scaledBias = FSel(BAnd(ccdSeparationCondition, isGreater2), zero, scaledBias);
 
-			impulseMultiplier = FLoad(1.f);
+			impulseMultiplier = FLoad(1.0f);
 
 			biasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(scaledBias));
 			unbiasedErr = FScaleAdd(targetVelocity, velMultiplier, FSel(isGreater2, zero, FNeg(FMax(scaledBias, zero))));
-
 		}
 
-		
-
-
-		
 		//const FloatV unbiasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(FMax(scaledBias, zero)));
 
 		FStore(biasedErr, &solverContact.biasedErr);

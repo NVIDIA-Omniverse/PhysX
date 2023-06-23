@@ -42,6 +42,8 @@ SET(PVDRUNTIME_HEADERS
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileReadStream.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileWriteStream.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdMemoryStream.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLibraryHelpers.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLoader.h
 )
 SOURCE_GROUP(include FILES ${PVDRUNTIME_HEADERS})
 
@@ -52,6 +54,9 @@ SET(PVDRUNTIME_HEADERS_USER
 INSTALL(FILES ${PVDRUNTIME_HEADERS} ${PVDRUNTIME_HEADERS_USER} DESTINATION pvdruntime/include)
 
 SET(PVDRUNTIME_SOURCES
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdDefinesInternal.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdHelpers.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdHelpers.cpp
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLibraryFunctionsImpl.cpp
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLog.h
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLog.cpp

@@ -94,7 +94,6 @@ namespace Sc
 		ptrdiff_t 	scPBDParticleSystem2PxActor;
 		ptrdiff_t 	scFLIPParticleSystem2PxActor;
 		ptrdiff_t 	scMPMParticleSystem2PxActor;
-		ptrdiff_t 	scCustomParticleSystem2PxActor;
 		ptrdiff_t 	scHairSystem2PxActor;
 		ptrdiff_t 	scShape2Px;
 		ptrdiff_t 	scArticulationRC2Px;

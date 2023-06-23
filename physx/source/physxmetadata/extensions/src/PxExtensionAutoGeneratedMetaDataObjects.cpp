@@ -155,10 +155,6 @@ void setPxD6Joint_Drive( PxD6Joint* inObj, PxD6Drive::Enum inIndex, PxD6JointDri
 PxD6JointDrive getPxD6Joint_Drive( const PxD6Joint* inObj, PxD6Drive::Enum inIndex ) { return inObj->getDrive( inIndex ); }
 void setPxD6Joint_DrivePosition( PxD6Joint* inObj, const PxTransform & inArg){ inObj->setDrivePosition( inArg ); }
 PxTransform getPxD6Joint_DrivePosition( const PxD6Joint* inObj ) { return inObj->getDrivePosition(); }
-void setPxD6Joint_ProjectionLinearTolerance( PxD6Joint* inObj, PxReal inArg){ inObj->setProjectionLinearTolerance( inArg ); }
-PxReal getPxD6Joint_ProjectionLinearTolerance( const PxD6Joint* inObj ) { return inObj->getProjectionLinearTolerance(); }
-void setPxD6Joint_ProjectionAngularTolerance( PxD6Joint* inObj, PxReal inArg){ inObj->setProjectionAngularTolerance( inArg ); }
-PxReal getPxD6Joint_ProjectionAngularTolerance( const PxD6Joint* inObj ) { return inObj->getProjectionAngularTolerance(); }
 const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return inObj->getConcreteTypeName(); }
  PxD6JointGeneratedInfo::PxD6JointGeneratedInfo()
 	: Motion( "Motion", setPxD6Joint_Motion, getPxD6Joint_Motion)
@@ -173,8 +169,6 @@ const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return in
 	, PyramidSwingLimit( "PyramidSwingLimit", setPxD6Joint_PyramidSwingLimit, getPxD6Joint_PyramidSwingLimit)
 	, Drive( "Drive", setPxD6Joint_Drive, getPxD6Joint_Drive)
 	, DrivePosition( "DrivePosition", setPxD6Joint_DrivePosition, getPxD6Joint_DrivePosition)
-	, ProjectionLinearTolerance( "ProjectionLinearTolerance", setPxD6Joint_ProjectionLinearTolerance, getPxD6Joint_ProjectionLinearTolerance)
-	, ProjectionAngularTolerance( "ProjectionAngularTolerance", setPxD6Joint_ProjectionAngularTolerance, getPxD6Joint_ProjectionAngularTolerance)
 	, ConcreteTypeName( "ConcreteTypeName", getPxD6Joint_ConcreteTypeName)
 {}
  PxD6JointGeneratedValues::PxD6JointGeneratedValues( const PxD6Joint* inSource )
@@ -189,8 +183,6 @@ const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return in
 		,SwingLimit( getPxD6Joint_SwingLimit( inSource ) )
 		,PyramidSwingLimit( getPxD6Joint_PyramidSwingLimit( inSource ) )
 		,DrivePosition( getPxD6Joint_DrivePosition( inSource ) )
-		,ProjectionLinearTolerance( getPxD6Joint_ProjectionLinearTolerance( inSource ) )
-		,ProjectionAngularTolerance( getPxD6Joint_ProjectionAngularTolerance( inSource ) )
 		,ConcreteTypeName( getPxD6Joint_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -210,8 +202,6 @@ void setPxDistanceJoint_Stiffness( PxDistanceJoint* inObj, PxReal inArg){ inObj-
 PxReal getPxDistanceJoint_Stiffness( const PxDistanceJoint* inObj ) { return inObj->getStiffness(); }
 void setPxDistanceJoint_Damping( PxDistanceJoint* inObj, PxReal inArg){ inObj->setDamping( inArg ); }
 PxReal getPxDistanceJoint_Damping( const PxDistanceJoint* inObj ) { return inObj->getDamping(); }
-void setPxDistanceJoint_ContactDistance( PxDistanceJoint* inObj, PxReal inArg){ inObj->setContactDistance( inArg ); }
-PxReal getPxDistanceJoint_ContactDistance( const PxDistanceJoint* inObj ) { return inObj->getContactDistance(); }
 void setPxDistanceJoint_DistanceJointFlags( PxDistanceJoint* inObj, PxDistanceJointFlags inArg){ inObj->setDistanceJointFlags( inArg ); }
 PxDistanceJointFlags getPxDistanceJoint_DistanceJointFlags( const PxDistanceJoint* inObj ) { return inObj->getDistanceJointFlags(); }
 const char * getPxDistanceJoint_ConcreteTypeName( const PxDistanceJoint* inObj ) { return inObj->getConcreteTypeName(); }
@@ -222,7 +212,6 @@ const char * getPxDistanceJoint_ConcreteTypeName( const PxDistanceJoint* inObj )
 	, Tolerance( "Tolerance", setPxDistanceJoint_Tolerance, getPxDistanceJoint_Tolerance)
 	, Stiffness( "Stiffness", setPxDistanceJoint_Stiffness, getPxDistanceJoint_Stiffness)
 	, Damping( "Damping", setPxDistanceJoint_Damping, getPxDistanceJoint_Damping)
-	, ContactDistance( "ContactDistance", setPxDistanceJoint_ContactDistance, getPxDistanceJoint_ContactDistance)
 	, DistanceJointFlags( "DistanceJointFlags", setPxDistanceJoint_DistanceJointFlags, getPxDistanceJoint_DistanceJointFlags)
 	, ConcreteTypeName( "ConcreteTypeName", getPxDistanceJoint_ConcreteTypeName)
 {}
@@ -234,7 +223,6 @@ const char * getPxDistanceJoint_ConcreteTypeName( const PxDistanceJoint* inObj )
 		,Tolerance( getPxDistanceJoint_Tolerance( inSource ) )
 		,Stiffness( getPxDistanceJoint_Stiffness( inSource ) )
 		,Damping( getPxDistanceJoint_Damping( inSource ) )
-		,ContactDistance( getPxDistanceJoint_ContactDistance( inSource ) )
 		,DistanceJointFlags( getPxDistanceJoint_DistanceJointFlags( inSource ) )
 		,ConcreteTypeName( getPxDistanceJoint_ConcreteTypeName( inSource ) )
 {
@@ -270,20 +258,12 @@ const char * getPxContactJoint_ConcreteTypeName( const PxContactJoint* inObj ) {
 {
 	PX_UNUSED(inSource);
 }
-void setPxFixedJoint_ProjectionLinearTolerance( PxFixedJoint* inObj, PxReal inArg){ inObj->setProjectionLinearTolerance( inArg ); }
-PxReal getPxFixedJoint_ProjectionLinearTolerance( const PxFixedJoint* inObj ) { return inObj->getProjectionLinearTolerance(); }
-void setPxFixedJoint_ProjectionAngularTolerance( PxFixedJoint* inObj, PxReal inArg){ inObj->setProjectionAngularTolerance( inArg ); }
-PxReal getPxFixedJoint_ProjectionAngularTolerance( const PxFixedJoint* inObj ) { return inObj->getProjectionAngularTolerance(); }
 const char * getPxFixedJoint_ConcreteTypeName( const PxFixedJoint* inObj ) { return inObj->getConcreteTypeName(); }
  PxFixedJointGeneratedInfo::PxFixedJointGeneratedInfo()
-	: ProjectionLinearTolerance( "ProjectionLinearTolerance", setPxFixedJoint_ProjectionLinearTolerance, getPxFixedJoint_ProjectionLinearTolerance)
-	, ProjectionAngularTolerance( "ProjectionAngularTolerance", setPxFixedJoint_ProjectionAngularTolerance, getPxFixedJoint_ProjectionAngularTolerance)
-	, ConcreteTypeName( "ConcreteTypeName", getPxFixedJoint_ConcreteTypeName)
+	: ConcreteTypeName( "ConcreteTypeName", getPxFixedJoint_ConcreteTypeName)
 {}
  PxFixedJointGeneratedValues::PxFixedJointGeneratedValues( const PxFixedJoint* inSource )
 		:PxJointGeneratedValues( inSource )
-		,ProjectionLinearTolerance( getPxFixedJoint_ProjectionLinearTolerance( inSource ) )
-		,ProjectionAngularTolerance( getPxFixedJoint_ProjectionAngularTolerance( inSource ) )
 		,ConcreteTypeName( getPxFixedJoint_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -294,18 +274,12 @@ void setPxPrismaticJoint_Limit( PxPrismaticJoint* inObj, const PxJointLinearLimi
 PxJointLinearLimitPair getPxPrismaticJoint_Limit( const PxPrismaticJoint* inObj ) { return inObj->getLimit(); }
 void setPxPrismaticJoint_PrismaticJointFlags( PxPrismaticJoint* inObj, PxPrismaticJointFlags inArg){ inObj->setPrismaticJointFlags( inArg ); }
 PxPrismaticJointFlags getPxPrismaticJoint_PrismaticJointFlags( const PxPrismaticJoint* inObj ) { return inObj->getPrismaticJointFlags(); }
-void setPxPrismaticJoint_ProjectionLinearTolerance( PxPrismaticJoint* inObj, PxReal inArg){ inObj->setProjectionLinearTolerance( inArg ); }
-PxReal getPxPrismaticJoint_ProjectionLinearTolerance( const PxPrismaticJoint* inObj ) { return inObj->getProjectionLinearTolerance(); }
-void setPxPrismaticJoint_ProjectionAngularTolerance( PxPrismaticJoint* inObj, PxReal inArg){ inObj->setProjectionAngularTolerance( inArg ); }
-PxReal getPxPrismaticJoint_ProjectionAngularTolerance( const PxPrismaticJoint* inObj ) { return inObj->getProjectionAngularTolerance(); }
 const char * getPxPrismaticJoint_ConcreteTypeName( const PxPrismaticJoint* inObj ) { return inObj->getConcreteTypeName(); }
  PxPrismaticJointGeneratedInfo::PxPrismaticJointGeneratedInfo()
 	: Position( "Position", getPxPrismaticJoint_Position)
 	, Velocity( "Velocity", getPxPrismaticJoint_Velocity)
 	, Limit( "Limit", setPxPrismaticJoint_Limit, getPxPrismaticJoint_Limit)
 	, PrismaticJointFlags( "PrismaticJointFlags", setPxPrismaticJoint_PrismaticJointFlags, getPxPrismaticJoint_PrismaticJointFlags)
-	, ProjectionLinearTolerance( "ProjectionLinearTolerance", setPxPrismaticJoint_ProjectionLinearTolerance, getPxPrismaticJoint_ProjectionLinearTolerance)
-	, ProjectionAngularTolerance( "ProjectionAngularTolerance", setPxPrismaticJoint_ProjectionAngularTolerance, getPxPrismaticJoint_ProjectionAngularTolerance)
 	, ConcreteTypeName( "ConcreteTypeName", getPxPrismaticJoint_ConcreteTypeName)
 {}
  PxPrismaticJointGeneratedValues::PxPrismaticJointGeneratedValues( const PxPrismaticJoint* inSource )
@@ -314,8 +288,6 @@ const char * getPxPrismaticJoint_ConcreteTypeName( const PxPrismaticJoint* inObj
 		,Velocity( getPxPrismaticJoint_Velocity( inSource ) )
 		,Limit( getPxPrismaticJoint_Limit( inSource ) )
 		,PrismaticJointFlags( getPxPrismaticJoint_PrismaticJointFlags( inSource ) )
-		,ProjectionLinearTolerance( getPxPrismaticJoint_ProjectionLinearTolerance( inSource ) )
-		,ProjectionAngularTolerance( getPxPrismaticJoint_ProjectionAngularTolerance( inSource ) )
 		,ConcreteTypeName( getPxPrismaticJoint_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -332,10 +304,6 @@ void setPxRevoluteJoint_DriveGearRatio( PxRevoluteJoint* inObj, PxReal inArg){ i
 PxReal getPxRevoluteJoint_DriveGearRatio( const PxRevoluteJoint* inObj ) { return inObj->getDriveGearRatio(); }
 void setPxRevoluteJoint_RevoluteJointFlags( PxRevoluteJoint* inObj, PxRevoluteJointFlags inArg){ inObj->setRevoluteJointFlags( inArg ); }
 PxRevoluteJointFlags getPxRevoluteJoint_RevoluteJointFlags( const PxRevoluteJoint* inObj ) { return inObj->getRevoluteJointFlags(); }
-void setPxRevoluteJoint_ProjectionLinearTolerance( PxRevoluteJoint* inObj, PxReal inArg){ inObj->setProjectionLinearTolerance( inArg ); }
-PxReal getPxRevoluteJoint_ProjectionLinearTolerance( const PxRevoluteJoint* inObj ) { return inObj->getProjectionLinearTolerance(); }
-void setPxRevoluteJoint_ProjectionAngularTolerance( PxRevoluteJoint* inObj, PxReal inArg){ inObj->setProjectionAngularTolerance( inArg ); }
-PxReal getPxRevoluteJoint_ProjectionAngularTolerance( const PxRevoluteJoint* inObj ) { return inObj->getProjectionAngularTolerance(); }
 const char * getPxRevoluteJoint_ConcreteTypeName( const PxRevoluteJoint* inObj ) { return inObj->getConcreteTypeName(); }
  PxRevoluteJointGeneratedInfo::PxRevoluteJointGeneratedInfo()
 	: Angle( "Angle", getPxRevoluteJoint_Angle)
@@ -345,8 +313,6 @@ const char * getPxRevoluteJoint_ConcreteTypeName( const PxRevoluteJoint* inObj )
 	, DriveForceLimit( "DriveForceLimit", setPxRevoluteJoint_DriveForceLimit, getPxRevoluteJoint_DriveForceLimit)
 	, DriveGearRatio( "DriveGearRatio", setPxRevoluteJoint_DriveGearRatio, getPxRevoluteJoint_DriveGearRatio)
 	, RevoluteJointFlags( "RevoluteJointFlags", setPxRevoluteJoint_RevoluteJointFlags, getPxRevoluteJoint_RevoluteJointFlags)
-	, ProjectionLinearTolerance( "ProjectionLinearTolerance", setPxRevoluteJoint_ProjectionLinearTolerance, getPxRevoluteJoint_ProjectionLinearTolerance)
-	, ProjectionAngularTolerance( "ProjectionAngularTolerance", setPxRevoluteJoint_ProjectionAngularTolerance, getPxRevoluteJoint_ProjectionAngularTolerance)
 	, ConcreteTypeName( "ConcreteTypeName", getPxRevoluteJoint_ConcreteTypeName)
 {}
  PxRevoluteJointGeneratedValues::PxRevoluteJointGeneratedValues( const PxRevoluteJoint* inSource )
@@ -358,8 +324,6 @@ const char * getPxRevoluteJoint_ConcreteTypeName( const PxRevoluteJoint* inObj )
 		,DriveForceLimit( getPxRevoluteJoint_DriveForceLimit( inSource ) )
 		,DriveGearRatio( getPxRevoluteJoint_DriveGearRatio( inSource ) )
 		,RevoluteJointFlags( getPxRevoluteJoint_RevoluteJointFlags( inSource ) )
-		,ProjectionLinearTolerance( getPxRevoluteJoint_ProjectionLinearTolerance( inSource ) )
-		,ProjectionAngularTolerance( getPxRevoluteJoint_ProjectionAngularTolerance( inSource ) )
 		,ConcreteTypeName( getPxRevoluteJoint_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -370,15 +334,12 @@ PxReal getPxSphericalJoint_SwingYAngle( const PxSphericalJoint* inObj ) { return
 PxReal getPxSphericalJoint_SwingZAngle( const PxSphericalJoint* inObj ) { return inObj->getSwingZAngle(); }
 void setPxSphericalJoint_SphericalJointFlags( PxSphericalJoint* inObj, PxSphericalJointFlags inArg){ inObj->setSphericalJointFlags( inArg ); }
 PxSphericalJointFlags getPxSphericalJoint_SphericalJointFlags( const PxSphericalJoint* inObj ) { return inObj->getSphericalJointFlags(); }
-void setPxSphericalJoint_ProjectionLinearTolerance( PxSphericalJoint* inObj, PxReal inArg){ inObj->setProjectionLinearTolerance( inArg ); }
-PxReal getPxSphericalJoint_ProjectionLinearTolerance( const PxSphericalJoint* inObj ) { return inObj->getProjectionLinearTolerance(); }
 const char * getPxSphericalJoint_ConcreteTypeName( const PxSphericalJoint* inObj ) { return inObj->getConcreteTypeName(); }
  PxSphericalJointGeneratedInfo::PxSphericalJointGeneratedInfo()
 	: LimitCone( "LimitCone", setPxSphericalJoint_LimitCone, getPxSphericalJoint_LimitCone)
 	, SwingYAngle( "SwingYAngle", getPxSphericalJoint_SwingYAngle)
 	, SwingZAngle( "SwingZAngle", getPxSphericalJoint_SwingZAngle)
 	, SphericalJointFlags( "SphericalJointFlags", setPxSphericalJoint_SphericalJointFlags, getPxSphericalJoint_SphericalJointFlags)
-	, ProjectionLinearTolerance( "ProjectionLinearTolerance", setPxSphericalJoint_ProjectionLinearTolerance, getPxSphericalJoint_ProjectionLinearTolerance)
 	, ConcreteTypeName( "ConcreteTypeName", getPxSphericalJoint_ConcreteTypeName)
 {}
  PxSphericalJointGeneratedValues::PxSphericalJointGeneratedValues( const PxSphericalJoint* inSource )
@@ -387,7 +348,6 @@ const char * getPxSphericalJoint_ConcreteTypeName( const PxSphericalJoint* inObj
 		,SwingYAngle( getPxSphericalJoint_SwingYAngle( inSource ) )
 		,SwingZAngle( getPxSphericalJoint_SwingZAngle( inSource ) )
 		,SphericalJointFlags( getPxSphericalJoint_SphericalJointFlags( inSource ) )
-		,ProjectionLinearTolerance( getPxSphericalJoint_ProjectionLinearTolerance( inSource ) )
 		,ConcreteTypeName( getPxSphericalJoint_ConcreteTypeName( inSource ) )
 {
 	PX_UNUSED(inSource);
@@ -400,21 +360,17 @@ inline PxReal getPxJointLimitParametersStiffness( const PxJointLimitParameters* 
 inline void setPxJointLimitParametersStiffness( PxJointLimitParameters* inOwner, PxReal inData) { inOwner->stiffness = inData; }
 inline PxReal getPxJointLimitParametersDamping( const PxJointLimitParameters* inOwner ) { return inOwner->damping; }
 inline void setPxJointLimitParametersDamping( PxJointLimitParameters* inOwner, PxReal inData) { inOwner->damping = inData; }
-inline PxReal getPxJointLimitParametersContactDistance_deprecated( const PxJointLimitParameters* inOwner ) { return inOwner->contactDistance_deprecated; }
-inline void setPxJointLimitParametersContactDistance_deprecated( PxJointLimitParameters* inOwner, PxReal inData) { inOwner->contactDistance_deprecated = inData; }
  PxJointLimitParametersGeneratedInfo::PxJointLimitParametersGeneratedInfo()
 	: Restitution( "Restitution", setPxJointLimitParametersRestitution, getPxJointLimitParametersRestitution )
 	, BounceThreshold( "BounceThreshold", setPxJointLimitParametersBounceThreshold, getPxJointLimitParametersBounceThreshold )
 	, Stiffness( "Stiffness", setPxJointLimitParametersStiffness, getPxJointLimitParametersStiffness )
 	, Damping( "Damping", setPxJointLimitParametersDamping, getPxJointLimitParametersDamping )
-	, ContactDistance_deprecated( "ContactDistance_deprecated", setPxJointLimitParametersContactDistance_deprecated, getPxJointLimitParametersContactDistance_deprecated )
 {}
  PxJointLimitParametersGeneratedValues::PxJointLimitParametersGeneratedValues( const PxJointLimitParameters* inSource )
 		:Restitution( inSource->restitution )
 		,BounceThreshold( inSource->bounceThreshold )
 		,Stiffness( inSource->stiffness )
 		,Damping( inSource->damping )
-		,ContactDistance_deprecated( inSource->contactDistance_deprecated )
 {
 	PX_UNUSED(inSource);
 }

@@ -103,27 +103,23 @@ namespace Gu
 							void				release();
 
 		// PxBVH
-		virtual				bool				raycast(const PxVec3& origin, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags)							const	/*override*/;
-		virtual				bool				overlap(const PxGeometry& geom, const PxTransform& pose, OverlapCallback& cb, PxGeometryQueryFlags flags)										const	/*override*/;
-		virtual				bool				sweep(const PxGeometry& geom, const PxTransform& pose, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags)	const	/*override*/;
-		virtual				bool				cull(PxU32 nbPlanes, const PxPlane* planes, OverlapCallback& cb, PxGeometryQueryFlags flags)													const	/*override*/;
+		virtual				bool				raycast(const PxVec3& origin, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags)							const	PX_OVERRIDE;
+		virtual				bool				overlap(const PxGeometry& geom, const PxTransform& pose, OverlapCallback& cb, PxGeometryQueryFlags flags)										const	PX_OVERRIDE;
+		virtual				bool				sweep(const PxGeometry& geom, const PxTransform& pose, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags)	const	PX_OVERRIDE;
+		virtual				bool				cull(PxU32 nbPlanes, const PxPlane* planes, OverlapCallback& cb, PxGeometryQueryFlags flags)													const	PX_OVERRIDE;
 
-		virtual				PxU32				raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT rayHits)									const	/*override*/;
-		virtual				PxU32				sweep(const PxBounds3& aabb, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT sweepHits)								const	/*override*/;
-		virtual				PxU32				overlap(const PxBounds3& aabb, PxU32 maxHits, PxU32* PX_RESTRICT overlapHits)																	const	/*override*/;
+		virtual				PxU32				getNbBounds()	const PX_OVERRIDE	{ return mData.mNbIndices;			}
+		virtual				const PxBounds3*	getBounds()		const PX_OVERRIDE	{ return mData.mBounds.getBounds();	}
 
-		virtual				PxU32				getNbBounds()	const /*override*/	{ return mData.mNbIndices;			}
-		virtual				const PxBounds3*	getBounds()		const /*override*/	{ return mData.mBounds.getBounds();	}
+		virtual				void				refit()														PX_OVERRIDE;
+		virtual				bool				updateBounds(PxU32 boundsIndex, const PxBounds3& newBounds)	PX_OVERRIDE;
+		virtual				void				partialRefit()												PX_OVERRIDE;
 
-		virtual				void				refit()														/*override*/;
-		virtual				bool				updateBounds(PxU32 boundsIndex, const PxBounds3& newBounds)	/*override*/;
-		virtual				void				partialRefit()												/*override*/;
-
-		virtual				bool				traverse(TraversalCallback& cb)	const	/*override*/;
+		virtual				bool				traverse(TraversalCallback& cb)	const	PX_OVERRIDE;
 		//~PxBVH
 
 		// Cm::RefCountable
-		virtual				void				onRefCountZero()	/*override*/;
+		virtual				void				onRefCountZero()	PX_OVERRIDE;
 		//~Cm::RefCountable
 
 		PX_FORCE_INLINE		const BVHNode*		getNodes()		const	{ return mData.mNodes;		}

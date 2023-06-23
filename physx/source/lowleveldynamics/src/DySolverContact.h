@@ -73,35 +73,33 @@ struct SolverContactHeader
 	//resolves the normal constraint on all links
 	Vec4V	normal_minAppliedImpulseForFrictionW;							//48 
 																			
-
 	PxReal	invMass1;														//52
-	PxU32 broken;															//56
-	PxU8* frictionBrokenWritebackByte;										//60	64
+	PxU32	broken;															//56
+	PxU8*	frictionBrokenWritebackByte;									//60	64
 	Sc::ShapeInteraction* shapeInteraction;									//64	72
 #if PX_P64_FAMILY
 	PxU32	pad[2];															//64	80
 #endif // PX_X64
 
+	PX_FORCE_INLINE void setStaticFriction(const FloatV f)	{ staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDynamicFriction(const FloatV f)	{ staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDominance0(const FloatV f)		{ staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDominance1(const FloatV f)		{ staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
 
-	PX_FORCE_INLINE void setStaticFriction(const FloatV f)	{staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W,f);}
-	PX_FORCE_INLINE void setDynamicFriction(const FloatV f)	{staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W,f);}
-	PX_FORCE_INLINE void setDominance0(const FloatV f)		{staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W,f);}
-	PX_FORCE_INLINE void setDominance1(const FloatV f)		{staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W,f);}
+	PX_FORCE_INLINE FloatV getStaticFriction() const		{ return V4GetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE FloatV getDynamicFriction() const		{ return V4GetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE FloatV getDominance0() const			{ return V4GetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE FloatV getDominance1() const			{ return V4GetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 
-	PX_FORCE_INLINE FloatV getStaticFriction() const		{return V4GetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE FloatV getDynamicFriction() const		{return V4GetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE FloatV getDominance0() const			{return V4GetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE FloatV getDominance1() const			{return V4GetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
+	PX_FORCE_INLINE void setStaticFriction(PxF32 f)			{ V4WriteX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDynamicFriction(PxF32 f)		{ V4WriteY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDominance0(PxF32 f)				{ V4WriteZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
+	PX_FORCE_INLINE void setDominance1(PxF32 f)				{ V4WriteW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);	}
 
-	PX_FORCE_INLINE void setStaticFriction(PxF32 f)			{V4WriteX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);}
-	PX_FORCE_INLINE void setDynamicFriction(PxF32 f)		{V4WriteY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);}
-	PX_FORCE_INLINE void setDominance0(PxF32 f)				{V4WriteZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);}
-	PX_FORCE_INLINE void setDominance1(PxF32 f)				{V4WriteW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, f);}
-
-	PX_FORCE_INLINE PxF32 getStaticFrictionPxF32() const	{return V4ReadX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE PxF32 getDynamicFrictionPxF32() const	{return V4ReadY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE PxF32 getDominance0PxF32() const		{return V4ReadZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
-	PX_FORCE_INLINE PxF32 getDominance1PxF32() const		{return V4ReadW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);}
+	PX_FORCE_INLINE PxF32 getStaticFrictionPxF32() const	{ return V4ReadX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE PxF32 getDynamicFrictionPxF32() const	{ return V4ReadY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE PxF32 getDominance0PxF32() const		{ return V4ReadZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
+	PX_FORCE_INLINE PxF32 getDominance1PxF32() const		{ return V4ReadW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W);	}
 }; 
 
 #if !PX_P64_FAMILY
@@ -123,14 +121,14 @@ struct SolverContactPoint
 	PxF32 impulseMultiplier;
 	PxU32 pad;
 
-	PX_FORCE_INLINE FloatV getVelMultiplier() const			{return V4GetW(raXn_velMultiplierW);}
-	PX_FORCE_INLINE FloatV getImpulseMultiplier() const { return FLoad(impulseMultiplier); }
+	PX_FORCE_INLINE FloatV getVelMultiplier() const			{ return V4GetW(raXn_velMultiplierW);			}
+	PX_FORCE_INLINE FloatV getImpulseMultiplier() const		{ return FLoad(impulseMultiplier);				}
 
-	PX_FORCE_INLINE FloatV getBiasedErr() const				{return FLoad(biasedErr);}
-	PX_FORCE_INLINE FloatV getMaxImpulse() const			{return V4GetW(rbXn_maxImpulseW);}
+	PX_FORCE_INLINE FloatV getBiasedErr() const				{ return FLoad(biasedErr);						}
+	PX_FORCE_INLINE FloatV getMaxImpulse() const			{ return V4GetW(rbXn_maxImpulseW);				}
 
-	PX_FORCE_INLINE Vec3V getRaXn() const					{return Vec3V_From_Vec4V(raXn_velMultiplierW);}
-	PX_FORCE_INLINE Vec3V getRbXn() const					{return Vec3V_From_Vec4V(rbXn_maxImpulseW);}
+	PX_FORCE_INLINE Vec3V getRaXn() const					{ return Vec3V_From_Vec4V(raXn_velMultiplierW);	}
+	PX_FORCE_INLINE Vec3V getRbXn() const					{ return Vec3V_From_Vec4V(rbXn_maxImpulseW);	}
 
 	/*PX_FORCE_INLINE void setRaXn(const PxVec3& v)			{V4WriteXYZ(raXn_velMultiplierW, v);}
 	PX_FORCE_INLINE void setRbXn(const PxVec3& v)			{V4WriteXYZ(rbXn_maxImpulseW, v);}
@@ -200,7 +198,6 @@ struct SolverContactFriction
 	PX_FORCE_INLINE PxF32 getAppliedForcePxF32() const		{return V4ReadW(normalXYZ_appliedForceW);}
 	PX_FORCE_INLINE PxF32 getVelMultiplierPxF32() const		{return V4ReadW(raXnXYZ_velMultiplierW);}
 	PX_FORCE_INLINE PxF32 getBiasPxF32() const				{return V4ReadW(rbXnXYZ_biasW);}
-
 }; 
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverContactFriction) == 64);

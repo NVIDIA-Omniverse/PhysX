@@ -45,29 +45,29 @@ namespace vehicle2
 #if PX_SUPPORT_OMNI_PVD
 
 PX_FORCE_INLINE void createPvdObject
-(OmniPvdWriter* omniWriter, OmniPvdContextHandle contextHandle,
+(OmniPvdWriter& omniWriter, OmniPvdContextHandle contextHandle,
 OmniPvdClassHandle classHandle, OmniPvdObjectHandle objectHandle, const char* objectName)
 {
-	omniWriter->createObject(contextHandle, classHandle, objectHandle, objectName);
+	omniWriter.createObject(contextHandle, classHandle, objectHandle, objectName);
 }
 
 PX_FORCE_INLINE void writeObjectHandleAttribute
-(OmniPvdWriter* omniWriter, OmniPvdContextHandle ch,  OmniPvdObjectHandle oh, OmniPvdAttributeHandle ah, 
+(OmniPvdWriter& omniWriter, OmniPvdContextHandle ch,  OmniPvdObjectHandle oh, OmniPvdAttributeHandle ah, 
  OmniPvdObjectHandle val)
 {
 	PX_ASSERT(oh);
 	PX_ASSERT(ah);
 	if(val)
-		omniWriter->setAttributeShallow(ch, oh, ah, reinterpret_cast<const uint8_t*>(&val), sizeof(OmniPvdObjectHandle));
+		omniWriter.setAttribute(ch, oh, ah, reinterpret_cast<const uint8_t*>(&val), sizeof(OmniPvdObjectHandle));
 }
 
-PX_FORCE_INLINE void addObjectHandleToSet
-(OmniPvdWriter* ow, OmniPvdContextHandle ch, OmniPvdObjectHandle setOwnerOH,  OmniPvdAttributeHandle setAH, OmniPvdObjectHandle ohToAdd)
+PX_FORCE_INLINE void addObjectHandleToUniqueList
+(OmniPvdWriter& ow, OmniPvdContextHandle ch, OmniPvdObjectHandle setOwnerOH,  OmniPvdAttributeHandle setAH, OmniPvdObjectHandle ohToAdd)
 {	
 	PX_ASSERT(setOwnerOH);
 	PX_ASSERT(setAH);
 	if(ohToAdd)
-		ow->addToSetAttributeShallow(ch, setOwnerOH, setAH, reinterpret_cast<const uint8_t*>(&ohToAdd), sizeof(OmniPvdObjectHandle));
+		ow.addToUniqueListAttribute(ch, setOwnerOH, setAH, reinterpret_cast<const uint8_t*>(&ohToAdd), sizeof(OmniPvdObjectHandle));
 }
 
 PX_FORCE_INLINE void appendWithInt(char* buffer, PxU32 number)
@@ -79,15 +79,15 @@ PX_FORCE_INLINE void appendWithInt(char* buffer, PxU32 number)
 
 PX_FORCE_INLINE void createVehicleObject
 (const PxVehiclePvdAttributeHandles& attributeHandles,
- PxVehiclePvdObjectHandles* objectHandles, OmniPvdWriter* omniWriter)
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter)
 {
 	// Register the top-level vehicle object if this hasn't already been done.
-	if(0 == objectHandles->vehicleOH)
+	if(0 == objectHandles.vehicleOH)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle vehicleOH = reinterpret_cast<OmniPvdObjectHandle>(&objectHandles->vehicleOH);
-		createPvdObject(omniWriter, objectHandles->contextHandle, attributeHandles.vehicle.CH, vehicleOH, "Vehicle");
-		objectHandles->vehicleOH = vehicleOH;
+		const OmniPvdObjectHandle vehicleOH = reinterpret_cast<OmniPvdObjectHandle>(&objectHandles.vehicleOH);
+		createPvdObject(omniWriter, objectHandles.contextHandle, attributeHandles.vehicle.CH, vehicleOH, "Vehicle");
+		objectHandles.vehicleOH = vehicleOH;
 	}
 }
 
@@ -99,41 +99,37 @@ PX_FORCE_INLINE void createVehicleObject
 void PxVehiclePvdRigidBodyRegister
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdRigidBodyRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	if(rbodyParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->rigidBodyParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.rigidBodyParamsOH);
 		createPvdObject(ow, ch, ah.rigidBodyParams.CH, oh, "RigidBodyParams");
-		objHands->rigidBodyParamsOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.rigidBodyParamsAH, oh);
+		objHands.rigidBodyParamsOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.rigidBodyParamsAH, oh);
 	}
 
 	if(rbodyState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->rigidBodyStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.rigidBodyStateOH);
 		createPvdObject(ow, ch, ah.rigidBodyState.CH, oh, "RigidBodyState");
-		objHands->rigidBodyStateOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.rigidBodyStateAH, oh);
+		objHands.rigidBodyStateOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.rigidBodyStateAH, oh);
 	}
 }
 
 void PxVehiclePvdRigidBodyWrite
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdRigidBodyWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	const OmniPvdContextHandle ch = oh.contextHandle;
 
 	if(oh.rigidBodyParamsOH && rbodyParams)
@@ -154,32 +150,28 @@ void PxVehiclePvdRigidBodyWrite
 void PxVehiclePvdSuspensionStateCalculationParamsRegister
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdSuspensionStateCalculationParamsRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	if(suspStateCalcParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspStateCalcParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspStateCalcParamsOH);
 		createPvdObject(ow, ch, ah.suspStateCalcParams.CH, oh, "SuspStateCalcParams");
-		objHands->suspStateCalcParamsOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.suspStateCalcParamsAH, oh);
+		objHands.suspStateCalcParamsOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.suspStateCalcParamsAH, oh);
 	}
 }
 
 void PxVehiclePvdSuspensionStateCalculationParamsWrite
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* omniWriter)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& omniWriter)
 {
-	PX_CHECK_AND_RETURN(omniWriter, "PxVehiclePvdSuspensionStateCalculationParamsWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	if(oh.suspStateCalcParamsOH && suspStateCalcParams)
 	{
 		writeSuspStateCalcParams(*suspStateCalcParams, oh.suspStateCalcParamsOH, ah.suspStateCalcParams, omniWriter, oh.contextHandle);
@@ -196,10 +188,8 @@ void PxVehiclePvdCommandResponseRegister
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdCommandResponseRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_CHECK_AND_RETURN(
 		brakeResponseParams.size <= 2, 
 		"PxVehiclePvdCommandResponseRegister : brakeResponseParams.size must have less than or equal to 2");
@@ -207,46 +197,46 @@ void PxVehiclePvdCommandResponseRegister
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	for(PxU32 i = 0; i < brakeResponseParams.size; i++)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->brakeResponseParamOHs[i]);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.brakeResponseParamOHs[i]);
 		char objectName[32] = "BrakeComandResponseParams";
 		appendWithInt(objectName, i);
 		createPvdObject(ow, ch, ah.brakeCommandResponseParams.CH, oh, objectName);
-		objHands->brakeResponseParamOHs[i] = oh;
+		objHands.brakeResponseParamOHs[i] = oh;
 
-		addObjectHandleToSet(ow, ch, objHands->vehicleOH, ah.vehicle.brakeResponseParamsSetAH, oh);
+		addObjectHandleToUniqueList(ow, ch, objHands.vehicleOH, ah.vehicle.brakeResponseParamsSetAH, oh);
 	}
 
 	if(steerResponseParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->steerResponseParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.steerResponseParamsOH);
 		const char objectName[32] = "SteerCommandResponseParams";
 		createPvdObject(ow, ch, ah.steerCommandResponseParams.CH, oh, objectName);
-		objHands->steerResponseParamsOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.steerResponseParamsAH, oh);
+		objHands.steerResponseParamsOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.steerResponseParamsAH, oh);
 	}	
 
 	if(!brakeResponseStates.isEmpty())
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->brakeResponseStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.brakeResponseStateOH);
 		const char objectName[32] = "BrakeCommandResponseStates";
 		createPvdObject(ow, ch, ah.brakeCommandResponseStates.CH, oh, objectName);
-		objHands->brakeResponseStateOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.brakeResponseStatesAH, oh);
+		objHands.brakeResponseStateOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.brakeResponseStatesAH, oh);
 	}
 
 	if(!steerResponseStates.isEmpty())
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->steerResponseStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.steerResponseStateOH);
 		const char objectName[32] = "SteerCommandResponseStates";
 		createPvdObject(ow, ch, ah.steerCommandResponseStates.CH, oh, objectName);
-		objHands->steerResponseStateOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.steerResponseStatesAH, oh);
+		objHands.steerResponseStateOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.steerResponseStatesAH, oh);
 	}
 }
 
@@ -257,10 +247,8 @@ void PxVehiclePvdCommandResponseWrite
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdCommandResponseWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_CHECK_AND_RETURN(
 		brakeResponseParams.size <= 2, 
 		"PxVehiclePvdCommandResponseWrite : brakeResponseParams.size must have less than or equal to 2");
@@ -316,14 +304,12 @@ void PxVehiclePvdWheelAttachmentsRegister
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& ah, 
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdWheelAttachmentsRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 	
 	// Register the wheel attachments
 	for(PxU32 i = 0; i < axleDesc.nbWheels; i++)
@@ -331,249 +317,249 @@ void PxVehiclePvdWheelAttachmentsRegister
 		const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
 
 		PX_CHECK_AND_RETURN(
-			wheelId < objHands->nbWheels,
+			wheelId < objHands.nbWheels,
 			"PxVehiclePvdWheelAttachmentsRegister - axleDesc.axleToWheelIds[i] must be less than the value of the nbWheels argument in the function PxVehiclePvdObjectCreate()");
 		
 		if(!wheelParams.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->wheelParamsOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.wheelParamsOHs[wheelId]);
 			char objectName[32] = "WheelParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.wheelParams.CH, oh, objectName);
-			objHands->wheelParamsOHs[wheelId] = oh;
+			objHands.wheelParamsOHs[wheelId] = oh;
 		}
 
 		if(!wheelActuationStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->wheelActuationStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.wheelActuationStateOHs[wheelId]);
 			char objectName[32] = "WheelActuationState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.wheelActuationState.CH, oh, objectName);
-			objHands->wheelActuationStateOHs[wheelId] = oh;
+			objHands.wheelActuationStateOHs[wheelId] = oh;
 		}
 
 		if(!wheelRigidBody1dStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->wheelRigidBody1dStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.wheelRigidBody1dStateOHs[wheelId]);
 			char objectName[32] = "WheelRigidBody1dState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.wheelRigidBody1dState.CH, oh, objectName);
-			objHands->wheelRigidBody1dStateOHs[wheelId] = oh;
+			objHands.wheelRigidBody1dStateOHs[wheelId] = oh;
 		}
 
 
 		if(!wheelLocalPoses.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->wheelLocalPoseStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.wheelLocalPoseStateOHs[wheelId]);
 			char objectName[32] = "WheelLocalPoseState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.wheelLocalPoseState.CH, oh, objectName);
-			objHands->wheelLocalPoseStateOHs[wheelId] = oh;
+			objHands.wheelLocalPoseStateOHs[wheelId] = oh;
 		}
 
 		if(!roadGeometryStates.isEmpty())
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->roadGeomStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.roadGeomStateOHs[wheelId]);
 			char objectName[32] = "RoadGeometryState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.roadGeomState.CH, oh, objectName);
-			objHands->roadGeomStateOHs[wheelId] = oh;
+			objHands.roadGeomStateOHs[wheelId] = oh;
 		}
 
 		if(!suspParams.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspParamsOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspParamsOHs[wheelId]);
 			char objectName[32] = "SuspParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspParams.CH, oh, objectName);
-			objHands->suspParamsOHs[wheelId] = oh;
+			objHands.suspParamsOHs[wheelId] = oh;
 		}
 
 		if(!suspCompParams.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspCompParamsOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspCompParamsOHs[wheelId]);
 			char objectName[32] = "SuspCompParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspCompParams.CH, oh, objectName);
-			objHands->suspCompParamsOHs[wheelId] = oh;
+			objHands.suspCompParamsOHs[wheelId] = oh;
 		}
 
 		if(!suspForceParams.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspForceParamsOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspForceParamsOHs[wheelId]);
 			char objectName[32] = "SuspForceParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspForceParams.CH, oh, objectName);
-			objHands->suspForceParamsOHs[wheelId] = oh;
+			objHands.suspForceParamsOHs[wheelId] = oh;
 		}
 
 		if(!suspStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspStateOHs[wheelId]);
 			char objectName[32] = "SuspState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspState.CH, oh, objectName);
-			objHands->suspStateOHs[wheelId] = oh;
+			objHands.suspStateOHs[wheelId] = oh;
 		}
 
 		if(!suspCompStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspCompStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspCompStateOHs[wheelId]);
 			char objectName[32] = "SuspComplianceState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspCompState.CH, oh, objectName);
-			objHands->suspCompStateOHs[wheelId] = oh;
+			objHands.suspCompStateOHs[wheelId] = oh;
 		}
 
 		if(!suspForces.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->suspForceOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.suspForceOHs[wheelId]);
 			char objectName[32] = "SuspForce";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.suspForce.CH, oh, objectName);
-			objHands->suspForceOHs[wheelId] = oh;
+			objHands.suspForceOHs[wheelId] = oh;
 		}
 
 		if(!tireForceParams.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireParamsOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireParamsOHs[wheelId]);
 			char objectName[32] = "TireParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireParams.CH, oh, objectName);
-			objHands->tireParamsOHs[wheelId] = oh;
+			objHands.tireParamsOHs[wheelId] = oh;
 		}
 
 		if(!tireDirectionStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireDirectionStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireDirectionStateOHs[wheelId]);
 			char objectName[32] = "TireDirectionState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireDirectionState.CH, oh, objectName);
-			objHands->tireDirectionStateOHs[wheelId] = oh;
+			objHands.tireDirectionStateOHs[wheelId] = oh;
 		}
 
 		if(!tireSpeedStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireSpeedStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireSpeedStateOHs[wheelId]);
 			char objectName[32] = "TireSpeedState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireSpeedState.CH, oh, objectName);
-			objHands->tireSpeedStateOHs[wheelId] = oh;
+			objHands.tireSpeedStateOHs[wheelId] = oh;
 		}
 
 		if(!tireSlipStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireSlipStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireSlipStateOHs[wheelId]);
 			char objectName[32] = "TireSlipState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireSlipState.CH, oh, objectName);
-			objHands->tireSlipStateOHs[wheelId] = oh;
+			objHands.tireSlipStateOHs[wheelId] = oh;
 		}
 
 		if(!tireStickyStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireStickyStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireStickyStateOHs[wheelId]);
 			char objectName[32] = "TireStickyState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireStickyState.CH, oh, objectName);
-			objHands->tireStickyStateOHs[wheelId] = oh;
+			objHands.tireStickyStateOHs[wheelId] = oh;
 		}
 
 		if(!tireGripStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireGripStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireGripStateOHs[wheelId]);
 			char objectName[32] = "TireGripState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireGripState.CH, oh, objectName);
-			objHands->tireGripStateOHs[wheelId] = oh;
+			objHands.tireGripStateOHs[wheelId] = oh;
 		}
 
 		if(!tireCamberStates.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireCamberStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireCamberStateOHs[wheelId]);
 			char objectName[32] = "TireCamberState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireCamberState.CH, oh, objectName);
-			objHands->tireCamberStateOHs[wheelId] = oh;
+			objHands.tireCamberStateOHs[wheelId] = oh;
 		}
 
 		if(!tireForces.isEmpty())
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->tireForceOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.tireForceOHs[wheelId]);
 			char objectName[32] = "TireForce";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.tireForce.CH, oh, objectName);
-			objHands->tireForceOHs[wheelId] = oh;
+			objHands.tireForceOHs[wheelId] = oh;
 		}
 
 		{
 			//Get a unique id from a memory adress in objectHandles.
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->wheelAttachmentOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.wheelAttachmentOHs[wheelId]);
 			char objectName[32] = "WheelAttachment";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.wheelAttachment.CH, oh, objectName);
-			objHands->wheelAttachmentOHs[wheelId] = oh;
+			objHands.wheelAttachmentOHs[wheelId] = oh;
 
 			// Point the wheel attachment object at the wheel params, susp state, tire force etc objects.
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.wheelParamsAH, objHands->wheelParamsOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.wheelParamsAH, objHands.wheelParamsOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.wheelActuationStateAH, objHands->wheelActuationStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.wheelActuationStateAH, objHands.wheelActuationStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.wheelRigidBody1dStateAH, objHands->wheelRigidBody1dStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.wheelRigidBody1dStateAH, objHands.wheelRigidBody1dStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.wheelLocalPoseStateAH, objHands->wheelLocalPoseStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.wheelLocalPoseStateAH, objHands.wheelLocalPoseStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.roadGeomStateAH, objHands->roadGeomStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.roadGeomStateAH, objHands.roadGeomStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspParamsAH, objHands->suspParamsOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspParamsAH, objHands.suspParamsOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspCompParamsAH, objHands->suspCompParamsOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspCompParamsAH, objHands.suspCompParamsOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspForceParamsAH, objHands->suspForceParamsOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspForceParamsAH, objHands.suspForceParamsOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspStateAH, objHands->suspStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspStateAH, objHands.suspStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspCompStateAH, objHands->suspCompStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspCompStateAH, objHands.suspCompStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.suspForceAH, objHands->suspForceOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.suspForceAH, objHands.suspForceOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireParamsAH, objHands->tireParamsOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireParamsAH, objHands.tireParamsOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireDirectionStateAH, objHands->tireDirectionStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireDirectionStateAH, objHands.tireDirectionStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireSpeedStateAH, objHands->tireSpeedStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireSpeedStateAH, objHands.tireSpeedStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireSlipStateAH, objHands->tireSlipStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireSlipStateAH, objHands.tireSlipStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireStickyStateAH, objHands->tireStickyStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireStickyStateAH, objHands.tireStickyStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireGripStateAH, objHands->tireGripStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireGripStateAH, objHands.tireGripStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireCamberStateAH, objHands->tireCamberStateOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireCamberStateAH, objHands.tireCamberStateOHs[wheelId]);
 			writeObjectHandleAttribute(
-					ow, ch, oh, ah.wheelAttachment.tireForceAH, objHands->tireForceOHs[wheelId]);
+					ow, ch, oh, ah.wheelAttachment.tireForceAH, objHands.tireForceOHs[wheelId]);
 
 			//Point the vehicle object at the wheel attachment object.
-			addObjectHandleToSet(ow, ch, objHands->vehicleOH, ah.vehicle.wheelAttachmentSetAH, oh);
+			addObjectHandleToUniqueList(ow, ch, objHands.vehicleOH, ah.vehicle.wheelAttachmentSetAH, oh);
 		}
 	}
 }
@@ -600,10 +586,8 @@ void PxVehiclePvdWheelAttachmentsWrite
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdWheelAttachmentsWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	const OmniPvdContextHandle ch = oh.contextHandle;
 
 	for(PxU32 i = 0; i < axleDesc.nbWheels; i++)
@@ -716,56 +700,54 @@ void PxVehiclePvdDirectDrivetrainRegister
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdDirectDrivetrainRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	if(commandState)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->directDriveCommandStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.directDriveCommandStateOH);
 		createPvdObject(ow, ch, ah.directDriveCommandState.CH, oh, "DirectDriveCommandState");
-		objHands->directDriveCommandStateOH = oh;
+		objHands.directDriveCommandStateOH = oh;
 	}
 
 	if(transmissionState)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->directDriveTransmissionCommandStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.directDriveTransmissionCommandStateOH);
 		createPvdObject(ow, ch, ah.directDriveTransmissionCommandState.CH, oh, "DirectDriveTransmissionCommandState");
-		objHands->directDriveTransmissionCommandStateOH = oh;
+		objHands.directDriveTransmissionCommandStateOH = oh;
 	}
 
 	if(directDriveThrottleResponseParams)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->directDriveThrottleResponseParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.directDriveThrottleResponseParamsOH);
 		createPvdObject(ow, ch, ah.directDriveThrottleCommandResponseParams.CH, oh, "DirectDriveThrottleResponseParams");
-		objHands->directDriveThrottleResponseParamsOH = oh;
+		objHands.directDriveThrottleResponseParamsOH = oh;
 	}
 
 	if(!directDriveThrottleResponseState.isEmpty())
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->directDriveThrottleResponseStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.directDriveThrottleResponseStateOH);
 		createPvdObject(ow, ch, ah.directDriveThrottleCommandResponseState.CH, oh, "DirectDriveThrottleResponseState");
-		objHands->directDriveThrottleResponseStateOH = oh;
+		objHands.directDriveThrottleResponseStateOH = oh;
 	}
 
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->directDrivetrainOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.directDrivetrainOH);
 		createPvdObject(ow, ch, ah.directDrivetrain.CH, oh, "DirectDrivetrain");
-		objHands->directDrivetrainOH = oh;
+		objHands.directDrivetrainOH = oh;
 
 		writeObjectHandleAttribute(
-			ow, ch, oh, ah.directDrivetrain.commandStateAH, objHands->directDriveCommandStateOH);
+			ow, ch, oh, ah.directDrivetrain.commandStateAH, objHands.directDriveCommandStateOH);
 		writeObjectHandleAttribute(
-			ow, ch, oh, ah.directDrivetrain.throttleResponseParamsAH, objHands->directDriveThrottleResponseParamsOH);
+			ow, ch, oh, ah.directDrivetrain.throttleResponseParamsAH, objHands.directDriveThrottleResponseParamsOH);
 		writeObjectHandleAttribute(
-			ow, ch, oh, ah.directDrivetrain.throttleResponseStateAH, objHands->directDriveThrottleResponseStateOH);
+			ow, ch, oh, ah.directDrivetrain.throttleResponseStateAH, objHands.directDriveThrottleResponseStateOH);
 
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.directDrivetrainAH, oh);
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.directDrivetrainAH, oh);
 	}
 }
 
@@ -775,10 +757,8 @@ void PxVehiclePvdDirectDrivetrainWrite
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const  PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdDirectDrivetrainWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	const OmniPvdContextHandle ch = oh.contextHandle;
 
 	if(oh.directDriveCommandStateOH && commandState)
@@ -819,167 +799,166 @@ void PxVehiclePvdEngineDrivetrainRegister
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdEngineDrivetrainRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	if(commandState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineDriveCommandStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineDriveCommandStateOH);
 		createPvdObject(ow, ch, ah.engineDriveCommandState.CH, oh, "EngineDriveCommandState");
-		objHands->engineDriveCommandStateOH = oh;
+		objHands.engineDriveCommandStateOH = oh;
 	}
 
 	if(transmissionCommandState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineDriveTransmissionCommandStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineDriveTransmissionCommandStateOH);
 		createPvdObject(ow, ch, ah.engineDriveTransmissionCommandState.CH, oh, "EngineDriveTransmissionCommandState");
-		objHands->engineDriveTransmissionCommandStateOH = oh;
+		objHands.engineDriveTransmissionCommandStateOH = oh;
 	}
 
 	if(clutchResponseParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->clutchResponseParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.clutchResponseParamsOH);
 		createPvdObject(ow, ch, ah.clutchCommandResponseParams.CH, oh, "ClutchResponseParams");	
-		objHands->clutchResponseParamsOH = oh;
+		objHands.clutchResponseParamsOH = oh;
 	}
 
 	if(clutchParms)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->clutchParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.clutchParamsOH);
 		createPvdObject(ow, ch, ah.clutchParams.CH, oh, "ClutchParams");
-		objHands->clutchParamsOH = oh;
+		objHands.clutchParamsOH = oh;
 	}
 
 	if(engineParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineParamsOH);
 		createPvdObject(ow, ch, ah.engineParams.CH, oh, "EngineParams");
-		objHands->engineParamsOH = oh;
+		objHands.engineParamsOH = oh;
 	}
 
 	if(gearboxParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->gearboxParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.gearboxParamsOH);
 		createPvdObject(ow, ch, ah.gearboxParams.CH, oh, "GearboxParams");
-		objHands->gearboxParamsOH = oh;
+		objHands.gearboxParamsOH = oh;
 	}
 
 	if(autoboxParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->autoboxParamsOH);
-		createPvdObject(ow, objHands->contextHandle, ah.autoboxParams.CH, oh, "AutoboxParams");
-		objHands->autoboxParamsOH = oh;
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.autoboxParamsOH);
+		createPvdObject(ow, objHands.contextHandle, ah.autoboxParams.CH, oh, "AutoboxParams");
+		objHands.autoboxParamsOH = oh;
 	}
 
 	if(multiWheelDiffParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->multiWheelDiffParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.multiWheelDiffParamsOH);
 		createPvdObject(ow, ch, ah.multiwheelDiffParams.CH, oh, "MultiWheelDiffParams");
-		objHands->multiWheelDiffParamsOH = oh;
+		objHands.multiWheelDiffParamsOH = oh;
 	}
 
 	if(fourWheelDiffPrams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->fourWheelDiffParamsOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.fourWheelDiffParamsOH);
 		createPvdObject(ow, ch, ah.fourwheelDiffParams.CH, oh, "FourWheelDiffParams");
-		objHands->fourWheelDiffParamsOH = oh;
+		objHands.fourWheelDiffParamsOH = oh;
 	}
 
 	if(clutchResponseState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->clutchResponseStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.clutchResponseStateOH);
 		createPvdObject(ow, ch, ah.clutchResponseState.CH, oh, "ClutchResponseState");
-		objHands->clutchResponseStateOH = oh;
+		objHands.clutchResponseStateOH = oh;
 	}
 
 	if(throttleResponseState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineDriveThrottleResponseStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineDriveThrottleResponseStateOH);
 		createPvdObject(ow, ch, ah.throttleResponseState.CH, oh, "ThrottleResponseState");
-		objHands->engineDriveThrottleResponseStateOH = oh;
+		objHands.engineDriveThrottleResponseStateOH = oh;
 	}
 
 	if(engineState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineStateOH);
 		createPvdObject(ow, ch, ah.engineState.CH, oh, "EngineState");
-		objHands->engineStateOH = oh;
+		objHands.engineStateOH = oh;
 	}
 
 	if(gearboxState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->gearboxStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.gearboxStateOH);
 		createPvdObject(ow, ch, ah.gearboxState.CH, oh, "GearboxState");
-		objHands->gearboxStateOH = oh;
+		objHands.gearboxStateOH = oh;
 	}
 
 	if(autoboxState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->autoboxStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.autoboxStateOH);
 		createPvdObject(ow, ch, ah.autoboxState.CH, oh, "AutoboxState");
-		objHands->autoboxStateOH = oh;
+		objHands.autoboxStateOH = oh;
 	}
 
 	if(diffState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->diffStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.diffStateOH);
 		createPvdObject(ow, ch, ah.diffState.CH, oh, "DiffState");
-		objHands->diffStateOH = oh;
+		objHands.diffStateOH = oh;
 	}
 
 	if(clutchSlipState)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->clutchSlipStateOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.clutchSlipStateOH);
 		createPvdObject(ow, ch, ah.clutchSlipState.CH, oh, "ClutchSlipState");
-		objHands->clutchSlipStateOH = oh;
+		objHands.clutchSlipStateOH = oh;
 	}
 
 	//Engine drivetrain
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->engineDrivetrainOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineDrivetrainOH);
 		createPvdObject(ow, ch, ah.engineDrivetrain.CH, oh, "EngineDrivetrain");
-		objHands->engineDrivetrainOH = oh;
+		objHands.engineDrivetrainOH = oh;
 
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.commandStateAH, objHands->engineDriveCommandStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchResponseParamsAH, objHands->clutchResponseParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchParamsAH, objHands->clutchParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineParamsAH, objHands->engineParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.gearboxParamsAH, objHands->gearboxParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.autoboxParamsAH, objHands->autoboxParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.multiWheelDiffParamsAH, objHands->multiWheelDiffParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.fourWheelDiffParamsAH, objHands->fourWheelDiffParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchResponseStateAH, objHands->clutchResponseStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.throttleResponseStateAH, objHands->engineDriveThrottleResponseStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineStateAH, objHands->engineStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.gearboxStateAH, objHands->gearboxStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.autoboxStateAH, objHands->autoboxStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.diffStateAH, objHands->diffStateOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchSlipStateAH, objHands->clutchSlipStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.commandStateAH, objHands.engineDriveCommandStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.transmissionCommandStateAH, objHands.engineDriveTransmissionCommandStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchResponseParamsAH, objHands.clutchResponseParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchParamsAH, objHands.clutchParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineParamsAH, objHands.engineParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.gearboxParamsAH, objHands.gearboxParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.autoboxParamsAH, objHands.autoboxParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.multiWheelDiffParamsAH, objHands.multiWheelDiffParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.fourWheelDiffParamsAH, objHands.fourWheelDiffParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchResponseStateAH, objHands.clutchResponseStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.throttleResponseStateAH, objHands.engineDriveThrottleResponseStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineStateAH, objHands.engineStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.gearboxStateAH, objHands.gearboxStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.autoboxStateAH, objHands.autoboxStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.diffStateAH, objHands.diffStateOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchSlipStateAH, objHands.clutchSlipStateOH);
 
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.engineDriveTrainAH, oh);
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.engineDriveTrainAH, oh);
 	}
 }
 
@@ -1000,10 +979,8 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* omniWriter)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& omniWriter)
 {
-	PX_CHECK_AND_RETURN(omniWriter, "PxVehiclePvdEngineDrivetrainWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	const OmniPvdContextHandle ch = oh.contextHandle;
 
 	if(oh.engineDriveCommandStateOH && commandState)
@@ -1091,38 +1068,36 @@ void PxVehiclePvdAntiRollsRegister
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams,
  const PxVehicleAntiRollTorque* antiRollTorque,
 const PxVehiclePvdAttributeHandles& ah, 
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdAntiRollsRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_CHECK_AND_RETURN(
-		antiRollForceParams.size <= objHands->nbAntirolls,
+		antiRollForceParams.size <= objHands.nbAntirolls,
 		"PxVehiclePvdAntiRollsRegister - antiRollForceParams.size  must be less than or equal to vallue of nbAntirolls argument in the function PxVehiclePvdObjectCreate");
 
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	// Register the antiroll params.
 	for(PxU32 i = 0; i < antiRollForceParams.size; i++)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->antiRollParamOHs[i]);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.antiRollParamOHs[i]);
 		char objectName[32] = "AntiRollParams";
 		appendWithInt(objectName, i);
 		createPvdObject(ow, ch, ah.antiRollParams.CH, oh, objectName);
-		objHands->antiRollParamOHs[i] = oh;
-		addObjectHandleToSet(ow, ch, objHands->vehicleOH, ah.vehicle.antiRollSetAH, oh);
+		objHands.antiRollParamOHs[i] = oh;
+		addObjectHandleToUniqueList(ow, ch, objHands.vehicleOH, ah.vehicle.antiRollSetAH, oh);
 	}
 
 	// Register the antiroll force.
 	if(antiRollTorque)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->antiRollTorqueOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.antiRollTorqueOH);
 		const char objectName[32] = "AntiRollTorque";
 		createPvdObject(ow, ch, ah.antiRollForce.CH, oh, objectName);
-		objHands->antiRollTorqueOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.antiRollForceAH, oh);
+		objHands.antiRollTorqueOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.antiRollForceAH, oh);
 	}
 }
 
@@ -1130,10 +1105,8 @@ void PxVehiclePvdAntiRollsWrite
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams,
  const PxVehicleAntiRollTorque* antiRollTorque,
  const PxVehiclePvdAttributeHandles& ah, 
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdAntiRollsWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_CHECK_AND_RETURN(
 		antiRollForceParams.size <= oh.nbAntirolls,
 		"PxVehiclePvdAntiRollsWrite - antiRollForceParams.size  must be less than or equal to vallue of nbAntirolls argument in the function PxVehiclePvdObjectCreate");
@@ -1162,10 +1135,8 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>&  physxRoadGeomState,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdPhysXWheelAttachmentRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_UNUSED(physxMaterialFrictionParams);
 	PX_UNUSED(physxRoadGeomState);
 	PX_UNUSED(physxConstraintStates);
@@ -1173,7 +1144,7 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	// Register the wheel attachments
 	for(PxU32 i = 0; i < axleDesc.nbWheels; i++)
@@ -1181,85 +1152,85 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
 		const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
 
 		PX_CHECK_AND_RETURN(
-			wheelId < objHands->nbWheels,
+			wheelId < objHands.nbWheels,
 			"PxVehiclePvdPhysXWheelAttachmentRegister - axleDesc.axleToWheelIds[i] must be less than the value of the nbWheels argument in the function PxVehiclePvdObjectCreate()");
 
 		if(!physxSuspLimitConstraintParams.isEmpty())
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxConstraintParamOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxConstraintParamOHs[wheelId]);
 			char objectName[32] = "PhysXSuspLimtConstraintParams";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.physxSuspLimitConstraintParams.CH, oh, objectName);
-			objHands->physxConstraintParamOHs[wheelId] = oh;
+			objHands.physxConstraintParamOHs[wheelId] = oh;
 		}
 
 		if(physxActor && physxActor->wheelShapes[wheelId])
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxWheelShapeOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxWheelShapeOHs[wheelId]);
 			char objectName[32] = "PhysXWheelShape";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.physxWheelShape.CH, oh, objectName);
-			objHands->physxWheelShapeOHs[wheelId] = oh;
+			objHands.physxWheelShapeOHs[wheelId] = oh;
 		}
 
 		if(!physxConstraintStates.isEmpty())
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxConstraintStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxConstraintStateOHs[wheelId]);
 			char objectName[32] = "PhysXConstraintState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.physxConstraintState.CH, oh, objectName);
-			objHands->physxConstraintStateOHs[wheelId] = oh;
+			objHands.physxConstraintStateOHs[wheelId] = oh;
 
 		}
 
 		if(!physxRoadGeomState.isEmpty())
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxRoadGeomStateOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxRoadGeomStateOHs[wheelId]);
 			char objectName[32] = "PhysXRoadGeomState";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.physxRoadGeomState.CH, oh, objectName);
-			objHands->physxRoadGeomStateOHs[wheelId] = oh;
+			objHands.physxRoadGeomStateOHs[wheelId] = oh;
 		}
 
 		{
-			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxWheelAttachmentOHs[wheelId]);
+			const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxWheelAttachmentOHs[wheelId]);
 			char objectName[32] = "PhysxWheelAttachment";
 			appendWithInt(objectName, wheelId);
 			createPvdObject(ow, ch, ah.physxWheelAttachment.CH, oh, objectName);
-			objHands->physxWheelAttachmentOHs[wheelId] = oh;
+			objHands.physxWheelAttachmentOHs[wheelId] = oh;
 
-			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxConstraintParamsAH, objHands->physxConstraintParamOHs[wheelId]);
-			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxWeelShapeAH, objHands->physxWheelShapeOHs[wheelId]);
-			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxRoadGeometryStateAH, objHands->physxRoadGeomStateOHs[wheelId]);
-			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxConstraintStateAH, objHands->physxConstraintStateOHs[wheelId]);
+			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxConstraintParamsAH, objHands.physxConstraintParamOHs[wheelId]);
+			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxWeelShapeAH, objHands.physxWheelShapeOHs[wheelId]);
+			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxRoadGeometryStateAH, objHands.physxRoadGeomStateOHs[wheelId]);
+			writeObjectHandleAttribute(ow, ch, oh, ah.physxWheelAttachment.physxConstraintStateAH, objHands.physxConstraintStateOHs[wheelId]);
 
-			addObjectHandleToSet(ow, ch, objHands->vehicleOH, ah.vehicle.physxWheelAttachmentSetAH, oh);
+			addObjectHandleToUniqueList(ow, ch, objHands.vehicleOH, ah.vehicle.physxWheelAttachmentSetAH, oh);
 		}
 
 		if(!physxMaterialFrictionParams.isEmpty())
 		{
-			for(PxU32 j = 0; j < objHands->nbPhysXMaterialFrictions; j++)
+			for(PxU32 j = 0; j < objHands.nbPhysXMaterialFrictions; j++)
 			{
-				const PxU32 id = wheelId*objHands->nbPhysXMaterialFrictions + j;
-				const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxMaterialFrictionOHs[id]);
+				const PxU32 id = wheelId*objHands.nbPhysXMaterialFrictions + j;
+				const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxMaterialFrictionOHs[id]);
 				char objectName[32] = "PhysxMaterialFriction";
 				appendWithInt(objectName, wheelId);
 				strcat(objectName, "_");
  				appendWithInt(objectName, j);
 				createPvdObject(ow, ch, ah.physxMaterialFriction.CH, oh, objectName);
-				objHands->physxMaterialFrictionOHs[id] = oh;
-				addObjectHandleToSet(ow, ch, objHands->physxWheelAttachmentOHs[wheelId], ah.physxWheelAttachment.physxMaterialFrictionSetAH, oh);
+				objHands.physxMaterialFrictionOHs[id] = oh;
+				addObjectHandleToUniqueList(ow, ch, objHands.physxWheelAttachmentOHs[wheelId], ah.physxWheelAttachment.physxMaterialFrictionSetAH, oh);
 			}
 		}
 	}
 
 	if(physxRoadGeomQryParams)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxRoadGeomQueryParamOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxRoadGeomQueryParamOH);
 		char objectName[32] = "PhysxRoadGeomQryParams";
 		createPvdObject(ow, ch, ah.physxRoadGeometryQueryParams.CH, oh, objectName);
-		objHands->physxRoadGeomQueryParamOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.physxRoadGeometryQueryParamsAH, oh);
+		objHands.physxRoadGeomQueryParamOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.physxRoadGeometryQueryParamsAH, oh);
 	}
 }
 
@@ -1271,10 +1242,8 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdPhysXWheelAttachmentWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	PX_UNUSED(physxMaterialFrictionParams);
 	PX_UNUSED(physxRoadGeomStates);
 	PX_UNUSED(physxConstraintStates);
@@ -1343,31 +1312,27 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
 void PxVehiclePvdPhysXRigidActorRegister
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdPhysXRigidActorRegister: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	// Register the top-level vehicle object if this hasn't already been done.
 	createVehicleObject(ah, objHands, ow);
 
-	const OmniPvdContextHandle ch = objHands->contextHandle;
+	const OmniPvdContextHandle ch = objHands.contextHandle;
 
 	if(physxActor && physxActor->rigidBody)
 	{
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands->physxRigidActorOH);
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxRigidActorOH);
 		createPvdObject(ow, ch, ah.physxRigidActor.CH, oh, "PhysXRigidActor");
-		objHands->physxRigidActorOH = oh;
-		writeObjectHandleAttribute(ow, ch, objHands->vehicleOH, ah.vehicle.physxRigidActorAH, oh);		
+		objHands.physxRigidActorOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.physxRigidActorAH, oh);		
 	}
 }
 
 void PxVehiclePvdPhysXRigidActorWrite
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_CHECK_AND_RETURN(ow, "PxVehiclePvdPhysXRigidActorWrite: omniWriter must be a pointer to a valid OmniPvdWriter intance");
-
 	if(oh.physxRigidActorOH && physxActor)
 	{
 		writePhysXRigidActor(physxActor->rigidBody, oh.physxRigidActorOH, ah.physxRigidActor, ow, oh.contextHandle);
@@ -1379,7 +1344,7 @@ void PxVehiclePvdPhysXRigidActorWrite
 void PxVehiclePvdRigidBodyRegister
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(rbodyParams);
 	PX_UNUSED(rbodyState);
@@ -1391,7 +1356,7 @@ void PxVehiclePvdRigidBodyRegister
 void PxVehiclePvdRigidBodyWrite
 (const PxVehicleRigidBodyParams* rbodyParams, const PxVehicleRigidBodyState* rbodyState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(rbodyParams);
 	PX_UNUSED(rbodyState);
@@ -1403,7 +1368,7 @@ void PxVehiclePvdRigidBodyWrite
 void PxVehiclePvdSuspensionStateCalculationParamsRegister
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(suspStateCalcParams);
 	PX_UNUSED(ah);
@@ -1414,7 +1379,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsRegister
 void PxVehiclePvdSuspensionStateCalculationParamsWrite
 (const PxVehicleSuspensionStateCalculationParams* suspStateCalcParams, 
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(suspStateCalcParams);
 	PX_UNUSED(ah);
@@ -1428,7 +1393,7 @@ void PxVehiclePvdCommandResponseRegister
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(steerResponseParams);
 	PX_UNUSED(brakeResponseParams);
@@ -1446,7 +1411,7 @@ void PxVehiclePvdCommandResponseWrite
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(steerResponseParams);
@@ -1480,7 +1445,7 @@ void PxVehiclePvdWheelAttachmentsRegister
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& ah, 
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(wheelParams);
@@ -1529,7 +1494,7 @@ void PxVehiclePvdWheelAttachmentsWrite
  const PxVehicleArrayData<const PxVehicleTireCamberAngleState>& tireCamberStates,
  const PxVehicleArrayData<const PxVehicleTireForce>& tireForces, 
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(wheelParams);
@@ -1561,7 +1526,7 @@ void PxVehiclePvdDirectDrivetrainRegister
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(commandState);
 	PX_UNUSED(transmissionState);
@@ -1578,7 +1543,7 @@ void PxVehiclePvdDirectDrivetrainWrite
  const PxVehicleDirectDriveThrottleCommandResponseParams* directDriveThrottleResponseParams,
  const  PxVehicleArrayData<PxReal>& directDriveThrottleResponseState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(commandState);
@@ -1607,7 +1572,7 @@ void PxVehiclePvdEngineDrivetrainRegister
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(commandState);
 	PX_UNUSED(transmissionCommandState);
@@ -1647,7 +1612,7 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehicleDifferentialState* diffState,
  const PxVehicleClutchSlipState* clutchSlipState,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* omniWriter)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& omniWriter)
 {
 	PX_UNUSED(commandState);
 	PX_UNUSED(transmissionCommandState);
@@ -1674,7 +1639,7 @@ void PxVehiclePvdAntiRollsRegister
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams,
  const PxVehicleAntiRollTorque* antiRollTorque,
 const PxVehiclePvdAttributeHandles& ah, 
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(antiRollForceParams);
 	PX_UNUSED(antiRollTorque);
@@ -1687,7 +1652,7 @@ void PxVehiclePvdAntiRollsWrite
 (const PxVehicleSizedArrayData<const PxVehicleAntiRollForceParams>& antiRollForceParams,
  const PxVehicleAntiRollTorque* antiRollTorque,
  const PxVehiclePvdAttributeHandles& ah, 
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(antiRollForceParams);
 	PX_UNUSED(antiRollTorque);
@@ -1704,7 +1669,7 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>&  physxRoadGeomState,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(physxSuspLimitConstraintParams);
@@ -1726,7 +1691,7 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
  const PxVehicleArrayData<const PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
  const PxVehicleArrayData<const PxVehiclePhysXConstraintState>& physxConstraintStates,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(physxSuspLimitConstraintParams);
@@ -1743,7 +1708,7 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
 void PxVehiclePvdPhysXRigidActorRegister
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& ah,
- PxVehiclePvdObjectHandles* objHands, OmniPvdWriter* ow)
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(physxActor);
 	PX_UNUSED(ah);
@@ -1754,7 +1719,7 @@ void PxVehiclePvdPhysXRigidActorRegister
 void PxVehiclePvdPhysXRigidActorWrite
 (const PxVehiclePhysXActor* physxActor,
  const PxVehiclePvdAttributeHandles& ah,
- const PxVehiclePvdObjectHandles& oh, OmniPvdWriter* ow)
+ const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
 	PX_UNUSED(physxActor);
 	PX_UNUSED(ah);

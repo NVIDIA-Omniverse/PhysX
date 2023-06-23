@@ -83,7 +83,6 @@ namespace
 		const PxU32 markedPadding = read32(address);
 		PX_UNUSED(markedPadding);
 
-#if PX_CHECKED
 		if (header != PX_MAKE_FOURCC('S','E','B','D'))
 		{
 			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
@@ -107,7 +106,7 @@ namespace
 				getBinaryPlatformName(platformTag));
 			return false;
 		}
-#endif
+
 		return true;
 	}
 
@@ -148,13 +147,12 @@ namespace
 
 PxCollection* PxSerialization::createCollectionFromBinary(void* memBlock, PxSerializationRegistry& sr, const PxCollection* pxExternalRefs)
 {
-#if PX_CHECKED
 	if(size_t(memBlock) & (PX_SERIAL_FILE_ALIGN-1))
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Buffer must be 128-bytes aligned.");
 		return NULL;
 	}
-#endif
+
 	PxU8* address = reinterpret_cast<PxU8*>(memBlock);
 	const Cm::Collection* externalRefs = static_cast<const Cm::Collection*>(pxExternalRefs);
 			

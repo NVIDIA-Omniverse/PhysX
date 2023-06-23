@@ -48,9 +48,9 @@ namespace physx
 } // namespace physx
 #endif
 
-	PX_C_EXPORT PX_PHYSX_COOKING_API physx::PxTriangleMesh* PX_CALL_CONV PxCreateTriangleMeshInternal(const physx::PxTriangleMeshInternalData& data, const physx::PxCooking& cooking);
+	PX_C_EXPORT PX_PHYSX_COOKING_API physx::PxTriangleMesh* PX_CALL_CONV PxCreateTriangleMeshInternal(const physx::PxTriangleMeshInternalData& data);
 
-	PX_C_EXPORT PX_PHYSX_COOKING_API physx::PxBVH* PX_CALL_CONV PxCreateBVHInternal(const physx::PxBVHInternalData& data, const physx::PxCooking& cooking);
+	PX_C_EXPORT PX_PHYSX_COOKING_API physx::PxBVH* PX_CALL_CONV PxCreateBVHInternal(const physx::PxBVHInternalData& data);
 
 /** @} */
 #endif

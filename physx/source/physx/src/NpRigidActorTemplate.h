@@ -236,7 +236,7 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 
 	mShapeManager.attachShape(npShape, *this);
 
-	OMNI_PVD_ADD(actor, shapes, static_cast<PxActor&>(*this), shape)
+	OMNI_PVD_ADD(PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)
 
 	return true;
 }
@@ -249,7 +249,7 @@ void NpRigidActorTemplate<APIClass>::detachShape(PxShape& shape, bool wakeOnLost
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidActor::detachShape() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_REMOVE(actor, shapes, static_cast<PxActor&>(*this), shape)	//this needs to happen before the actual detach happens below, because that detach might actually delete the shape, which invalidates the shape handle.
+	OMNI_PVD_REMOVE(PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)	//this needs to happen before the actual detach happens below, because that detach might actually delete the shape, which invalidates the shape handle.
 
 	if (mShapeManager.getPruningStructure())
 	{

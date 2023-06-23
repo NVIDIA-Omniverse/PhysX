@@ -38,7 +38,6 @@
 
 namespace physx
 {
-
 namespace Dy
 {
 	struct Constraint;
@@ -51,6 +50,7 @@ namespace Dy
 #endif
 }
 
+// PT: TODO: fw declaring an Sc class here is not good
 namespace Sc
 {
 	class ArticulationSim;
@@ -63,12 +63,10 @@ struct PartitionEdge;
 
 namespace IG
 {
-
 //This index is 
 #define IG_INVALID_ISLAND 0xFFFFFFFFu
 #define IG_INVALID_EDGE 0xFFFFFFFFu
 #define IG_INVALID_LINK 0xFFu
-
 
 typedef PxU32 IslandId;
 typedef PxU32 EdgeIndex;
@@ -93,7 +91,6 @@ struct Edge
 		eEDGE_TYPE_COUNT
 	};
 	
-
 	enum EdgeState
 	{
 		eINSERTED			=1<<0,
@@ -105,14 +102,11 @@ struct Edge
 		eACTIVATING			=1<<6
 	};
 
-
 	//NodeIndex mNode1, mNode2;
 	EdgeType mEdgeType;
 	PxU16 mEdgeState;
 	
 	EdgeIndex mNextIslandEdge, mPrevIslandEdge;
-
-	
 
 	PX_FORCE_INLINE void setInserted() { mEdgeState |= (eINSERTED); }
 	
@@ -177,7 +171,7 @@ public:
 		return mCurrentHandle++;				
 	}
 
-	bool isNotFreeHandle(Handle handle)
+	bool isNotFreeHandle(Handle handle)	const
 	{
 		for(PxU32 a = 0; a < mFreeHandles.size(); ++a)
 		{
@@ -197,7 +191,7 @@ public:
 			mFreeHandles.pushBack(handle);
 	}
 
-	bool isValidHandle(Handle handle)
+	bool isValidHandle(Handle handle)	const
 	{
 		return handle < mCurrentHandle;
 	}
@@ -207,7 +201,6 @@ public:
 
 class Node
 {
-
 public:
 	enum NodeType
 	{
@@ -219,6 +212,7 @@ public:
 		eHAIRSYSTEM_TYPE,
 		eTYPE_COUNT
 	};
+
 	enum State
 	{
 		eREADY_FOR_SLEEPING = 1u << 0,				//! Ready to go to sleep
@@ -229,6 +223,7 @@ public:
 		eACTIVATING			= 1u << 5,				//! Is in the activating list
 		eDEACTIVATING		= 1u << 6				//! It is being forced to deactivate this frame
 	};
+
 	EdgeInstanceIndex mFirstEdgeIndex;
 
 	PxU8 mFlags;
@@ -243,7 +238,6 @@ public:
 	//to be in the active kinematics list
 	PxU32 mActiveRefCount;
 	
-
 	//A node can correspond with either a rigid body or an articulation or softBody 
 	union
 	{
@@ -256,8 +250,6 @@ public:
 		Dy::HairSystem*							mLLHairSystem;
 #endif
 	};
-
-
 
 	PX_FORCE_INLINE Node() : mFirstEdgeIndex(IG_INVALID_EDGE), mFlags(eDELETED), mType(eRIGID_BODY_TYPE),
 	 mStaticTouchCount(0), mActiveRefCount(0), mRigidBody(NULL)
@@ -296,44 +288,28 @@ public:
 	PX_FORCE_INLINE void setDeactivating() { mFlags |= eDEACTIVATING; }
 	PX_FORCE_INLINE void clearDeactivating() { mFlags &= (~eDEACTIVATING); }
 
-
 	//Activates a body/node.
-	PX_FORCE_INLINE void setIsReadyForSleeping() { mFlags |= eREADY_FOR_SLEEPING; }
-
-	PX_FORCE_INLINE void clearIsReadyForSleeping(){	mFlags &= (~eREADY_FOR_SLEEPING);}
-
-	PX_FORCE_INLINE void setIsDeleted(){mFlags |= eDELETED;	}
-
-	PX_FORCE_INLINE void setKinematicFlag()	{PX_ASSERT(!isKinematic());	mFlags |= eKINEMATIC;}
-
-	PX_FORCE_INLINE void clearKinematicFlag(){ PX_ASSERT(isKinematic()); mFlags &= (~eKINEMATIC);}
-
-	PX_FORCE_INLINE void markDirty(){mFlags |= eDIRTY;}
-
-	PX_FORCE_INLINE void clearDirty(){mFlags &= (~eDIRTY);}
+	PX_FORCE_INLINE void setIsReadyForSleeping()	{ mFlags |= eREADY_FOR_SLEEPING;						}
+	PX_FORCE_INLINE void clearIsReadyForSleeping()	{ mFlags &= (~eREADY_FOR_SLEEPING);						}
+	PX_FORCE_INLINE void setIsDeleted()				{ mFlags |= eDELETED;									}
+	PX_FORCE_INLINE void setKinematicFlag()			{ PX_ASSERT(!isKinematic());	mFlags |= eKINEMATIC;	}
+	PX_FORCE_INLINE void clearKinematicFlag()		{ PX_ASSERT(isKinematic()); mFlags &= (~eKINEMATIC);	}
+	PX_FORCE_INLINE void markDirty()				{ mFlags |= eDIRTY;										}
+	PX_FORCE_INLINE void clearDirty()				{ mFlags &= (~eDIRTY);									}
 
 public:
 
-	PX_FORCE_INLINE bool isActive() const { return !!(mFlags & eACTIVE); }
-
-	PX_FORCE_INLINE bool isActiveOrActivating() const { return !!(mFlags & (eACTIVE | eACTIVATING)); }
-
-	PX_FORCE_INLINE bool isActivating() const { return !!(mFlags & eACTIVATING); }
-
-	PX_FORCE_INLINE bool isDeactivating() const { return !!(mFlags & eDEACTIVATING); }
-
-	PX_FORCE_INLINE bool isKinematic() const { return !!(mFlags & eKINEMATIC); }
-
-	PX_FORCE_INLINE bool isDeleted() const { return !!(mFlags & eDELETED); }
-
-	PX_FORCE_INLINE bool isDirty() const { return !!(mFlags & eDIRTY); }
-
-	PX_FORCE_INLINE bool isReadyForSleeping() const { return !!(mFlags & eREADY_FOR_SLEEPING); }
-
-	PX_FORCE_INLINE NodeType getNodeType() const { return NodeType(mType); }
+	PX_FORCE_INLINE bool isActive()				const { return !!(mFlags & eACTIVE);					}
+	PX_FORCE_INLINE bool isActiveOrActivating()	const { return !!(mFlags & (eACTIVE | eACTIVATING));	}
+	PX_FORCE_INLINE bool isActivating()			const { return !!(mFlags & eACTIVATING);				}
+	PX_FORCE_INLINE bool isDeactivating()		const { return !!(mFlags & eDEACTIVATING);				}
+	PX_FORCE_INLINE bool isKinematic()			const { return !!(mFlags & eKINEMATIC);					}
+	PX_FORCE_INLINE bool isDeleted()			const { return !!(mFlags & eDELETED);					}
+	PX_FORCE_INLINE bool isDirty()				const { return !!(mFlags & eDIRTY);						}
+	PX_FORCE_INLINE bool isReadyForSleeping()	const { return !!(mFlags & eREADY_FOR_SLEEPING);		}
+	PX_FORCE_INLINE NodeType getNodeType()		const { return NodeType(mType);							}
 
 	friend class SimpleIslandManager;
-
 };
 
 struct Island
@@ -407,84 +383,82 @@ private:
 	NodeComparator& operator = (const NodeComparator&);
 };
 
-
 class IslandSim
 {
-	HandleManager<IslandId> mIslandHandles;					//! Handle manager for islands
+	PX_NOCOPY(IslandSim)
 
-	PxArray<Node> mNodes;									//! The nodes used in the constraint graph
-	PxArray<PxU32> mActiveNodeIndex;						//! The active node index for each node
-	Cm::BlockArray<Edge> mEdges;
-	Cm::BlockArray<EdgeInstance> mEdgeInstances;			//! Edges used to connect nodes in the constraint graph
-	PxArray<Island> mIslands;								//! The array of islands
-	PxArray<PxU32> mIslandStaticTouchCount;				//! Array of static touch counts per-island
+	HandleManager<IslandId>							mIslandHandles;								//! Handle manager for islands
 
+	PxArray<Node>									mNodes;										//! The nodes used in the constraint graph
+	PxArray<PxU32>									mActiveNodeIndex;							//! The active node index for each node
+	Cm::BlockArray<Edge>							mEdges;
+	Cm::BlockArray<EdgeInstance>					mEdgeInstances;								//! Edges used to connect nodes in the constraint graph
+	PxArray<Island>									mIslands;									//! The array of islands
+	PxArray<PxU32>									mIslandStaticTouchCount;					//! Array of static touch counts per-island
 
-	PxArray<PxNodeIndex> mActiveNodes[Node::eTYPE_COUNT];			//! An array of active nodes
-	PxArray<PxNodeIndex> mActiveKinematicNodes;						//! An array of active or referenced kinematic nodes
-	PxArray<EdgeIndex> mActivatedEdges[Edge::eEDGE_TYPE_COUNT];	//! An array of active edges
+	PxArray<PxNodeIndex>							mActiveNodes[Node::eTYPE_COUNT];			//! An array of active nodes
+	PxArray<PxNodeIndex>							mActiveKinematicNodes;						//! An array of active or referenced kinematic nodes
+	PxArray<EdgeIndex>								mActivatedEdges[Edge::eEDGE_TYPE_COUNT];	//! An array of active edges
 
-	PxU32 mActiveEdgeCount[Edge::eEDGE_TYPE_COUNT];
+	PxU32											mActiveEdgeCount[Edge::eEDGE_TYPE_COUNT];
 	
-	PxArray<PxU32> mHopCounts;							//! The observed number of "hops" from a given node to its root node. May be inaccurate but used to accelerate searches.
-	PxArray<PxNodeIndex> mFastRoute;						//! The observed last route from a given node to the root node. We try the fast route (unless its broken) before trying others.
+	PxArray<PxU32>									mHopCounts;									//! The observed number of "hops" from a given node to its root node. May be inaccurate but used to accelerate searches.
+	PxArray<PxNodeIndex>							mFastRoute;									//! The observed last route from a given node to the root node. We try the fast route (unless its broken) before trying others.
 
-	PxArray<IslandId> mIslandIds;							//! The array of per-node island ids
+	PxArray<IslandId>								mIslandIds;									//! The array of per-node island ids
 	
-	PxBitMap mIslandAwake;								//! Indicates whether an island is awake or not
+	PxBitMap										mIslandAwake;								//! Indicates whether an island is awake or not
 
-	PxBitMap mActiveContactEdges;
+	PxBitMap										mActiveContactEdges;
 
 	//An array of active islands
-	PxArray<IslandId> mActiveIslands;
+	PxArray<IslandId>								mActiveIslands;
 
-	PxU32 mInitialActiveNodeCount[Edge::eEDGE_TYPE_COUNT];
+	PxU32											mInitialActiveNodeCount[Edge::eEDGE_TYPE_COUNT];
 
-	PxArray<PxNodeIndex> mNodesToPutToSleep[Node::eTYPE_COUNT];
+	PxArray<PxNodeIndex>							mNodesToPutToSleep[Node::eTYPE_COUNT];
 
 	//Input to this frame's island management (changed nodes/edges)
 
 	//Input list of changes observed this frame. If there no changes, no work to be done.
-	PxArray<EdgeIndex> mDirtyEdges[Edge::eEDGE_TYPE_COUNT];
+	PxArray<EdgeIndex>								mDirtyEdges[Edge::eEDGE_TYPE_COUNT];
 	//Dirty nodes. These nodes lost at least one connection so we need to recompute islands from these nodes
-	//PxArray<NodeIndex> mDirtyNodes;
-	PxBitMap mDirtyMap;
-	PxU32 mLastMapIndex;
+	//PxArray<NodeIndex>							mDirtyNodes;
+	PxBitMap										mDirtyMap;
+	PxU32											mLastMapIndex;
 
 	//An array of nodes to activate
-	PxArray<PxNodeIndex> mActivatingNodes;
-	PxArray<EdgeIndex> mDestroyedEdges;
-	PxArray<IslandId> mTempIslandIds;
+	PxArray<PxNodeIndex>							mActivatingNodes;
+	PxArray<EdgeIndex>								mDestroyedEdges;
+	PxArray<IslandId>								mTempIslandIds;
 
-	
 	//Temporary, transient data used for traversals. TODO - move to PxsSimpleIslandManager. Or if we keep it here, we can 
 	//process multiple island simulations in parallel
-	Cm::PriorityQueue<QueueElement, NodeComparator> 
-		mPriorityQueue;										//! Priority queue used for graph traversal
-	PxArray<TraversalState> mVisitedNodes;				//! The list of nodes visited in the current traversal
-	PxBitMap mVisitedState;								//! Indicates whether a node has been visited
-	PxArray<EdgeIndex> mIslandSplitEdges[Edge::eEDGE_TYPE_COUNT];
+	Cm::PriorityQueue<QueueElement, NodeComparator>	mPriorityQueue;								//! Priority queue used for graph traversal
+	PxArray<TraversalState>							mVisitedNodes;								//! The list of nodes visited in the current traversal
+	PxBitMap										mVisitedState;								//! Indicates whether a node has been visited
+	PxArray<EdgeIndex>								mIslandSplitEdges[Edge::eEDGE_TYPE_COUNT];
 
-	PxArray<EdgeIndex> mDeactivatingEdges[Edge::eEDGE_TYPE_COUNT];
+	PxArray<EdgeIndex>								mDeactivatingEdges[Edge::eEDGE_TYPE_COUNT];
 
-	PxArray<PartitionEdge*>* mFirstPartitionEdges;
-	Cm::BlockArray<PxNodeIndex>& mEdgeNodeIndices;
-	PxArray<physx::PartitionEdge*>* mDestroyedPartitionEdges;
+	PxArray<PartitionEdge*>*						mFirstPartitionEdges;
+	Cm::BlockArray<PxNodeIndex>&					mEdgeNodeIndices;
+	PxArray<physx::PartitionEdge*>*					mDestroyedPartitionEdges;
 
-	PxU32* mNpIndexPtr;
+	PxU32*											mNpIndexPtr;
 	
-	PxU64	mContextId;
+	const PxU64										mContextId;
 
 public:
 
 	IslandSim(PxArray<PartitionEdge*>* firstPartitionEdges, Cm::BlockArray<PxNodeIndex>& edgeNodeIndices, PxArray<PartitionEdge*>* destroyedPartitionEdges, PxU64 contextID);
 	~IslandSim() {}
 
-	void resize(const PxU32 nbNodes, const PxU32 nbContactManagers, const PxU32 nbConstraints);
+	//void resize(const PxU32 nbNodes, const PxU32 nbContactManagers, const PxU32 nbConstraints);
 
 	void addRigidBody(PxsRigidBody* body, bool isKinematic, bool isActive, PxNodeIndex nodeIndex);
 
-	void addArticulation(Sc::ArticulationSim* articulation, Dy::FeatherstoneArticulation* llArtic, bool isActive, PxNodeIndex nodeIndex);
+	void addArticulation(Dy::FeatherstoneArticulation* llArtic, bool isActive, PxNodeIndex nodeIndex);
 
 #if PX_SUPPORT_GPU_PHYSX
 	void addSoftBody(Dy::SoftBody* llArtic, bool isActive, PxNodeIndex nodeIndex);
@@ -496,7 +470,7 @@ public:
 	void addHairSystem(Dy::HairSystem* llHairSystem, bool isActive, PxNodeIndex nodeIndex);
 #endif
 
-	void addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, EdgeIndex handle);
+	//void addContactManager(PxsContactManager* manager, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, EdgeIndex handle);
 
 	void addConstraint(Dy::Constraint* constraint, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, EdgeIndex handle);
 
@@ -549,6 +523,7 @@ public:
 		return node.mLLArticulation;
 	}
 
+	// PT: this one is questionable here
 	Sc::ArticulationSim* getArticulationSim(PxNodeIndex nodeIndex) const;
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -623,12 +598,9 @@ public:
 
 	void setDynamic(PxNodeIndex nodeIndex);
 
-	PX_FORCE_INLINE void setEdgeNodeIndexPtr(PxU32* ptr) { mNpIndexPtr = ptr; }
-
 	PX_FORCE_INLINE PxNodeIndex getNodeIndex1(IG::EdgeIndex index) const { return mEdgeNodeIndices[2 * index]; }
 	PX_FORCE_INLINE PxNodeIndex getNodeIndex2(IG::EdgeIndex index) const { return mEdgeNodeIndices[2 * index + 1]; }
 
-	PX_FORCE_INLINE PxU32*	getEdgeNodeIndexPtr()	const { return mNpIndexPtr;	}
 	PX_FORCE_INLINE	PxU64	getContextId()			const { return mContextId;	}
 
 	PxU32 getNbIslands() const { return mIslandStaticTouchCount.size(); }
@@ -637,8 +609,7 @@ public:
 
 	const PxU32* getIslandIds() const { return mIslandIds.begin(); }
 
-	bool checkInternalConsistency();
-
+	bool checkInternalConsistency() const;
 
 	PX_INLINE void activateNode_ForGPUSolver(PxNodeIndex index)
 	{
@@ -651,6 +622,11 @@ public:
 		IG::Node& node = mNodes[index.index()];
 		node.setIsReadyForSleeping();
 	}
+
+	// PT: these ones are strange, used to store an unrelated ptr from the outside, and only for GPU
+	// Why do we store that here? What happens on the CPU ?
+	PX_FORCE_INLINE void	setEdgeNodeIndexPtr(PxU32* ptr)		{ mNpIndexPtr = ptr;	}
+	PX_FORCE_INLINE PxU32*	getEdgeNodeIndexPtr()		const	{ return mNpIndexPtr;	}
 
 private:
 
@@ -675,10 +651,6 @@ private:
 
 	void mergeIslandsInternal(Island& island0, Island& island1, IslandId islandId0, IslandId islandId1, PxNodeIndex node0, PxNodeIndex node1);
 	
-
-	IslandSim& operator = (const IslandSim&);
-	IslandSim(const IslandSim&);
-
 	void unwindRoute(PxU32 traversalIndex, PxNodeIndex lastNode, PxU32 hopCount, IslandId id);
 
 	void activateIsland(IslandId island);
@@ -691,7 +663,7 @@ private:
 
 	bool findRoute(PxNodeIndex startNode, PxNodeIndex targetNode, IslandId islandId);
 
-	bool isPathTo(PxNodeIndex startNode, PxNodeIndex targetNode);
+	bool isPathTo(PxNodeIndex startNode, PxNodeIndex targetNode)	const;
 
 	void addNode(bool isActive, bool isKinematic, Node::NodeType type, PxNodeIndex nodeIndex);
 
@@ -871,7 +843,6 @@ private:
 				node.mActiveRefCount++;
 			}
 		}
-
 	}
 
 	void removeEdgeFromActivatingList(EdgeIndex index);
@@ -962,19 +933,15 @@ private:
 
 	friend class SimpleIslandManager;
 	friend class ThirdPassTask;
-
 };
-
-
 }
-
 
 struct PartitionIndexData
 {
-	PxU16 mPartitionIndex;				//! The current partition this edge is in. Used to find the edge efficiently. PxU8 is probably too small (256 partitions max) but PxU16 should be more than enough
-	PxU8 mPatchIndex;					//! The patch index for this partition edge. There may be multiple entries for a given edge if there are multiple patches.
-	PxU8 mCType;						//! The type of constraint this is
-	PxU32 mPartitionEntryIndex;			//! index of partition edges for this partition
+	PxU16 mPartitionIndex;		//! The current partition this edge is in. Used to find the edge efficiently. PxU8 is probably too small (256 partitions max) but PxU16 should be more than enough
+	PxU8 mPatchIndex;			//! The patch index for this partition edge. There may be multiple entries for a given edge if there are multiple patches.
+	PxU8 mCType;				//! The type of constraint this is
+	PxU32 mPartitionEntryIndex;	//! index of partition edges for this partition
 };
 
 struct PartitionNodeData
@@ -985,23 +952,21 @@ struct PartitionNodeData
 	PxU32 mNextIndex1;
 };
 
-
 #define INVALID_PARTITION_INDEX 0xFFFF
 
 struct PartitionEdge
 {
-	IG::EdgeIndex mEdgeIndex;			//! The edge index into the island manager. Used to identify the contact manager/constraint
-	PxNodeIndex mNode0;				//! The node index for node 0. Can be obtained from the edge index alternatively
-	PxNodeIndex mNode1;				//! The node idnex for node 1. Can be obtained from the edge index alternatively
-	bool mInfiniteMass0;				//! Whether body 0 is kinematic
-	bool mArticulation0;				//! Whether body 0 is an articulation link
-	bool mInfiniteMass1;				//! Whether body 1 is kinematic
-	bool mArticulation1;				//! Whether body 1 is an articulation link
+	IG::EdgeIndex mEdgeIndex;	//! The edge index into the island manager. Used to identify the contact manager/constraint
+	PxNodeIndex mNode0;			//! The node index for node 0. Can be obtained from the edge index alternatively
+	PxNodeIndex mNode1;			//! The node idnex for node 1. Can be obtained from the edge index alternatively
+	bool mInfiniteMass0;		//! Whether body 0 is kinematic
+	bool mArticulation0;		//! Whether body 0 is an articulation link
+	bool mInfiniteMass1;		//! Whether body 1 is kinematic
+	bool mArticulation1;		//! Whether body 1 is an articulation link
 
-	PartitionEdge* mNextPatch;	 //! for the contact manager has more than 1 patch, we have next patch's edge and previous patch's edge to connect to this edge
+	PartitionEdge* mNextPatch;	//! for the contact manager has more than 1 patch, we have next patch's edge and previous patch's edge to connect to this edge
 
-	PxU32 mUniqueIndex;					//! a unique ID for this edge
-
+	PxU32 mUniqueIndex;			//! a unique ID for this edge
 
 	//KS - This constructor explicitly does not set mUniqueIndex. It is filled in by the pool allocator and this constructor
 	//is called afterwards. We do not want to stomp the uniqueIndex value

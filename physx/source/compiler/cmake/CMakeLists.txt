@@ -35,9 +35,9 @@ OPTION(PX_GENERATE_STATIC_LIBRARIES "Generate static libraries" OFF)
 OPTION(PX_EXPORT_LOWLEVEL_PDB "Export low level pdb's" OFF)
 
 IF(NOT DEFINED PHYSX_ROOT_DIR)
-	
+
 	STRING(REPLACE "\\" "/" BRD_TEMP $ENV{PHYSX_ROOT_DIR})
-	
+
 	# This env variable is set by GenerateProjects.bat, and is no longer available when CMake rebuilds, so this stores it in the cache
 	SET(PHYSX_ROOT_DIR ${BRD_TEMP} CACHE INTERNAL "Root of the PhysX source tree")
 
@@ -49,20 +49,6 @@ IF(NOT EXISTS ${PHYSX_ROOT_DIR})
 	MESSAGE(FATAL_ERROR "PHYSX_ROOT_DIR environment variable wasn't set or was invalid.")
 ENDIF()
 
-IF(NOT DEFINED CMAKEMODULES_VERSION)
-	SET(CMAKEMODULES_PATH $ENV{PM_CMakeModules_PATH} CACHE INTERNAL "Path to CMakeModules")
-	SET(CMAKEMODULES_NAME $ENV{PM_CMakeModules_NAME} CACHE INTERNAL "CMakeModules name")
-	SET(CMAKEMODULES_VERSION $ENV{PM_CMakeModules_VERSION} CACHE INTERNAL "CMakeModules version from generation batch")
-ENDIF()
-
-#TODO: More elegance
-IF(NOT EXISTS ${CMAKEMODULES_PATH})
-	MESSAGE(FATAL_ERROR "Could not find ${CMAKEMODULES_PATH}")
-ENDIF()
-
-SET(CMAKE_MODULE_PATH ${CMAKEMODULES_PATH})
-
-
 MESSAGE("PhysX Build Platform: " ${TARGET_BUILD_PLATFORM})
 MESSAGE("Using CXX Compiler: " ${CMAKE_CXX_COMPILER})
 
@@ -71,15 +57,15 @@ INCLUDE(NvidiaBuildOptions)
 IF(CMAKE_CONFIGURATION_TYPES)
 	SET(CMAKE_CONFIGURATION_TYPES debug checked profile release)
 	SET(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING
-		"Reset config to what we need" 
+		"Reset config to what we need"
 		FORCE)
-	
+
 	SET(CMAKE_SHARED_LINKER_FLAGS_CHECKED "")
 	SET(CMAKE_SHARED_LINKER_FLAGS_PROFILE "")
 
 	# Build PDBs for all configurations
 	SET(CMAKE_SHARED_LINKER_FLAGS "/DEBUG")
-	
+
 ENDIF()
 
 # Prevent failure due to command line limitations

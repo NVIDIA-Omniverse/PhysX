@@ -38,14 +38,7 @@ using namespace Gu;
 static bool buildBVH(const PxBVHDesc& desc, BVHData& data, const char* errorMessage)
 {
 	if(!desc.isValid())
-	{
-#if PX_CHECKED
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, errorMessage);
-#else
-		PX_UNUSED(errorMessage);
-#endif
-		return false;
-	}
+		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, errorMessage);
 
 	BVHBuildStrategy bs;
 	if(desc.buildStrategy==PxBVHBuildStrategy::eFAST)

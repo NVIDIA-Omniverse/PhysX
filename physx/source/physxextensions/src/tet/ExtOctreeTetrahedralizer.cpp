@@ -89,11 +89,11 @@ namespace physx
 			for (PxI32 i = 0; i < PxI32(surfaceVerts.size()); i++) 
 			{
 				const PxVec3& v = surfaceVerts[i];
-				bounds.include(Vec3(v.x, v.y, v.z));
+				bounds.include(PxVec3d(PxF64(v.x), PxF64(v.y), PxF64(v.z)));
 			}
 
 			bounds.expand(0.01);
-			Vec3 dims = bounds.getDimensions();
+			PxVec3d dims = bounds.getDimensions();
 			PxF64 size = PxMax(dims.x, PxMax(dims.y, dims.z));
 
 			// create root
@@ -116,7 +116,7 @@ namespace physx
 
 		// -------------------------------------------------------------------------------------
 
-		PxI32 OctreeTetrahedralizer::Cell::getChildNr(const Vec3& p)
+		PxI32 OctreeTetrahedralizer::Cell::getChildNr(const PxVec3d& p)
 		{
 			if (firstChild < 0)
 				return -1;
@@ -160,7 +160,7 @@ namespace physx
 				child.init();
 				child.depth = cells[cellNr].depth + 1;
 				child.size = cells[cellNr].size * 0.5;
-				child.orig = cells[cellNr].orig + Vec3(
+				child.orig = cells[cellNr].orig + PxVec3d(
 					childRelPos[i][0] * child.size,
 					childRelPos[i][1] * child.size,
 					childRelPos[i][2] * child.size);
@@ -177,10 +177,10 @@ namespace physx
 
 		// -----------------------------------------------------------------------------------
 
-		static Vec3 jitter(const Vec3& p, Cm::RandomR250& random)
+		static PxVec3d jitter(const PxVec3d& p, Cm::RandomR250& random)
 		{
 			PxF64 eps = 0.001;
-			return Vec3(
+			return PxVec3d(
 				p.x - eps + 2.0 * eps * PxF64(random.rand(0.0f, 1.0f)),
 				p.y - eps + 2.0 * eps * PxF64(random.rand(0.0f, 1.0f)),
 				p.z - eps + 2.0 * eps * PxF64(random.rand(0.0f, 1.0f))); 
@@ -198,20 +198,20 @@ namespace physx
 			for (PxI32 i = 0; i < PxI32(surfaceVerts.size()); i++)
 			{
 				const PxVec3& v = surfaceVerts[i];
-				tetVerts.pushBack(Vec3(v.x, v.y, v.z));
+				tetVerts.pushBack(PxVec3d(PxF64(v.x), PxF64(v.y), PxF64(v.z)));
 			}
 
 			if (includeOctreeNodes) 
 			{
 
-				PxArray<Vec3> treeVerts;
+				PxArray<PxVec3d> treeVerts;
 
 				for (PxI32 i = 0; i < PxI32(cells.size()); i++)
 				{
 					PxF64 s = cells[i].size;
 
 					for (PxI32 j = 0; j < 8; j++) {
-						Vec3 p = cells[i].orig + Vec3(
+						PxVec3d p = cells[i].orig + PxVec3d(
 							s * cubeCorners[j][0],
 							s * cubeCorners[j][1],
 							s * cubeCorners[j][2]);
@@ -238,7 +238,7 @@ namespace physx
 				PxArray<Ref> refs(numTreeVerts);
 				for (PxI32 i = 0; i < numTreeVerts; i++)
 				{
-					Vec3& p = treeVerts[i];
+					PxVec3d& p = treeVerts[i];
 					refs[i].d = p.x + 0.3 * p.y + 0.1 * p.z;
 					refs[i].vertNr = i;
 				}
@@ -254,8 +254,8 @@ namespace physx
 					nr++;
 					if (duplicate[r.vertNr])
 						continue;
-					Vec3& p = treeVerts[r.vertNr];
-					Vec3 v = jitter(p, random);
+					PxVec3d& p = treeVerts[r.vertNr];
+					PxVec3d v = jitter(p, random);
 
 					if (insideTester.isInside(PxVec3(PxReal(v.x), PxReal(v.y), PxReal(v.z))))
 						tetVerts.pushBack(jitter(p, random));
@@ -263,7 +263,7 @@ namespace physx
 					PxI32 i = nr;
 					while (i < numTreeVerts && fabs(refs[i].d - r.d) < eps)
 					{
-						Vec3& q = treeVerts[refs[i].vertNr];
+						PxVec3d& q = treeVerts[refs[i].vertNr];
 						if ((p - q).magnitude() < eps)
 							duplicate[refs[i].vertNr] = true;
 						i++;
@@ -273,7 +273,7 @@ namespace physx
 		}
 
 		// -----------------------------------------------------------------------------------
-		Vec3 OctreeTetrahedralizer::getTetCenter(PxI32 tetNr) const
+		PxVec3d OctreeTetrahedralizer::getTetCenter(PxI32 tetNr) const
 		{
 			return (tetVerts[tetIds[4 * tetNr]] +
 				tetVerts[tetIds[4 * tetNr + 1]] +
@@ -284,7 +284,7 @@ namespace physx
 		// -----------------------------------------------------------------------------------
 		void OctreeTetrahedralizer::treeInsertTet(PxI32 tetNr)
 		{
-			Vec3 center = getTetCenter(tetNr);
+			PxVec3d center = getTetCenter(tetNr);
 
 			PxI32 cellNr = 0;
 			while (cellNr >= 0) 
@@ -294,8 +294,8 @@ namespace physx
 					c.closestTetNr = tetNr;
 				else 
 				{
-					Vec3 cellCenter = c.orig + Vec3(c.size, c.size, c.size) * 0.5;
-					Vec3 closest = getTetCenter(c.closestTetNr);
+					PxVec3d cellCenter = c.orig + PxVec3d(c.size, c.size, c.size) * 0.5;
+					PxVec3d closest = getTetCenter(c.closestTetNr);
 					if ((cellCenter - center).magnitudeSquared() < (cellCenter - closest).magnitudeSquared())
 						c.closestTetNr = tetNr;
 				}
@@ -306,7 +306,7 @@ namespace physx
 		// -----------------------------------------------------------------------------------
 		void OctreeTetrahedralizer::treeRemoveTet(PxI32 tetNr)
 		{
-			Vec3 center = getTetCenter(tetNr);
+			PxVec3d center = getTetCenter(tetNr);
 
 			PxI32 cellNr = 0;
 			while (cellNr >= 0)
@@ -362,7 +362,7 @@ namespace physx
 		}
 
 		// -----------------------------------------------------------------------------------
-		bool OctreeTetrahedralizer::findSurroundingTet(const Vec3& p, PxI32 startTetNr, PxI32& tetNr)
+		bool OctreeTetrahedralizer::findSurroundingTet(const PxVec3d& p, PxI32 startTetNr, PxI32& tetNr)
 		{
 			currentTetMark++;
 			tetNr = startTetNr;
@@ -375,7 +375,7 @@ namespace physx
 					break;
 				tetMarks[tetNr] = currentTetMark;
 
-				Vec3 c = getTetCenter(tetNr);
+				PxVec3d c = getTetCenter(tetNr);
 
 				PxI32* ids = &tetIds[4 * tetNr];
 				PxF64 minT = DBL_MAX;
@@ -383,11 +383,11 @@ namespace physx
 
 				for (PxI32 i = 0; i < 4; i++) 
 				{
-					const Vec3& p0 = tetVerts[ids[tetFaces[i][0]]];
-					const Vec3& p1 = tetVerts[ids[tetFaces[i][1]]];
-					const Vec3& p2 = tetVerts[ids[tetFaces[i][2]]];
+					const PxVec3d& p0 = tetVerts[ids[tetFaces[i][0]]];
+					const PxVec3d& p1 = tetVerts[ids[tetFaces[i][1]]];
+					const PxVec3d& p2 = tetVerts[ids[tetFaces[i][2]]];
 
-					Vec3 n = (p1 - p0).cross(p2 - p0);
+					PxVec3d n = (p1 - p0).cross(p2 - p0);
 					n = n.getNormalized();
 					PxF64 hp = (p - p0).dot(n);
 					PxF64 hc = (c - p0).dot(n);
@@ -411,7 +411,7 @@ namespace physx
 		}
 
 		// -----------------------------------------------------------------------------------
-		bool OctreeTetrahedralizer::findSurroundingTet(const Vec3& p, PxI32& tetNr)
+		bool OctreeTetrahedralizer::findSurroundingTet(const PxVec3d& p, PxI32& tetNr)
 		{
 			PxI32 startTet = 0;
 			PxI32 cellNr = 0;
@@ -426,17 +426,17 @@ namespace physx
 		}
 
 		// -----------------------------------------------------------------------------------
-		static Vec3 getCircumCenter(Vec3& p0, Vec3& p1, Vec3& p2, Vec3& p3)
+		static PxVec3d getCircumCenter(PxVec3d& p0, PxVec3d& p1, PxVec3d& p2, PxVec3d& p3)
 		{
-			Vec3 b = p1 - p0;
-			Vec3 c = p2 - p0;
-			Vec3 d = p3 - p0;
+			PxVec3d b = p1 - p0;
+			PxVec3d c = p2 - p0;
+			PxVec3d d = p3 - p0;
 			PxF64 det = 2.0 * (b.x*(c.y*d.z - c.z*d.y) - b.y*(c.x*d.z - c.z*d.x) + b.z*(c.x*d.y - c.y*d.x));
 			if (det == 0.0)
 				return p0;
 			else 
 			{
-				Vec3 v = c.cross(d)*b.dot(b) + d.cross(b)*c.dot(c) + b.cross(c)*d.dot(d);
+				PxVec3d v = c.cross(d)*b.dot(b) + d.cross(b)*c.dot(c) + b.cross(c)*d.dot(d);
 				v /= det;
 				return p0 + v;
 			}
@@ -446,7 +446,7 @@ namespace physx
 		// -----------------------------------------------------------------------------------
 		bool OctreeTetrahedralizer::meshInsertTetVert(PxI32 vertNr)
 		{
-			const Vec3& p = tetVerts[vertNr];
+			const PxVec3d& p = tetVerts[vertNr];
 			PxI32 surroundingTetNr;
 			if (!findSurroundingTet(p, surroundingTetNr))
 				return false;
@@ -475,7 +475,7 @@ namespace physx
 
 					// Delaunay condition test
 					PxI32* ids = &tetIds[4 * n];
-					Vec3 c = getCircumCenter(tetVerts[ids[0]], tetVerts[ids[1]], tetVerts[ids[2]], tetVerts[ids[3]]);
+					PxVec3d c = getCircumCenter(tetVerts[ids[0]], tetVerts[ids[1]], tetVerts[ids[2]], tetVerts[ids[3]]);
 
 					PxF64 r2 = (tetVerts[ids[0]] - c).magnitudeSquared();
 					if ((p - c).magnitudeSquared() < r2)
@@ -571,14 +571,14 @@ namespace physx
 		}
 
 		// -----------------------------------------------------------------------------------
-		static PxF64 tetQuality(const Vec3& p0, const Vec3& p1, const Vec3& p2, const Vec3& p3)
+		static PxF64 tetQuality(const PxVec3d& p0, const PxVec3d& p1, const PxVec3d& p2, const PxVec3d& p3)
 		{
-			Vec3 d0 = p1 - p0;
-			Vec3 d1 = p2 - p0;
-			Vec3 d2 = p3 - p0;
-			Vec3 d3 = p2 - p1;
-			Vec3 d4 = p3 - p2;
-			Vec3 d5 = p1 - p3;
+			PxVec3d d0 = p1 - p0;
+			PxVec3d d1 = p2 - p0;
+			PxVec3d d2 = p3 - p0;
+			PxVec3d d3 = p2 - p1;
+			PxVec3d d4 = p3 - p2;
+			PxVec3d d5 = p1 - p3;
 
 			PxF64 s0 = d0.magnitudeSquared();
 			PxF64 s1 = d1.magnitudeSquared();
@@ -624,7 +624,7 @@ namespace physx
 
 				if (!remove)
 				{
-					Vec3 c = getTetCenter(i);
+					PxVec3d c = getTetCenter(i);
 					if (!insideTester.isInside(PxVec3(PxReal(c.x), PxReal(c.y), PxReal(c.z))))
 						remove = true;
 
@@ -678,11 +678,11 @@ namespace physx
 			bounds.expand(bounds.getDimensions().magnitude() * 0.1);
 
 			firstABBVert = PxI32(tetVerts.size());
-			Vec3 dims = bounds.getDimensions();
+			PxVec3d dims = bounds.getDimensions();
 
 			for (PxI32 i = 0; i < 8; i++) 
 			{
-				tetVerts.pushBack(bounds.minimum + Vec3(
+				tetVerts.pushBack(bounds.minimum + PxVec3d(
 					cubeCorners[i][0] * dims.x,
 					cubeCorners[i][1] * dims.y,
 					cubeCorners[i][2] * dims.z));
@@ -718,7 +718,7 @@ namespace physx
 
 			for (PxU32 i = 0; i < tetVerts.size(); i++) 
 			{
-				Vec3 &v = tetVerts[i];
+				PxVec3d &v = tetVerts[i];
 				outputTetVerts[i] = PxVec3(PxReal(v.x), PxReal(v.y), PxReal(v.z));
 			}
 

@@ -39,8 +39,9 @@ void PhysXIntegrationParams::create
  const PxVec3& actorBoxShapeHalfExtents, const PxTransform& actorBoxShapeLocalPose)
 {
 	physxRoadGeometryQueryParams.roadGeometryQueryType = PxVehiclePhysXRoadGeometryQueryType::eRAYCAST;
-	physxRoadGeometryQueryParams.filterData = queryFilterData;
+	physxRoadGeometryQueryParams.defaultFilterData = queryFilterData;
 	physxRoadGeometryQueryParams.filterCallback = queryFilterCallback;
+	physxRoadGeometryQueryParams.filterDataEntries = NULL;
 
 	for(PxU32 i = 0; i < axleDescription.nbWheels; i++)
 	{

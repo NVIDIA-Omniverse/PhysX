@@ -57,7 +57,6 @@
 #include "PxPhysicsAPI.h"
 #include "../snippetcommon/SnippetPrint.h"
 #include "../snippetcommon/SnippetPVD.h"
-#include "../snippetutils/SnippetUtils.h"
 
 //This will allow the split sim to overlap collision and render and game logic.
 #define OVERLAP_COLLISION_AND_RENDER_WITH_NO_LAG  1
@@ -83,20 +82,6 @@ static bool isFirstFrame = true;
 PxRigidDynamic* gKinematics[NB_KINE_Y][NB_KINE_X];
 PxTransform gKinematicTargets[NB_KINE_Y][NB_KINE_X];
 
-PxQuat setRotY(PxMat33& m, const PxReal angle)
-{
-	m = PxMat33(PxIdentity);
-
-	const PxReal cos = cosf(angle);
-	const PxReal sin = sinf(angle);
-
-	m[0][0] = m[2][2] = cos;
-	m[0][2] = -sin;
-	m[2][0] = sin;
-
-	return PxQuat(m);
-}
-
 void createDynamics()
 {
 	const PxU32 NbX = 8;
@@ -116,11 +101,10 @@ void createDynamics()
 	PX_UNUSED(boxShape);
 	PX_UNUSED(sphereShape);
 	PX_UNUSED(capsuleShape);
-	PxMat33 m;
 	for(PxU32 j=0;j<NbLayers;j++)
 	{
 		const float angle = float(j)*0.08f;
-		const PxQuat rot = setRotY(m, angle);
+		const PxQuat rot = PxGetRotYQuat(angle);
 
 		const float ScaleX = 4.0f;
 		const float ScaleY = 4.0f;

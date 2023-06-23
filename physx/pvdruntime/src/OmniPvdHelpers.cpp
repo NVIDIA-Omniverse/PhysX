@@ -33,7 +33,7 @@ uint8_t OmniPvdCompressInt(uint64_t handle, uint8_t *bytes) {
 	uint8_t shiftBits = 0;
 	for (int i = 0; i < 8; i++) {
 		if ((handle >> shiftBits) & 0x7f) {
-			lastBitGroupIndex = i;
+			lastBitGroupIndex = static_cast<uint8_t>(i);
 		}
 		shiftBits += 7;
 	}
@@ -46,6 +46,8 @@ uint8_t OmniPvdCompressInt(uint64_t handle, uint8_t *bytes) {
 		bytes[i] = currentBitGroup;
 		shiftBits += 7;
 	}
+
+	return lastBitGroupIndex;
 }
 
 uint64_t OmniPvdDeCompressInt(uint8_t *bytes, uint8_t maxBytes) {

@@ -37,13 +37,11 @@ RevoluteJoint::RevoluteJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* a
 {
 	RevoluteJointData* data = static_cast<RevoluteJointData*>(mData);
 
-	data->projectionLinearTolerance		= 1e10f;
-	data->projectionAngularTolerance	= PxPi;
-	data->driveForceLimit				= PX_MAX_F32;
-	data->driveVelocity					= 0.0f;
-	data->driveGearRatio				= 1.0f;
-	data->limit							= PxJointAngularLimitPair(-PxPi/2, PxPi/2);
-	data->jointFlags					= PxRevoluteJointFlags();
+	data->driveForceLimit	= PX_MAX_F32;
+	data->driveVelocity		= 0.0f;
+	data->driveGearRatio	= 1.0f;
+	data->limit				= PxJointAngularLimitPair(-PxPi/2, PxPi/2);
+	data->jointFlags		= PxRevoluteJointFlags();
 }
 
 PxReal RevoluteJoint::getAngle() const
@@ -70,14 +68,13 @@ void RevoluteJoint::setLimit(const PxJointAngularLimitPair& limit)
 	markDirty();	
 
 #if PX_SUPPORT_OMNI_PVD
-	PxJoint& j = static_cast<PxJoint&>(*this);
-	OMNI_PVD_SET(joint, revoluteLimitLower, j, limit.lower)
-	OMNI_PVD_SET(joint, revoluteLimitUpper, j, limit.upper)
-	OMNI_PVD_SET(joint, revoluteLimitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(joint, revoluteLimitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(joint, revoluteLimitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(joint, revoluteLimitDamping, j, limit.damping)
-	OMNI_PVD_SET(joint, revoluteLimitContactDistance, j, limit.contactDistance_deprecated)
+	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(*this);
+	OMNI_PVD_SET(PxRevoluteJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET(PxRevoluteJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET(PxRevoluteJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET(PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET(PxRevoluteJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET(PxRevoluteJoint, limitDamping, j, limit.damping)
 #endif
 }
 
@@ -92,10 +89,9 @@ void RevoluteJoint::setDriveVelocity(PxReal velocity, bool autowake)
 	data().driveVelocity = velocity; 
 	if(autowake)
 		wakeUpActors();
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteDriveVelocity, static_cast<PxJoint&>(*this), velocity)
-#endif
+	markDirty();
+
+	OMNI_PVD_SET(PxRevoluteJoint, driveVelocity, static_cast<PxRevoluteJoint&>(*this), velocity)
 }
 
 PxReal RevoluteJoint::getDriveForceLimit() const
@@ -107,10 +103,9 @@ void RevoluteJoint::setDriveForceLimit(PxReal forceLimit)
 { 
 	PX_CHECK_AND_RETURN(PxIsFinite(forceLimit), "PxRevoluteJoint::setDriveForceLimit: invalid parameter");
 	data().driveForceLimit = forceLimit; 
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteDriveForceLimit, static_cast<PxJoint&>(*this), forceLimit)
-#endif
+	markDirty();
+
+	OMNI_PVD_SET(PxRevoluteJoint, driveForceLimit, static_cast<PxRevoluteJoint&>(*this), forceLimit)
 }
 
 PxReal RevoluteJoint::getDriveGearRatio() const
@@ -122,40 +117,9 @@ void RevoluteJoint::setDriveGearRatio(PxReal gearRatio)
 { 
 	PX_CHECK_AND_RETURN(PxIsFinite(gearRatio) && gearRatio>0, "PxRevoluteJoint::setDriveGearRatio: invalid parameter");
 	data().driveGearRatio = gearRatio; 
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteDriveGearRatio, static_cast<PxJoint&>(*this), gearRatio)
-#endif
-}
+	markDirty();
 
-void RevoluteJoint::setProjectionAngularTolerance(PxReal tolerance)
-{ 
-	PX_CHECK_AND_RETURN(PxIsFinite(tolerance) && tolerance>=0 && tolerance<=PxPi, "PxRevoluteJoint::setProjectionAngularTolerance: invalid parameter");
-	data().projectionAngularTolerance = tolerance;
-	markDirty();	
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteProjectionAngularTolerance, static_cast<PxJoint&>(*this), tolerance)
-#endif
-}
-
-PxReal RevoluteJoint::getProjectionAngularTolerance() const	
-{ 
-	return data().projectionAngularTolerance; 
-}
-
-void RevoluteJoint::setProjectionLinearTolerance(PxReal tolerance)
-{ 
-	PX_CHECK_AND_RETURN(PxIsFinite(tolerance) && tolerance >=0, "PxRevoluteJoint::setProjectionLinearTolerance: invalid parameter");
-	data().projectionLinearTolerance = tolerance;
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteProjectionLinearTolerance, static_cast<PxJoint&>(*this), tolerance)
-#endif
-}
-
-PxReal RevoluteJoint::getProjectionLinearTolerance() const
-{ 
-	return data().projectionLinearTolerance;		
+	OMNI_PVD_SET(PxRevoluteJoint, driveGearRatio, static_cast<PxRevoluteJoint&>(*this), gearRatio)
 }
 
 PxRevoluteJointFlags RevoluteJoint::getRevoluteJointFlags(void)	const
@@ -165,10 +129,9 @@ PxRevoluteJointFlags RevoluteJoint::getRevoluteJointFlags(void)	const
 
 void RevoluteJoint::setRevoluteJointFlags(PxRevoluteJointFlags flags)
 { 
-	data().jointFlags = flags; 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteJointFlags, static_cast<PxJoint&>(*this), flags)
-#endif
+	data().jointFlags = flags;
+
+	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), flags)
 }
 
 void RevoluteJoint::setRevoluteJointFlag(PxRevoluteJointFlag::Enum flag, bool value)
@@ -178,30 +141,8 @@ void RevoluteJoint::setRevoluteJointFlag(PxRevoluteJointFlag::Enum flag, bool va
 	else
 		data().jointFlags &= ~flag;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, revoluteJointFlags, static_cast<PxJoint&>(*this), getRevoluteJointFlags())
-#endif
-}
 
-static void RevoluteJointProject(const void* constantBlock, PxTransform& bodyAToWorld, PxTransform& bodyBToWorld, bool projectToA)
-{
-	const RevoluteJointData& data = *reinterpret_cast<const RevoluteJointData*>(constantBlock);
-
-	PxTransform cA2w, cB2w, cB2cA, projected;
-	joint::computeDerived(data, bodyAToWorld, bodyBToWorld, cA2w, cB2w, cB2cA, false);
-
-	bool linearTrunc, angularTrunc;
-	projected.p = joint::truncateLinear(cB2cA.p, data.projectionLinearTolerance, linearTrunc);
-
-	PxQuat swing, twist, projSwing;
-	PxSeparateSwingTwist(cB2cA.q, swing, twist);
-	projSwing = joint::truncateAngular(swing, PxSin(data.projectionAngularTolerance/2), PxCos(data.projectionAngularTolerance/2), angularTrunc);
-	
-	if(linearTrunc || angularTrunc)
-	{
-		projected.q = projSwing * twist;
-		joint::projectTransforms(bodyAToWorld, bodyBToWorld, cA2w, cB2w, projected, data, projectToA);
-	}
+	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), getRevoluteJointFlags())
 }
 
 static PxQuat computeTwist(const PxTransform& cA2w, const PxTransform& cB2w)
@@ -235,21 +176,13 @@ static void RevoluteJointVisualize(PxConstraintVisualizer& viz, const void* cons
 {
 	const RevoluteJointData& data = *reinterpret_cast<const RevoluteJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::computeJointFrames(cA2w, cB2w, data, body0Transform, body1Transform);
 	if(flags & PxConstraintVisualizationFlag::eLOCAL_FRAMES)
 		viz.visualizeJointFrames(cA2w, cB2w);
 
 	if((data.jointFlags & PxRevoluteJointFlag::eLIMIT_ENABLED) && (flags & PxConstraintVisualizationFlag::eLIMITS))
-	{
-		const PxReal angle = computePhi(cA2w, cB2w);
-		const PxReal pad = data.limit.contactDistance_deprecated;
-		const PxReal low = data.limit.lower;
-		const PxReal high = data.limit.upper;
-
-		const bool active = isLimitActive(data.limit, pad, angle, low, high);
-		viz.visualizeAngularLimit(cA2w, data.limit.lower, data.limit.upper, active);
-	}
+		viz.visualizeAngularLimit(cA2w, data.limit.lower, data.limit.upper);
 }
 
 //TAG:solverprepshader
@@ -265,7 +198,7 @@ static PxU32 RevoluteJointSolverPrep(Px1DConstraint* constraints,
 {
 	const RevoluteJointData& data = *reinterpret_cast<const RevoluteJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
 	const PxJointAngularLimitPair& limit = data.limit;
@@ -275,18 +208,16 @@ static PxU32 RevoluteJointSolverPrep(Px1DConstraint* constraints,
 
 	// PT: it is a mistake to use the neighborhood operator since it
 	// prevents us from using the quat's double-cover feature.
-	if(!useExtendedLimits && cB2w.q.dot(cA2w.q)<0.0f)
-		cB2w.q = -cB2w.q;
+	if(!useExtendedLimits)
+		joint::applyNeighborhoodOperator(cA2w, cB2w);
 
-	PxVec3 ra, rb;
-	ch.prepareLockedAxes(cA2w.q, cB2w.q, cA2w.transformInv(cB2w.p), 7, PxU32(limitIsLocked ? 7 : 6), ra, rb);
+	PxVec3 ra, rb, axis;
+	ch.prepareLockedAxes(cA2w.q, cB2w.q, cA2w.transformInv(cB2w.p), 7, PxU32(limitIsLocked ? 7 : 6), ra, rb, &axis);
 	cA2wOut = ra + bA2w.p;
 	cB2wOut = rb + bB2w.p;
 
 	if(limitIsLocked)
 		return ch.getCount();
-
-	const PxVec3 axis = cA2w.q.getBasisVector0();
 
 	if(data.jointFlags & PxRevoluteJointFlag::eDRIVE_ENABLED)
 	{
@@ -314,7 +245,7 @@ static PxU32 RevoluteJointSolverPrep(Px1DConstraint* constraints,
 	if(limitEnabled)
 	{
 		const PxReal phi = computePhi(cA2w, cB2w);
-		ch.anglePair(phi, data.limit.lower, data.limit.upper, data.limit.contactDistance_deprecated, axis, limit);
+		ch.anglePair(phi, data.limit.lower, data.limit.upper, axis, limit);
 	}
 
 	return ch.getCount();
@@ -322,9 +253,12 @@ static PxU32 RevoluteJointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gRevoluteJointShaders = { RevoluteJointSolverPrep, RevoluteJointProject, RevoluteJointVisualize, PxConstraintFlag::Enum(0) };
+static PxConstraintShaderTable gRevoluteJointShaders = { RevoluteJointSolverPrep, RevoluteJointVisualize, PxConstraintFlag::Enum(0) };
 
 PxConstraintSolverPrep RevoluteJoint::getPrep()	const	{ return gRevoluteJointShaders.solverPrep; }
+
+// PT: for tests / benchmarks
+PxConstraintSolverPrep getRevoluteJointPrep()	{ return gRevoluteJointShaders.solverPrep; }
 
 PxRevoluteJoint* physx::PxRevoluteJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1)
 {
@@ -347,35 +281,33 @@ void RevoluteJoint::resolveReferences(PxDeserializationContext& context)
 
 void RevoluteJoint::updateOmniPvdProperties() const
 {
-	const PxJoint& j = static_cast<const PxJoint&>(*this);
-	OMNI_PVD_SET(joint, revoluteAngle, j, getAngle())
-	OMNI_PVD_SET(joint, revoluteVelocity, j, getVelocity())
+	const PxRevoluteJoint& j = static_cast<const PxRevoluteJoint&>(*this);
+	OMNI_PVD_SET(PxRevoluteJoint, angle, j, getAngle())
+	OMNI_PVD_SET(PxRevoluteJoint, velocity, j, getVelocity())
 }
 
 template<>
 void physx::Ext::omniPvdInitJoint<RevoluteJoint>(RevoluteJoint* joint)
 {
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_SET(joint, type, j, PxJointConcreteType::eREVOLUTE)
-	OMNI_PVD_SET(joint, revoluteProjectionLinearTolerance, j, joint->getProjectionLinearTolerance())
-	OMNI_PVD_SET(joint, revoluteProjectionAngularTolerance, j, joint->getProjectionAngularTolerance())
-
+	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(*joint);
+	OMNI_PVD_CREATE(PxRevoluteJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eREVOLUTE);
+	
 	PxJointAngularLimitPair limit = joint->getLimit();
-	OMNI_PVD_SET(joint, revoluteLimitLower, j, limit.lower)
-	OMNI_PVD_SET(joint, revoluteLimitUpper, j, limit.upper)
-	OMNI_PVD_SET(joint, revoluteLimitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(joint, revoluteLimitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(joint, revoluteLimitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(joint, revoluteLimitDamping, j, limit.damping)
-	OMNI_PVD_SET(joint, revoluteLimitContactDistance, j, limit.contactDistance_deprecated)
+	OMNI_PVD_SET(PxRevoluteJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET(PxRevoluteJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET(PxRevoluteJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET(PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET(PxRevoluteJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET(PxRevoluteJoint, limitDamping, j, limit.damping)
 
-	OMNI_PVD_SET(joint, revoluteDriveVelocity, j, joint->getDriveVelocity())
-	OMNI_PVD_SET(joint, revoluteDriveForceLimit, j, joint->getDriveForceLimit())
-	OMNI_PVD_SET(joint, revoluteDriveGearRatio, j, joint->getDriveGearRatio())
-	OMNI_PVD_SET(joint, revoluteJointFlags, j, joint->getRevoluteJointFlags())
+	OMNI_PVD_SET(PxRevoluteJoint, driveVelocity, j, joint->getDriveVelocity())
+	OMNI_PVD_SET(PxRevoluteJoint, driveForceLimit, j, joint->getDriveForceLimit())
+	OMNI_PVD_SET(PxRevoluteJoint, driveGearRatio, j, joint->getDriveGearRatio())
+	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, j, joint->getRevoluteJointFlags())
 
-	OMNI_PVD_SET(joint, revoluteAngle, j, joint->getAngle())
-	OMNI_PVD_SET(joint, revoluteVelocity, j, joint->getVelocity())
+	OMNI_PVD_SET(PxRevoluteJoint, angle, j, joint->getAngle())
+	OMNI_PVD_SET(PxRevoluteJoint, velocity, j, joint->getVelocity())
 }
 
 #endif

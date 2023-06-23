@@ -41,8 +41,7 @@ using namespace physx::Dy;
 
 Sc::FEMClothSim::FEMClothSim(FEMClothCore& core, Scene& scene) :
 	ActorSim(scene, core),
-	mShapeSim(*this),
-	mNumCountedInteractions(0)
+	mShapeSim(*this)
 {
 	mLLFEMCloth = scene.createLLFEMCloth(this);
 
@@ -86,19 +85,6 @@ bool Sc::FEMClothSim::isSleeping() const
 	return sim.getActiveNodeIndex(mNodeIndex) == PX_INVALID_NODE;
 }
 
-void Sc::FEMClothSim::setActive(const bool b, const PxU32 infoFlag)
-{
-	PX_UNUSED(infoFlag);
-	if (b)
-	{
-		activate();
-	}
-	else
-	{
-		deactivate();
-	}
-}
-
 void Sc::FEMClothSim::onSetWakeCounter()
 {
 	getScene().getSimulationController()->setClothWakeCounter(mLLFEMCloth);
@@ -114,21 +100,6 @@ void Sc::FEMClothSim::attachShapeCore(ShapeCore* core)
 
 	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
 	mLLFEMCloth->setShapeCore(shapeCore);
-}
-
-
-void Sc::FEMClothSim::activate()
-{
-	mScene.getSimulationController()->activateCloth(mLLFEMCloth);
-
-	activateInteractions(*this);
-}
-
-void Sc::FEMClothSim::deactivate()
-{
-	mScene.getSimulationController()->deactivateCloth(mLLFEMCloth);
-
-	deactivateInteractions(*this);
 }
 
 #endif //PX_SUPPORT_GPU_PHYSX

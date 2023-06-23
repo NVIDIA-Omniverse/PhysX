@@ -728,7 +728,7 @@ namespace physx { namespace Sn {
 	}
 }
 
-	bool PxSerialization::serializeCollectionToXml( PxOutputStream& outputStream, PxCollection& collection, PxSerializationRegistry& sr, PxCooking* cooking, const PxCollection* externalRefs, PxXmlMiscParameter* inArgs )
+	bool PxSerialization::serializeCollectionToXml( PxOutputStream& outputStream, PxCollection& collection, PxSerializationRegistry& sr, const PxCookingParams* params, const PxCollection* externalRefs, PxXmlMiscParameter* inArgs )
 	{
 		if( !PxSerialization::isSerializable(collection, sr, const_cast<PxCollection*>(externalRefs)) )
 			return false;
@@ -736,7 +736,7 @@ namespace physx { namespace Sn {
 		bool bRet = true;
 
 		SerializationRegistry& sn = static_cast<SerializationRegistry&>(sr);
-		PxRepXInstantiationArgs args( sn.getPhysics(), cooking );
+		PxRepXInstantiationArgs args( sn.getPhysics(), params );
 
 		PxCollection* tmpCollection = PxCreateCollection();
 		PX_ASSERT(tmpCollection);
@@ -794,7 +794,7 @@ namespace physx { namespace Sn {
 		return bRet;
 	}
 	
-	PxCollection* PxSerialization::createCollectionFromXml(PxInputData& inputData, PxCooking& cooking, PxSerializationRegistry& sr, const PxCollection* externalRefs, PxStringTable* stringTable, PxXmlMiscParameter* outArgs)
+	PxCollection* PxSerialization::createCollectionFromXml(PxInputData& inputData, const PxCookingParams& params, PxSerializationRegistry& sr, const PxCollection* externalRefs, PxStringTable* stringTable, PxXmlMiscParameter* outArgs)
 	{
 		SerializationRegistry& sn = static_cast<SerializationRegistry&>(sr);
 		PxCollection* collection = PxCreateCollection();
@@ -807,7 +807,7 @@ namespace physx { namespace Sn {
 		Sn::RepXCollection* theRepXCollection = Sn::create(sn, inputData, allocator, *collection);
 		theRepXCollection = &Sn::RepXUpgrader::upgradeCollection( *theRepXCollection );
 				
-		PxRepXInstantiationArgs args( sn.getPhysics(), &cooking, stringTable );  
+		PxRepXInstantiationArgs args( sn.getPhysics(), &params, stringTable );  
 		if( !theRepXCollection->instantiateCollection(args, *collection) )
 		{
 			collection->release();

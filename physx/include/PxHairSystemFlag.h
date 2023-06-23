@@ -39,7 +39,6 @@ namespace physx
 
 	/**
 	\brief Identifies input and output buffers for PxHairSystem
-	\see PxHairSystemData::readData(), PxHairSystemData::writeData(), PxBuffer
 	*/
 	struct PxHairSystemData
 	{

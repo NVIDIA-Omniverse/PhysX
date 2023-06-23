@@ -135,10 +135,10 @@ void Sc::ArticulationCore::putToSleep()
 void Sc::ArticulationCore::setArticulationFlags(PxArticulationFlags flags)
 {
 	mCore.flags = flags;
-	if (mSim)
+	if(mSim)
 	{
-		const bool isKinematicLink = flags & PxArticulationFlag::eFIX_BASE;
-		mSim->setKinematicLink(isKinematicLink);
+		const bool isFixedBaseLink = flags & PxArticulationFlag::eFIX_BASE;
+		mSim->setFixedBaseLink(isFixedBaseLink);
 	}
 }
 
@@ -170,10 +170,10 @@ bool Sc::ArticulationCore::applyCache(PxArticulationCache& cache, const PxArticu
 	return false;
 }
 
-void Sc::ArticulationCore::copyInternalStateToCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag) const
+void Sc::ArticulationCore::copyInternalStateToCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag, const bool isGpuSimEnabled) const
 {
 	if(mSim)
-		mSim->copyInternalStateToCache(cache, flag);
+		mSim->copyInternalStateToCache(cache, flag, isGpuSimEnabled);
 }
 
 
@@ -253,9 +253,9 @@ PxU32 Sc::ArticulationCore::getCoefficientMatrixSize() const
 	return mSim ? mSim->getCoefficientMatrixSize() : 0xFFFFFFFFu;
 }
 
-PxSpatialVelocity Sc::ArticulationCore::getLinkAcceleration(const PxU32 linkId) const
+PxSpatialVelocity Sc::ArticulationCore::getLinkAcceleration(const PxU32 linkId, const bool isGpuSimEnabled) const
 {
-	return mSim ? mSim->getLinkAcceleration(linkId) : PxSpatialVelocity();
+	return mSim ? mSim->getLinkAcceleration(linkId, isGpuSimEnabled) : PxSpatialVelocity();
 }
 
 PxU32 Sc::ArticulationCore::getGpuArticulationIndex() const
@@ -269,7 +269,6 @@ void Sc::ArticulationCore::updateKinematic(PxArticulationKinematicFlags flags)
 
 	if (mSim)
 		mSim->updateKinematic(flags);
-
 }
 
 PxNodeIndex Sc::ArticulationCore::getIslandNodeIndex() const

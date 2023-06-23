@@ -303,9 +303,9 @@ float BlastBondGeneratorImpl::processWithMidplanes(TriangleProcessor* trProcesso
     const float maxSeparation = maxRelSeparation * std::sqrt(std::max(aBounds.getExtents().magnitudeSquared(), bBounds.getExtents().magnitudeSquared()));
 
     Separation separation;
-    if (!importerHullsInProximityApexFree(hull1p.size(), hull1p.data(), aBounds, NvTransform(),
+    if (!importerHullsInProximityApexFree(hull1p.size(), hull1p.data(), aBounds, NvTransform(NvIdentity),
                                           NvVec3(1, 1, 1), hull2p.size(), hull2p.data(), bBounds,
-                                          NvTransform(), NvVec3(1, 1, 1), 2.0f * maxSeparation, &separation))
+                                          NvTransform(NvIdentity), NvVec3(1, 1, 1), 2.0f * maxSeparation, &separation))
     {
         return 0.0f;
     }
@@ -917,15 +917,15 @@ int32_t BlastBondGeneratorImpl::createBondForcedInternal(const std::vector<NvVec
 
     TriangleProcessor trProcessor;
     Separation separation;
-    importerHullsInProximityApexFree(hull0.size(), hull0.data(), bound0, NvTransform(), NvVec3(1, 1, 1),
-                                     hull1.size(), hull1.data(), bound1, NvTransform(), NvVec3(1, 1, 1),
+    importerHullsInProximityApexFree(hull0.size(), hull0.data(), bound0, NvTransform(NvIdentity), NvVec3(1, 1, 1),
+                                     hull1.size(), hull1.data(), bound1, NvTransform(NvIdentity), NvVec3(1, 1, 1),
                                      0.000, &separation);
 
     if (std::isnan(separation.plane.d))
     {
         importerHullsInProximityApexFree(
             hull0.size(), hull0.data(), bound0, NvTransform(NvVec3(0.000001f, 0.000001f, 0.000001f)), NvVec3(1, 1, 1),
-            hull1.size(), hull1.data(), bound1, NvTransform(), NvVec3(1, 1, 1), 0.000, &separation);
+            hull1.size(), hull1.data(), bound1, NvTransform(NvIdentity), NvVec3(1, 1, 1), 0.000, &separation);
         if (std::isnan(separation.plane.d))
         {
             return 1;

@@ -44,6 +44,7 @@
 #include "NpArticulationLink.h"
 #include "ScSoftBodySim.h"
 #include "NpFEMSoftBodyMaterial.h"
+#include "cudamanager/PxCudaContext.h"
 
 using namespace physx;
 
@@ -116,7 +117,7 @@ namespace physx
 		return mCore.getFlags();
 	}
 
-	void NpSoftBody::setParameter(const PxFEMParameters paramters)
+	void NpSoftBody::setParameter(PxFEMParameters paramters)
 	{
 		NpScene* npScene = getNpScene();
 		NP_WRITE_CHECK(npScene);
@@ -133,108 +134,53 @@ namespace physx
 		return mCore.getParameter();
 	}
 
-	PxBuffer* NpSoftBody::getBufferFromFlag(PxSoftBodyData::Enum flags)
+	PxVec4* NpSoftBody::getPositionInvMassBufferD()
 	{
-		PxBuffer* buf = NULL;
+		PX_CHECK_AND_RETURN_NULL(mShape != NULL, "NpSoftBody::getPositionInvMassBufferD: Softbody does not have a shape, attach shape first.");
+
 		Dy::SoftBodyCore& core = mCore.getCore();
-		PX_UNUSED(core);
-		switch (flags)
-		{
-		case PxSoftBodyData::ePOSITION_INVMASS:
-			buf = core.mPositionInvMass;
-			break;
-		case PxSoftBodyData::eSIM_POSITION_INVMASS:
-			buf = core.mSimPositionInvMass;
-			break;
-		case PxSoftBodyData::eSIM_VELOCITY:
-			buf = core.mSimVelocityInvMass;
-			break;
-		case PxSoftBodyData::eSIM_KINEMATIC_TARGET:
-			buf = core.mKinematicTarget;
-			break;
-		case PxSoftBodyData::eNONE:
-		case PxSoftBodyData::eALL:
-		default:
-			PX_ASSERT(0);
-		}
-		return buf;
+		return core.mPositionInvMass;
 	}
 
-	PxBuffer* NpSoftBody::getBufferHostFromFlag(PxSoftBodyData::Enum flags)
+	PxVec4* NpSoftBody::getRestPositionBufferD()
 	{
-		PxBuffer* buf = NULL;
+		PX_CHECK_AND_RETURN_NULL(mShape != NULL, "NpSoftBody::getRestPositionBufferD: Softbody does not have a shape, attach shape first.");
+
 		Dy::SoftBodyCore& core = mCore.getCore();
-		PX_UNUSED(core);
-		switch (flags)
-		{
-		case PxSoftBodyData::ePOSITION_INVMASS:
-			buf = core.mPositionInvMassCPU;
-			break;
-		case PxSoftBodyData::eSIM_POSITION_INVMASS:
-			buf = core.mSimPositionInvMassCPU;
-			break;
-		case PxSoftBodyData::eSIM_VELOCITY:
-			buf = core.mSimVelocityInvMassCPU;
-			break;
-		case PxSoftBodyData::eSIM_KINEMATIC_TARGET:
-			buf = core.mKinematicTargetCPU;
-			break;
-		case PxSoftBodyData::eNONE:
-		case PxSoftBodyData::eALL:
-		default:
-			PX_ASSERT(0);
-		}
-		return buf;
+		return core.mRestPosition;
 	}
 
-	void NpSoftBody::readData(PxSoftBodyData::Enum flags, PxBuffer& buffer, bool flush)
+	PxVec4* NpSoftBody::getSimPositionInvMassBufferD()
 	{
-		PxBuffer* sourceBuffer = getBufferFromFlag(flags);
-		if (!sourceBuffer)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxSoftBody::readData, source buffer hasn't been allocated.");
-			return;
-		}
+		PX_CHECK_AND_RETURN_NULL(mSimulationMesh != NULL, "NpSoftBody::getSimPositionInvMassBufferD: Softbody does not have a simulation mesh, attach simulation mesh first.");
 
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-		PX_ASSERT(physxGpu);
-
-		physxGpu->addCopyCommand(buffer, *sourceBuffer, flush);
+		Dy::SoftBodyCore& core = mCore.getCore();
+		return core.mSimPositionInvMass;
 	}
 
-	void NpSoftBody::readData(PxSoftBodyData::Enum flags, bool flush)
+	PxVec4* NpSoftBody::getSimVelocityBufferD()
 	{
-		readData(flags, *getBufferHostFromFlag(flags), flush);
+		PX_CHECK_AND_RETURN_NULL(mSimulationMesh != NULL, "NpSoftBody::getSimVelocityBufferD: Softbody does not have a simulation mesh, attach simulation mesh first.");
+
+		Dy::SoftBodyCore& core = mCore.getCore();
+		return core.mSimVelocity;
 	}
 
-	void NpSoftBody::writeData(PxSoftBodyData::Enum flags, PxBuffer& buffer, bool flush)
+	void NpSoftBody::markDirty(PxSoftBodyDataFlags flags)
 	{
-		NpScene* npScene = getNpScene();
-		NP_WRITE_CHECK(npScene);
+		NP_WRITE_CHECK(getNpScene());
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxSoftBody::writeData() not allowed while simulation is running. Call will be ignored.")
-
-		if (flags == PxSoftBodyData::ePOSITION_INVMASS)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "NpSoftBody::writeData, ePOSITION_INVMASS is immutable.");
-			return;
-		}
-		PxBuffer* targetBuffer = getBufferFromFlag(flags);
-		if (!targetBuffer)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "NpSoftBody::writeData, target buffer hasn't been allocated.");
-			return;
-		}
-
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-		PX_ASSERT(physxGpu);
-
-		physxGpu->addCopyCommand(*targetBuffer, buffer, flush);
+		Dy::SoftBodyCore& core = mCore.getCore();
+		core.mDirtyFlags |= flags;
 	}
 
-	void NpSoftBody::writeData(PxSoftBodyData::Enum flags, bool flush)
+	void NpSoftBody::setKinematicTargetBufferD(const PxVec4* positions, PxSoftBodyFlags flags)
 	{
-		writeData(flags, *getBufferHostFromFlag(flags), flush);
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(!(positions == NULL && flags != PxSoftBodyFlags(0)), "NpSoftBody::setKinematicTargetBufferD: targets cannot be null if flags are set to be kinematic.");
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxSoftBody::setKinematicTargetBufferD() not allowed while simulation is running. Call will be ignored.")
+
+		mCore.setKinematicTargets(positions, flags);
 	}
 
 	PxCudaContextManager* NpSoftBody::getCudaContextManager() const
@@ -288,73 +234,38 @@ namespace physx
 	}
 
 	PxShape* NpSoftBody::getShape()
-	{ 
-		return mShape; 
+	{
+		return mShape;
 	}
 
 	PxTetrahedronMesh* NpSoftBody::getCollisionMesh()
 	{
-		PxTetrahedronMeshGeometry tetMeshGeom;
-		mShape->getTetrahedronMeshGeometry(tetMeshGeom);
+		const PxTetrahedronMeshGeometry& tetMeshGeom = static_cast<const PxTetrahedronMeshGeometry&>(mShape->getGeometry());
 		return tetMeshGeom.tetrahedronMesh;
 	}
 
-	PxTetrahedronMesh* NpSoftBody::getSimulationMesh()
+	const PxTetrahedronMesh* NpSoftBody::getCollisionMesh() const
 	{
-		return mSimulationMesh;
+		const PxTetrahedronMeshGeometry& tetMeshGeom = static_cast<const PxTetrahedronMeshGeometry&>(mShape->getGeometry());
+		return tetMeshGeom.tetrahedronMesh;
 	}
 
-	PxSoftBodyAuxData* NpSoftBody::getSoftBodyAuxData()
-	{
-		return mSoftBodyAuxData;
-	}
 
 	bool NpSoftBody::attachSimulationMesh(PxTetrahedronMesh& simulationMesh, PxSoftBodyAuxData& softBodyAuxData)
 	{
 		Dy::SoftBodyCore& core = mCore.getCore();
 
-		PX_CHECK_AND_RETURN_NULL(core.mSimPositionInvMassCPU == NULL, "NpSoftBody::attachSimulationMesh: mSimPositionInvMassCPU already exists, overwrite not allowed, call detachSimulationMesh first");
-		PX_CHECK_AND_RETURN_NULL(core.mSimVelocityInvMassCPU == NULL, "NpSoftBody::attachSimulationMesh: mSimVelocityInvMassCPU already exists, overwrite not allowed, call detachSimulationMesh first");
-
 		PX_CHECK_AND_RETURN_NULL(core.mSimPositionInvMass == NULL, "NpSoftBody::attachSimulationMesh: mSimPositionInvMass already exists, overwrite not allowed, call detachSimulationMesh first");
-		PX_CHECK_AND_RETURN_NULL(core.mSimVelocityInvMass == NULL, "NpSoftBody::attachSimulationMesh: mSimVelocityInvMass already exists, overwrite not allowed, call detachSimulationMesh first");
+		PX_CHECK_AND_RETURN_NULL(core.mSimVelocity == NULL, "NpSoftBody::attachSimulationMesh: mSimVelocity already exists, overwrite not allowed, call detachSimulationMesh first");
 
 		mSimulationMesh = static_cast<Gu::TetrahedronMesh*>(&simulationMesh);
 		mSoftBodyAuxData = static_cast<Gu::SoftBodyAuxData*>(&softBodyAuxData);
 
-		//const PxTetrahedronMeshGeometry& tetGeometry = mSimShape->getGeometry().tetMesh();
 		Gu::TetrahedronMesh* tetMesh = static_cast<Gu::TetrahedronMesh*>(&simulationMesh);
-		
+
 		const PxU32 numVertsGM = tetMesh->getNbVerticesFast();
-
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-
-		core.mSimPositionInvMassCPU = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eHOST, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mSimVelocityInvMassCPU = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eHOST, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mKinematicTargetCPU = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eHOST, mCudaContextManager, &mCore.getGpuMemStat());
-
-		core.mSimPositionInvMass = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mSimVelocityInvMass = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mKinematicTarget = physxGpu->createBuffer(numVertsGM * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		
-		const Gu::TetrahedronMesh* meshData = static_cast<const Gu::TetrahedronMesh*>(tetMesh);
-		PxVec3* positions = meshData->getVerticesFast();
-		PxVec4* positionInv = reinterpret_cast<PxVec4*>(core.mSimPositionInvMassCPU->map());
-		PxVec4* velocityInv = reinterpret_cast<PxVec4*>(core.mSimVelocityInvMassCPU->map());
-		PxVec4* kinematicTarget = reinterpret_cast<PxVec4*>(core.mKinematicTargetCPU->map());
-		const Gu::SoftBodyAuxData* s = static_cast<const Gu::SoftBodyAuxData*>(&softBodyAuxData);
-		const float* invMassGM = s->mGridModelInvMass;
-		for (PxU32 i = 0; i < numVertsGM; ++i)
-		{
-			const PxVec3 vert = positions[i];
-			PxReal invMass = invMassGM ? invMassGM[i] : 1.0f;
-			positionInv[i] = PxVec4(vert.x, vert.y, vert.z, invMass);
-			velocityInv[i] = PxVec4(0.f, 0.f, 0.f, invMass);
-			kinematicTarget[i] = PxVec4(vert.x, vert.y, vert.z, 0.f);
-		}
-		core.mSimPositionInvMassCPU->unmap();
-		core.mSimVelocityInvMassCPU->unmap();
-		core.mKinematicTargetCPU->unmap();
+		core.mSimPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVertsGM);
+		core.mSimVelocity = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVertsGM);
 
 		return true;
 	}
@@ -379,42 +290,23 @@ namespace physx
 		PX_CHECK_AND_RETURN_NULL(mShape == NULL, "NpSoftBody::attachShape: soft body can just have one shape");
 		PX_CHECK_AND_RETURN_NULL(shape.isExclusive(), "NpSoftBody::attachShape: shape must be exclusive");
 		PX_CHECK_AND_RETURN_NULL(npShape->getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eSOFT_BODY_SHAPE, "NpSoftBody::attachShape: shape must be a soft body shape!");
-		
+
 		Dy::SoftBodyCore& core = mCore.getCore();
 
-		PX_CHECK_AND_RETURN_NULL(core.mPositionInvMassCPU == NULL, "NpSoftBody::attachShape: mPositionInvMassCPU already exists, overwrite not allowed, call detachShape first");
-		
 		PX_CHECK_AND_RETURN_NULL(core.mPositionInvMass == NULL, "NpSoftBody::attachShape: mPositionInvMass already exists, overwrite not allowed, call detachShape first");
-		
+
 		mShape = npShape;
 
 		PX_ASSERT(shape.getActor() == NULL);
 		npShape->onActorAttach(*this);
-			
+
 		const PxGeometryHolder gh(mShape->getGeometry());	// PT: TODO: avoid that copy
 		const PxTetrahedronMeshGeometry& tetGeometry = gh.tetMesh();
 		Gu::BVTetrahedronMesh* tetMesh = static_cast<Gu::BVTetrahedronMesh*>(tetGeometry.tetrahedronMesh);
 		const PxU32 numVerts = tetMesh->getNbVerticesFast();
 
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-
-		core.mPositionInvMassCPU = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eHOST, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mRestPositionInvMassCPU = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eHOST, mCudaContextManager, &mCore.getGpuMemStat());
-		
-		core.mPositionInvMass = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		
-		const Gu::TetrahedronMesh* meshData = static_cast<const Gu::TetrahedronMesh*>(tetMesh);
-		PxVec3* positions = meshData->getVerticesFast();
-		PxVec4* positionInv = reinterpret_cast<PxVec4*>(core.mPositionInvMassCPU->map());
-		PxVec4* restPositionInv = reinterpret_cast<PxVec4*>(core.mRestPositionInvMassCPU->map());
-		for (PxU32 i = 0; i < numVerts; ++i)
-		{
-			const PxVec3 vert = positions[i];
-			positionInv[i] = PxVec4(vert.x, vert.y, vert.z, 1.0f);
-			restPositionInv[i] = PxVec4(vert.x, vert.y, vert.z, 1.f);
-		}
-		core.mPositionInvMassCPU->unmap();
-		core.mRestPositionInvMassCPU->unmap();
+		core.mPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+		core.mRestPosition = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
 
 		updateMaterials();
 
@@ -426,32 +318,15 @@ namespace physx
 		PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL, "Detaching a shape from a softbody is currenly only allowed as long as it is not part of a scene. Please remove the softbody from its scene first.");
 
 		Dy::SoftBodyCore& core = mCore.getCore();
-		if (core.mPositionInvMassCPU)
+		if (core.mRestPosition)
 		{
-			core.mPositionInvMassCPU->release();
-			core.mPositionInvMassCPU = NULL;
-		}
-		if (core.mRestPositionInvMassCPU)
-		{
-			core.mRestPositionInvMassCPU->release();
-			core.mRestPositionInvMassCPU = NULL;
+			PX_DEVICE_FREE(mCudaContextManager, core.mRestPosition);
+			core.mRestPosition = NULL;
 		}
 		if (core.mPositionInvMass)
 		{
-			core.mPositionInvMass->release();
+			PX_DEVICE_FREE(mCudaContextManager, core.mPositionInvMass);
 			core.mPositionInvMass = NULL;
-		}
-
-		if (core.mKinematicTargetCPU)
-		{
-			core.mKinematicTargetCPU->release();
-			core.mKinematicTargetCPU = NULL;
-		}
-
-		if (core.mKinematicTarget)
-		{
-			core.mKinematicTarget->release();
-			core.mKinematicTarget = NULL;
 		}
 
 		if (mShape)
@@ -462,37 +337,16 @@ namespace physx
 	void NpSoftBody::detachSimulationMesh()
 	{
 		Dy::SoftBodyCore& core = mCore.getCore();
-		if (core.mSimPositionInvMassCPU) 
-		{
-			core.mSimPositionInvMassCPU->release();
-			core.mSimPositionInvMassCPU = NULL;
-		}
 		if (core.mSimPositionInvMass)
 		{
-			core.mSimPositionInvMass->release();
+			PX_DEVICE_FREE(mCudaContextManager, core.mSimPositionInvMass);
 			core.mSimPositionInvMass = NULL;
 		}
 
-		if (core.mSimVelocityInvMassCPU)
+		if (core.mSimVelocity)
 		{
-			core.mSimVelocityInvMassCPU->release();
-			core.mSimVelocityInvMassCPU = NULL;
-		}
-		if (core.mSimVelocityInvMass)
-		{
-			core.mSimVelocityInvMass->release();
-			core.mSimVelocityInvMass = NULL;
-		}
-
-		if (core.mKinematicTargetCPU)
-		{
-			core.mKinematicTargetCPU->release();
-			core.mKinematicTargetCPU = NULL;
-		}
-		if (core.mKinematicTarget)
-		{
-			core.mKinematicTarget->release();
-			core.mKinematicTarget = NULL;
+			PX_DEVICE_FREE(mCudaContextManager, core.mSimVelocity);
+			core.mSimVelocity = NULL;
 		}
 
 		mSimulationMesh = NULL;
@@ -504,6 +358,7 @@ namespace physx
 		NpScene* npScene = getNpScene();
 		NP_WRITE_CHECK(npScene);
 
+		// AD why is this commented out?
 	//	NpPhysics::getInstance().notifyDeletionListenersUserRelease(this, PxArticulationBase::userData);
 
 		if (npScene)
@@ -512,6 +367,7 @@ namespace physx
 			npScene->removeFromSoftBodyList(*this);
 		}
 
+		detachSimulationMesh();
 		detachShape();
 
 		PX_ASSERT(!isAPIWriteForbidden());
@@ -612,13 +468,14 @@ namespace physx
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpSoftBody::addRigidAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "NpSoftBody::addRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpSoftBody::addRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpSoftBody::addRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
 		Sc::BodyCore* core = getBodyCore(actor);
 
 		PxVec3 aPose = actorSpacePose;
-		if(actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
+		if (actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
 		{
 			NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor);
 			aPose = stat->getGlobalPose().transform(aPose);
@@ -668,13 +525,14 @@ namespace physx
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpSoftBody::addTetRigidAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "NpSoftBody::addTetRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpSoftBody::addTetRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpSoftBody::addTetRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
 		Sc::BodyCore* core = getBodyCore(actor);
 
 		PxVec3 aPose = actorSpacePose;
-		if(actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
+		if (actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
 		{
 			NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor);
 			aPose = stat->getGlobalPose().transform(aPose);
@@ -743,19 +601,21 @@ namespace physx
 		mCore.removeSoftBodyFilters(*core, tetIndices0, tetIndices1, tetIndicesSize);
 	}
 
-	PxU32 NpSoftBody::addSoftBodyAttachment(PxSoftBody* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1, PxConeLimitedConstraint* constraint)
+	PxU32 NpSoftBody::addSoftBodyAttachment(PxSoftBody* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
+											PxConeLimitedConstraint* constraint, PxReal constraintOffset)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(softbody0 != NULL, "NpSoftBody::addSoftBodyAttachment: soft body must not be null", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpSoftBody::addSoftBodyAttachment: soft body must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL(softbody0->getScene() != NULL, "NpSoftBody::addSoftBodyAttachment: soft body must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpSoftBody::addSoftBodyAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpSoftBody::addSoftBodyAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
 		NpSoftBody* dyn = static_cast<NpSoftBody*>(softbody0);
 		Sc::SoftBodyCore* core = &dyn->getCore();
 
-		return mCore.addSoftBodyAttachment(*core, tetIdx0, tetBarycentric0, tetIdx1, tetBarycentric1, constraint);
+		return mCore.addSoftBodyAttachment(*core, tetIdx0, tetBarycentric0, tetIdx1, tetBarycentric1, constraint, constraintOffset);
 	}
 
 	void NpSoftBody::removeSoftBodyAttachment(PxSoftBody* softbody0, PxU32 handle)
@@ -813,25 +673,24 @@ namespace physx
 
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	PxU32 NpSoftBody::addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint)
+	PxU32 NpSoftBody::addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
+										 PxConeLimitedConstraint* constraint, PxReal constraintOffset)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(cloth != NULL, "NpSoftBody::addClothAttachment: actor must not be null", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpSoftBody::addClothAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL(cloth->getScene() != NULL, "NpSoftBody::addClothAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpSoftBody::addClothAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpSoftBody::addClothAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
 		NpFEMCloth* dyn = static_cast<NpFEMCloth*>(cloth);
 		Sc::FEMClothCore* core = &dyn->getCore();
-		
-		return mCore.addClothAttachment(*core, triIdx, triBarycentric, tetIdx, tetBarycentric, constraint);
+
+		return mCore.addClothAttachment(*core, triIdx, triBarycentric, tetIdx, tetBarycentric, constraint, constraintOffset);
 	}
 #else
-	PxU32 NpSoftBody::addClothAttachment(PxFEMCloth*, PxU32, const PxVec4&, PxU32, const PxVec4&, PxConeLimitedConstraint*)
-	{
-		return 0;
-	}
+	PxU32 NpSoftBody::addClothAttachment(PxFEMCloth*, PxU32, const PxVec4&, PxU32, const PxVec4&, PxConeLimitedConstraint*, PxReal) { return 0; }
 #endif
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION

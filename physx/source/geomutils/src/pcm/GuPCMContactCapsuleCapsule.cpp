@@ -29,7 +29,7 @@
 #include "geomutils/PxContactBuffer.h"
 #include "GuVecCapsule.h"
 #include "GuContactMethodImpl.h"
-#include "GuDistanceSegmentSegmentSIMD.h"
+#include "GuDistanceSegmentSegment.h"
 
 using namespace physx;
 using namespace Gu;
@@ -185,7 +185,7 @@ bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 				if(BAllEqTTTT(bCon))
 				{
 					const FloatV dist = FSqrt(sqDist);
-					const FloatV pen =  FSub(dist, sumRadius);
+					const FloatV pen = FSub(dist, sumRadius);
 					const Vec3V normal = V3ScaleInv(v, dist);
 					PX_ASSERT(isFiniteVec3V(normal));
 					const Vec3V _p = V3NegScaleSub(normal, r0, projS1);
@@ -205,8 +205,8 @@ bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 				if(BAllEqTTTT(bCon))
 				{
 					const FloatV dist = FSqrt(sqDist);
-					const FloatV pen =  FSub(dist, sumRadius);
-					const Vec3V normal =  V3ScaleInv(v, dist);
+					const FloatV pen = FSub(dist, sumRadius);
+					const Vec3V normal = V3ScaleInv(v, dist);
 					PX_ASSERT(isFiniteVec3V(normal));
 					const Vec3V _p = V3NegScaleSub(normal, r0, projE1);
 					const Vec3V p = V3Add(_p, positionOffset);
@@ -225,7 +225,7 @@ bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 				if(BAllEqTTTT(bCon))
 				{
 					const FloatV dist = FSqrt(sqDist);
-					const FloatV pen =  FSub(dist, sumRadius);
+					const FloatV pen = FSub(dist, sumRadius);
 					const Vec3V normal = V3ScaleInv(v, dist);
 				 	PX_ASSERT(isFiniteVec3V(normal));
 					const Vec3V _p = V3NegScaleSub(normal, r0, s0);
@@ -246,7 +246,7 @@ bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 				if(BAllEqTTTT(bCon))
 				{
 					const FloatV dist = FSqrt(sqDist);
-					const FloatV pen =  FSub(dist, sumRadius);
+					const FloatV pen = FSub(dist, sumRadius);
 					const Vec3V normal = V3ScaleInv(v, dist);
 					PX_ASSERT(isFiniteVec3V(normal));
 					const Vec3V _p = V3NegScaleSub(normal, r0, e0);

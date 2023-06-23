@@ -34,16 +34,31 @@
 
 using namespace physx;
 
-PX_PHYSX_CORE_API PxGeometryType::Enum PxShapeGeomPropertyHelper::getGeometryType(const PxShape* inShape) const { return inShape->getGeometryType(); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxBoxGeometry& geometry) const { return inShape->getBoxGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxSphereGeometry& geometry) const { return inShape->getSphereGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxCapsuleGeometry& geometry) const { return inShape->getCapsuleGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxPlaneGeometry& geometry) const { return inShape->getPlaneGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxConvexMeshGeometry& geometry) const { return inShape->getConvexMeshGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxTetrahedronMeshGeometry& geometry) const { return inShape->getTetrahedronMeshGeometry(geometry); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxParticleSystemGeometry& geometry) const { return inShape->getParticleSystemGeometry(geometry); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxTriangleMeshGeometry& geometry) const { return inShape->getTriangleMeshGeometry( geometry ); }
-PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxHeightFieldGeometry& geometry) const { return inShape->getHeightFieldGeometry( geometry ); }
+namespace {
+
+template<class T>
+PX_FORCE_INLINE bool getGeometryT(PxGeometryType::Enum type, const PxShape* inShape, T& geom)
+{
+	const PxGeometry& inGeometry = inShape->getGeometry();
+	if(inShape == NULL || inGeometry.getType() != type)
+		return false;
+
+	geom = static_cast<const T&>(inGeometry);
+	return true;
+}
+
+}
+
+PX_PHYSX_CORE_API PxGeometryType::Enum PxShapeGeomPropertyHelper::getGeometryType(const PxShape* inShape) const { return inShape->getGeometry().getType(); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxBoxGeometry& geometry) const { return getGeometryT(PxGeometryType::eBOX, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxSphereGeometry& geometry) const { return getGeometryT(PxGeometryType::eSPHERE, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxCapsuleGeometry& geometry) const { return getGeometryT(PxGeometryType::eCAPSULE, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxPlaneGeometry& geometry) const { return getGeometryT(PxGeometryType::ePLANE, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxConvexMeshGeometry& geometry) const { return getGeometryT(PxGeometryType::eCONVEXMESH, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxTetrahedronMeshGeometry& geometry) const { return getGeometryT(PxGeometryType::eTETRAHEDRONMESH, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxParticleSystemGeometry& geometry) const { return getGeometryT(PxGeometryType::ePARTICLESYSTEM, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxTriangleMeshGeometry& geometry) const { return getGeometryT(PxGeometryType::eTRIANGLEMESH, inShape, geometry); }
+PX_PHYSX_CORE_API bool PxShapeGeomPropertyHelper::getGeometry(const PxShape* inShape, PxHeightFieldGeometry& geometry) const { return getGeometryT(PxGeometryType::eHEIGHTFIELD, inShape, geometry); }
 
 PX_PHYSX_CORE_API void PxShapeMaterialsPropertyHelper::setMaterials(PxShape* inShape, PxMaterial*const* materials, PxU16 materialCount) const
 {

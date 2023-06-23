@@ -34,6 +34,7 @@
 
 namespace physx
 {
+	class PxCudaContextManager;
 	class KernelWrangler;
 	class PxErrorCallback;
 
@@ -42,6 +43,7 @@ namespace physx
 	public:
 		virtual ~PxsKernelWranglerManager(){}
 		virtual KernelWrangler* getKernelWrangler() = 0;
+		virtual PxCudaContextManager* getCudaContextManager() = 0;
 	};
 }
 #endif

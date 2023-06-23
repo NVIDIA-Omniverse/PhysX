@@ -39,8 +39,6 @@
 
 namespace physx
 {
-	class PxBuffer;
-
 	namespace Dy
 	{
 		struct FEMClothCore
@@ -52,14 +50,14 @@ namespace physx
 			bool									dirty;
 			PxReal									wakeCounter;
 			PxFEMClothFlags							mFlags;
-
-			// Ratio between target volume and rest volume in inflatable simulation.
-			PxReal									mRestVolumeScale;
+			PxFEMClothDataFlags						mDirtyFlags;
 
 			PxArray<PxU16>							mMaterialHandles;
-			PxBuffer*								mClothPositionInvMass;
-			PxBuffer*								mClothVelocity;
-			PxBuffer*								mClothRestPosition;
+
+			// device pointers
+			PxVec4*									mPositionInvMass;
+			PxVec4*									mVelocity;
+			PxVec4*									mRestPosition;
 
 			// multimaterial bending effects
 			PxArray<PxReal>							mBendingScales;
@@ -71,6 +69,7 @@ namespace physx
 			PxReal									airDensity;
 
 			PxReal									maxVelocity;
+			PxReal									maxDepenetrationVelocity;
 
 			// negative values mean no activation angle: apply bending force toward rest bending angle
 			PxReal									mBendingActivationAngle;
@@ -89,11 +88,14 @@ namespace physx
 		        wind = PxVec3(0.f);
 		        airDensity = 1.225f; // default: 1.225 kg/m^3
 		        maxVelocity = 0.f;
+				maxDepenetrationVelocity = 0.f;
 		        mBendingActivationAngle = -1.f;
-		        mRestVolumeScale = 0.0f; // No inflatable simulation by default.
 
 				NbCollisionPairUpdatesPerTimestep = 1;
 				nbCollisionSubsteps = 1;
+
+				dirty = 0;
+				mDirtyFlags = PxFEMClothDataFlags(0);
 			}
 
 			void setMaterial(const PxU16 materialHandle)

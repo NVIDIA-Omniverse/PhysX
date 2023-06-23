@@ -38,11 +38,6 @@
 namespace physx
 {
 
-struct PxcNpWorkUnit;
-struct PxSolverBody;
-struct PxSolverBodyData;
-struct PxSolverConstraintDesc;
-
 namespace Sc
 {
 	class ShapeInteraction;
@@ -50,9 +45,6 @@ namespace Sc
 	
 namespace Dy
 {
-
-
-
 
 /**
 \brief Batched SOA contact data. Note, we don't support batching with extended contacts for the simple reason that handling multiple articulations would be complex.
@@ -89,9 +81,9 @@ struct SolverContactHeader4
 	Vec4V	angDom0;
 	Vec4V	angDom1;
 	//Normal is shared between all contacts in the batch. This will save some memory!
-	Vec4V normalX;
-	Vec4V normalY;
-	Vec4V normalZ;
+	Vec4V	normalX;
+	Vec4V	normalY;
+	Vec4V	normalZ;
 
 	Sc::ShapeInteraction* shapeInteraction[4];		//192 or 208
 }; 
@@ -144,7 +136,6 @@ struct SolverFrictionSharedData4
 #if !PX_P64_FAMILY
 PX_COMPILE_TIME_ASSERT(sizeof(SolverFrictionSharedData4) == 128);
 #endif
-
 
 /**
 \brief This represents a batch of 4 friction constraints with static rolled into a single structure

@@ -43,24 +43,14 @@ namespace Ext
 {
 	struct RevoluteJointData : public JointData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		PxReal					driveVelocity;
 		PxReal					driveForceLimit;
 		PxReal					driveGearRatio;
 
 		PxJointAngularLimitPair	limit;
 							
-		PxReal					projectionLinearTolerance;
-		PxReal					projectionAngularTolerance;
-							
 		PxRevoluteJointFlags	jointFlags;
-	private:
+//	private:	// PT: must be public for a benchmark
 		RevoluteJointData(const PxJointAngularLimitPair& pair) : limit(pair)	{}
 	};
 
@@ -68,12 +58,6 @@ namespace Ext
     
 	class RevoluteJoint : public RevoluteJointT
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 // PX_SERIALIZATION
 										RevoluteJoint(PxBaseFlags baseFlags) : RevoluteJointT(baseFlags) {}
@@ -96,10 +80,6 @@ namespace Ext
 		virtual	void					setRevoluteJointFlags(PxRevoluteJointFlags flags)	PX_OVERRIDE;
 		virtual	void					setRevoluteJointFlag(PxRevoluteJointFlag::Enum flag, bool value)	PX_OVERRIDE;
 		virtual	PxRevoluteJointFlags	getRevoluteJointFlags()	const	PX_OVERRIDE;
-		virtual	void					setProjectionLinearTolerance(PxReal distance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionLinearTolerance()	const	PX_OVERRIDE;
-		virtual	void					setProjectionAngularTolerance(PxReal tolerance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionAngularTolerance()	const	PX_OVERRIDE;
 		//~PxRevoluteJoint
 	
 		// PxConstraintConnector

@@ -36,17 +36,10 @@ namespace physx
 {
 namespace Sc
 {
-	
 	class StaticSim;
 
-	class StaticCore: public RigidCore
+	class StaticCore : public RigidCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 											StaticCore(const PxTransform& actor2World): RigidCore(PxActorType::eRIGID_STATIC)	
 											{

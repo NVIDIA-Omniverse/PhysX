@@ -71,12 +71,10 @@ class RaycastCCDManagerInternal
 static PxVec3 getShapeCenter(PxShape* shape, const PxTransform& pose)
 {
 	PxVec3 offset(0.0f);
-	if(shape->getGeometryType()==PxGeometryType::eCONVEXMESH)
+	const PxGeometry& geom = shape->getGeometry();
+	if(geom.getType()==PxGeometryType::eCONVEXMESH)
 	{
-		PxConvexMeshGeometry geometry;
-		bool status = shape->getConvexMeshGeometry(geometry);
-		PX_UNUSED(status);
-		PX_ASSERT(status);
+		const PxConvexMeshGeometry& geometry = static_cast<const PxConvexMeshGeometry&>(geom);
 
 		PxReal mass;
 		PxMat33 localInertia;
@@ -105,15 +103,12 @@ static PxReal computeInternalRadius(PxRigidActor* actor, PxShape* shape, const P
 	PxReal internalRadius = 0.0f;
 	const PxReal length = offsetFromOrigin*2.0f;
 
-	switch(shape->getGeometryType())
+	const PxGeometry& geom = shape->getGeometry();
+	switch(geom.getType())
 	{
 		case PxGeometryType::eSPHERE:
 		{
-			PxSphereGeometry geometry;
-			bool status = shape->getSphereGeometry(geometry);
-			PX_UNUSED(status);
-			PX_ASSERT(status);
-
+			const PxSphereGeometry& geometry = static_cast<const PxSphereGeometry&>(geom);
 			internalRadius = geometry.radius;
 		}
 		break;

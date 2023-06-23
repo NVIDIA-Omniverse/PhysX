@@ -130,10 +130,14 @@ public:
 	\param[out] vertexMap Optional parameter which returns the mapping from input to output vertices. Note that multiple input vertices are typically collapsed into the same output vertex.
 	\param[in] edgeLengthCostWeight Factor to scale influence of edge length when prioritizing edge collapses. Has no effect if set to zero.
 	\param[in] flatnessDetectionThreshold Threshold used to detect edges in flat regions and to improve the placement of the collapsed point. If set to a large value it will have no effect.
+	\param[in] projectSimplifiedPointsOnInputMeshSurface If set to true, the simplified points will lie exactly on the original surface.	
+	\param[out] outputVertexToInputTriangle Optional indices providing the triangle index per resulting vertex. Only available when projectSimplifiedPointsOnInputMeshSurface is set to true
+	\param[in] removeDisconnectedPatches Enables the optional removal of disconnected triangles in the mesh. Only the largest connected set/patch will be kept
 	*/
 	static void simplifyTriangleMesh(const PxArray<PxVec3>& inputVertices, const PxArray<PxU32>&inputIndices, int targetTriangleCount, PxF32 maximalEdgeLength,
 		PxArray<PxVec3>& outputVertices, PxArray<PxU32>& outputIndices,
-		PxArray<PxU32> *vertexMap = NULL, PxReal edgeLengthCostWeight = 0.1f, PxReal flatnessDetectionThreshold = 0.01f);
+		PxArray<PxU32> *vertexMap = NULL, PxReal edgeLengthCostWeight = 0.1f, PxReal flatnessDetectionThreshold = 0.01f, 
+		bool projectSimplifiedPointsOnInputMeshSurface = false, PxArray<PxU32>* outputVertexToInputTriangle = NULL, bool removeDisconnectedPatches = false);
 
 	/**
 	\brief Creates a new mesh from a given mesh. The input mesh is first voxelized. The new surface is created from the voxel surface and subsequent projection to the original mesh.
@@ -145,9 +149,23 @@ public:
 	\param[out] outputIndices The indices of the output (decimated) triangle mesh of the form  (id0, id1, id2),  (id0, id1, id2), ..
 	\param[out] vertexMap Optional parameter which returns a mapping from input to output vertices. Since the meshes are independent, the mapping returns an output vertex that is topologically close to the input vertex.
 	*/
-	static void remeshTriangleMesh(const PxArray<PxVec3>& inputVertices, const PxArray<PxU32>&inputIndices, int gridResolution,
-		PxArray<PxVec3>& outputVertices, PxArray<PxU32>& outputIndices,
-		PxArray<PxU32> *vertexMap = NULL);
+	static void remeshTriangleMesh(const PxArray<PxVec3>& inputVertices, const PxArray<PxU32>&inputIndices, PxU32 gridResolution,
+		PxArray<PxVec3>& outputVertices, PxArray<PxU32>& outputIndices,	PxArray<PxU32> *vertexMap = NULL);
+
+	/**
+	\brief Creates a new mesh from a given mesh. The input mesh is first voxelized. The new surface is created from the voxel surface and subsequent projection to the original mesh.
+
+	\param[in] inputVertices The vertices of the input triangle mesh
+	\param[in] nbVertices The number of vertices of the input triangle mesh
+	\param[in] inputIndices The indices of the input triangle mesh of the form  (id0, id1, id2),  (id0, id1, id2), ..
+	\param[in] nbIndices The number of indices of the input triangle mesh (equal to three times the number of triangles)
+	\param[in] gridResolution Size of the voxel grid (number of voxels along the longest dimension)
+	\param[out] outputVertices The vertices of the output (decimated) triangle mesh
+	\param[out] outputIndices The indices of the output (decimated) triangle mesh of the form  (id0, id1, id2),  (id0, id1, id2), ..
+	\param[out] vertexMap Optional parameter which returns a mapping from input to output vertices. Since the meshes are independent, the mapping returns an output vertex that is topologically close to the input vertex.
+	*/
+	static void remeshTriangleMesh(const PxVec3* inputVertices, PxU32 nbVertices, const PxU32* inputIndices, PxU32 nbIndices, PxU32 gridResolution,
+		PxArray<PxVec3>& outputVertices, PxArray<PxU32>& outputIndices,	PxArray<PxU32> *vertexMap = NULL);
 
 	/**
 	\brief Creates a tetrahedral mesh using an octree. 
@@ -177,6 +195,23 @@ public:
 		PxArray<PxVec3>& outputVertices, PxArray<PxU32>& outputIndices, 
 		PxI32 resolution, PxI32 numRelaxationIterations = 5, PxF32 relMinTetVolume = 0.05f);
 
+	/**
+	\brief Creates a tetrahedral mesh by relaxing a voxel mesh around the input mesh
+
+	\param[in] triangles The indices of the input triangle mesh of the form  (id0, id1, id2),  (id0, id1, id2), ..
+	\param[in] numTriangles The number of triangles
+	\param[out] islandIndexPerTriangle Every triangle gets an island index assigned. Triangles with the same island index belong to the same patch of connected triangles.
+	*/
+	static void detectTriangleIslands(const PxI32* triangles, PxU32 numTriangles, PxArray<PxU32>& islandIndexPerTriangle);
+
+	/**
+	\brief Creates a tetrahedral mesh by relaxing a voxel mesh around the input mesh
+
+	\param[in] islandIndexPerTriangle An island marker per triangles. All triangles with the same marker belong to an island. Can becomputed using the method detectTriangleIslands.
+	\param[in] numTriangles The number of triangles
+	\return The marker value of the island that contains the most triangles
+	*/
+	static PxU32 findLargestIslandId(const PxU32* islandIndexPerTriangle, PxU32 numTriangles);
 };
 
 #if !PX_DOXYGEN

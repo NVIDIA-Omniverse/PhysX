@@ -339,7 +339,7 @@ void NpRigidDynamic::setSleepThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setSleepThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(actor, sleepThreshold, static_cast<PxActor&>(*this), threshold); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, sleepThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setSleepThreshold(threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -361,7 +361,7 @@ void NpRigidDynamic::setStabilizationThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setStabilizationThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(actor, stabilizationThreshold, static_cast<PxActor&>(*this), threshold); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, stabilizationThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setFreezeThreshold(threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -387,7 +387,7 @@ void NpRigidDynamic::setWakeCounter(PxReal wakeCounterValue)
 
 	scSetWakeCounter(wakeCounterValue);
 
-	OMNI_PVD_SET(actor, wakeCounter, static_cast<PxActor&>(*this), wakeCounterValue); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, wakeCounter, static_cast<PxRigidDynamic&>(*this), wakeCounterValue); // @@@
 }
 
 PxReal NpRigidDynamic::getWakeCounter() const
@@ -437,8 +437,8 @@ void NpRigidDynamic::setSolverIterationCounts(PxU32 positionIters, PxU32 velocit
 
 	scSetSolverIterationCounts((velocityIters & 0xff) << 8 | (positionIters & 0xff));
 
-	OMNI_PVD_SET(actor, positionIterations, static_cast<PxActor&>(*this), positionIters); // @@@
-	OMNI_PVD_SET(actor, velocityIterations, static_cast<PxActor&>(*this), velocityIters); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, positionIterations, static_cast<PxRigidDynamic&>(*this), positionIters); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, velocityIterations, static_cast<PxRigidDynamic&>(*this), velocityIters); // @@@
 }
 
 void NpRigidDynamic::getSolverIterationCounts(PxU32 & positionIters, PxU32 & velocityIters) const
@@ -459,7 +459,7 @@ void NpRigidDynamic::setContactReportThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setContactReportThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(actor, contactReportThreshold, static_cast<PxActor&>(*this), threshold); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, contactReportThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setContactReportThreshold(threshold<0 ? 0 : threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -521,7 +521,7 @@ void NpRigidDynamic::setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxRigidDynamic::setRigidDynamicLockFlags() not allowed while simulation is running. Call will be ignored.")
 	scSetLockFlags(flags);
 
-	OMNI_PVD_SET(actor, rigidDynamicLockFlags, static_cast<PxActor&>(*this), flags); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
 }
 
 void NpRigidDynamic::setRigidDynamicLockFlag(PxRigidDynamicLockFlag::Enum flag, bool value)
@@ -535,6 +535,6 @@ void NpRigidDynamic::setRigidDynamicLockFlag(PxRigidDynamicLockFlag::Enum flag, 
 
 	scSetLockFlags(flags);
 
-	OMNI_PVD_SET(actor, rigidDynamicLockFlags, static_cast<PxActor&>(*this), flags); // @@@
+	OMNI_PVD_SET(PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
 }
 

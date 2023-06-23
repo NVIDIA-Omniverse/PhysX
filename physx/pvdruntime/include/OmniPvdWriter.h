@@ -62,7 +62,7 @@ public:
 	 *
 	 * @param writeStream The OmniPvdWriteStream to receive the stream of API calls/notifications
 	 */
-	virtual void OMNI_PVD_CALL setWriteStream(const OmniPvdWriteStream* writeStream) = 0;
+	virtual void OMNI_PVD_CALL setWriteStream(OmniPvdWriteStream& writeStream) = 0;
 	
 	/**
 	 * @brief Gets the pointer to the write stream
@@ -84,7 +84,7 @@ public:
 	 * @see OmniPvdWriter::registerEnumValue()
 	 * @see OmniPvdWriter::registerFlagsAttribute()
 	 * @see OmniPvdWriter::registerClassAttribute()
-	 * @see OmniPvdWriter::registerSetAttribute()
+	 * @see OmniPvdWriter::registerUniqueListAttribute()
 	 * @see OmniPvdWriter::createObject()
 	 */
 	virtual OmniPvdClassHandle OMNI_PVD_CALL registerClass(const char* className, OmniPvdClassHandle baseClassHandle = 0) = 0;
@@ -103,23 +103,23 @@ public:
 	 *
 	 * @see OmniPvdWriter::registerClass()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerEnumValue(const OmniPvdClassHandle classHandle, const char* attributeName, const uint32_t value) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, uint32_t value) = 0;
 	
 	/**
 	 * @brief Registers an attribute.
 	 *
-	 * The class handle is obtained from a previous call to registerClass(). After registering an attribute, one gets an attribute handle which can be used to set data values of an attribute with setAttribute(). All attributes are treated as arrays, even if the attribute has only a single data item. Set nbrFields to 0 to indicate that the array has a variable length.
+	 * The class handle is obtained from a previous call to registerClass(). After registering an attribute, one gets an attribute handle which can be used to set data values of an attribute with setAttribute(). All attributes are treated as arrays, even if the attribute has only a single data item. Set nbElements to 0 to indicate that the array has a variable length.
 	 *
 	 * @param classHandle The handle from the registerClass() call
 	 * @param attributeName The attribute name
-	 * @param attributeDataType The attribute data type // TODO: Change to type OmniPvdDataTypeEnum
-	 * @param nbrFields The number of fields. Set this to 0 to indicate a variable length array
+	 * @param attributeDataType The attribute data type
+	 * @param nbElements The number of elements in the array. Set this to 0 to indicate a variable length array
 	 * @return A unique attribute handle for the registered attribute
 	 *
 	 * @see OmniPvdWriter::registerClass()
 	 * @see OmniPvdWriter::setAttribute()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, const OmniPvdAttributeDataType attributeDataType, const uint32_t nbrFields) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdDataType::Enum attributeDataType, uint32_t nbElements) = 0;
 	
 	/**
 	 * @brief Registers an attribute which is a flag.
@@ -129,14 +129,14 @@ public:
 	 * The returned attribute handle can be used in setAttribute() to set an object's flags.
 	 *
 	 * @param classHandle The handle from the registerClass() call of the class
-	 * @param enumClassHandle The handle from the registerClass() call of the enum
 	 * @param attributeName The attribute name
+	 * @param enumClassHandle The handle from the registerClass() call of the enum
 	 * @return A unique attribute handle for the registered flags attribute
 	 *
 	 * @see OmniPvdWriter::registerClass()
 	 * @see OmniPvdWriter::setAttribute()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerFlagsAttribute(const OmniPvdClassHandle classHandle, const OmniPvdClassHandle enumClassHandle, const char* attributeName) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerFlagsAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdClassHandle enumClassHandle) = 0;
 	
 	/**
 	 * @brief Registers an attribute which is a class.
@@ -153,42 +153,47 @@ public:
 	 * @see OmniPvdWriter::registerClass()
 	 * @see OmniPvdWriter::setAttribute()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerClassAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, const OmniPvdClassHandle classAttributeHandle) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerClassAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdClassHandle classAttributeHandle) = 0;
 	
 	/**
-	 * @brief Registers an attribute which is a set.
+	 * @brief Registers an attribute which can hold a list of unique items.
 	 *
-	 * A set is a collection of unique items and has a variable size.
-	 *
-	 * The returned attribute handle can be used in calls to addToSetAttribute() and removeFromSetAttribute(), to add an item to and remove it from a set, respectively.
+	 * The returned attribute handle can be used in calls to addToUniqueListAttribute() and removeFromUniqueListAttribute(), to add an item to and remove it from the list, respectively.
 	 *
 	 * @param classHandle The handle from the registerClass() call of the class
 	 * @param attributeName The attribute name
-	 * @param attributeDataType The data type of items in the set attribute
-	 * @return A unique handle for the registered set attribute
+	 * @param attributeDataType The data type of the items which will get added to the list attribute
+	 * @return A unique handle for the registered list attribute
 	 *
 	 * @see OmniPvdWriter::registerClass()
-	 * @see OmniPvdWriter::addToSetAttribute()
-	 * @see OmniPvdWriter::removeFromSetAttribute()
+	 * @see OmniPvdWriter::addToUniqueListAttribute()
+	 * @see OmniPvdWriter::removeFromUniqueListAttribute()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerSetAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, const OmniPvdAttributeDataType attributeDataType) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerUniqueListAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdDataType::Enum attributeDataType) = 0;
 
 	/**
 	 * @brief Sets an attribute value.
+	 *
+	 * Since an attribute can be part of a nested construct of class attributes, the method
+	 * expects an array of attribute handles as input to uniquely identify the attribute.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
-	 * @param handleDepth The number of nested attribute handles requiref to identify the attribute
-	 * @param attributeHandles The nested attribute handles needed to identify the attribute
+	 * @param attributeHandles The attribute handles containing all class attribute handles of a nested class
+	 *        construct. The last one has to be the handle from the registerUniqueListAttribute() call.
+	 * @param nbAttributeHandles The number of attribute handles provided in attributeHandles
 	 * @param data The pointer to the data of the element(s) to remove from the set
 	 * @param nbrBytes The number of bytes to be written
+	 *
+	 * @see OmniPvdWriter::registerAttribute()
 	 */
-	virtual void OMNI_PVD_CALL setAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t *data, const uint32_t nbrBytes) = 0;
+	virtual void OMNI_PVD_CALL setAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t *data, uint32_t nbrBytes) = 0;
 
 	/**
 	 * @brief Sets an attribute value.
 	 *
-	 * Use the attribute handle from the registerAttribute() call to set the value of an attribute of an existing object.
+	 * See other setAttribute method for details. This special version covers the case where the
+	 * attribute is not part of a class attribute construct.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
@@ -198,73 +203,88 @@ public:
 	 *
 	 * @see OmniPvdWriter::registerAttribute()
 	 */
-	virtual void OMNI_PVD_CALL setAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t *data, const uint32_t nbrBytes) = 0;
+	inline void OMNI_PVD_CALL setAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, OmniPvdAttributeHandle attributeHandle, const uint8_t *data, uint32_t nbrBytes)
+	{
+		setAttribute(contextHandle, objectHandle, &attributeHandle, 1, data, nbrBytes);
+	}
 	
 	/**
-	 * @brief Adds an item to a set attribute.
+	 * @brief Adds an item to a unique list attribute.
 	 *
-	 * Use the attribute handle(s) from the registerSetAttribute() call to add an item to a set attribute.
+	 * A unique list attribute is defined like a set in mathematics, where each element must be unique.
 	 *
-	 * An array of nested attribute handles is required to uniquely identify the attribute.
+	 * Since an attribute can be part of a nested construct of class attributes, the method
+	 * expects an array of attribute handles as input to uniquely identify the attribute.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
-	 * @param handleDepth The number of nested attribute handles requiref to identify the attribute
-	 * @param attributeHandles The nested attribute handles needed to identify the attribute
-	 * @param data The pointer to the data of the element(s) to remove from the set
+	 * @param attributeHandles The attribute handles containing all class attribute handles of a nested class
+	 *        construct. The last one has to be the handle from the registerUniqueListAttribute() call.
+	 * @param nbAttributeHandles The number of attribute handles provided in attributeHandles
+	 * @param data The pointer to the data of the item to add to the list
 	 * @param nbrBytes The number of bytes to be written
+	 *
+	 * @see OmniPvdWriter::registerUniqueListAttribute()
 	 */
-	virtual void OMNI_PVD_CALL addToSetAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t* data, const uint32_t nbrBytes) = 0;
+	virtual void OMNI_PVD_CALL addToUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t* data, uint32_t nbrBytes) = 0;
 	
 	/**
-	 * @brief Adds an item to a set attribute.
+	 * @brief Adds an item to a unique list attribute.
 	 *
-	 * Use the attribute handle from the registerSetAttribute() call to add an item to a set attribute.
-	 *
-	 * A set attribute is defined like a set in mathematics, where each element must be unique.
-	 *
-	 * The Shallow part of the function indicates that an array of nested attribute handles is not required to uniquely identify the attribute.
+	 * See other addToUniqueListAttribute method for details. This special version covers the case where the
+	 * attribute is not part of a class attribute construct.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
-	 * @param attributeHandle The handle from the registerSetAttribute() call
-	 * @param data The pointer to the data of the added set item
+	 * @param attributeHandle The handle from the registerUniqueListAttribute() call
+	 * @param data The pointer to the data of the item to add to the list
 	 * @param nbrBytes The number of bytes to be written
 	 *
-	 * @see OmniPvdWriter::registerSetAttribute()
+	 * @see OmniPvdWriter::registerUniqueListAttribute()
 	 */
-	virtual void OMNI_PVD_CALL addToSetAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t* data, const uint32_t nbrBytes) = 0;
+	inline void OMNI_PVD_CALL addToUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, OmniPvdAttributeHandle attributeHandle, const uint8_t* data, uint32_t nbrBytes)
+	{
+		addToUniqueListAttribute(contextHandle, objectHandle, &attributeHandle, 1, data, nbrBytes);
+	}
 	
 	/**
-	 * @brief Removes an item from a set attribute, where the attribute is allowed to be nested
+	 * @brief Removes an item from a uniqe list attribute
 	 *
-	 * A set attribute is defined like a set in mathematics, where each element must be unique.
+	 * A uniqe list attribute is defined like a set in mathematics, where each element must be unique.
 	 *
-	 * An array of nested attribute handles is required to uniquely identify the attribute.
+	 * Since an attribute can be part of a nested construct of class attributes, the method
+	 * expects an array of attribute handles as input to uniquely identify the attribute.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
-	 * @param handleDepth The number of nested attribute handles require to identify the attribute
-	 * @param attributeHandles The attribute handles needed to identify the attribute
-	 * @param data The pointer to the data of the element(s) to remove from the set
+	 * @param attributeHandles The attribute handles containing all class attribute handles of a nested class
+	 *        construct. The last one has to be the handle from the registerUniqueListAttribute() call.
+	 * @param nbAttributeHandles The number of attribute handles provided in attributeHandles
+	 * @param data The pointer to the data of the item to remove from the list
 	 * @param nbrBytes The number of bytes to be written
+	 *
+	 * @see OmniPvdWriter::registerUniqueListAttribute()
 	 */
-	virtual void OMNI_PVD_CALL removeFromSetAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t* data, const uint32_t nbrBytes) = 0;
+	virtual void OMNI_PVD_CALL removeFromUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t* data, uint32_t nbrBytes) = 0;
 	
 	/**
-	 * @brief Removes an item from a set attribute
+	 * @brief Removes an item from a uniqe list attribute
 	 *
-	 * A set attribute is defined like a set in mathematics, where each element must be unique.
-	 *
-	 * The Shallow part of the function indicates that an array of nested attribute handles is not required to uniquely identify the attribute.
+	 * See other removeFromUniqueListAttribute method for details. This special version covers the case where the
+	 * attribute is not part of a class attribute construct.
 	 *
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param objectHandle The user-defined unique handle of the object. E.g. its physical memory address
-	 * @param attributeHandle The handle from the registerSetAttribute() call
-	 * @param data The pointer to the data of the removed set element(s)
+	 * @param attributeHandle The handle from the registerUniqueListAttribute() call
+	 * @param data The pointer to the data of the item to remove from the list
 	 * @param nbrBytes The number of bytes to be written
+	 *
+	 * @see OmniPvdWriter::registerUniqueListAttribute()
 	 */
-	virtual void OMNI_PVD_CALL removeFromSetAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t* data, const uint32_t nbrBytes) = 0;
+	inline void OMNI_PVD_CALL removeFromUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, OmniPvdAttributeHandle attributeHandle, const uint8_t* data, uint32_t nbrBytes)
+	{
+		removeFromUniqueListAttribute(contextHandle, objectHandle, &attributeHandle, 1, data, nbrBytes);
+	}
 
 	/**
 	 * @brief Creates an object creation event
@@ -285,7 +305,7 @@ public:
 	 * @see OmniPvdWriter::registerClass()
 	 * @see OmniPvdWriter::destroyObject()
 	 */
-	virtual void OMNI_PVD_CALL createObject(const OmniPvdContextHandle contextHandle, const OmniPvdClassHandle classHandle, const OmniPvdObjectHandle objectHandle, const char* objectName) = 0;
+	virtual void OMNI_PVD_CALL createObject(OmniPvdContextHandle contextHandle, OmniPvdClassHandle classHandle, OmniPvdObjectHandle objectHandle, const char* objectName) = 0;
 	
 	/**
 	 * @brief Creates an object destruction event
@@ -298,7 +318,7 @@ public:
 	 * @see OmniPvdWriter::registerClass()
 	 * @see OmniPvdWriter::createObject()
 	 */
-	virtual void OMNI_PVD_CALL destroyObject(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle) = 0;
+	virtual void OMNI_PVD_CALL destroyObject(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle) = 0;
 	
 	/**
 	 * @brief Creates a frame start event
@@ -308,7 +328,7 @@ public:
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param timeStamp The timestamp of the frame start event
 	 */
-	virtual void OMNI_PVD_CALL startFrame(const OmniPvdContextHandle contextHandle, const uint64_t timeStamp) = 0;
+	virtual void OMNI_PVD_CALL startFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp) = 0;
 	
 	/**
 	 * @brief Creates a stop frame event
@@ -318,7 +338,7 @@ public:
 	 * @param contextHandle The user-defined context handle for grouping objects
 	 * @param timeStamp The timestamp of the frame stop event
 	 */
-	virtual void OMNI_PVD_CALL stopFrame(const OmniPvdContextHandle contextHandle, const uint64_t timeStamp) = 0;
+	virtual void OMNI_PVD_CALL stopFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp) = 0;
 
 	
 };

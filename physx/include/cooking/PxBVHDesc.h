@@ -131,11 +131,6 @@ PX_INLINE bool PxBVHDesc::isValid() const
 	return true;
 }
 
-	/**
-	 * @deprecated
-	 */
-	typedef PX_DEPRECATED PxBVHDesc PxBVHStructureDesc;
-
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

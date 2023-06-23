@@ -111,7 +111,9 @@ namespace physx
 		\param[in] jointType The joint type to set.
 
 		\note Setting the joint type is not allowed while the articulation is in a scene.
-		In order to set the joint type, remove and then re-add the articulation to the scene.
+		In order to amend the joint type, remove and then re-add the articulation to the scene.
+
+		<b>Default:</b> PxArticulationJointType::eUNDEFINED
 
 		@see PxArticulationJointType, getJointType
 		*/
@@ -134,6 +136,8 @@ namespace physx
 
 		\note Setting the motion of joint axes is not allowed while the articulation is in a scene.
 		In order to set the motion, remove and then re-add the articulation to the scene.
+	
+		<b>Default:</b> PxArticulationMotion::eLOCKED
 
 		@see PxArticulationAxis, PxArticulationMotion, getMotion
 		*/
@@ -155,50 +159,6 @@ namespace physx
 
 		- The motion of the corresponding axis should be set to PxArticulationMotion::eLIMITED in order for the limits to be enforced.
 		- The lower limit should be strictly smaller than the higher limit. If the limits should be equal, use PxArticulationMotion::eLOCKED
-		and an appropriate offset in the parent/child joint frames.
-
-		\param[in] axis The target axis.
-		\param[in] lowLimit The lower joint limit.<br>
-		<b>Range:</b> [-PX_MAX_F32, highLimit)<br>
-		<b>Default:</b> 0.0
-		\param[in] highLimit The higher joint limit.<br>
-		<b>Range:</b> (lowLimit, PX_MAX_F32]<br>
-		<b>Default:</b> 0.0
-
-		\note This call is not allowed while the simulation is running.
-
-		\deprecated Use #setLimitParams instead. Deprecated since PhysX version 5.1.
-
-		@see setLimitParams, PxArticulationAxis
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE void	setLimit(PxArticulationAxis::Enum axis, const PxReal lowLimit, const PxReal highLimit)
-		{
-			setLimitParams(axis, PxArticulationLimit(lowLimit, highLimit));
-		}
-
-		/**
-		\brief Returns the joint limits for a given axis.
-
-		\param[in] axis The target axis.
-		\param[out] lowLimit The lower joint limit.
-		\param[out] highLimit The higher joint limit.
-
-		\deprecated Use #getLimitParams instead. Deprecated since PhysX version 5.1.
-		
-		@see getLimitParams, PxArticulationAxis
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE void	getLimit(PxArticulationAxis::Enum axis, PxReal& lowLimit, PxReal& highLimit) const
-		{
-			PxArticulationLimit pair = getLimitParams(axis);
-			lowLimit = pair.low;
-			highLimit = pair.high;
-		}
-
-		/**
-		\brief Sets the joint limits for a given axis.
-
-		- The motion of the corresponding axis should be set to PxArticulationMotion::eLIMITED in order for the limits to be enforced.
-		- The lower limit should be strictly smaller than the higher limit. If the limits should be equal, use PxArticulationMotion::eLOCKED
 			and an appropriate offset in the parent/child joint frames.
 
 		\param[in] axis The target axis.
@@ -206,7 +166,12 @@ namespace physx
 		
 		\note This call is not allowed while the simulation is running.
 
-		\note For spherical joints, limit.min and limit.max must both be in range [-Pi, Pi].
+		\note For PxArticulationJointType::eSPHERICAL, limit.min and limit.max must both be in range [-Pi, Pi].
+		\note For PxArticulationJointType::eREVOLUTE, limit.min and limit.max must both be in range [-2*Pi, 2*Pi].
+		\note For PxArticulationJointType::eREVOLUTE_UNWRAPPED, limit.min and limit.max must both be in range [-PX_MAX_REAL, PX_MAX_REAL].
+		\note For PxArticulationJointType::ePRISMATIC, limit.min and limit.max must both be in range [-PX_MAX_REAL, PX_MAX_REAL].
+		
+		<b>Default:</b> (0,0)
 
 		@see getLimitParams, PxArticulationAxis, PxArticulationLimit
 		*/
@@ -229,61 +194,13 @@ namespace physx
 		See PxArticulationDrive for parameter details; and the manual for further information, and the drives' implicit spring-damper (i.e. PD control) implementation in particular.
 
 		\param[in] axis The target axis.
-		\param[in] stiffness The drive stiffness, i.e. the proportional gain of the implicit PD controller.<br>
-		<b>Range:</b> [0, PX_MAX_F32]<br>
-		<b>Default:</b> 0.0
-		\param[in] damping The drive damping, i.e. the derivative gain of the implicit PD controller.<br>
-		<b>Range:</b> [0, PX_MAX_F32]<br>
-		<b>Default:</b> 0.0
-		\param[in] maxForce The force limit of the drive (this parameter also limits the force for an acceleration-type drive).<br>
-		<b>Range:</b> [0, PX_MAX_F32]<br>
-		<b>Default:</b> 0.0
-		\param[in] driveType The drive type, @see PxArticulationDriveType.
-
-		\note This call is not allowed while the simulation is running.
-
-		\deprecated Use #setDriveParams instead. Deprecated since PhysX version 5.1.
-
-		@see setDriveParams, PxArticulationAxis, PxArticulationDriveType, PxArticulationDrive, PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE void				setDrive(PxArticulationAxis::Enum axis, const PxReal stiffness, const PxReal damping, const PxReal maxForce, PxArticulationDriveType::Enum driveType = PxArticulationDriveType::eFORCE)
-		{
-			setDriveParams(axis, PxArticulationDrive(stiffness, damping, maxForce, driveType));
-		}
-
-		/**
-		\brief Gets the joint drive configuration for the given axis.
-
-		\param[in] axis The motion axis.
-		\param[out] stiffness The drive stiffness.
-		\param[out] damping The drive damping.
-		\param[out] maxForce The force limit.
-		\param[out] driveType The drive type.
-
-		\deprecated Use #getDriveParams instead. Deprecated since PhysX version 5.1.
-
-		@see getDriveParams, PxArticulationAxis, PxArticulationDriveType, PxArticulationDrive
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE void			getDrive(PxArticulationAxis::Enum axis, PxReal& stiffness, PxReal& damping, PxReal& maxForce, PxArticulationDriveType::Enum& driveType) const
-		{
-			PxArticulationDrive drive = getDriveParams(axis);
-			stiffness = drive.stiffness;
-			damping = drive.damping;
-			maxForce = drive.maxForce;
-			driveType = drive.driveType;
-		}
-
-		/**
-		\brief Configures a joint drive for the given axis.
-
-		See PxArticulationDrive for parameter details; and the manual for further information, and the drives' implicit spring-damper (i.e. PD control) implementation in particular.
-
-		\param[in] axis The target axis.
 		\param[in] drive The drive parameters
 
 		\note This call is not allowed while the simulation is running.
 		
 		@see getDriveParams, PxArticulationAxis, PxArticulationDrive
+
+		<b>Default:</b> PxArticulationDrive(0.0f, 0.0f, 0.0f, PxArticulationDriveType::eNONE)
 		*/
 		virtual		void				setDriveParams(PxArticulationAxis::Enum axis, const PxArticulationDrive& drive) = 0;
 
@@ -316,6 +233,8 @@ namespace physx
 		\note For spherical joints with more than 1 degree of freedom, the joint target angles taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint drive target is not the shortest path rotation.  The joint pose J that is the outcome after driving to the target pose will always be the equivalent of the shortest path rotation.
 
 		@see PxArticulationAxis, getDriveTarget
+
+		<b>Default:</b> 0.0
 		*/
 		virtual		void				setDriveTarget(PxArticulationAxis::Enum axis, const PxReal target, bool autowake = true) = 0;
 
@@ -343,6 +262,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running.
 
 		@see PxArticulationAxis, getDriveVelocity
+
+		<b>Default:</b> 0.0
 		*/
 		virtual		void				setDriveVelocity(PxArticulationAxis::Enum axis, const PxReal targetVel, bool autowake = true) = 0;
 
@@ -369,6 +290,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running.
 
 		@see PxArticulationAxis, getArmature
+
+		<b>Default:</b> 0.0
 		*/
 		virtual		void				setArmature(PxArticulationAxis::Enum axis, const PxReal armature) = 0;
 
@@ -396,6 +319,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running.
 
 		@see getFrictionCoefficient
+
+		<b>Default:</b> 0.05
 		*/
 		virtual		void				setFrictionCoefficient(const PxReal coefficient) = 0;
 
@@ -419,6 +344,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running.
 
 		@see getMaxJointVelocity
+
+		<b>Default:</b> 100.0
 		*/
 		virtual		void				setMaxJointVelocity(const PxReal maxJointV) = 0;
 
@@ -443,13 +370,18 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		\note For spherical joints, jointPos must be in range [-Pi, Pi].
+		\note For PxArticulationJointType::eSPHERICAL, jointPos must be in range [-Pi, Pi].
+		\note For PxArticulationJointType::eREVOLUTE, jointPos must be in range [-2*Pi, 2*Pi].
+		\note For PxArticulationJointType::eREVOLUTE_UNWRAPPED, jointPos must be in range [-PX_MAX_REAL, PX_MAX_REAL].
+		\note For PxArticulationJointType::ePRISMATIC, jointPos must be in range [-PX_MAX_REAL, PX_MAX_REAL].
 
 		\note Joint position is specified in the parent frame of the joint. If Gp, Gc are the parent and child actor poses in the world frame and Lp, Lc are the parent and child joint frames expressed in the parent and child actor frames then the parent and child links will be given poses that obey Gp * Lp * J = Gc * Lc with J denoting the joint pose. For joints restricted to angular motion, J has the form PxTranfsorm(PxVec3(PxZero), PxExp(PxVec3(twistPos, swing1Pos, swing2Pos))).  For joints restricted to linear motion, J has the form PxTransform(PxVec3(xPos, yPos, zPos), PxQuat(PxIdentity)).
 
 		\note For spherical joints with more than 1 degree of freedom, the input joint positions taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint positions is not the shortest path rotation.  The joint pose J that is the outcome of setting and applying the joint positions will always be the equivalent of the shortest path rotation.
 
 		@see PxArticulationAxis, getJointPosition, PxArticulationCache::jointPosition, PxArticulationReducedCoordinate::updateKinematic
+
+		<b>Default:</b> 0.0
 		*/
 		virtual		void				setJointPosition(PxArticulationAxis::Enum axis, const PxReal jointPos) = 0;
 
@@ -482,6 +414,8 @@ namespace physx
 		\note This call is not allowed while the simulation is running.
 
 		@see PxArticulationAxis, getJointVelocity, PxArticulationCache::jointVelocity, PxArticulationReducedCoordinate::updateKinematic
+
+		<b>Default:</b> 0.0
 		*/
 		virtual		void				setJointVelocity(PxArticulationAxis::Enum axis, const PxReal jointVel) = 0;
 

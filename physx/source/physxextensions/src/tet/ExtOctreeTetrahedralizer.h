@@ -71,24 +71,24 @@ namespace physx
 				void init()
 				{
 					firstChild = -1;
-					orig = Vec3(0.0, 0.0, 0.0);
+					orig = PxVec3d(0.0, 0.0, 0.0);
 					size = 0.0;
 					numVerts = 0;
 					closestTetNr = -1;
 					depth = 0;
 				}
 
-				PxI32 getChildNr(const Vec3& p);
+				PxI32 getChildNr(const PxVec3d& p);
 
 				PX_FORCE_INLINE PxI32 getChildNr(const PxVec3& p) 
 				{
-					return getChildNr(Vec3(p.x, p.y, p.z));
+					return getChildNr(PxVec3d(PxF64(p.x), PxF64(p.y), PxF64(p.z)));
 				}
 
 				PxI32 firstChild;
 				PxI32 firstCellVert;
 				PxI32 firstCellTet;
-				Vec3 orig;
+				PxVec3d orig;
 				double size;
 				PxI32 numVerts;
 				PxI32 closestTetNr;
@@ -100,7 +100,7 @@ namespace physx
 
 			// tet mesh
 
-			PxArray<Vec3> tetVerts;
+			PxArray<PxVec3d> tetVerts;
 			PxArray<PxI32> tetIds;
 			PxArray<PxI32> tetNeighbors;
 			PxArray<PxI32> tetMarks;
@@ -142,8 +142,8 @@ namespace physx
 			void treeInsertVert(PxI32 cellNr, PxI32 vertNr);
 			void createTetVerts(bool includeOctreeNodes);
 
-			bool findSurroundingTet(const Vec3& p, PxI32 startTetNr, PxI32& tetNr);
-			bool findSurroundingTet(const Vec3& p, PxI32& tetNr);
+			bool findSurroundingTet(const PxVec3d& p, PxI32 startTetNr, PxI32& tetNr);
+			bool findSurroundingTet(const PxVec3d& p, PxI32& tetNr);
 			void treeInsertTet(PxI32 tetNr);
 			void treeRemoveTet(PxI32 tetNr);
 
@@ -151,7 +151,7 @@ namespace physx
 			PxI32 getNewTetNr();
 			void removeTetNr(PxI32 tetNr);
 
-			Vec3 getTetCenter(PxI32 tetNr) const;
+			PxVec3d getTetCenter(PxI32 tetNr) const;
 			bool meshInsertTetVert(PxI32 vertNr);
 
 			InsideTester insideTester;

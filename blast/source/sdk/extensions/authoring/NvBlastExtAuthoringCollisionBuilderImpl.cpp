@@ -73,8 +73,8 @@ void trimCollisionGeometry(ConvexMeshBuilder& cmb, uint32_t chunksCount, Collisi
                 continue;
             }
             if (importerHullsInProximityApexFree(in[hull]->pointsCount, toNvShared(in[hull]->points), hullsBounds[hull],
-                                                 NvTransform(), NvVec3(1, 1, 1), in[hull2]->pointsCount,
-                                                 toNvShared(in[hull2]->points), hullsBounds[hull2], NvTransform(),
+                                                 NvTransform(NvIdentity), NvVec3(1, 1, 1), in[hull2]->pointsCount,
+                                                 toNvShared(in[hull2]->points), hullsBounds[hull2], NvTransform(NvIdentity),
                                                  NvVec3(1, 1, 1), 0.0, &params) == false)
             {
                 continue;

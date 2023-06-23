@@ -43,7 +43,7 @@ NpMaterial::NpMaterial(const PxsMaterialCore& desc) :
 
 NpMaterial::~NpMaterial()
 {
-	OMNI_PVD_DESTROY(material, static_cast<PxMaterial &>(*this))
+	OMNI_PVD_DESTROY(PxMaterial, static_cast<PxMaterial &>(*this))
 
 	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
@@ -110,7 +110,7 @@ void NpMaterial::setDynamicFriction(PxReal x)
 	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxMaterial::setDynamicFriction: invalid float");
 	mMaterial.dynamicFriction = x;
 	updateMaterial();
-	OMNI_PVD_SET(material, dynamicFriction, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, dynamicFriction, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getDynamicFriction() const
@@ -125,7 +125,7 @@ void NpMaterial::setStaticFriction(PxReal x)
 	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxMaterial::setStaticFriction: invalid float");
 	mMaterial.staticFriction = x;
 	updateMaterial();
-	OMNI_PVD_SET(material, staticFriction, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, staticFriction, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getStaticFriction() const
@@ -146,7 +146,7 @@ void NpMaterial::setRestitution(PxReal x)
 	}
 	mMaterial.restitution = x;
 	updateMaterial();
-	OMNI_PVD_SET(material, restitution, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, restitution, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getRestitution() const
@@ -167,7 +167,7 @@ void NpMaterial::setDamping(PxReal x)
 	}
 	mMaterial.damping = x;
 	updateMaterial();
-	OMNI_PVD_SET(material, damping, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, damping, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getDamping() const
@@ -184,14 +184,14 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 	else
 		mMaterial.flags &= ~PxMaterialFlags(flag);
 	updateMaterial();
-	OMNI_PVD_SET(material, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
+	OMNI_PVD_SET(PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
 
 void NpMaterial::setFlags(PxMaterialFlags inFlags)
 {
 	mMaterial.flags = inFlags;
 	updateMaterial();
-	OMNI_PVD_SET(material, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
+	OMNI_PVD_SET(PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
 
 PxMaterialFlags NpMaterial::getFlags() const
@@ -205,7 +205,7 @@ void NpMaterial::setFrictionCombineMode(PxCombineMode::Enum x)
 {
 	mMaterial.setFrictionCombineMode(x);
 	updateMaterial();
-	OMNI_PVD_SET(material, frictionCombineMode, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, frictionCombineMode, static_cast<PxMaterial &>(*this), x)
 }
 
 PxCombineMode::Enum NpMaterial::getFrictionCombineMode() const
@@ -219,7 +219,7 @@ void NpMaterial::setRestitutionCombineMode(PxCombineMode::Enum x)
 {
 	mMaterial.setRestitutionCombineMode(x);
 	updateMaterial();
-	OMNI_PVD_SET(material, restitutionCombineMode, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(PxMaterial, restitutionCombineMode, static_cast<PxMaterial &>(*this), x)
 }
 
 PxCombineMode::Enum NpMaterial::getRestitutionCombineMode() const

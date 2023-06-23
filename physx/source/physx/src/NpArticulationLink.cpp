@@ -26,13 +26,7 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "NpArticulationLink.h"
-#include "NpArticulationJointReducedCoordinate.h"
 #include "NpArticulationReducedCoordinate.h"
-#include "NpCheck.h"
-#include "CmVisualization.h"
-#include "CmConeLimitHelper.h"
-#include "CmUtils.h"
 #include "NpRigidActorTemplateInternal.h"
 
 using namespace physx;
@@ -145,6 +139,7 @@ PxTransform NpArticulationLink::getGlobalPose() const
 
 	PX_CHECK_SCENE_API_READ_FORBIDDEN_EXCEPT_COLLIDE_AND_RETURN_VAL(getNpScene(), "PxArticulationLink::getGlobalPose() not allowed while simulation is running (except during PxScene::collide()).", PxTransform(PxIdentity));
 
+	// PT:: tag: scalar transform*transform
 	return mCore.getBody2World() * mCore.getBody2Actor().getInverse();
 }
 
@@ -204,9 +199,9 @@ void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationLink::setCMassLocalPose() not allowed while simulation is running. Call will be ignored.")
 
-	if (getNpScene() && getNpScene()->getFlags() & PxSceneFlag::eSUPPRESS_READBACK)
+	if (getNpScene() && getNpScene()->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationLink::setCMassLocalPose() : it is illegal to call this method if PxSceneFlag::eSUPPRESS_ARTICULATION_READBACK is enabled!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationLink::setCMassLocalPose() : it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
 	}
 
 	const PxTransform p = pose.getNormalized();
@@ -218,12 +213,14 @@ void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 	if(mInboundJoint)
 	{
 		NpArticulationJointReducedCoordinate* j =static_cast<NpArticulationJointReducedCoordinate*>(mInboundJoint);
+		// PT:: tag: scalar transform*transform
 		j->scSetChildPose(comShift.transform(j->getCore().getChildPose()));
 	}
 
 	for(PxU32 i=0; i<mChildLinks.size(); i++)
 	{
 		NpArticulationJointReducedCoordinate* j = static_cast<NpArticulationJointReducedCoordinate*>(mChildLinks[i]->getInboundJoint());
+		// PT:: tag: scalar transform*transform
 		j->scSetParentPose(comShift.transform(j->getCore().getParentPose()));
 	}
 }
@@ -296,7 +293,7 @@ void NpArticulationLink::setCfmScale(const PxReal cfmScale)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationLink::setCfmScale() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.getCore().cfmScale = cfmScale;
-	OMNI_PVD_SET(actor, CFMScale, static_cast<PxActor&>(*this), cfmScale); // @@@
+	OMNI_PVD_SET(PxArticulationLink, CFMScale, static_cast<PxArticulationLink&>(*this), cfmScale); // @@@
 }
 
 PxReal NpArticulationLink::getCfmScale() const
@@ -320,6 +317,7 @@ void NpArticulationLink::setGlobalPoseInternal(const PxTransform& pose, bool aut
 
 	const PxTransform newPose = pose.getNormalized();	//AM: added to fix 1461 where users read and write orientations for no reason.
 
+	// PT:: tag: scalar transform*transform
 	const PxTransform body2World = newPose * mCore.getBody2Actor();
 	scSetBody2World(body2World);
 
@@ -330,11 +328,11 @@ void NpArticulationLink::setGlobalPoseInternal(const PxTransform& pose, bool aut
 		static_cast<NpArticulationReducedCoordinate*>(mRoot)->setGlobalPose();
 }
 
-void NpArticulationLink::setKinematicLink(const bool value)
+void NpArticulationLink::setFixedBaseLink(bool value)
 {
 	NP_WRITE_CHECK(getNpScene());
 
-	mCore.setKinematicLink(value);
+	mCore.setFixedBaseLink(value);
 }
 
 PxU32 physx::NpArticulationGetShapes(NpArticulationLink& actor, NpShape* const*& shapes, bool* isCompound)
@@ -346,168 +344,3 @@ PxU32 physx::NpArticulationGetShapes(NpArticulationLink& actor, NpShape* const*&
 	return sm.getNbShapes();
 }
 
-#if PX_ENABLE_DEBUG_VISUALIZATION
-void NpArticulationLink::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
-{
-	PX_ASSERT(scale!=0.0f);	// Else we shouldn't have been called
-	if(!(mCore.getActorFlags() & PxActorFlag::eVISUALIZATION))
-		return;
-
-	NpArticulationLinkT::visualize(out, scene, scale);
-
-	const Sc::Scene& scScene = scene.getScScene();
-
-	// PT: TODO: can we share this with the PxRigidDynamic version?
-	const PxReal massAxes = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES);
-	if(massAxes != 0)
-	{
-		PxU32 color = 0xff;
-		color = (color<<16 | color<<8 | color);
-		PxVec3 dims = invertDiagInertia(mCore.getInverseInertia());
-		dims = getDimsFromBodyInertia(dims, 1.0f / mCore.getInverseMass());
-		out << color << mCore.getBody2World();
-		const PxVec3 extents = dims * 0.5f;
-		renderOutputDebugBox(out, PxBounds3(-extents, extents));
-	}
-
-	const PxReal frameScale = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES);
-	const PxReal limitScale = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS);
-	if(frameScale != 0.0f || limitScale != 0.0f)
-	{
-		ConstraintImmediateVisualizer viz(frameScale, limitScale, out);
-		visualizeJoint(viz);
-	}
-}
-
-static PX_FORCE_INLINE PxReal computePhi(const PxQuat& q)
-{
-	PxQuat twist = q;
-	twist.normalize();
-
-	PxReal angle = twist.getAngle();
-	if (twist.x<0.0f)
-		angle = -angle;
-	return angle;
-}
-
-// PT: TODO: don't duplicate this, it should be available in MathUtils or something
-static PX_FORCE_INLINE float computeSwingAngle(float swingYZ, float swingW)
-{
-	return 4.0f * PxAtan2(swingYZ, 1.0f + swingW);	// tan (t/2) = sin(t)/(1+cos t), so this is the quarter angle
-}
-
-static PX_FORCE_INLINE void separateSwingTwist(const PxQuat& q, PxQuat& twist, PxQuat& swing1, PxQuat& swing2)
-{
-	twist = q.x != 0.0f ? PxQuat(q.x, 0, 0, q.w).getNormalized() : PxQuat(PxIdentity);
-	PxQuat swing = q * twist.getConjugate();
-	swing1 = swing.y != 0.f ? PxQuat(0.f, swing.y, 0.f, swing.w).getNormalized() : PxQuat(PxIdentity);
-	swing = swing * swing1.getConjugate();
-	swing2 = swing.z != 0.f ? PxQuat(0.f, 0.f, swing.z, swing.w).getNormalized() : PxQuat(PxIdentity);
-}
-
-void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
-{
-	const NpArticulationLink* parent = getParent();
-	if(parent)
-	{
-		PxTransform cA2w = getGlobalPose().transform(mInboundJoint->getChildPose());
-		PxTransform cB2w = parent->getGlobalPose().transform(mInboundJoint->getParentPose());
-	
-		jointViz.visualizeJointFrames(cA2w, cB2w);
-
-		NpArticulationJointReducedCoordinate* impl = static_cast<NpArticulationJointReducedCoordinate*>(mInboundJoint);
-
-		PX_ASSERT(getArticulation().getConcreteType() == PxConcreteType::eARTICULATION_REDUCED_COORDINATE);
-		//(1) visualize any angular dofs/limits...
-
-		const PxMat33 cA2w_m(cA2w.q), cB2w_m(cB2w.q);
-
-		PxTransform parentFrame = cB2w;
-
-		if (cA2w.q.dot(cB2w.q) < 0)
-			cB2w.q = -cB2w.q;
-
-		//const PxTransform cB2cA = cA2w.transformInv(cB2w);
-
-		const PxTransform cA2cB = cB2w.transformInv(cA2w);
-
-		Sc::ArticulationJointCore& joint = impl->getCore();
-
-		PxQuat swing1, swing2, twist;
-		separateSwingTwist(cA2cB.q, twist, swing1, swing2);
-
-		const PxReal pad = 0.01f;
-
-		if(joint.getMotion(PxArticulationAxis::eTWIST))
-		{
-			PxArticulationLimit pair;
-
-			const PxReal angle = computePhi(twist);
-			pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eTWIST));
-
-			bool active = (angle-pad) < pair.low || (angle+pad) > pair.high;
-
-			PxTransform tmp = parentFrame;
-
-			jointViz.visualizeAngularLimit(tmp, pair.low, pair.high, active);
-		}
-
-		if (joint.getMotion(PxArticulationAxis::eSWING1))
-		{
-			PxArticulationLimit pair;
-
-			pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING1));
-
-			const PxReal angle = computeSwingAngle(swing1.y, swing1.w);
-
-			bool active = (angle - pad) < pair.low || (angle + pad) > pair.high;
-
-			PxTransform tmp = parentFrame;
-			tmp.q = tmp.q * PxQuat(-PxPiDivTwo, PxVec3(0.f, 0.f, 1.f));
-
-				
-			jointViz.visualizeAngularLimit(tmp, -pair.high, -pair.low, active);
-		}
-
-		if (joint.getMotion(PxArticulationAxis::eSWING2))
-		{
-			PxArticulationLimit pair;
-
-			pair= joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING2));
-
-			const PxReal angle = computeSwingAngle(swing2.z, swing2.w);
-
-			bool active = (angle - pad) < pair.low || (angle + pad) > pair.high;
-
-			PxTransform tmp = parentFrame;
-			tmp.q = tmp.q * PxQuat(PxPiDivTwo, PxVec3(0.f, 1.f, 0.f));
-
-			jointViz.visualizeAngularLimit(tmp, -pair.high, -pair.low, active);
-		}
-
-		for (PxU32 i = PxArticulationAxis::eX; i <= PxArticulationAxis::eZ; ++i)
-		{
-			if (joint.getMotion(PxArticulationAxis::Enum(i)) == PxArticulationMotion::eLIMITED)
-			{
-
-				PxArticulationLimit pair;
-
-				PxU32 index = i - PxArticulationAxis::eX;
-				
-				pair = joint.getLimit(PxArticulationAxis::Enum(i));
-				PxReal ordinate = cA2cB.p[index];
-				PxVec3 origin = cB2w.p;
-				PxVec3 axis = cA2w_m[index];
-				const bool active = ordinate < pair.low || ordinate > pair.high;
-				const PxVec3 p0 = origin + axis * pair.low;
-				const PxVec3 p1 = origin + axis * pair.high;
-				jointViz.visualizeLine(p0, p1, active ? 0xff0000u : 0xffffffu);
-			}
-		}
-		
-	}	
-}
-
-#else
-	PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
-#endif

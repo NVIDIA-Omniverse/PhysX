@@ -145,20 +145,20 @@ static PX_INLINE void collisionResponse(PxExtendedVec3& targetPosition, const Px
 	decomposeVector(normalCompo, tangentCompo, reflectDir, hitNormal);
 
 	// Compute new destination position
-    const PxF32 amplitude = (targetPosition - currentPosition).magnitude();
+    const PxF32 amplitude = diff(targetPosition, currentPosition).magnitude();
     
 	targetPosition = currentPosition;
 	if(bump!=0.0f)
 	{
 		if(normalize)
 			normalCompo.normalize();
-        targetPosition += normalCompo*bump*amplitude;
+        add(targetPosition, normalCompo*bump*amplitude);
 	}
 	if(friction!=0.0f)
 	{
 		if(normalize)
 			tangentCompo.normalize();
-        targetPosition += tangentCompo*friction*amplitude;
+        add(targetPosition, tangentCompo*friction*amplitude);
 	}
 }
 
@@ -1144,8 +1144,8 @@ void SweepTest::onObstacleUpdated(PxObstacleHandle index, const PxObstacleContex
 
 void SweepTest::onOriginShift(const PxVec3& shift)
 {
-	mCacheBounds.minimum -= shift;
-	mCacheBounds.maximum -= shift;
+	sub(mCacheBounds.minimum, shift);
+	sub(mCacheBounds.maximum, shift);
 
 	if(mTouchedShape)
 	{
@@ -1174,7 +1174,7 @@ void SweepTest::onOriginShift(const PxVec3& shift)
 	{
 		TouchedGeom* currentGeom = reinterpret_cast<TouchedGeom*>(data);
 
-		currentGeom->mOffset -= shift;
+		sub(currentGeom->mOffset, shift);
 
 		PxU8* ptr = reinterpret_cast<PxU8*>(data);
 		ptr += GeomSizes[currentGeom->mType];
@@ -1338,14 +1338,14 @@ void SweepTest::updateTouchedGeoms(	const InternalCBData_FindTouchedGeom* userDa
 		if(1 && !sideVector.isZero())
 		{
 			const PxVec3 sn = sideVector.getNormalized();
-			float dp0 = PxAbs((worldTemporalBox.maximum - worldTemporalBox.minimum).dot(sn));
-			float dp1 = PxAbs((mCacheBounds.maximum - mCacheBounds.minimum).dot(sn));
+			float dp0 = PxAbs(diff(worldTemporalBox.maximum, worldTemporalBox.minimum).dot(sn));
+			float dp1 = PxAbs(diff(mCacheBounds.maximum, mCacheBounds.minimum).dot(sn));
 			dp1 -= dp0;
 			dp1 *= 0.5f * 0.9f;
 			const PxVec3 offset = sn * dp1;
 //			printf("%f %f %f\n", offset.x, offset.y, offset.z);
-			mCacheBounds.minimum += offset;
-			mCacheBounds.maximum += offset;
+			add(mCacheBounds.minimum, offset);
+			add(mCacheBounds.maximum, offset);
 			add(mCacheBounds, worldTemporalBox);
 			PX_ASSERT(worldTemporalBox.isInside(mCacheBounds));
 		}
@@ -1434,14 +1434,14 @@ bool SweepTest::doSweepTest(const InternalCBData_FindTouchedGeom* userData,
 
 	PxExtendedVec3 currentPosition = swept_volume.mCenter;
 	PxExtendedVec3 targetOrientation = swept_volume.mCenter;
-	targetOrientation += direction;
+	add(targetOrientation, direction);
 
 	PxU32 NbCollisions = 0;
 	while(max_iter--)
 	{
 		mNbIterations++;
 		// Compute current direction
-		PxVec3 currentDirection = targetOrientation - currentPosition;
+		PxVec3 currentDirection = diff(targetOrientation, currentPosition);
 
 		// Make sure the new TBV is still valid
 		{
@@ -1662,7 +1662,7 @@ bool SweepTest::doSweepTest(const InternalCBData_FindTouchedGeom* userData,
 		const float DynSkin = mUserParams.mContactOffset;
 
 		if(C.mDistance>DynSkin/*+0.01f*/)
-			currentPosition += currentDirection*(C.mDistance-DynSkin);
+			add(currentPosition, currentDirection*(C.mDistance-DynSkin));
 // DE6513
 /*		else if(sweepPass==SWEEP_PASS_SIDE)
 		{
@@ -1734,7 +1734,7 @@ PxControllerCollisionFlags SweepTest::moveCharacter(
 
 	// Save initial height
 	const PxVec3& upDirection = mUserParams.mUpDirection;
-	const PxExtended originalHeight = volume.mCenter.dot(upDirection);
+	const PxExtended originalHeight = dot(volume.mCenter, upDirection);
     const PxExtended originalBottomPoint = originalHeight - PxExtended(volume.mHalfHeight);	// UBI
 
 	// TEST! Disable auto-step when flying. Not sure this is really useful.
@@ -1850,7 +1850,7 @@ PxControllerCollisionFlags SweepTest::moveCharacter(
 					CollisionFlags |= PxControllerCollisionFlag::eCOLLISION_UP;
 
 					// Clamp step offset to make sure we don't undo more than what we did
-                    float Delta = float(volume.mCenter.dot(upDirection) - originalHeight);
+                    float Delta = float(dot(volume.mCenter, upDirection) - originalHeight);
 
                     if(Delta<stepOffset)
 					{
@@ -1999,7 +1999,7 @@ PxControllerCollisionFlags SweepTest::moveCharacter(
 
 				mFlags |= STF_NORMALIZE_RESPONSE;
 
-                const PxExtended tmp = volume.mCenter.dot(upDirection);
+                const PxExtended tmp = dot(volume.mCenter, upDirection);
                 float Delta = tmp > originalHeight ? float(tmp - originalHeight) : 0.0f;
                 Delta += fabsf(direction.dot(upDirection));
                 float Recover = Delta;
@@ -2571,7 +2571,7 @@ PxControllerCollisionFlags Controller::move(SweptVolume& volume, const PxVec3& o
 	// Update kinematic actor
 	if(mKineActor)
 	{
-		const PxVec3 delta = Backup - volume.mCenter;
+		const PxVec3 delta = diff(Backup, volume.mCenter);
 		const PxF32 deltaM2 = delta.magnitudeSquared();
 		if(deltaM2!=0.0f)
 		{

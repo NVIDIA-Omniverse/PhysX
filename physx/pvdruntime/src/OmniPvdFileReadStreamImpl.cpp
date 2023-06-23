@@ -115,7 +115,7 @@ uint64_t OMNI_PVD_CALL OmniPvdFileReadStreamImpl::readBytes(uint8_t* bytes, uint
 	}
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdFileReadStreamImpl::skipBytes(const uint64_t nbrBytes)
+uint64_t OMNI_PVD_CALL OmniPvdFileReadStreamImpl::skipBytes(uint64_t nbrBytes)
 {
 	if (mFileWasOpened)
 	{

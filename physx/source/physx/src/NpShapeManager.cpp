@@ -35,6 +35,7 @@
 #include "NpAggregate.h"
 #include "CmTransformUtils.h"
 #include "NpRigidStatic.h"
+#include "foundation/PxSIMDHelpers.h"
 
 using namespace physx;
 using namespace Sq;
@@ -285,12 +286,18 @@ PxBounds3 NpShapeManager::getWorldBounds_(const PxRigidActor& actor) const
 	PxBounds3 bounds(PxBounds3::empty());
 
 	const PxU32 nbShapes = getNbShapes();
-	const PxTransform actorPose = actor.getGlobalPose();
 	NpShape*const* PX_RESTRICT shapes = getShapes();
 
+	const PxTransform32 actorPose(actor.getGlobalPose());
+
 	for(PxU32 i=0;i<nbShapes;i++)
-		bounds.include(computeBounds(shapes[i]->getCore().getGeometry(), actorPose * shapes[i]->getLocalPoseFast()));
-		
+	{
+		PxTransform32 shapeAbsPose;
+		aos::transformMultiply<true, true>(shapeAbsPose, actorPose, shapes[i]->getLocalPoseFast());
+
+		bounds.include(computeBounds(shapes[i]->getCore().getGeometry(), shapeAbsPose));
+	}
+
 	return bounds;
 }
 

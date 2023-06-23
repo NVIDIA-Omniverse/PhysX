@@ -72,8 +72,8 @@ namespace Sc
 
 		PX_FORCE_INLINE void				forceProcessingThisFrame(Sc::Scene& scene);
 
-						bool				onActivate_(void*);
-						bool				onDeactivate_();
+						bool				onActivate(void*);
+						bool				onDeactivate();
 
 	protected:
 						Gu::TriggerCache	mTriggerCache;

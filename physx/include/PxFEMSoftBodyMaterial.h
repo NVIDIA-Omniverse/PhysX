@@ -39,6 +39,15 @@ namespace physx
 {
 #endif
 
+	struct PxFEMSoftBodyMaterialModel
+	{
+		enum Enum
+		{
+			eCO_ROTATIONAL,   //!< Default model. Well suited for high stiffness. Does need tetrahedra with good shapes (no extreme slivers) in the rest pose.
+			eNEO_HOOKEAN      //!< Well suited for lower stiffness. Robust to any tetrahedron shape.
+		};
+	};
+
 	class PxScene;
 	/**
 	\brief Material class to represent a set of softbody FEM material properties.
@@ -82,6 +91,23 @@ namespace physx
 		@see setDamping()
 		*/
 		virtual		PxReal	getDampingScale() const = 0;
+
+		/**
+		\brief Sets the material model.
+
+		\param[in] model The material model
+
+		@see getMaterialModel
+		*/
+		virtual		void	setMaterialModel(PxFEMSoftBodyMaterialModel::Enum model) = 0;
+		
+		/**
+		\brief Retrieves the material model.
+		\return The material model.
+
+		@see setMaterialModel()
+		*/
+		virtual		PxFEMSoftBodyMaterialModel::Enum getMaterialModel() const = 0;
 
 		virtual		const char*		getConcreteTypeName() const { return "PxFEMSoftBodyMaterial"; }
 

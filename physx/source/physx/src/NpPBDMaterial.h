@@ -45,12 +45,6 @@ namespace physx
 
 	class NpPBDMaterial : public PxPBDMaterial, public PxUserAllocated
 	{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
 	public:
 		// PX_SERIALIZATION            
 										NpPBDMaterial(PxBaseFlags baseFlags) : PxPBDMaterial(baseFlags), mMaterial(PxEmpty) {}
@@ -126,72 +120,6 @@ namespace physx
 		for (PxU32 i = 0; i < materialCount; i++)
 			materialIndices[i] = static_cast<NpPBDMaterial*>(materials[i])->mMaterial.mMaterialIndex;
 	}
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	class NpCustomMaterial : public PxCustomMaterial, public PxUserAllocated
-	{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-	public:
-		// PX_SERIALIZATION            
-										NpCustomMaterial(PxBaseFlags baseFlags) : PxCustomMaterial(baseFlags), mMaterial(PxEmpty) {}
-		virtual		void				resolveReferences(PxDeserializationContext& context);
-		static		NpCustomMaterial*	createObject(PxU8*& address, PxDeserializationContext& context);
-		static		void				getBinaryMetaData(PxOutputStream& stream);
-
-		// PxBase
-		virtual		void				onRefCountZero();
-		//~PxBase
-
-		void							preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
-		void							exportExtraData(PxSerializationContext&) {}
-		void							importExtraData(PxDeserializationContext&) {}
-		virtual		void				requiresObjects(PxProcessPxBaseCallback&) {}
-		//~PX_SERIALIZATION
-										NpCustomMaterial(const PxsCustomMaterialCore& desc);
-		virtual							~NpCustomMaterial();
-
-		virtual		void				release();
-
-		// PxRefCounted
-		virtual		void				acquireReference();
-		virtual		PxU32				getReferenceCount() const;
-		//~PxRefCounted
-
-		// PxParticleMaterial
-		virtual		void				setFriction(PxReal friction)	PX_OVERRIDE;
-		virtual		PxReal				getFriction() const	PX_OVERRIDE;
-		virtual		void				setDamping(PxReal damping)	PX_OVERRIDE;
-		virtual		PxReal				getDamping() const	PX_OVERRIDE;
-		virtual		void				setAdhesion(PxReal adhesion)	PX_OVERRIDE;
-		virtual		PxReal				getAdhesion() const	PX_OVERRIDE;
-		virtual		void				setGravityScale(PxReal scale)	PX_OVERRIDE;
-		virtual		PxReal				getGravityScale() const	PX_OVERRIDE;
-		virtual		void				setAdhesionRadiusScale(PxReal scale)	PX_OVERRIDE;
-		virtual		PxReal				getAdhesionRadiusScale() const	PX_OVERRIDE;
-		//~PxParticleMaterial
-
-		PX_FORCE_INLINE static void		getMaterialIndices(NpCustomMaterial*const* materials, PxU16* materialIndices, PxU32 materialCount);
-
-	private:
-		PX_INLINE	void				updateMaterial();
-
-		// PX_SERIALIZATION
-	public:
-		//~PX_SERIALIZATION
-				PxsCustomMaterialCore	mMaterial;
-	};
-
-	PX_FORCE_INLINE void NpCustomMaterial::getMaterialIndices(NpCustomMaterial*const* materials, PxU16* materialIndices, PxU32 materialCount)
-	{
-		for (PxU32 i = 0; i < materialCount; i++)
-			materialIndices[i] = static_cast<NpCustomMaterial*>(materials[i])->mMaterial.mMaterialIndex;
-	}
-#endif
 }
 
 #endif

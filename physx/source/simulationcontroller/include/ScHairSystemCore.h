@@ -27,83 +27,78 @@
 #ifndef SC_HAIR_SYSTEM_CORE_H
 #define SC_HAIR_SYSTEM_CORE_H
 
-#include "PxHairSystemFlag.h"
-#include "DyHairSystemCore.h"
-#include "ScHairSystemShapeCore.h"
-
-#include "foundation/PxAssert.h"
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "ScActorCore.h"
+#include "ScHairSystemShapeCore.h"
+#include "DyHairSystem.h"
 
 namespace physx
 {
-	namespace Sc
-	{
-		class HairSystemSim;
-		class BodyCore;
+namespace Sc
+{
+class HairSystemSim;
+class BodySim;
+class SoftBodySim;
 
-		class HairSystemCore : public ActorCore
-		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
+class HairSystemCore : public ActorCore
+{
+	// PX_SERIALIZATION
+  public:
+	HairSystemCore(const PxEMPTY) : ActorCore(PxEmpty) {}
+	static void getBinaryMetaData(PxOutputStream& stream);
+	//~PX_SERIALIZATION
 
-			// PX_SERIALIZATION
-		public:
-			HairSystemCore(const PxEMPTY) : ActorCore(PxEmpty) {}
-			static void getBinaryMetaData(PxOutputStream& stream);
-			//~PX_SERIALIZATION
-			HairSystemCore();
-			~HairSystemCore();
+	HairSystemCore();
+	~HairSystemCore();
 
-			//---------------------------------------------------------------------------------
-			// External API
-			//---------------------------------------------------------------------------------
-			void setMaterial(const PxU16 handle);
-			void clearMaterials();
+	//---------------------------------------------------------------------------------
+	// External API
+	//---------------------------------------------------------------------------------
+	void setMaterial(const PxU16 handle);
+	void clearMaterials();
 
-			PxReal		getContactOffset() const;
-			void		setContactOffset(PxReal v);
+	PxReal getContactOffset() const;
+	void setContactOffset(PxReal v);
 
-			PxReal		getSleepThreshold() const { return mShapeCore.getLLCore().mSleepThreshold; }
-			void		setSleepThreshold(const PxReal v);
+	PxReal getSleepThreshold() const { return mShapeCore.getLLCore().mSleepThreshold; }
+	void setSleepThreshold(const PxReal v);
 
-			PxU16		getSolverIterationCounts() const { return mShapeCore.getLLCore().mSolverIterationCounts; }
-			void		setSolverIterationCounts(PxU16 c);
+	PxU16 getSolverIterationCounts() const { return mShapeCore.getLLCore().mSolverIterationCounts; }
+	void setSolverIterationCounts(PxU16 c);
 
-			PxReal		getWakeCounter() const { return mShapeCore.getLLCore().mWakeCounter; }
-			void		setWakeCounter(const PxReal v);
+	PxReal getWakeCounter() const { return mShapeCore.getLLCore().mWakeCounter; }
+	void setWakeCounter(const PxReal v);
 
-			bool		isSleeping() const;
-			void		wakeUp(PxReal wakeCounter);
-			void		putToSleep();
+	bool isSleeping() const;
+	void wakeUp(PxReal wakeCounter);
+	void putToSleep();
 
-			PxActor*	getPxActor() const;
+	PxActor* getPxActor() const;
 
-			void		addRigidAttachment(const Sc::BodyCore* core);
-			void		removeRigidAttachment(const Sc::BodyCore* core);
+	void addAttachment(const BodySim& bodySim);
+	void removeAttachment(const BodySim& bodySim);
+	void addAttachment(const SoftBodySim& sbSim);
+	void removeAttachment(const SoftBodySim& sbSim);
 
+	//---------------------------------------------------------------------------------
+	// Internal API
+	//---------------------------------------------------------------------------------
+  public:
+	HairSystemSim* getSim() const;
 
-			//---------------------------------------------------------------------------------
-			// Internal API
-			//---------------------------------------------------------------------------------
-		public:
-			
-			HairSystemSim*		getSim() const;
+	PX_FORCE_INLINE const HairSystemShapeCore& getShapeCore() const { return mShapeCore; }
+	PX_FORCE_INLINE HairSystemShapeCore& getShapeCore() { return mShapeCore; }
 
-			PX_FORCE_INLINE	const HairSystemShapeCore&	getShapeCore() const { return mShapeCore; }
-			PX_FORCE_INLINE	HairSystemShapeCore& getShapeCore() { return mShapeCore; }
+	PxHairSystemFlags getFlags() const { return PxHairSystemFlags(mShapeCore.getLLCore().mParams.mFlags); }
 
-			PxHairSystemFlags getFlags() const { return PxHairSystemFlags(mShapeCore.getLLCore().mParams.mFlags); }
+	void setFlags(PxHairSystemFlags flags);
 
-			void						setFlags(PxHairSystemFlags flags);
-
-		private:
-			HairSystemShapeCore mShapeCore;
-		};
-	} // namespace Sc
+  private:
+	HairSystemShapeCore mShapeCore;
+};
+} // namespace Sc
 } // namespace physx
 
+#endif
 #endif

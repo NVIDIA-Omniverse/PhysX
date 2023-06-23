@@ -55,8 +55,7 @@ namespace physx
 		enum Enum
 		{
 			eSTATICS		= 0,
-			ePARTICLES		= 1,
-			eDYNAMICS_BASE	= 2,
+			eDYNAMICS_BASE	= 1,
 #ifdef BP_USE_AGGREGATE_GROUP_TAIL
 			eAGGREGATE_BASE	= 0xfffffffe,
 #endif

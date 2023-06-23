@@ -63,6 +63,7 @@ namespace physx
 			virtual	PxU32					getReferenceCount()		const	{ return Cm::RefCountable_getRefCount(*this);	}
 			virtual	void					release()						{ Cm::RefCountable_decRefCount(*this);			}
 			virtual	void					onRefCountZero()				{ PX_DELETE_THIS; }
+			virtual PxReal*					getGridModelInvMass()			{ return mGridModelInvMass; }
 
 			PX_FORCE_INLINE				PxU32					getNbTetRemapSizeFast()					const { return mTetsRemapSize; }
 			PX_FORCE_INLINE				PxReal*					getGridModelInvMassFast()				{ return mGridModelInvMass; }	
@@ -231,12 +232,6 @@ namespace physx
 		// Possible optimization: align the whole struct to cache line
 		class SoftBodyMesh : public PxSoftBodyMesh, public PxUserAllocated
 		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
 		public:
 
 			virtual const char*				getConcreteTypeName()	const { return "PxSoftBodyMesh"; }

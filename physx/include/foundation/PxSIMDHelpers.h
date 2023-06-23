@@ -31,11 +31,13 @@
 
 #include "foundation/PxMat33.h"
 #include "foundation/PxVecMath.h"
+#include "foundation/PxTransform.h"
 
 #if !PX_DOXYGEN
 namespace physx
 {
 #endif
+
 	//! A padded version of PxMat33, to safely load its data using SIMD
 	class PxMat33Padded : public PxMat33
 	{
@@ -65,6 +67,66 @@ namespace physx
 		}
 		PxU32	padding;
 	};
+
+#if !PX_DOXYGEN
+namespace aos
+{
+#endif
+
+	PX_FORCE_INLINE void transformKernelVec4(	const FloatVArg wa, const Vec4VArg va, const Vec4VArg pa, 
+												const FloatVArg wb, const Vec4VArg vb, const Vec4VArg pb, 
+												FloatV& wo, Vec4V& vo, Vec4V& po)
+	{
+		wo = FSub(FMul(wa, wb), V4Dot3(va, vb));
+		vo = V4ScaleAdd(va, wb, V4ScaleAdd(vb, wa, V4Cross(va, vb)));
+
+		const Vec4V t1 = V4Scale(pb, FScaleAdd(wa, wa, FLoad(-0.5f)));
+		const Vec4V t2 = V4ScaleAdd(V4Cross(va, pb), wa, t1);
+		const Vec4V t3 = V4ScaleAdd(va, V4Dot3(va, pb), t2);
+
+		po = V4ScaleAdd(t3, FLoad(2.0f), pa);
+	}
+
+	// PT: out = a * b
+	template<const bool alignedInput, const bool alignedOutput>
+	PX_FORCE_INLINE void transformMultiply(PxTransform& out, const PxTransform& a, const PxTransform& b)
+	{
+		PX_ASSERT(!alignedInput || (size_t(&a)&15) == 0);
+		PX_ASSERT(!alignedInput || (size_t(&b)&15) == 0);
+
+		const Vec4V aPos = alignedInput ? V4LoadA(&a.p.x) : V4LoadU(&a.p.x);
+		const Vec4V aRot = alignedInput ? V4LoadA(&a.q.x) : V4LoadU(&a.q.x);
+
+		const Vec4V bPos = alignedInput ? V4LoadA(&b.p.x) : V4LoadU(&b.p.x);
+		const Vec4V bRot = alignedInput ? V4LoadA(&b.q.x) : V4LoadU(&b.q.x);
+	
+		Vec4V v, p;
+		FloatV w; 
+		transformKernelVec4(V4GetW(aRot), aRot, aPos, V4GetW(bRot), bRot, bPos, w, v, p);
+
+		if(alignedOutput)
+		{
+			PX_ASSERT((size_t(&out)&15) == 0);
+			V4StoreA(p, &out.p.x);
+			V4StoreA(V4SetW(v,w), &out.q.x);
+		}
+		else
+		{
+			V4StoreU(p, &out.p.x);
+			V4StoreU(V4SetW(v,w), &out.q.x);
+		}
+	}
+
+	// PT: out = a * b
+	PX_FORCE_INLINE void transformMultiply(PxTransform32& out, const PxTransform32& a, const PxTransform32& b)
+	{
+		transformMultiply<true, true>(out, a, b);
+	}
+
+#if !PX_DOXYGEN
+} // namespace aos
+#endif
+
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

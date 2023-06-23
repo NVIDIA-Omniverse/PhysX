@@ -35,7 +35,7 @@ Compilers:
 
 ## PhysX GPU Acceleration:
 
-* Requires CUDA 11.0 compatible display driver and CUDA ARCH 3.0 compatible GPU
+* Requires CUDA 11.8 compatible display driver. The corresponding driver version can be found [here](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions).
 
 
 ## Required Packages for Building and Running PhysX Snippets:

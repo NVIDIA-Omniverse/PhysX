@@ -26,11 +26,11 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
 #ifndef PX_PHYSICS_SCP_FEMCLOTH_CORE
 #define PX_PHYSICS_SCP_FEMCLOTH_CORE
 
 #include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #include "PxFEMCloth.h"
 #endif
@@ -48,21 +48,9 @@ namespace physx
 	namespace Sc
 	{
 		class FEMClothSim;
-		//class BodyCore;
 
 		class FEMClothCore : public ActorCore
 		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
-
-			//---------------------------------------------------------------------------------
-			// Construction, destruction & initialization
-			//---------------------------------------------------------------------------------
-
 			// PX_SERIALIZATION
 		public:
 			FEMClothCore(const PxEMPTY) : ActorCore(PxEmpty) {}
@@ -75,8 +63,6 @@ namespace physx
 			//---------------------------------------------------------------------------------
 			// External API
 			//---------------------------------------------------------------------------------
-			//void						commit(PxBuffer& positionInvMassBuf, const PxTransform& transform, const PxReal density, const PxReal scale, const PxReal maxInvMass);
-
 			PxFEMParameters				getParameter() const;
 			void						setParameter(const PxFEMParameters& paramters);
 
@@ -100,6 +86,7 @@ namespace physx
 										const PxVec4& triBarycentric);
 			void						removeClothAttachment(Sc::FEMClothCore* otherCore, PxU32 handle);
 
+#if 0 // disabled until future use.
 			void						setDrag(const PxReal v) { mCore.drag = v; }
 			PxReal						getDrag() const { return mCore.drag; }
 
@@ -112,6 +99,10 @@ namespace physx
 			void						setAirDensity(const float airDensity) { mCore.airDensity = airDensity; }
 			PxReal						getAirDensity() const { return mCore.airDensity; }
 
+			void						setBendingActivationAngle(const PxReal angle) { mCore.mBendingActivationAngle = angle; }
+			PxReal						getBendingActivationAngle() const { return mCore.mBendingActivationAngle; }
+#endif
+
 			void						setBendingScales(const PxReal* const bendingScales, PxU32 nbElements);
 	        const PxReal*				getBendingScales() const;
 	        PxU32						getNbBendingScales() const { return mCore.mBendingScales.size(); }
@@ -119,8 +110,8 @@ namespace physx
 			void						setMaxVelocity(const float maxVelocity) { mCore.maxVelocity = maxVelocity; }
 			PxReal						getMaxVelocity() const { return mCore.maxVelocity; }
 
-			void						setBendingActivationAngle(const PxReal angle) { mCore.mBendingActivationAngle = angle; }
-			PxReal						getBendingActivationAngle() const { return mCore.mBendingActivationAngle; }
+			void						setMaxDepenetrationVelocity(const float maxDepenetrationVelocity) { mCore.maxDepenetrationVelocity = maxDepenetrationVelocity; }
+			PxReal						getMaxDepenetrationVelocity() const { return mCore.maxDepenetrationVelocity; }
 
 			void						setNbCollisionPairUpdatesPerTimestep(const PxU32 frequency) { mCore.NbCollisionPairUpdatesPerTimestep = frequency; }
 			PxU32						getNbCollisionPairUpdatesPerTimestep() const { return mCore.NbCollisionPairUpdatesPerTimestep; }
@@ -162,12 +153,8 @@ namespace physx
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 			PxFEMClothFlags						getFlags() const { return mCore.mFlags; }
 
-			void								setFlags(PxFEMClothFlags flags) { mCore.mFlags = flags; }
+			void								setFlags(PxFEMClothFlags flags);
 #endif
-
-			PxReal								getRestVolumeScale() const { return mCore.mRestVolumeScale; }
-
-	        void								setRestVolumeScale(PxReal scale) { mCore.mRestVolumeScale = scale; }
 
 			PX_FORCE_INLINE	PxU64&				getGpuMemStat() { return mGpuMemStat; }
 
@@ -181,5 +168,6 @@ namespace physx
 
 	} // namespace Sc
 }
+#endif
 
 #endif

@@ -278,12 +278,6 @@ void BVH::onRefCountZero()
 	::onRefCountZero(this, mMeshFactory, false, "PxBVH::release: double deletion detected!");
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- *	Query Implementation
- */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 namespace
 {
 	struct BVHTree
@@ -296,87 +290,7 @@ namespace
 		const BVHNode*	mRootNode;
 		const PxU32*	mIndices;
 	};
-
-	struct BVHCallback
-	{
-		BVHCallback(PxU32* hits, PxU32 numMaxHits):
-			mHits				(hits),
-			mNbMaxHits			(numMaxHits),
-			mCurrentHitsCount	(0)
-		{
-		}
-
-		PX_FORCE_INLINE bool invoke(PxReal&, PxU32 payload)
-		{
-			mHits[mCurrentHitsCount++] = payload;
-			if(mCurrentHitsCount == mNbMaxHits)
-				return false;
-			return true;
-		}
-
-		PxU32*			mHits;
-		PxU32			mNbMaxHits;
-		PxU32			mCurrentHitsCount;
-	};
-
-	struct BVHOverlapCallback
-	{
-		BVHOverlapCallback(PxU32* hits, PxU32 numMaxHits):
-			mHits				(hits),
-			mNbMaxHits			(numMaxHits),
-			mCurrentHitsCount	(0)
-		{
-		}
-
-		PX_FORCE_INLINE bool invoke(PxU32 payload)
-		{
-			mHits[mCurrentHitsCount++] = payload;
-			if(mCurrentHitsCount == mNbMaxHits)
-				return false;
-			return true;
-		}
-
-		PxU32*			mHits;
-		PxU32			mNbMaxHits;
-		PxU32			mCurrentHitsCount;
-		const PxU32*	mVolumes;
-	};
 }
-
-PxU32 BVH::raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT rayHits) const
-{
-	BVHCallback cbk(rayHits, maxHits);
-	if(mData.mIndices)
-		AABBTreeRaycast<false, true, BVHTree, BVHNode, BVHCallback>()(mData.mBounds, BVHTree(mData), origin, unitDir, maxDist, PxVec3(0.0f), cbk);
-	else
-		AABBTreeRaycast<false, false, BVHTree, BVHNode, BVHCallback>()(mData.mBounds, BVHTree(mData), origin, unitDir, maxDist, PxVec3(0.0f), cbk);
-
-	return cbk.mCurrentHitsCount;
-}
-
-PxU32 BVH::sweep(const PxBounds3& aabb, const PxVec3& unitDir, PxReal maxDist, PxU32 maxHits, PxU32* PX_RESTRICT sweepHits) const
-{
-	BVHCallback cbk(sweepHits, maxHits);
-	if(mData.mIndices)
-		AABBTreeRaycast<true, true, BVHTree, BVHNode, BVHCallback>()(mData.mBounds, BVHTree(mData), aabb.getCenter(), unitDir, maxDist, aabb.getExtents(), cbk);
-	else
-		AABBTreeRaycast<true, false, BVHTree, BVHNode, BVHCallback>()(mData.mBounds, BVHTree(mData), aabb.getCenter(), unitDir, maxDist, aabb.getExtents(), cbk);
-
-	return cbk.mCurrentHitsCount;
-}
-
-PxU32 BVH::overlap(const PxBounds3& aabb, PxU32 maxHits, PxU32* PX_RESTRICT overlapHits) const
-{
-	BVHOverlapCallback cbk(overlapHits, maxHits);
-	const AABBAABBTest test(aabb);
-	if(mData.mIndices)
-		AABBTreeOverlap<true, AABBAABBTest, BVHTree, BVHNode, BVHOverlapCallback>()(mData.mBounds, BVHTree(mData), test, cbk);
-	else
-		AABBTreeOverlap<false, AABBAABBTest, BVHTree, BVHNode, BVHOverlapCallback>()(mData.mBounds, BVHTree(mData), test, cbk);
-
-	return cbk.mCurrentHitsCount;
-}
-
 
 namespace
 {

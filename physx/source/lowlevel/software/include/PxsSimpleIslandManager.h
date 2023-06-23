@@ -36,13 +36,13 @@
 namespace physx
 {
 
+// PT: TODO: fw declaring an Sc class here is not good
 namespace Sc
 {
 	class Interaction;
 }
 namespace IG
 {
-
 	class SimpleIslandManager;
 
 class ThirdPassTask : public Cm::Task
@@ -91,7 +91,6 @@ class SimpleIslandManager : public PxUserAllocated
 	//An array of destroyed nodes
 	PxArray<PxNodeIndex> mDestroyedNodes;
 	Cm::BlockArray<Sc::Interaction*> mInteractions;
-	
 
 	//Edges destroyed this frame
 	PxArray<EdgeIndex> mDestroyedEdges;
@@ -124,7 +123,7 @@ public:
 
 	void removeNode(const PxNodeIndex index);
 
-	PxNodeIndex addArticulation(Sc::ArticulationSim* articulation, Dy::FeatherstoneArticulation* llArtic, bool isActive);
+	PxNodeIndex addArticulation(Dy::FeatherstoneArticulation* llArtic, bool isActive);
 
 #if PX_SUPPORT_GPU_PHYSX
 	PxNodeIndex addSoftBody(Dy::SoftBody* llSoftBody, bool isActive);
@@ -197,7 +196,6 @@ public:
 
 	bool checkInternalConsistency();
 
-
 private:
 
 	friend class ThirdPassTask;
@@ -207,8 +205,6 @@ private:
 
 	PX_NOCOPY(SimpleIslandManager)
 };
-
-
 
 }
 }

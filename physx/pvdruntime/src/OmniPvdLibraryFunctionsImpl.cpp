@@ -38,9 +38,9 @@ OMNI_PVD_EXPORT OmniPvdReader* OMNI_PVD_CALL createOmniPvdReader()
 	return new OmniPvdReaderImpl();
 }
 
-OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdReader(OmniPvdReader *reader)
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdReader(OmniPvdReader& reader)
 {
-	OmniPvdReaderImpl *impl = (OmniPvdReaderImpl*)reader;
+	OmniPvdReaderImpl* impl = (OmniPvdReaderImpl*)(&reader);
 	delete impl;
 }
 
@@ -49,9 +49,9 @@ OMNI_PVD_EXPORT OmniPvdWriter* OMNI_PVD_CALL createOmniPvdWriter()
 	return new OmniPvdWriterImpl();
 }
 
-OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdWriter(OmniPvdWriter *writer)
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdWriter(OmniPvdWriter& writer)
 {
-	OmniPvdWriterImpl *impl = (OmniPvdWriterImpl*)writer;
+	OmniPvdWriterImpl* impl = (OmniPvdWriterImpl*)(&writer);
 	delete impl;
 }
 
@@ -60,9 +60,9 @@ OMNI_PVD_EXPORT OmniPvdFileReadStream* OMNI_PVD_CALL createOmniPvdFileReadStream
 	return new OmniPvdFileReadStreamImpl();
 }
 
-OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdFileReadStream(OmniPvdFileReadStream *readStream)
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdFileReadStream(OmniPvdFileReadStream& readStream)
 {
-	OmniPvdFileReadStreamImpl *impl = (OmniPvdFileReadStreamImpl*)readStream;
+	OmniPvdFileReadStreamImpl* impl = (OmniPvdFileReadStreamImpl*)(&readStream);
 	delete impl;
 }
 
@@ -71,9 +71,9 @@ OMNI_PVD_EXPORT OmniPvdFileWriteStream* OMNI_PVD_CALL createOmniPvdFileWriteStre
 	return new OmniPvdFileWriteStreamImpl();
 }
 
-OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdFileWriteStream(OmniPvdFileWriteStream *writeStream)
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdFileWriteStream(OmniPvdFileWriteStream& writeStream)
 {
-	OmniPvdFileWriteStreamImpl *impl = (OmniPvdFileWriteStreamImpl*)writeStream;
+	OmniPvdFileWriteStreamImpl* impl = (OmniPvdFileWriteStreamImpl*)(&writeStream);
 	delete impl;
 }
 
@@ -82,8 +82,8 @@ OMNI_PVD_EXPORT OmniPvdMemoryStream* OMNI_PVD_CALL createOmniPvdMemoryStream()
 	return new OmniPvdMemoryStreamImpl();
 }
 
-OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdMemoryStream(OmniPvdMemoryStream *memoryStream)
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdMemoryStream(OmniPvdMemoryStream& memoryStream)
 {
-	OmniPvdMemoryStreamImpl *impl = (OmniPvdMemoryStreamImpl*)memoryStream;
+	OmniPvdMemoryStreamImpl* impl = (OmniPvdMemoryStreamImpl*)(&memoryStream);
 	delete impl;
 }

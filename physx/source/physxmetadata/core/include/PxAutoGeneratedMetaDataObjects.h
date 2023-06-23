@@ -44,13 +44,6 @@
 	};
 
 template<> struct PxEnumTraits< physx::PxShapeFlag::Enum > { PxEnumTraits() : NameConversion( g_physx__PxShapeFlag__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
-	static PxU32ToName g_physx__PxBufferType__EnumConversion[] = {
-		{ "eHOST", static_cast<PxU32>( physx::PxBufferType::eHOST ) },
-		{ "eDEVICE", static_cast<PxU32>( physx::PxBufferType::eDEVICE ) },
-		{ NULL, 0 }
-	};
-
-template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxBufferType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxPhysics;
 	struct PxPhysicsGeneratedValues
 	{
@@ -68,14 +61,12 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_HeightFields, PxPhysics, PxHeightField *, PxInputStream & > HeightFields;
 		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_ConvexMeshes, PxPhysics, PxConvexMesh *, PxInputStream & > ConvexMeshes;
 		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_BVHs, PxPhysics, PxBVH *, PxInputStream & > BVHs;
-		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_BVHStructures, PxPhysics, PxBVHStructure *, PxInputStream & > BVHStructures;
 		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_Scenes, PxPhysics, PxScene *, const PxSceneDesc & > Scenes;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_Shapes, PxPhysics, PxShape * > Shapes;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_Materials, PxPhysics, PxMaterial * > Materials;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_FEMSoftBodyMaterials, PxPhysics, PxFEMSoftBodyMaterial * > FEMSoftBodyMaterials;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_FEMClothMaterials, PxPhysics, PxFEMClothMaterial * > FEMClothMaterials;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_PBDMaterials, PxPhysics, PxPBDMaterial * > PBDMaterials;
-		PxFactoryCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxPhysics_CustomMaterials, PxPhysics, PxCustomMaterial *, void * > CustomMaterials;
 
 		PX_PHYSX_CORE_API PxPhysicsGeneratedInfo();
 		template<typename TReturnType, typename TOperator>
@@ -95,7 +86,7 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 14; }
+		static PxU32 instancePropertyCount() { return 12; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -108,15 +99,13 @@ template<> struct PxEnumTraits< physx::PxBufferType::Enum > { PxEnumTraits() : N
 			inOperator( HeightFields, inStartIndex + 3 );; 
 			inOperator( ConvexMeshes, inStartIndex + 4 );; 
 			inOperator( BVHs, inStartIndex + 5 );; 
-			inOperator( BVHStructures, inStartIndex + 6 );; 
-			inOperator( Scenes, inStartIndex + 7 );; 
-			inOperator( Shapes, inStartIndex + 8 );; 
-			inOperator( Materials, inStartIndex + 9 );; 
-			inOperator( FEMSoftBodyMaterials, inStartIndex + 10 );; 
-			inOperator( FEMClothMaterials, inStartIndex + 11 );; 
-			inOperator( PBDMaterials, inStartIndex + 12 );; 
-			inOperator( CustomMaterials, inStartIndex + 13 );; 
-			return 14 + inStartIndex;
+			inOperator( Scenes, inStartIndex + 6 );; 
+			inOperator( Shapes, inStartIndex + 7 );; 
+			inOperator( Materials, inStartIndex + 8 );; 
+			inOperator( FEMSoftBodyMaterials, inStartIndex + 9 );; 
+			inOperator( FEMClothMaterials, inStartIndex + 10 );; 
+			inOperator( PBDMaterials, inStartIndex + 11 );; 
+			return 12 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxPhysics>
@@ -385,16 +374,25 @@ template<> struct PxEnumTraits< physx::PxCombineMode::Enum > { PxEnumTraits() : 
 		const PxFEMMaterialGeneratedInfo* getInfo() { return &Info; }
 	};
 
+	static PxU32ToName g_physx__PxFEMSoftBodyMaterialModel__EnumConversion[] = {
+		{ "eCO_ROTATIONAL", static_cast<PxU32>( physx::PxFEMSoftBodyMaterialModel::eCO_ROTATIONAL ) },
+		{ "eNEO_HOOKEAN", static_cast<PxU32>( physx::PxFEMSoftBodyMaterialModel::eNEO_HOOKEAN ) },
+		{ NULL, 0 }
+	};
+
+template<> struct PxEnumTraits< physx::PxFEMSoftBodyMaterialModel::Enum > { PxEnumTraits() : NameConversion( g_physx__PxFEMSoftBodyMaterialModel__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxFEMSoftBodyMaterial;
 	struct PxFEMSoftBodyMaterialGeneratedValues
 		: PxFEMMaterialGeneratedValues	{
 		PxReal Damping;
 		PxReal DampingScale;
+		PxFEMSoftBodyMaterialModel::Enum MaterialModel;
 		const char * ConcreteTypeName;
 		 PX_PHYSX_CORE_API PxFEMSoftBodyMaterialGeneratedValues( const PxFEMSoftBodyMaterial* inSource );
 	};
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFEMSoftBodyMaterial, Damping, PxFEMSoftBodyMaterialGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFEMSoftBodyMaterial, DampingScale, PxFEMSoftBodyMaterialGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFEMSoftBodyMaterial, MaterialModel, PxFEMSoftBodyMaterialGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFEMSoftBodyMaterial, ConcreteTypeName, PxFEMSoftBodyMaterialGeneratedValues)
 	struct PxFEMSoftBodyMaterialGeneratedInfo
 		: PxFEMMaterialGeneratedInfo
@@ -402,6 +400,7 @@ template<> struct PxEnumTraits< physx::PxCombineMode::Enum > { PxEnumTraits() : 
 		static const char* getClassName() { return "PxFEMSoftBodyMaterial"; }
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxFEMSoftBodyMaterial_Damping, PxFEMSoftBodyMaterial, PxReal, PxReal > Damping;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxFEMSoftBodyMaterial_DampingScale, PxFEMSoftBodyMaterial, PxReal, PxReal > DampingScale;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxFEMSoftBodyMaterial_MaterialModel, PxFEMSoftBodyMaterial, PxFEMSoftBodyMaterialModel::Enum, PxFEMSoftBodyMaterialModel::Enum > MaterialModel;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxFEMSoftBodyMaterial_ConcreteTypeName, PxFEMSoftBodyMaterial, const char * > ConcreteTypeName;
 
 		PX_PHYSX_CORE_API PxFEMSoftBodyMaterialGeneratedInfo();
@@ -425,7 +424,7 @@ template<> struct PxEnumTraits< physx::PxCombineMode::Enum > { PxEnumTraits() : 
 			inStartIndex = PxFEMMaterialGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 3; }
+		static PxU32 instancePropertyCount() { return 4; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxFEMMaterialGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -435,8 +434,9 @@ template<> struct PxEnumTraits< physx::PxCombineMode::Enum > { PxEnumTraits() : 
 			PX_UNUSED(inStartIndex);
 			inOperator( Damping, inStartIndex + 0 );; 
 			inOperator( DampingScale, inStartIndex + 1 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 2 );; 
-			return 3 + inStartIndex;
+			inOperator( MaterialModel, inStartIndex + 2 );; 
+			inOperator( ConcreteTypeName, inStartIndex + 3 );; 
+			return 4 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxFEMSoftBodyMaterial>
@@ -610,7 +610,6 @@ template<> struct PxEnumTraits< physx::PxCombineMode::Enum > { PxEnumTraits() : 
 		{ "ePBD_PARTICLESYSTEM", static_cast<PxU32>( physx::PxActorType::ePBD_PARTICLESYSTEM ) },
 		{ "eFLIP_PARTICLESYSTEM", static_cast<PxU32>( physx::PxActorType::eFLIP_PARTICLESYSTEM ) },
 		{ "eMPM_PARTICLESYSTEM", static_cast<PxU32>( physx::PxActorType::eMPM_PARTICLESYSTEM ) },
-		{ "eCUSTOM_PARTICLESYSTEM", static_cast<PxU32>( physx::PxActorType::eCUSTOM_PARTICLESYSTEM ) },
 		{ "eHAIRSYSTEM", static_cast<PxU32>( physx::PxActorType::eHAIRSYSTEM ) },
 		{ NULL, 0 }
 	};
@@ -1142,16 +1141,6 @@ template<> struct PxEnumTraits< physx::PxArticulationAxis::Enum > { PxEnumTraits
 	};
 
 template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTraits() : NameConversion( g_physx__PxArticulationMotion__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
-	static PxU32ToName g_physx__PxArticulationDriveType__EnumConversion[] = {
-		{ "eFORCE", static_cast<PxU32>( physx::PxArticulationDriveType::eFORCE ) },
-		{ "eACCELERATION", static_cast<PxU32>( physx::PxArticulationDriveType::eACCELERATION ) },
-		{ "eTARGET", static_cast<PxU32>( physx::PxArticulationDriveType::eTARGET ) },
-		{ "eVELOCITY", static_cast<PxU32>( physx::PxArticulationDriveType::eVELOCITY ) },
-		{ "eNONE", static_cast<PxU32>( physx::PxArticulationDriveType::eNONE ) },
-		{ NULL, 0 }
-	};
-
-template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxArticulationDriveType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxArticulationJointReducedCoordinate;
 	struct PxArticulationJointReducedCoordinateGeneratedValues
 	{
@@ -1268,6 +1257,7 @@ template<> struct PxEnumTraits< physx::PxArticulationFlag::Enum > { PxEnumTraits
 		{ "eROOT_VELOCITIES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eROOT_VELOCITIES ) },
 		{ "eSENSOR_FORCES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eSENSOR_FORCES ) },
 		{ "eJOINT_SOLVER_FORCES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_SOLVER_FORCES ) },
+		{ "eLINK_INCOMING_JOINT_FORCE", static_cast<PxU32>( physx::PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE ) },
 		{ "eALL", static_cast<PxU32>( physx::PxArticulationCacheFlag::eALL ) },
 		{ NULL, 0 }
 	};
@@ -1447,9 +1437,6 @@ template<> struct PxEnumTraits< physx::PxArticulationCacheFlag::Enum > { PxEnumT
 
 	static PxU32ToName g_physx__PxConstraintFlag__EnumConversion[] = {
 		{ "eBROKEN", static_cast<PxU32>( physx::PxConstraintFlag::eBROKEN ) },
-		{ "ePROJECT_TO_ACTOR0", static_cast<PxU32>( physx::PxConstraintFlag::ePROJECT_TO_ACTOR0 ) },
-		{ "ePROJECT_TO_ACTOR1", static_cast<PxU32>( physx::PxConstraintFlag::ePROJECT_TO_ACTOR1 ) },
-		{ "ePROJECTION", static_cast<PxU32>( physx::PxConstraintFlag::ePROJECTION ) },
 		{ "eCOLLISION_ENABLED", static_cast<PxU32>( physx::PxConstraintFlag::eCOLLISION_ENABLED ) },
 		{ "eVISUALIZATION", static_cast<PxU32>( physx::PxConstraintFlag::eVISUALIZATION ) },
 		{ "eDRIVE_LIMITS_ARE_FORCES", static_cast<PxU32>( physx::PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES ) },
@@ -1539,26 +1526,9 @@ template<> struct PxEnumTraits< physx::PxConstraintFlag::Enum > { PxEnumTraits()
 		const PxConstraintGeneratedInfo* getInfo() { return &Info; }
 	};
 
-	static PxU32ToName g_physx__PxGeometryType__EnumConversion[] = {
-		{ "eSPHERE", static_cast<PxU32>( physx::PxGeometryType::eSPHERE ) },
-		{ "ePLANE", static_cast<PxU32>( physx::PxGeometryType::ePLANE ) },
-		{ "eCAPSULE", static_cast<PxU32>( physx::PxGeometryType::eCAPSULE ) },
-		{ "eBOX", static_cast<PxU32>( physx::PxGeometryType::eBOX ) },
-		{ "eCONVEXMESH", static_cast<PxU32>( physx::PxGeometryType::eCONVEXMESH ) },
-		{ "ePARTICLESYSTEM", static_cast<PxU32>( physx::PxGeometryType::ePARTICLESYSTEM ) },
-		{ "eTETRAHEDRONMESH", static_cast<PxU32>( physx::PxGeometryType::eTETRAHEDRONMESH ) },
-		{ "eTRIANGLEMESH", static_cast<PxU32>( physx::PxGeometryType::eTRIANGLEMESH ) },
-		{ "eHEIGHTFIELD", static_cast<PxU32>( physx::PxGeometryType::eHEIGHTFIELD ) },
-		{ "eHAIRSYSTEM", static_cast<PxU32>( physx::PxGeometryType::eHAIRSYSTEM ) },
-		{ "eCUSTOM", static_cast<PxU32>( physx::PxGeometryType::eCUSTOM ) },
-		{ NULL, 0 }
-	};
-
-template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxGeometryType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxShape;
 	struct PxShapeGeneratedValues
 		: PxRefCountedGeneratedValues	{
-		PxGeometryType::Enum GeometryType;
 		PxTransform LocalPose;
 		PxFilterData SimulationFilterData;
 		PxFilterData QueryFilterData;
@@ -1567,6 +1537,7 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		PxReal DensityForFluid;
 		PxReal TorsionalPatchRadius;
 		PxReal MinTorsionalPatchRadius;
+		PxU32 InternalShapeIndex;
 		PxShapeFlags Flags;
 		_Bool IsExclusive;
 		const char * Name;
@@ -1575,7 +1546,6 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		PxGeometryHolder Geom;
 		 PX_PHYSX_CORE_API PxShapeGeneratedValues( const PxShape* inSource );
 	};
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, GeometryType, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, LocalPose, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, SimulationFilterData, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, QueryFilterData, PxShapeGeneratedValues)
@@ -1584,6 +1554,7 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, DensityForFluid, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, TorsionalPatchRadius, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, MinTorsionalPatchRadius, PxShapeGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, InternalShapeIndex, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, Flags, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, IsExclusive, PxShapeGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxShape, Name, PxShapeGeneratedValues)
@@ -1594,7 +1565,6 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		: PxRefCountedGeneratedInfo
 	{
 		static const char* getClassName() { return "PxShape"; }
-		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_GeometryType, PxShape, PxGeometryType::Enum > GeometryType;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_LocalPose, PxShape, const PxTransform &, PxTransform > LocalPose;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_SimulationFilterData, PxShape, const PxFilterData &, PxFilterData > SimulationFilterData;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_QueryFilterData, PxShape, const PxFilterData &, PxFilterData > QueryFilterData;
@@ -1604,6 +1574,7 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_DensityForFluid, PxShape, PxReal, PxReal > DensityForFluid;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_TorsionalPatchRadius, PxShape, PxReal, PxReal > TorsionalPatchRadius;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_MinTorsionalPatchRadius, PxShape, PxReal, PxReal > MinTorsionalPatchRadius;
+		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_InternalShapeIndex, PxShape, PxU32 > InternalShapeIndex;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_Flags, PxShape, PxShapeFlags, PxShapeFlags > Flags;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_IsExclusive, PxShape, _Bool > IsExclusive;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxShape_Name, PxShape, const char *, const char * > Name;
@@ -1640,16 +1611,16 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		{
 			PX_UNUSED(inOperator);
 			PX_UNUSED(inStartIndex);
-			inOperator( GeometryType, inStartIndex + 0 );; 
-			inOperator( LocalPose, inStartIndex + 1 );; 
-			inOperator( SimulationFilterData, inStartIndex + 2 );; 
-			inOperator( QueryFilterData, inStartIndex + 3 );; 
-			inOperator( Materials, inStartIndex + 4 );; 
-			inOperator( ContactOffset, inStartIndex + 5 );; 
-			inOperator( RestOffset, inStartIndex + 6 );; 
-			inOperator( DensityForFluid, inStartIndex + 7 );; 
-			inOperator( TorsionalPatchRadius, inStartIndex + 8 );; 
-			inOperator( MinTorsionalPatchRadius, inStartIndex + 9 );; 
+			inOperator( LocalPose, inStartIndex + 0 );; 
+			inOperator( SimulationFilterData, inStartIndex + 1 );; 
+			inOperator( QueryFilterData, inStartIndex + 2 );; 
+			inOperator( Materials, inStartIndex + 3 );; 
+			inOperator( ContactOffset, inStartIndex + 4 );; 
+			inOperator( RestOffset, inStartIndex + 5 );; 
+			inOperator( DensityForFluid, inStartIndex + 6 );; 
+			inOperator( TorsionalPatchRadius, inStartIndex + 7 );; 
+			inOperator( MinTorsionalPatchRadius, inStartIndex + 8 );; 
+			inOperator( InternalShapeIndex, inStartIndex + 9 );; 
 			inOperator( Flags, inStartIndex + 10 );; 
 			inOperator( IsExclusive, inStartIndex + 11 );; 
 			inOperator( Name, inStartIndex + 12 );; 
@@ -1779,6 +1750,22 @@ template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() :
 		const PxTolerancesScaleGeneratedInfo* getInfo() { return &Info; }
 	};
 
+	static PxU32ToName g_physx__PxGeometryType__EnumConversion[] = {
+		{ "eSPHERE", static_cast<PxU32>( physx::PxGeometryType::eSPHERE ) },
+		{ "ePLANE", static_cast<PxU32>( physx::PxGeometryType::ePLANE ) },
+		{ "eCAPSULE", static_cast<PxU32>( physx::PxGeometryType::eCAPSULE ) },
+		{ "eBOX", static_cast<PxU32>( physx::PxGeometryType::eBOX ) },
+		{ "eCONVEXMESH", static_cast<PxU32>( physx::PxGeometryType::eCONVEXMESH ) },
+		{ "ePARTICLESYSTEM", static_cast<PxU32>( physx::PxGeometryType::ePARTICLESYSTEM ) },
+		{ "eTETRAHEDRONMESH", static_cast<PxU32>( physx::PxGeometryType::eTETRAHEDRONMESH ) },
+		{ "eTRIANGLEMESH", static_cast<PxU32>( physx::PxGeometryType::eTRIANGLEMESH ) },
+		{ "eHEIGHTFIELD", static_cast<PxU32>( physx::PxGeometryType::eHEIGHTFIELD ) },
+		{ "eHAIRSYSTEM", static_cast<PxU32>( physx::PxGeometryType::eHAIRSYSTEM ) },
+		{ "eCUSTOM", static_cast<PxU32>( physx::PxGeometryType::eCUSTOM ) },
+		{ NULL, 0 }
+	};
+
+template<> struct PxEnumTraits< physx::PxGeometryType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxGeometryType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	class PxGeometry;
 	struct PxGeometryGeneratedValues
 	{
@@ -2460,6 +2447,7 @@ template<> struct PxEnumTraits< physx::PxPruningStructureType::Enum > { PxEnumTr
 		{ "eENABLE_GPU_DYNAMICS", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_GPU_DYNAMICS ) },
 		{ "eENABLE_ENHANCED_DETERMINISM", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_ENHANCED_DETERMINISM ) },
 		{ "eENABLE_FRICTION_EVERY_ITERATION", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION ) },
+		{ "eENABLE_DIRECT_GPU_API", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_DIRECT_GPU_API ) },
 		{ "eSUPPRESS_READBACK", static_cast<PxU32>( physx::PxSceneFlag::eSUPPRESS_READBACK ) },
 		{ "eFORCE_READBACK", static_cast<PxU32>( physx::PxSceneFlag::eFORCE_READBACK ) },
 		{ "eMUTABLE_FLAGS", static_cast<PxU32>( physx::PxSceneFlag::eMUTABLE_FLAGS ) },
@@ -2478,7 +2466,6 @@ template<> struct PxEnumTraits< physx::PxActorTypeFlag::Enum > { PxEnumTraits() 
 		{ "ePBD", static_cast<PxU32>( physx::PxParticleSolverType::ePBD ) },
 		{ "eFLIP", static_cast<PxU32>( physx::PxParticleSolverType::eFLIP ) },
 		{ "eMPM", static_cast<PxU32>( physx::PxParticleSolverType::eMPM ) },
-		{ "eCUSTOM", static_cast<PxU32>( physx::PxParticleSolverType::eCUSTOM ) },
 		{ NULL, 0 }
 	};
 
@@ -2562,6 +2549,8 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 		{ "eROOT_VELOCITY", static_cast<PxU32>( physx::PxArticulationGpuDataType::eROOT_VELOCITY ) },
 		{ "eLINK_TRANSFORM", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_TRANSFORM ) },
 		{ "eLINK_VELOCITY", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_VELOCITY ) },
+		{ "eLINK_ACCELERATION", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_ACCELERATION ) },
+		{ "eLINK_INCOMING_JOINT_FORCE", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_INCOMING_JOINT_FORCE ) },
 		{ "eLINK_FORCE", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_FORCE ) },
 		{ "eLINK_TORQUE", static_cast<PxU32>( physx::PxArticulationGpuDataType::eLINK_TORQUE ) },
 		{ "eFIXED_TENDON", static_cast<PxU32>( physx::PxArticulationGpuDataType::eFIXED_TENDON ) },
@@ -2572,21 +2561,19 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 	};
 
 template<> struct PxEnumTraits< physx::PxArticulationGpuDataType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxArticulationGpuDataType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
-	static PxU32ToName g_physx__PxSoftBodyDataFlag__EnumConversion[] = {
-		{ "eTET_INDICES", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_INDICES ) },
-		{ "eTET_STRESS", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_STRESS ) },
-		{ "eTET_STRESSCOEFF", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_STRESSCOEFF ) },
-		{ "eTET_REST_POSES", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_REST_POSES ) },
-		{ "eTET_ROTATIONS", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_ROTATIONS ) },
-		{ "eTET_POSITION_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eTET_POSITION_INV_MASS ) },
-		{ "eSIM_TET_INDICES", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eSIM_TET_INDICES ) },
-		{ "eSIM_VELOCITY_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eSIM_VELOCITY_INV_MASS ) },
-		{ "eSIM_POSITION_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eSIM_POSITION_INV_MASS ) },
-		{ "eSIM_KINEMATIC_TARGET", static_cast<PxU32>( physx::PxSoftBodyDataFlag::eSIM_KINEMATIC_TARGET ) },
+	static PxU32ToName g_physx__PxSoftBodyGpuDataFlag__EnumConversion[] = {
+		{ "eTET_INDICES", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eTET_INDICES ) },
+		{ "eTET_REST_POSES", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eTET_REST_POSES ) },
+		{ "eTET_ROTATIONS", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eTET_ROTATIONS ) },
+		{ "eTET_POSITION_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eTET_POSITION_INV_MASS ) },
+		{ "eSIM_TET_INDICES", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eSIM_TET_INDICES ) },
+		{ "eSIM_TET_ROTATIONS", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eSIM_TET_ROTATIONS ) },
+		{ "eSIM_VELOCITY_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eSIM_VELOCITY_INV_MASS ) },
+		{ "eSIM_POSITION_INV_MASS", static_cast<PxU32>( physx::PxSoftBodyGpuDataFlag::eSIM_POSITION_INV_MASS ) },
 		{ NULL, 0 }
 	};
 
-template<> struct PxEnumTraits< physx::PxSoftBodyDataFlag::Enum > { PxEnumTraits() : NameConversion( g_physx__PxSoftBodyDataFlag__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
+template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTraits() : NameConversion( g_physx__PxSoftBodyGpuDataFlag__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	static PxU32ToName g_physx__PxActorCacheFlag__EnumConversion[] = {
 		{ "eACTOR_DATA", static_cast<PxU32>( physx::PxActorCacheFlag::eACTOR_DATA ) },
 		{ "eFORCE", static_cast<PxU32>( physx::PxActorCacheFlag::eFORCE ) },
@@ -2601,6 +2588,7 @@ template<> struct PxEnumTraits< physx::PxActorCacheFlag::Enum > { PxEnumTraits()
 		PxSceneFlags Flags;
 		PxSceneLimits Limits;
 		PxU32 Timestamp;
+		const char * Name;
 		PxCpuDispatcher * CpuDispatcher;
 		PxCudaContextManager * CudaContextManager;
 		PxSimulationEventCallback * SimulationEventCallback;
@@ -2638,6 +2626,7 @@ template<> struct PxEnumTraits< physx::PxActorCacheFlag::Enum > { PxEnumTraits()
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, Flags, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, Limits, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, Timestamp, PxSceneGeneratedValues)
+	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, Name, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, CpuDispatcher, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, CudaContextManager, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, SimulationEventCallback, PxSceneGeneratedValues)
@@ -2677,6 +2666,7 @@ template<> struct PxEnumTraits< physx::PxActorCacheFlag::Enum > { PxEnumTraits()
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Flags, PxScene, PxSceneFlags > Flags;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Limits, PxScene, const PxSceneLimits &, PxSceneLimits > Limits;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Timestamp, PxScene, PxU32 > Timestamp;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Name, PxScene, const char *, const char * > Name;
 		PxReadOnlyFilteredCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Actors, PxScene, PxActor *, PxActorTypeFlags > Actors;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_SoftBodies, PxScene, PxSoftBody * > SoftBodies;
 		PxReadOnlyCollectionPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_Articulations, PxScene, PxArticulationReducedCoordinate * > Articulations;
@@ -2738,7 +2728,7 @@ template<> struct PxEnumTraits< physx::PxActorCacheFlag::Enum > { PxEnumTraits()
 			inStartIndex = PxSceneSQSystemGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 42; }
+		static PxU32 instancePropertyCount() { return 43; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxSceneSQSystemGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -2749,46 +2739,47 @@ template<> struct PxEnumTraits< physx::PxActorCacheFlag::Enum > { PxEnumTraits()
 			inOperator( Flags, inStartIndex + 0 );; 
 			inOperator( Limits, inStartIndex + 1 );; 
 			inOperator( Timestamp, inStartIndex + 2 );; 
-			inOperator( Actors, inStartIndex + 3 );; 
-			inOperator( SoftBodies, inStartIndex + 4 );; 
-			inOperator( Articulations, inStartIndex + 5 );; 
-			inOperator( Constraints, inStartIndex + 6 );; 
-			inOperator( Aggregates, inStartIndex + 7 );; 
-			inOperator( CpuDispatcher, inStartIndex + 8 );; 
-			inOperator( CudaContextManager, inStartIndex + 9 );; 
-			inOperator( SimulationEventCallback, inStartIndex + 10 );; 
-			inOperator( ContactModifyCallback, inStartIndex + 11 );; 
-			inOperator( CCDContactModifyCallback, inStartIndex + 12 );; 
-			inOperator( BroadPhaseCallback, inStartIndex + 13 );; 
-			inOperator( FilterShaderDataSize, inStartIndex + 14 );; 
-			inOperator( FilterShader, inStartIndex + 15 );; 
-			inOperator( FilterCallback, inStartIndex + 16 );; 
-			inOperator( KinematicKinematicFilteringMode, inStartIndex + 17 );; 
-			inOperator( StaticKinematicFilteringMode, inStartIndex + 18 );; 
-			inOperator( Gravity, inStartIndex + 19 );; 
-			inOperator( BounceThresholdVelocity, inStartIndex + 20 );; 
-			inOperator( CCDMaxPasses, inStartIndex + 21 );; 
-			inOperator( CCDMaxSeparation, inStartIndex + 22 );; 
-			inOperator( CCDThreshold, inStartIndex + 23 );; 
-			inOperator( MaxBiasCoefficient, inStartIndex + 24 );; 
-			inOperator( FrictionOffsetThreshold, inStartIndex + 25 );; 
-			inOperator( FrictionCorrelationDistance, inStartIndex + 26 );; 
-			inOperator( FrictionType, inStartIndex + 27 );; 
-			inOperator( SolverType, inStartIndex + 28 );; 
-			inOperator( VisualizationCullingBox, inStartIndex + 29 );; 
-			inOperator( BroadPhaseType, inStartIndex + 30 );; 
-			inOperator( BroadPhaseRegions, inStartIndex + 31 );; 
-			inOperator( TaskManager, inStartIndex + 32 );; 
-			inOperator( NbContactDataBlocks, inStartIndex + 33 );; 
-			inOperator( MaxNbContactDataBlocksUsed, inStartIndex + 34 );; 
-			inOperator( ContactReportStreamBufferSize, inStartIndex + 35 );; 
-			inOperator( SolverBatchSize, inStartIndex + 36 );; 
-			inOperator( SolverArticulationBatchSize, inStartIndex + 37 );; 
-			inOperator( WakeCounterResetValue, inStartIndex + 38 );; 
-			inOperator( GpuDynamicsConfig, inStartIndex + 39 );; 
-			inOperator( UserData, inStartIndex + 40 );; 
-			inOperator( SimulationStatistics, inStartIndex + 41 );; 
-			return 42 + inStartIndex;
+			inOperator( Name, inStartIndex + 3 );; 
+			inOperator( Actors, inStartIndex + 4 );; 
+			inOperator( SoftBodies, inStartIndex + 5 );; 
+			inOperator( Articulations, inStartIndex + 6 );; 
+			inOperator( Constraints, inStartIndex + 7 );; 
+			inOperator( Aggregates, inStartIndex + 8 );; 
+			inOperator( CpuDispatcher, inStartIndex + 9 );; 
+			inOperator( CudaContextManager, inStartIndex + 10 );; 
+			inOperator( SimulationEventCallback, inStartIndex + 11 );; 
+			inOperator( ContactModifyCallback, inStartIndex + 12 );; 
+			inOperator( CCDContactModifyCallback, inStartIndex + 13 );; 
+			inOperator( BroadPhaseCallback, inStartIndex + 14 );; 
+			inOperator( FilterShaderDataSize, inStartIndex + 15 );; 
+			inOperator( FilterShader, inStartIndex + 16 );; 
+			inOperator( FilterCallback, inStartIndex + 17 );; 
+			inOperator( KinematicKinematicFilteringMode, inStartIndex + 18 );; 
+			inOperator( StaticKinematicFilteringMode, inStartIndex + 19 );; 
+			inOperator( Gravity, inStartIndex + 20 );; 
+			inOperator( BounceThresholdVelocity, inStartIndex + 21 );; 
+			inOperator( CCDMaxPasses, inStartIndex + 22 );; 
+			inOperator( CCDMaxSeparation, inStartIndex + 23 );; 
+			inOperator( CCDThreshold, inStartIndex + 24 );; 
+			inOperator( MaxBiasCoefficient, inStartIndex + 25 );; 
+			inOperator( FrictionOffsetThreshold, inStartIndex + 26 );; 
+			inOperator( FrictionCorrelationDistance, inStartIndex + 27 );; 
+			inOperator( FrictionType, inStartIndex + 28 );; 
+			inOperator( SolverType, inStartIndex + 29 );; 
+			inOperator( VisualizationCullingBox, inStartIndex + 30 );; 
+			inOperator( BroadPhaseType, inStartIndex + 31 );; 
+			inOperator( BroadPhaseRegions, inStartIndex + 32 );; 
+			inOperator( TaskManager, inStartIndex + 33 );; 
+			inOperator( NbContactDataBlocks, inStartIndex + 34 );; 
+			inOperator( MaxNbContactDataBlocksUsed, inStartIndex + 35 );; 
+			inOperator( ContactReportStreamBufferSize, inStartIndex + 36 );; 
+			inOperator( SolverBatchSize, inStartIndex + 37 );; 
+			inOperator( SolverArticulationBatchSize, inStartIndex + 38 );; 
+			inOperator( WakeCounterResetValue, inStartIndex + 39 );; 
+			inOperator( GpuDynamicsConfig, inStartIndex + 40 );; 
+			inOperator( UserData, inStartIndex + 41 );; 
+			inOperator( SimulationStatistics, inStartIndex + 42 );; 
+			return 43 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxScene>
@@ -3033,6 +3024,16 @@ template<> struct PxEnumTraits< physx::PxHeightFieldFlag::Enum > { PxEnumTraits(
 		const PxArticulationLimitGeneratedInfo* getInfo() { return &Info; }
 	};
 
+	static PxU32ToName g_physx__PxArticulationDriveType__EnumConversion[] = {
+		{ "eFORCE", static_cast<PxU32>( physx::PxArticulationDriveType::eFORCE ) },
+		{ "eACCELERATION", static_cast<PxU32>( physx::PxArticulationDriveType::eACCELERATION ) },
+		{ "eTARGET", static_cast<PxU32>( physx::PxArticulationDriveType::eTARGET ) },
+		{ "eVELOCITY", static_cast<PxU32>( physx::PxArticulationDriveType::eVELOCITY ) },
+		{ "eNONE", static_cast<PxU32>( physx::PxArticulationDriveType::eNONE ) },
+		{ NULL, 0 }
+	};
+
+template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxArticulationDriveType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	struct PxArticulationDrive;
 	struct PxArticulationDriveGeneratedValues
 	{

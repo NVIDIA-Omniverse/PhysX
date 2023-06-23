@@ -152,7 +152,7 @@ public:
 	PersistentContactManifold(PersistentContact* contactPointsBuff, PxU8 capacity): mNumContacts(0), mCapacity(capacity), mNumWarmStartPoints(0), mContactPoints(contactPointsBuff)
 	{
 		using namespace physx::aos;
-		mRelativeTransform.Invalidate();
+		mRelativeTransform.invalidate();
 		mQuatA = QuatIdentity();
 		mQuatB = QuatIdentity();
 	}
@@ -322,7 +322,7 @@ public:
 	{
 		mNumWarmStartPoints = 0;
 		mNumContacts = 0;
-		mRelativeTransform.Invalidate();
+		mRelativeTransform.invalidate();
 	}
 
 	PX_FORCE_INLINE void initialize()
@@ -533,7 +533,7 @@ class PX_PHYSX_COMMON_API MultiplePersistentContactManifold
 public:
 	MultiplePersistentContactManifold():mNumManifolds(0), mNumTotalContacts(0)
 	{
-		mRelativeTransform.Invalidate();
+		mRelativeTransform.invalidate();
 	}
 
 	PX_FORCE_INLINE void setRelativeTransform(const aos::PxTransformV& transform)
@@ -697,7 +697,7 @@ public:
 	{
 		mNumManifolds = 0;
 		mNumTotalContacts = 0;
-		mRelativeTransform.Invalidate();
+		mRelativeTransform.invalidate();
 		for(PxU8 i=0; i<GU_MAX_MANIFOLD_SIZE; ++i)
 		{
 			mManifolds[i].initialize();
@@ -713,7 +713,7 @@ public:
 		}
 		mNumManifolds = 0;
 		mNumTotalContacts = 0;
-		mRelativeTransform.Invalidate();
+		mRelativeTransform.invalidate();
 	}
 
 	PX_FORCE_INLINE SinglePersistentContactManifold* getManifold(const PxU32 index)
@@ -802,7 +802,7 @@ PX_FORCE_INLINE aos::Vec3V PersistentContactManifold::getLocalNormal()
 PX_FORCE_INLINE void PersistentContactManifold::refreshContactPoints(const aos::PxMatTransformV& aToB, const aos::FloatVArg projectBreakingThreshold, const aos::FloatVArg /*contactOffset*/)
 {
 	using namespace aos;
-	const FloatV sqProjectBreakingThreshold =  FMul(projectBreakingThreshold, projectBreakingThreshold); 
+	const FloatV sqProjectBreakingThreshold = FMul(projectBreakingThreshold, projectBreakingThreshold); 
 
 	// first refresh worldspace positions and distance
 	for (PxU32 i=mNumContacts; i > 0; --i)

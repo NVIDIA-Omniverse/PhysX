@@ -52,9 +52,9 @@ PX_FORCE_INLINE PxVec3 computeSafeSqrtInertia(const PxVec3& v)
 					v.z == 0.0f ? 0.0f : PxSqrt(v.z));
 }
 
-void copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angularVelocity, const PxReal invMass, const PxVec3& invInertia, const PxTransform& globalPose,
-	const PxReal maxDepenetrationVelocity, const PxReal maxContactImpulse, const PxU32 nodeIndex, const PxReal reportThreshold, PxSolverBodyData& solverBodyData, PxU32 lockFlags,
-	const PxReal dt, bool gyroscopicForces);
+void copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angularVelocity, PxReal invMass, const PxVec3& invInertia, const PxTransform& globalPose,
+	PxReal maxDepenetrationVelocity, PxReal maxContactImpulse, PxU32 nodeIndex, PxReal reportThreshold, PxSolverBodyData& solverBodyData, PxU32 lockFlags,
+	PxReal dt, bool gyroscopicForces);
 
 // PT: TODO: using PxsBodyCore in the interface makes us write less data to the stack for passing arguments, and we can take advantage of the class layout
 // (we know what is aligned or not, we know if it is safe to V4Load vectors, etc). Note that this is what we previously had, which is why PxsBodyCore was still

@@ -42,16 +42,7 @@ namespace Ext
 {
 	struct PrismaticJointData : public JointData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		PxJointLinearLimitPair	limit;
-		PxReal					projectionLinearTolerance;
-		PxReal					projectionAngularTolerance;
 
 		PxPrismaticJointFlags	jointFlags;
 
@@ -63,12 +54,6 @@ namespace Ext
    
 	class PrismaticJoint : public PrismaticJointT
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 // PX_SERIALIZATION
 										PrismaticJoint(PxBaseFlags baseFlags) : PrismaticJointT(baseFlags) {}
@@ -85,10 +70,6 @@ namespace Ext
 		virtual	void					setPrismaticJointFlags(PxPrismaticJointFlags flags)	PX_OVERRIDE;
 		virtual	void					setPrismaticJointFlag(PxPrismaticJointFlag::Enum flag, bool value)	PX_OVERRIDE;
 		virtual	PxPrismaticJointFlags	getPrismaticJointFlags()	const	PX_OVERRIDE;
-		virtual	void					setProjectionLinearTolerance(PxReal tolerance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionLinearTolerance()	const	PX_OVERRIDE;
-		virtual	void					setProjectionAngularTolerance(PxReal tolerance)	PX_OVERRIDE;
-		virtual	PxReal					getProjectionAngularTolerance()	const	PX_OVERRIDE;
 		//~PxPrismaticJoint
 
 		// PxConstraintConnector

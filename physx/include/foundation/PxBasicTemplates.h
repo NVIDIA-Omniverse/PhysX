@@ -68,28 +68,26 @@ namespace physx
 	public:
 		F first;
 		S second;
-		PX_CUDA_CALLABLE PxPair() : first(F()), second(S())
+		PX_CUDA_CALLABLE PX_INLINE PxPair() : first(F()), second(S())
 		{
 		}
-		PX_CUDA_CALLABLE PxPair(const F& f, const S& s) : first(f), second(s)
+		PX_CUDA_CALLABLE PX_INLINE PxPair(const F& f, const S& s) : first(f), second(s)
 		{
 		}
-		PX_CUDA_CALLABLE PxPair(const PxPair& p) : first(p.first), second(p.second)
+		PX_CUDA_CALLABLE PX_INLINE PxPair(const PxPair& p) : first(p.first), second(p.second)
 		{
 		}
-		// CN - fix for /.../PxBasicTemplates.h(61) : warning C4512: 'physx::PxPair<F,S>' : assignment operator could
-		// not be generated
-		PX_CUDA_CALLABLE PxPair& operator=(const PxPair& p)
+		PX_CUDA_CALLABLE PX_INLINE PxPair& operator=(const PxPair& p)
 		{
 			first = p.first;
 			second = p.second;
 			return *this;
 		}
-		PX_CUDA_CALLABLE bool operator==(const PxPair& p) const
+		PX_CUDA_CALLABLE PX_INLINE bool operator==(const PxPair& p) const
 		{
 			return first == p.first && second == p.second;
 		}
-		PX_CUDA_CALLABLE bool operator<(const PxPair& p) const
+		PX_CUDA_CALLABLE PX_INLINE bool operator<(const PxPair& p) const
 		{
 			if (first < p.first)
 				return true;

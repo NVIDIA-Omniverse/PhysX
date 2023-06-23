@@ -29,6 +29,8 @@
 #ifndef SC_PARTICLESYSTEM_CORE_H
 #define SC_PARTICLESYSTEM_CORE_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "PxParticleSystem.h"
 #include "foundation/PxAssert.h"
 #include "ScActorCore.h"
@@ -37,11 +39,8 @@
 #include "DyParticleSystem.h"
 #include "ScParticleSystemShapeCore.h"
 
-
 namespace physx
 {
-
-
 	namespace Sc
 	{
 		class ParticleSystemSim;
@@ -49,21 +48,10 @@ namespace physx
 
 		class ParticleSystemCore : public ActorCore
 		{
-			//= ATTENTION! =====================================================================================
-			// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-			// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-			// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-			// accordingly.
-			//==================================================================================================
-
-			//---------------------------------------------------------------------------------
-			// Construction, destruction & initialization
-			//---------------------------------------------------------------------------------
-
 			// PX_SERIALIZATION
 		public:
 			ParticleSystemCore(const PxEMPTY) : ActorCore(PxEmpty) {}
-			static		void							getBinaryMetaData(PxOutputStream& stream);
+			static		void			getBinaryMetaData(PxOutputStream& stream);
 			//~PX_SERIALIZATION
 			ParticleSystemCore(PxActorType::Enum actorType);
 			~ParticleSystemCore();
@@ -98,9 +86,6 @@ namespace physx
 
 			PxParticleSystemCallback*	getParticleSystemCallback() const;
 			void						setParticleSystemCallback(PxParticleSystemCallback* callback);
-
-			PxCustomParticleSystemSolverCallback*	getParticleSystemSolverCallback() const;
-			void						setParticleSystemSolverCallback(PxCustomParticleSystemSolverCallback* callback);
 			
 			PxReal						getFluidBoundaryDensityScale() const;
 			void						setFluidBoundaryDensityScale(const PxReal v);
@@ -116,7 +101,6 @@ namespace physx
 
 			PxU16						getSolverIterationCounts() const { return mShapeCore.getLLCore().solverIterationCounts; }
 			void						setSolverIterationCounts(PxU16 c);
-
 
 			PxReal						getWakeCounter() const;
 			void						setWakeCounter(const PxReal v);
@@ -158,10 +142,6 @@ namespace physx
 
 			void						removeRigidAttachment(Sc::BodyCore* core);
 
-			void						setPeriodicBoundary(const PxVec3& boundary) { mShapeCore.setPeriodicBoundary(boundary); }
-
-			PxVec3						getPeriodicBoundary() const { return mShapeCore.getPeriodicBoundary(); }
-
 			//---------------------------------------------------------------------------------
 			// Internal API
 			//---------------------------------------------------------------------------------
@@ -176,11 +156,10 @@ namespace physx
 		private:
 			//ParticleSystemSim*						mSim;
 			ParticleSystemShapeCore					mShapeCore;
-			
 		};
 
 	} // namespace Sc
-
 }
+#endif
 
 #endif

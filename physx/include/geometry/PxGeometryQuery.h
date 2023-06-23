@@ -85,21 +85,8 @@ public:
 	PX_PHYSX_COMMON_API static PxU32 raycast(	const PxVec3& origin, const PxVec3& unitDir,
 												const PxGeometry& geom, const PxTransform& pose,
 												PxReal maxDist, PxHitFlags hitFlags,
-												PxU32 maxHits, PxGeomRaycastHit* PX_RESTRICT rayHits, PxU32 stride, PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT,
+												PxU32 maxHits, PxGeomRaycastHit* PX_RESTRICT rayHits, PxU32 stride = sizeof(PxGeomRaycastHit), PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT,
 												PxRaycastThreadContext* threadContext = NULL);
-
-	/**
-	 * @brief Backward compatibility helper
-	 * @deprecated
-	 */
-	template<class HitT>
-	PX_DEPRECATED PX_FORCE_INLINE static PxU32 raycast(	const PxVec3& origin, const PxVec3& unitDir,
-														const PxGeometry& geom, const PxTransform& pose,
-														PxReal maxDist, PxHitFlags hitFlags,
-														PxU32 maxHits, HitT* PX_RESTRICT rayHits)
-	{
-		return raycast(origin, unitDir, geom, pose, maxDist, hitFlags, maxHits, rayHits, sizeof(HitT));
-	}
 
 	/**
 	\brief Overlap test for two geometry objects.
@@ -229,19 +216,6 @@ public:
 	@see PxGeometry PxTransform
 	*/
 	PX_PHYSX_COMMON_API static void	computeGeomBounds(PxBounds3& bounds, const PxGeometry& geom, const PxTransform& pose, float offset=0.0f, float inflation=1.0f, PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT);
-
-	/**
-	\brief get the bounds for a geometry object
-
-	\param[in] geom			The geometry object
-	\param[in] pose			Pose of the geometry object
-	\param[in] inflation	Scale factor for computed world bounds. Box extents are multiplied by this value.
-	\return The bounds of the object
-
-	@see PxGeometry PxTransform
-	@deprecated
-	*/
-	PX_DEPRECATED PX_PHYSX_COMMON_API static PxBounds3 getWorldBounds(const PxGeometry& geom, const PxTransform& pose, float inflation=1.01f);
 
 	/**
 	\brief Generate collision contacts between a convex geometry and a single triangle

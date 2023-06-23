@@ -91,7 +91,7 @@ bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::closeFile()
 	return true;
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::writeBytes(const uint8_t *bytes, const uint64_t nbrBytes)
+uint64_t OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::writeBytes(const uint8_t *bytes, uint64_t nbrBytes)
 {
 	size_t result = 0;
 	if (mFileWasOpened)

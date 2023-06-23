@@ -110,6 +110,7 @@ namespace physx
 		return mCore.getFlags();
 	}
 
+#if 0 // disabled until future use.
 	void NpFEMCloth::setDrag(const PxReal drag)
 	{
 		NpScene* npScene = getNpScene();
@@ -174,6 +175,23 @@ namespace physx
 		return mCore.getAirDensity(); 
 	}
 
+	void NpFEMCloth::setBendingActivationAngle(const PxReal angle)
+	{
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
+
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxFEMCloth::setBendingActivationAngle() not allowed while simulation is running. Call will be ignored.")
+
+			mCore.setBendingActivationAngle(angle);
+		UPDATE_PVD_PROPERTY
+	}
+
+	PxReal NpFEMCloth::getBendingActivationAngle() const
+	{
+		return mCore.getBendingActivationAngle();
+	}
+#endif
+
 	void NpFEMCloth::setParameter(const PxFEMParameters& paramters)
 	{
 		NpScene* npScene = getNpScene();
@@ -189,25 +207,6 @@ namespace physx
 	{
 		NP_READ_CHECK(getNpScene());
 		return mCore.getParameter();
-	}
-
-	void NpFEMCloth::setRestVolumeScale(const PxReal scale) 
-	{
-		// todo: pressure should be mutable during simulation.
-	    NpScene* npScene = getNpScene();
-	    NP_WRITE_CHECK(npScene);
-
-	    PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxFEMCloth::setPressure() not allowed while simulation is running. Call will be ignored.")
-
-	    mCore.setRestVolumeScale(scale);
-	    UPDATE_PVD_PROPERTY
-	}
-
-	PxReal NpFEMCloth::getRestVolumeScale() const 
-	{
-		// todo: is read lock necessary?
-	    NP_READ_CHECK(getNpScene());
-	    return mCore.getRestVolumeScale();
 	}
 
 	void NpFEMCloth::setBendingScales(const PxReal* const bendingScales, PxU32 nbElements)
@@ -249,20 +248,20 @@ namespace physx
 		return mCore.getMaxVelocity(); 
 	}
 
-	void NpFEMCloth::setBendingActivationAngle(const PxReal angle) 
-	{ 
-	    NpScene* npScene = getNpScene();
-	    NP_WRITE_CHECK(npScene);
+	void NpFEMCloth::setMaxDepenetrationVelocity(const PxReal v)
+	{
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
 
-	    PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxFEMCloth::setBendingActivationAngle() not allowed while simulation is running. Call will be ignored.")
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxFEMCloth::setMaxDepenetrationVelocity() not allowed while simulation is running. Call will be ignored.")
 
-	    mCore.setBendingActivationAngle(angle);
-	    UPDATE_PVD_PROPERTY
+		mCore.setMaxDepenetrationVelocity(v);
+		UPDATE_PVD_PROPERTY
 	}
 
-    PxReal NpFEMCloth::getBendingActivationAngle() const 
-	{ 
-		return mCore.getBendingActivationAngle(); 
+	PxReal NpFEMCloth::getMaxDepenetrationVelocity() const
+	{
+		return mCore.getMaxDepenetrationVelocity();
 	}
 
 	void NpFEMCloth::setNbCollisionPairUpdatesPerTimestep(const PxU32 frequency)
@@ -297,64 +296,36 @@ namespace physx
 		return mCore.getNbCollisionSubsteps();
 	}
 
-	PxBuffer* NpFEMCloth::getBufferFromFlag(PxFEMClothData::Enum flags)
+	PxVec4* NpFEMCloth::getPositionInvMassBufferD()
 	{
-		PxBuffer* buf = NULL;
+		PX_CHECK_AND_RETURN_NULL(mShape != NULL, " NpFEMCloth::getPositionInvMassBufferD: FEM cloth does not have a shape, attach shape first.");
+
 		Dy::FEMClothCore& core = mCore.getCore();
-		PX_UNUSED(core);
-		switch (flags)
-		{
-		case PxFEMClothData::ePOSITION_INVMASS:
-			buf = core.mClothPositionInvMass;
-			break;
-		case PxFEMClothData::eVELOCITY:
-			buf = core.mClothVelocity;
-			break;
-		case PxFEMClothData::eREST_POSITION:
-			buf = core.mClothRestPosition;
-			break;
-		case PxFEMClothData::eNONE:
-		case PxFEMClothData::eALL:
-		default:
-			PX_ASSERT(0);
-		}
-		return buf;
+		return core.mPositionInvMass;
 	}
 
-
-
-	void NpFEMCloth::readData(PxFEMClothData::Enum flags, PxBuffer& buffer)
+	PxVec4* NpFEMCloth::getVelocityBufferD()
 	{
-		PxBuffer* targetBuffer = getBufferFromFlag(flags);
-		if (!targetBuffer)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxFEMCloth::readData, source buffer hasn't been allocated.");
-			return;
-		}
+		PX_CHECK_AND_RETURN_NULL(mShape != NULL, " NpFEMCloth::getVelocityBufferD: FEM cloth does not have a shape, attach shape first.");
 
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-		PX_ASSERT(physxGpu);
-		physxGpu->addCopyCommand(buffer, *targetBuffer, false);
+		Dy::FEMClothCore& core = mCore.getCore();
+		return core.mVelocity;
 	}
 
-
-	void NpFEMCloth::writeData(PxFEMClothData::Enum flags, PxBuffer& buffer, bool flush)
+	PxVec4* NpFEMCloth::getRestPositionBufferD()
 	{
-		NpScene* npScene = getNpScene();
-		NP_WRITE_CHECK(npScene);
+		PX_CHECK_AND_RETURN_NULL(mShape != NULL, " NpFEMCloth::getRestPositionBufferD: FEM cloth does not have a shape, attach shape first.");
+		
+		Dy::FEMClothCore& core = mCore.getCore();
+		return core.mRestPosition;
+	}
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxFEMCloth::writeData() not allowed while simulation is running. Call will be ignored.")
+	void NpFEMCloth::markDirty(PxFEMClothDataFlags flags)
+	{
+		NP_WRITE_CHECK(getNpScene());
 
-		PxBuffer* targetBuffer = getBufferFromFlag(flags);
-		if (!targetBuffer)
-		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "NpFEMCloth::writeData, target buffer hasn't been allocated.");
-			return;
-		}
-
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-		PX_ASSERT(physxGpu);
-		physxGpu->addCopyCommand(*targetBuffer, buffer, flush);
+		Dy::FEMClothCore& core = mCore.getCore();
+		core.mDirtyFlags |= flags;
 	}
 
 	PxCudaContextManager* NpFEMCloth::getCudaContextManager() const
@@ -403,10 +374,16 @@ namespace physx
 		PX_CHECK_AND_RETURN_NULL(npShape->getGeometryTypeFast() == PxGeometryType::eTRIANGLEMESH, "NpFEMCloth::attachShape: Geometry type must be triangle mesh geometry");
 		PX_CHECK_AND_RETURN_NULL(mShape == NULL, "NpFEMCloth::attachShape: FEM-cloth can just have one shape");
 		PX_CHECK_AND_RETURN_NULL(shape.isExclusive(), "NpFEMCloth::attachShape: shape must be exclusive");
-#if PX_CHECK
-		PxTriangleMeshGeometry geom;
-		npShape->getTriangleMeshGeometry(geom);
+
+		Dy::FEMClothCore& core = mCore.getCore();
+		PX_CHECK_AND_RETURN_NULL(core.mPositionInvMass == NULL, "NpFEMCloth::attachShape: mPositionInvMass already exists, overwrite not allowed, call detachShape first");
+		PX_CHECK_AND_RETURN_NULL(core.mVelocity == NULL, "NpFEMCloth::attachShape: mClothVelocity already exists, overwrite not allowed, call detachShape first");
+		PX_CHECK_AND_RETURN_NULL(core.mRestPosition == NULL, "NpFEMCloth::attachShape: mClothRestPosition already exists, overwrite not allowed, call detachShape first");
+
+		const PxTriangleMeshGeometry& geom = static_cast<const PxTriangleMeshGeometry&>(npShape->getGeometry());
 		Gu::TriangleMesh* guMesh = static_cast<Gu::TriangleMesh*>(geom.triangleMesh);
+
+#if PX_CHECKED
 		const PxU32 triangleReference = guMesh->getNbTriangleReferences();
 		PX_CHECK_AND_RETURN_NULL(triangleReference > 0, "NpFEMCloth::attachShape: cloth triangle mesh has cooked with eENABLE_VERT_MAPPING");
 #endif		
@@ -418,25 +395,13 @@ namespace physx
 
 		updateMaterials();
 
+		const PxU32 numVerts = guMesh->getNbVerticesFast();
+
+		core.mPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+		core.mVelocity = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+		core.mRestPosition = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+
 		return true;
-	}
-
-	void NpFEMCloth::setClothCore(const PxVec4* const  positionInvMasses, const  PxVec4* const velocityInvMasses)
-	{
-		PX_UNUSED(positionInvMasses);
-		PX_UNUSED(velocityInvMasses);
-
-		const PxTriangleMeshGeometry& triangleGeometry = static_cast<const PxTriangleMeshGeometry&>(mShape->getGeometry());
-		Gu::TriangleMesh* triangleMesh = static_cast<Gu::TriangleMesh*>(triangleGeometry.triangleMesh);
-		const PxU32 numVerts = triangleMesh->getNbVerticesFast();
-
-		PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-
-		Dy::FEMClothCore& core = mCore.getCore();
-
-		core.mClothPositionInvMass = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mClothVelocity = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
-		core.mClothRestPosition = physxGpu->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eDEVICE, mCudaContextManager, &mCore.getGpuMemStat());
 	}
 	
 	void NpFEMCloth::addRigidFilter(PxRigidActor* actor, PxU32 vertId)
@@ -465,11 +430,12 @@ namespace physx
 		mCore.removeRigidFilter(core, vertId);
 	}
 
-	PxU32 NpFEMCloth::addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* params)
+	PxU32 NpFEMCloth::addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpFEMCloth::addRigidAttachment: cloth must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "NpFEMCloth::addRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpFEMCloth::addRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpFEMCloth::addRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
@@ -482,7 +448,7 @@ namespace physx
 			aPose = stat->getGlobalPose().transform(aPose);
 		}
 
-		return mCore.addRigidAttachment(core, vertId, aPose, params);
+		return mCore.addRigidAttachment(core, vertId, aPose, constraint);
 	}
 
 	void NpFEMCloth::removeRigidAttachment(PxRigidActor* actor, PxU32 handle)
@@ -529,6 +495,7 @@ namespace physx
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "NpFEMCloth::addTriRigidAttachment: cloth must be inserted into the scene.", 0xFFFFFFFF);
 		PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "NpFEMCloth::addTriRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
+		PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "NpFEMCloth::addTriRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "NpFEMCloth::addTriRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
 
@@ -617,6 +584,26 @@ namespace physx
 
 	void NpFEMCloth::detachShape()
 	{
+		Dy::FEMClothCore& core = mCore.getCore();
+
+		if (core.mPositionInvMass)
+		{
+			PX_DEVICE_FREE(mCudaContextManager, core.mPositionInvMass);
+			core.mPositionInvMass = NULL;
+		}
+
+		if (core.mVelocity)
+		{
+			PX_DEVICE_FREE(mCudaContextManager, core.mVelocity);
+			core.mVelocity = NULL;
+		}
+
+		if (core.mRestPosition)
+		{
+			PX_DEVICE_FREE(mCudaContextManager, core.mRestPosition);
+			core.mRestPosition = NULL;
+		}
+
 		if (mShape)
 			mShape->onActorDetach();
 		mShape = NULL;

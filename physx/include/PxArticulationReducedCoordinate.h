@@ -109,6 +109,7 @@ namespace physx
 			jointSolverForces	(NULL),
 			linkVelocity		(NULL),
 			linkAcceleration	(NULL),
+			linkIncomingJointForce(NULL),
 			rootLinkData		(NULL),
 			sensorForces		(NULL),
 			coefficientMatrix	(NULL),
@@ -206,6 +207,8 @@ namespace physx
 		PxReal*						jointForce;
 
 		/**
+		@deprecated Use linkIncomingJointForce instead.
+		
 		\brief Solver constraint joint DOF forces.
 
 		- N = getDofs().
@@ -213,7 +216,7 @@ namespace physx
 		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
 		- Raise PxArticulationFlag::eCOMPUTE_JOINT_FORCES to enable reading the solver forces.
 		*/
-		PxReal*						jointSolverForces;
+		PX_DEPRECATED PxReal*		jointSolverForces;
 
 		/**
 		\brief Link spatial velocity.
@@ -240,6 +243,18 @@ namespace physx
 		PxSpatialVelocity*			linkAcceleration;
 
 		/**
+		\brief Link incoming joint force, i.e. the total force transmitted from the parent link to this link.
+
+		- N = getNbLinks().
+		- Read using PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE.
+		- The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.
+		- The force is reported in the child joint frame of the link's incoming joint.
+
+		@see PxArticulationJointReducedCoordinate::getChildPose
+		*/
+		PxSpatialForce*			linkIncomingJointForce;
+		
+		/**
 		\brief Root link transform, velocities, and accelerations.
 
 		- N = 1.
@@ -250,6 +265,8 @@ namespace physx
 		PxArticulationRootLinkData*	rootLinkData;
 
 		/**
+		@deprecated
+
 		\brief Link sensor spatial forces.
 
 		- N = getNbSensors().
@@ -258,7 +275,7 @@ namespace physx
 
 		@see PxArticulationSensor
 		*/
-		PxSpatialForce*				sensorForces;
+		PX_DEPRECATED PxSpatialForce*	sensorForces;
 
 		// Members and memory below here are not zeroed when zeroCache is called, and are not included in the size returned by PxArticulationReducedCoordinate::getCacheDataSize.
 
@@ -288,11 +305,13 @@ namespace physx
 	};
 
 	/**
+	@deprecated
+
 	\brief Flags to configure the forces reported by articulation link sensors.
 
 	@see PxArticulationSensor::setFlag
 	*/
-	struct PxArticulationSensorFlag
+	struct PX_DEPRECATED PxArticulationSensorFlag
 	{
 		enum Enum
 		{
@@ -302,14 +321,16 @@ namespace physx
 		};
 	};
 
-	typedef physx::PxFlags<PxArticulationSensorFlag::Enum, PxU8> PxArticulationSensorFlags;
+	typedef PX_DEPRECATED physx::PxFlags<PxArticulationSensorFlag::Enum, PxU8> PxArticulationSensorFlags;
 
 	/**
+	@deprecated
+
 	\brief A force sensor that can be attached to articulation links to measure spatial force.
 
 	@see PxArticulationReducedCoordinate::createSensor
 	*/
-	class PxArticulationSensor : public PxBase
+	class PX_DEPRECATED PxArticulationSensor : public PxBase
 	{
 	public:
 		/**
@@ -471,9 +492,9 @@ namespace physx
 		If intersecting bodies are being depenetrated too violently, increase the number of velocity
 		iterations. More velocity iterations will drive the relative exit velocity of the intersecting
 		objects closer to the correct value given the restitution.
-
-		\param[in] minPositionIters Number of position iterations the solver should perform for this articulation. <b>Range:</b> [1,255]
-		\param[in] minVelocityIters Number of velocity iterations the solver should perform for this articulation. <b>Range:</b> [1,255]
+		
+		\param[in] minPositionIters Number of position iterations the solver should perform for this articulation. <b>Range:</b> [1,255]. <b>Default:</b> 4.
+		\param[in] minVelocityIters Number of velocity iterations the solver should perform for this articulation. <b>Range:</b> [0,255]. <b>Default:</b> 1
 
 		\note This call may not be made during simulation.
 
@@ -491,16 +512,16 @@ namespace physx
 		/**
 		\brief Returns true if this articulation is sleeping.
 
-		When an actor does not move for a period of time, it is no longer simulated in order to save time. This state
+		When an actor does not move for a period of time, it is no longer simulated in order to reduce computational cost. This state
 		is called sleeping. However, because the object automatically wakes up when it is either touched by an awake object,
 		or a sleep-affecting property is changed by the user, the entire sleep mechanism should be transparent to the user.
 
 		An articulation can only go to sleep if all links are ready for sleeping. An articulation is guaranteed to be awake
 		if at least one of the following holds:
 
-		\li The wake counter is positive (see #setWakeCounter()).
-		\li The linear or angular velocity of any link is non-zero.
-		\li A non-zero force or torque has been applied to the articulation or any of its links.
+		\li The wake counter of any link in the articulation is positive (see #setWakeCounter()).
+		\li The mass-normalized energy of any link in the articulation is above a threshold (see #setSleepThreshold()).
+		\li A non-zero force or torque has been applied to any joint or link.
 
 		If an articulation is sleeping, the following state is guaranteed:
 
@@ -519,7 +540,7 @@ namespace physx
 		\note This call may only be made on articulations that are in a scene, and may not be made during simulation,
 		except in a split simulation in-between #PxScene::fetchCollision and #PxScene::advance.
 
-		@see wakeUp() putToSleep()  getSleepThreshold()
+		@see wakeUp() putToSleep()  getSleepThreshold() setSleepThreshold()
 		*/
 		virtual		bool				isSleeping() const = 0;
 
@@ -531,6 +552,8 @@ namespace physx
 		\param[in] threshold Energy below which the articulation may go to sleep. <b>Range:</b> [0, PX_MAX_F32)
 
 		\note This call may not be made during simulation.
+
+		<b>Default:</b> 5e-5f * PxTolerancesScale::speed * PxTolerancesScale::speed;
 
 		@see isSleeping() getSleepThreshold() wakeUp() putToSleep()
 		*/
@@ -552,7 +575,7 @@ namespace physx
 
 		This value has no effect if PxSceneFlag::eENABLE_STABILIZATION was not enabled on the PxSceneDesc.
 
-		<b>Default:</b> 0.01 * PxTolerancesScale::speed * PxTolerancesScale::speed
+		<b>Default:</b> 5e-6f * PxTolerancesScale::speed * PxTolerancesScale::speed
 
 		\param[in] threshold Energy below which the articulation may participate in stabilization. <b>Range:</b> [0,inf)
 
@@ -576,9 +599,9 @@ namespace physx
 		/**
 		\brief Sets the wake counter for the articulation in seconds.
 
-		- The wake counter value determines the minimum amount of time until the articulation can be put to sleep.
-		- An articulation will not be put to sleep if the energy is above the specified threshold (see #setSleepThreshold())
-		or if other awake objects are touching it.
+		- The wake counter value specifies a time threshold used to determine whether an articulation may be put to sleep.
+		- The articulation will be put to sleep if all links have experienced a mass-normalised energy less than a threshold for at least
+		a threshold time, as specified by the wake counter.
 		- Passing in a positive value will wake up the articulation automatically.
 
 		<b>Default:</b> 0.4s (which corresponds to 20 frames for a time step of 0.02s)
@@ -605,7 +628,7 @@ namespace physx
 		/**
 		\brief Wakes up the articulation if it is sleeping.
 
-		- The articulation will get woken up and might cause other touching objects to wake up as well during the next simulation step.
+		- The articulation will be woken up and might cause other touching objects to wake up as well during the next simulation step.
 		- This will set the wake counter of the articulation to the value specified in #PxSceneDesc::wakeCounterResetValue.
 
 		\note This call may only be made on articulations that are in a scene, and may not be made during simulation,
@@ -639,7 +662,7 @@ namespace physx
 
 		\note This call may not be made during simulation.
 
-		\param[in]  maxLinearVelocity The maximal linear velocity magnitude. <b>Range:</b> [0, PX_MAX_F32); <b>Default:</b> PX_MAX_F32.
+		\param[in]  maxLinearVelocity The maximal linear velocity magnitude. <b>Range:</b> [0, PX_MAX_F32); <b>Default:</b> 1e+6.
 
 		@see setMaxCOMAngularVelocity, PxRigidBody::setLinearDamping, PxRigidBody::setAngularDamping, PxArticulationJointReducedCoordinate::setMaxJointVelocity
 		*/
@@ -666,7 +689,7 @@ namespace physx
 
 		\note This call may not be made during simulation.
 
-		\param[in]  maxAngularVelocity The maximal angular velocity magnitude. <b>Range:</b> [0, PX_MAX_F32); <b>Default:</b> PX_MAX_F32.
+		\param[in]  maxAngularVelocity The maximal angular velocity magnitude. <b>Range:</b> [0, PX_MAX_F32); <b>Default:</b> 1e+6
 
 		@see setMaxCOMLinearVelocity, PxRigidBody::setLinearDamping, PxRigidBody::setAngularDamping, PxArticulationJointReducedCoordinate::setMaxJointVelocity
 		*/
@@ -692,6 +715,11 @@ namespace physx
 		\note Creating a link is not allowed while the articulation is in a scene. In order to add a link,
 		remove and then re-add the articulation to the scene.
 
+		\note  When the articulation is added to a scene, the root link adopts the specified pose. The pose of the 
+		root link is propagated through the ensemble of links from parent to child after accounting for each child's 
+		inbound joint frames and the joint positions set by  PxArticulationJointReducedCoordinate::setJointPosition().
+		As a consequence, the pose of each non-root link is automatically overwritten when adding the articulation to the scene.
+
 		@see PxArticulationLink
 		*/
 		virtual		PxArticulationLink*	createLink(PxArticulationLink* parent, const PxTransform& pose) = 0;
@@ -702,6 +730,8 @@ namespace physx
 		Attached sensors and tendons are released automatically when the articulation is released.
 
 		\note This call may not be made during simulation.
+
+		\note This call does not release any PxArticulationCache instance that has been instantiated using #createCache()
 		*/
 		virtual		void				release() = 0;
 
@@ -739,7 +769,7 @@ namespace physx
 		This is for debugging and is not used by the SDK. The string is not copied by the SDK,
 		only the pointer is stored.
 
-		\param[in] name String to set the articulation's name to.
+		\param[in] name A pointer to a char buffer used to specify the name of the articulation.
 
 		@see getName()
 		*/
@@ -769,9 +799,9 @@ namespace physx
 		virtual		PxBounds3			getWorldBounds(float inflation = 1.01f) const = 0;
 
 		/**
-		\brief Returns the aggregate the articulation might be a part of.
+		\brief Returns the aggregate associated with the articulation.
 
-		\return The aggregate the articulation is a part of, or NULL if the articulation does not belong to an aggregate.
+		\return The aggregate associated with the articulation or NULL if the articulation does not belong to an aggregate.
 
 		@see PxAggregate
 		*/
@@ -803,7 +833,7 @@ namespace physx
 		/**
 		\brief Returns the articulation's flags.
 
-		\return The flags.
+		\return The articulation's flags.
 
 		@see PxArticulationFlag
 		*/
@@ -895,10 +925,12 @@ namespace physx
 		- Indexing into the maximal joint DOF data is via the link's low-level index minus 1 (the root link is not included).
 		- The reduced-coordinate data follows the cache indexing convention, see PxArticulationCache::jointVelocity.
 
-		\param[in]	maximum The maximal-coordinate joint DOF data,	N = (getNbLinks() - 1) * 6
-		\param[out]	reduced	The reduced-coordinate joint DOF data,	N = getDofs()
+		\param[in]	maximum The maximal-coordinate joint DOF data with minimum array length N = (getNbLinks() - 1) * 6
+		\param[out]	reduced	The reduced-coordinate joint DOF data with minimum array length N = getDofs()
 
 		\note The articulation must be in a scene.
+
+		\note This can be used as a helper function to prepare per joint cache data such as PxArticulationCache::jointVelocity.
 
 		@see unpackJointData
 		*/
@@ -910,8 +942,8 @@ namespace physx
 		- Indexing into the maximal joint DOF data is via the link's low-level index minus 1 (the root link is not included).
 		- The reduced-coordinate data follows the cache indexing convention, see PxArticulationCache::jointVelocity.
 
-		\param[in]	reduced	The reduced-coordinate joint DOF data,	N = getDofs().
-		\param[out]	maximum The maximal-coordinate joint DOF data,	N = (getNbLinks() - 1) * 6.
+		\param[in]	reduced	The reduced-coordinate joint DOF data with minimum array length	N = getDofs().
+		\param[out]	maximum The maximal-coordinate joint DOF data with minimum array length	N = (getNbLinks() - 1) * 6.
 
 		\note The articulation must be in a scene.
 
@@ -1142,17 +1174,19 @@ namespace physx
 		virtual		PxU32					getCoefficientMatrixSize() const = 0;
 
 		/**
-		\brief Sets the root link transform (world to actor frame).
+		\brief Sets the root link transform in the world frame.
 
-		- For performance, prefer PxArticulationCache::rootLinkData to set the root link transform in a batch articulation state update.
 		- Use updateKinematic() after all state updates to the articulation via non-cache API such as this method,
 		in order to update link states for the next simulation frame or querying.
 
 		\param[in] pose The new root link transform.
-		\param[in] autowake If true and the articulation is in a scene, the call wakes up the articulation and increases the wake counter
-		to #PxSceneDesc::wakeCounterResetValue if the counter value is below the reset value.
+		\param[in] autowake If true and the articulation is in a scene, the articulation will be woken up and the wake counter of 
+		each link will be reset to #PxSceneDesc::wakeCounterResetValue.
 
 		\note This call may not be made during simulation.
+
+		\note PxArticulationCache::rootLinkData similarly allows the root link pose to be updated and potentially offers better performance 
+		if the root link pose is to be updated along with other state variables. 
 
 		@see getRootGlobalPose, updateKinematic, PxArticulationCache, applyCache
 		*/
@@ -1161,12 +1195,13 @@ namespace physx
 		/**
 		\brief Returns the root link transform (world to actor frame).
 
-		For performance, prefer PxArticulationCache::rootLinkData to get the root link transform in a batch query.
-
 		\return The root link transform.
 
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
+
+		\note PxArticulationCache::rootLinkData similarly allows the root link pose to be queried and potentially offers better performance if the root
+		link pose is to be queried along with other state variables. 
 
 		@see setRootGlobalPose, PxArticulationCache, copyInternalStateToCache
 		*/
@@ -1176,7 +1211,6 @@ namespace physx
 		\brief Sets the root link linear center-of-mass velocity.
 
 		- The linear velocity is with respect to the link's center of mass and not the actor frame origin.
-		- For performance, prefer PxArticulationCache::rootLinkData to set the root link velocity in a batch articulation state update.
 		- The articulation is woken up if the input velocity is nonzero (ignoring autowake) and the articulation is in a scene.
 		- Use updateKinematic() after all state updates to the articulation via non-cache API such as this method,
 		in order to update link states for the next simulation frame or querying.
@@ -1187,6 +1221,9 @@ namespace physx
 
 		\note This call may not be made during simulation, except in a split simulation in-between #PxScene::fetchCollision and #PxScene::advance.
 
+		\note PxArticulationCache::rootLinkData similarly allows the root link linear velocity to be updated and potentially offers better performance 
+		if the root link linear velocity is to be updated along with other state variables. 
+
 		@see updateKinematic, getRootLinearVelocity, setRootAngularVelocity, getRootAngularVelocity, PxRigidBody::getCMassLocalPose, PxArticulationCache, applyCache
 		*/
 		virtual		void					setRootLinearVelocity(const PxVec3& linearVelocity, bool autowake = true) = 0;
@@ -1195,12 +1232,14 @@ namespace physx
 		\brief Gets the root link center-of-mass linear velocity.
 
 		- The linear velocity is with respect to the link's center of mass and not the actor frame origin.
-		- For performance, prefer PxArticulationCache::rootLinkData to get the root link velocity in a batch query.
 
 		\return The root link center-of-mass linear velocity.
 
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
+
+		\note PxArticulationCache::rootLinkData similarly allows the root link linear velocity to be queried and potentially offers better performance 
+		if the root link linear velocity is to be queried along with other state variables. 
 
 		@see setRootLinearVelocity, setRootAngularVelocity, getRootAngularVelocity, PxRigidBody::getCMassLocalPose, PxArticulationCache, applyCache
 		*/
@@ -1209,7 +1248,6 @@ namespace physx
 		/**
 		\brief Sets the root link angular velocity.
 
-		- For performance, prefer PxArticulationCache::rootLinkData to set the root link velocity in a batch articulation state update.
 		- The articulation is woken up if the input velocity is nonzero (ignoring autowake) and the articulation is in a scene.
 		- Use updateKinematic() after all state updates to the articulation via non-cache API such as this method,
 		in order to update link states for the next simulation frame or querying.
@@ -1220,6 +1258,9 @@ namespace physx
 
 		\note This call may not be made during simulation, except in a split simulation in-between #PxScene::fetchCollision and #PxScene::advance.
 
+		\note PxArticulationCache::rootLinkData similarly allows the root link angular velocity to be updated and potentially offers better performance 
+		if the root link angular velocity is to be updated along with other state variables. 
+
 		@see updateKinematic, getRootAngularVelocity, setRootLinearVelocity, getRootLinearVelocity, PxArticulationCache, applyCache
 		*/
 		virtual		void					setRootAngularVelocity(const PxVec3& angularVelocity, bool autowake = true) = 0;
@@ -1227,12 +1268,13 @@ namespace physx
 		/**
 		\brief Gets the root link angular velocity.
 
-		For performance, prefer PxArticulationCache::rootLinkData to get the root link velocity in a batch query.
-
 		\return The root link angular velocity.
 
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
+
+		\note PxArticulationCache::rootLinkData similarly allows the root link angular velocity to be queried and potentially offers better performance 
+		if the root link angular velocity is to be queried along with other state variables. 
 
 		@see setRootAngularVelocity, setRootLinearVelocity, getRootLinearVelocity, PxArticulationCache, applyCache
 		*/
@@ -1248,8 +1290,9 @@ namespace physx
 
 		\return The link's center-of-mass classical acceleration, or 0 if the call is made before the articulation participated in a first simulation step.
 
-		\note This call may only be made on articulations that are in a scene, and it is not allowed to use this method while the simulation
-		is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(), and in PxContactModifyCallback or in contact report callbacks.
+		\note This call may only be made on articulations that are in a scene. It is not allowed to use this method while the simulation
+		is running.  The exceptions to this rule are a split simulation during #PxScene::collide() and up to #PxScene::advance(); 
+		in PxContactModifyCallback; and in contact report callbacks.
 
 		@see PxArticulationLink::getLinkIndex, PxRigidBody::getCMassLocalPose
 		*/
@@ -1258,7 +1301,7 @@ namespace physx
 		/**
 		\brief Returns the GPU articulation index.
 
-		\return The GPU index, or 0xFFFFFFFF if the articulation is not in a scene or PxSceneFlag::eSUPPRESS_READBACK is not set.
+		\return The GPU index, or 0xFFFFFFFF if the articulation is not in a scene or PxSceneFlag::eENABLE_DIRECT_GPU_API is not set.
 		*/
 		virtual		PxU32					getGpuArticulationIndex() = 0;
 
@@ -1269,6 +1312,8 @@ namespace physx
 
 		\note Creating a spatial tendon is not allowed while the articulation is in a scene. In order to
 		add the tendon, remove and then re-add the articulation to the scene.
+
+		\note The spatial tendon is released with PxArticulationReducedCoordinate::release()
 
 		@see PxArticulationSpatialTendon
 		*/
@@ -1282,11 +1327,15 @@ namespace physx
 		\note Creating a fixed tendon is not allowed while the articulation is in a scene. In order to
 		add the tendon, remove and then re-add the articulation to the scene.
 
+		\note The fixed tendon is released with PxArticulationReducedCoordinate::release()
+
 		@see PxArticulationFixedTendon
 		*/
 		virtual		PxArticulationFixedTendon*		createFixedTendon() = 0;
 
 		/**
+		@deprecated
+
 		\brief Creates a force sensor attached to a link of the articulation.
 
 		\param[in] link The link to attach the sensor to.
@@ -1298,9 +1347,11 @@ namespace physx
 		\note Creating a sensor is not allowed while the articulation is in a scene. In order to
 		add the sensor, remove and then re-add the articulation to the scene.
 
+		\note The sensor is released with PxArticulationReducedCoordinate::release()
+
 		@see PxArticulationSensor
 		*/
-		virtual		PxArticulationSensor*	createSensor(PxArticulationLink* link, const PxTransform& relativePose) = 0;
+		virtual	PX_DEPRECATED PxArticulationSensor*	createSensor(PxArticulationLink* link, const PxTransform& relativePose) = 0;
 
 
 		/**
@@ -1350,6 +1401,8 @@ namespace physx
 		virtual		PxU32					getNbFixedTendons() = 0;
 
 		/**
+		@deprecated
+
 		\brief Returns the sensors attached to the articulation.
 
 		The order of the sensors in the buffer is not necessarily identical to the order in which the sensors were added to the articulation.
@@ -1364,19 +1417,21 @@ namespace physx
 		@see PxArticulationSensor, getNbSensors
 		*/
 
-		virtual		PxU32					getSensors(PxArticulationSensor** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const = 0;
+		virtual PX_DEPRECATED PxU32			getSensors(PxArticulationSensor** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const = 0;
 
 		/**
+		@deprecated
+
 		\brief Returns the number of sensors in the articulation.
 
 		\return The number of sensors.
 		*/
-		virtual		PxU32					getNbSensors() = 0;
+		virtual	PX_DEPRECATED PxU32			getNbSensors() = 0;
 
 		/**
 		\brief Update link velocities and/or positions in the articulation.
 
-	    For performance, prefer the PxArticulationCache API that performs batch articulation state updates.
+	    An alternative that potentially offers better performance is to use the PxArticulationCache API.
 
 		If the application updates the root state (position and velocity) or joint state via any combination of
 		the non-cache API calls

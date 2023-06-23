@@ -29,23 +29,23 @@
 #ifndef OMNI_PVD_COMMANDS_H
 #define OMNI_PVD_COMMANDS_H
 
-struct OmniPvdCommandEnum
+struct OmniPvdCommand
 {
 	enum Enum
 	{
-		eOmniPvdInvalid,
-		eOmniPvdRegisterClass,
-		eOmniPvdRegisterEnum,
-		eOmniPvdRegisterAttribute,
-		eOmniPvdRegisterClassAttribute,
-		eOmniPvdRegisterSetAttribute,
-		eOmniPvdSetAttribute,
-		eOmniPvdAddToSetAttribute,
-		eOmniPvdRemoveFromSetAttribute,
-		eOmniPvdCreateObject,
-		eOmniPvdDestroyObject,
-		eOmniPvdStartFrame,
-		eOmniPvdStopFrame
+		eINVALID,
+		eREGISTER_CLASS,
+		eREGISTER_ENUM,
+		eREGISTER_ATTRIBUTE,
+		eREGISTER_CLASS_ATTRIBUTE,
+		eREGISTER_UNIQUE_LIST_ATTRIBUTE,
+		eSET_ATTRIBUTE,
+		eADD_TO_UNIQUE_LIST_ATTRIBUTE,
+		eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTE,
+		eCREATE_OBJECT,
+		eDESTROY_OBJECT,
+		eSTART_FRAME,
+		eSTOP_FRAME
 	};
 };
 

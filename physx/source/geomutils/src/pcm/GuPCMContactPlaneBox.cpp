@@ -157,7 +157,7 @@ bool Gu::pcmContactPlaneBox(GU_CONTACT_METHOD_ARGS)
 		{
 			const FloatV pen = FAdd(s4, px);
 			//(-x, y, z)
-			const Vec3V p =V3Merge(nbx, by, bz);
+			const Vec3V p = V3Merge(nbx, by, bz);
 			manifoldContacts[numContacts].mLocalPointA = p;
 			manifoldContacts[numContacts].mLocalPointB = V3NegScaleSub(localNormal, pen, aToB.transform(p)); 
 			manifoldContacts[numContacts++].mLocalNormalPen = V4SetW(Vec4V_From_Vec3V(localNormal), pen);

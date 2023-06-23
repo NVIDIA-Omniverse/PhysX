@@ -40,9 +40,8 @@ namespace physx
 
 /**
 \brief Identifies input and output buffers for PxFEMCloth.
-@see PxFEMClothData::readData(), PxFEMClothData::writeData(), PxBuffer.
 */
-struct PxFEMClothData
+struct PxFEMClothDataFlag
 {
 	enum Enum
 	{
@@ -54,15 +53,15 @@ struct PxFEMClothData
 	};
 };
 
-typedef PxFlags<PxFEMClothData::Enum, PxU32> PxFEMClothDataFlags;
+typedef PxFlags<PxFEMClothDataFlag::Enum, PxU32> PxFEMClothDataFlags;
 
 struct PxFEMClothFlag
 {
 	enum Enum
 	{
 		eDISABLE_SELF_COLLISION = 1 << 0,
-		eUSE_ISOTROPIC_CLOTH = 1 << 1,          // 0: use anistropic model
-		eUSE_REST_POSITION_FOR_BENDING = 1 << 2 // 0: use zero bending angle
+		eUSE_ANISOTROPIC_CLOTH = 1 << 1,         // 0: use isotropic model, 1: use anistropic model
+		eENABLE_FLATTENING = 1 << 2				 // 0: query rest bending angle from rest shape, 1: use zero rest bending angle
 	};
 };
 

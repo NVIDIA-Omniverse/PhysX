@@ -50,6 +50,7 @@ using namespace physx;
 #pragma warning(push)
 #pragma warning(disable : 4324)
 #endif
+
 class PxsCMUpdateTask : public Cm::Task
 {
 public:
@@ -607,21 +608,6 @@ void PxsNphaseImplementationContext::secondPassUpdateContactManager(PxReal dt, P
 	processContactManagerSecondPass(dt, continuation);		
 }
 
-PxsNphaseImplementationContext* PxsNphaseImplementationContext::create(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator)
-{
-	PxsNphaseImplementationContext* npImplContext = reinterpret_cast<PxsNphaseImplementationContext*>(
-		PX_ALLOC(sizeof(PxsNphaseImplementationContext), "PxsNphaseImplementationContext"));
-
-	if (npImplContext)
-	{
-		//new(npImplContext) PxsNphaseImplementationContext(context, islandSim, allocator);
-
-		npImplContext = PX_PLACEMENT_NEW(npImplContext, PxsNphaseImplementationContext)(context, islandSim, allocator);
-	}
-
-	return npImplContext;
-}
-
 void PxsNphaseImplementationContext::destroy()
 {
 	this->~PxsNphaseImplementationContext();
@@ -673,9 +659,14 @@ void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* c
 	mNewNarrowPhasePairs.mOutputContactManagers.pushBack(output);
 	mNewNarrowPhasePairs.mCaches.pushBack(cache);
 	mNewNarrowPhasePairs.mContactManagerMapping.pushBack(cm);
-	mNewNarrowPhasePairs.mShapeInteractions.pushBack(shapeInteraction);
-	mNewNarrowPhasePairs.mRestDistances.pushBack(cm->getRestDistance());
-	mNewNarrowPhasePairs.mTorsionalProperties.pushBack(PxsTorsionalFrictionData(workUnit.mTorsionalPatchRadius, workUnit.mMinTorsionalPatchRadius));
+
+	if(mGPU)
+	{
+		mNewNarrowPhasePairs.mShapeInteractions.pushBack(shapeInteraction);
+		mNewNarrowPhasePairs.mRestDistances.pushBack(cm->getRestDistance());
+		mNewNarrowPhasePairs.mTorsionalProperties.pushBack(PxsTorsionalFrictionData(workUnit.mTorsionalPatchRadius, workUnit.mMinTorsionalPatchRadius));
+	}
+
 	PxU32 newSz = mNewNarrowPhasePairs.mOutputContactManagers.size();
 	workUnit.mNpIndex = mNewNarrowPhasePairs.computeId(newSz - 1) | PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 }
@@ -729,13 +720,13 @@ void PxsNphaseImplementationContext::refreshContactManager(PxsContactManager* cm
 	if (!(index & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))
 	{
 		output = mNarrowPhasePairs.mOutputContactManagers[PxsContactManagerBase::computeIndexFromId(index)];
-		interaction = mNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index)];
+		interaction = mGPU ? mNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index)] : cm->getShapeInteraction();
 		unregisterAndForceSize(mNarrowPhasePairs, index);
 	}
 	else
 	{
 		output = mNewNarrowPhasePairs.mOutputContactManagers[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))];
-		interaction = mNewNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))];
+		interaction = mGPU ? mNewNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))] : cm->getShapeInteraction();
 		//KS - the index in the "new" list will be the index 
 		unregisterAndForceSize(mNewNarrowPhasePairs, index);
 	}
@@ -775,7 +766,7 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 	if (!(index & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))
 	{
 		output = cmOutputs[PxsContactManagerBase::computeIndexFromId(index)];
-		interaction = mNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))];
+		interaction = mGPU ? mNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))] : cm->getShapeInteraction();
 		//unregisterContactManagerInternal(index, mNarrowPhasePairs, cmOutputs);
 		unregisterContactManagerFallback(cm, cmOutputs);
 	}
@@ -783,7 +774,7 @@ void PxsNphaseImplementationContext::refreshContactManagerFallback(PxsContactMan
 	{
 		//KS - the index in the "new" list will be the index 
 		output = mNewNarrowPhasePairs.mOutputContactManagers[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))];
-		interaction = mNewNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))];
+		interaction = mGPU ? mNewNarrowPhasePairs.mShapeInteractions[PxsContactManagerBase::computeIndexFromId(index & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))] : cm->getShapeInteraction();
 		unregisterAndForceSize(mNewNarrowPhasePairs, index);
 	}
 
@@ -803,7 +794,7 @@ void PxsNphaseImplementationContext::appendContactManagers()
 	//Copy new pairs to end of old pairs. Clear new flag, update npIndex on CM and clear the new pair buffer
 	const PxU32 existingSize = mNarrowPhasePairs.mContactManagerMapping.size();
 	const PxU32 nbToAdd = mNewNarrowPhasePairs.mContactManagerMapping.size();
-	const PxU32 newSize =existingSize + nbToAdd;
+	const PxU32 newSize = existingSize + nbToAdd;
 	
 	if(newSize > mNarrowPhasePairs.mContactManagerMapping.capacity())
 	{
@@ -812,24 +803,33 @@ void PxsNphaseImplementationContext::appendContactManagers()
 		mNarrowPhasePairs.mContactManagerMapping.reserve(newSz);
 		mNarrowPhasePairs.mOutputContactManagers.reserve(newSz);
 		mNarrowPhasePairs.mCaches.reserve(newSz);
-		mNarrowPhasePairs.mShapeInteractions.reserve(newSz);
-		mNarrowPhasePairs.mRestDistances.reserve(newSz);
-		mNarrowPhasePairs.mTorsionalProperties.reserve(newSz);
+		if(mGPU)
+		{
+			mNarrowPhasePairs.mShapeInteractions.reserve(newSz);
+			mNarrowPhasePairs.mRestDistances.reserve(newSz);
+			mNarrowPhasePairs.mTorsionalProperties.reserve(newSz);
+		}
 	}
 
 	mNarrowPhasePairs.mContactManagerMapping.forceSize_Unsafe(newSize);
 	mNarrowPhasePairs.mOutputContactManagers.forceSize_Unsafe(newSize);
 	mNarrowPhasePairs.mCaches.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mShapeInteractions.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mRestDistances.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mTorsionalProperties.forceSize_Unsafe(newSize);
+	if(mGPU)
+	{
+		mNarrowPhasePairs.mShapeInteractions.forceSize_Unsafe(newSize);
+		mNarrowPhasePairs.mRestDistances.forceSize_Unsafe(newSize);
+		mNarrowPhasePairs.mTorsionalProperties.forceSize_Unsafe(newSize);
+	}
 
 	PxMemCopy(mNarrowPhasePairs.mContactManagerMapping.begin() + existingSize, mNewNarrowPhasePairs.mContactManagerMapping.begin(), sizeof(PxsContactManager*)*nbToAdd);
 	PxMemCopy(mNarrowPhasePairs.mOutputContactManagers.begin() + existingSize, mNewNarrowPhasePairs.mOutputContactManagers.begin(), sizeof(PxsContactManagerOutput)*nbToAdd);
 	PxMemCopy(mNarrowPhasePairs.mCaches.begin() + existingSize, mNewNarrowPhasePairs.mCaches.begin(), sizeof(Gu::Cache)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mShapeInteractions.begin() + existingSize, mNewNarrowPhasePairs.mShapeInteractions.begin(), sizeof(Sc::ShapeInteraction*)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mRestDistances.begin() + existingSize, mNewNarrowPhasePairs.mRestDistances.begin(), sizeof(PxReal)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mTorsionalProperties.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalProperties.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
+	if(mGPU)
+	{
+		PxMemCopy(mNarrowPhasePairs.mShapeInteractions.begin() + existingSize, mNewNarrowPhasePairs.mShapeInteractions.begin(), sizeof(Sc::ShapeInteraction*)*nbToAdd);
+		PxMemCopy(mNarrowPhasePairs.mRestDistances.begin() + existingSize, mNewNarrowPhasePairs.mRestDistances.begin(), sizeof(PxReal)*nbToAdd);
+		PxMemCopy(mNarrowPhasePairs.mTorsionalProperties.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalProperties.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
+	}
 
 	PxU32* edgeNodeIndices = mIslandSim->getEdgeNodeIndexPtr();
 
@@ -875,23 +875,32 @@ void PxsNphaseImplementationContext::appendContactManagersFallback(PxsContactMan
 
 		mNarrowPhasePairs.mContactManagerMapping.reserve(newSz);
 		mNarrowPhasePairs.mCaches.reserve(newSz);
-		mNarrowPhasePairs.mShapeInteractions.reserve(newSz);
-		mNarrowPhasePairs.mRestDistances.reserve(newSz);
-		mNarrowPhasePairs.mTorsionalProperties.reserve(newSz);
+		if(mGPU)
+		{
+			mNarrowPhasePairs.mShapeInteractions.reserve(newSz);
+			mNarrowPhasePairs.mRestDistances.reserve(newSz);
+			mNarrowPhasePairs.mTorsionalProperties.reserve(newSz);
+		}
 	}
 
 	mNarrowPhasePairs.mContactManagerMapping.forceSize_Unsafe(newSize);
 	mNarrowPhasePairs.mCaches.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mShapeInteractions.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mRestDistances.forceSize_Unsafe(newSize);
-	mNarrowPhasePairs.mTorsionalProperties.forceSize_Unsafe(newSize);
+	if(mGPU)
+	{
+		mNarrowPhasePairs.mShapeInteractions.forceSize_Unsafe(newSize);
+		mNarrowPhasePairs.mRestDistances.forceSize_Unsafe(newSize);
+		mNarrowPhasePairs.mTorsionalProperties.forceSize_Unsafe(newSize);
+	}
 
 	PxMemCopy(mNarrowPhasePairs.mContactManagerMapping.begin() + existingSize, mNewNarrowPhasePairs.mContactManagerMapping.begin(), sizeof(PxsContactManager*)*nbToAdd);
 	PxMemCopy(cmOutputs + existingSize, mNewNarrowPhasePairs.mOutputContactManagers.begin(), sizeof(PxsContactManagerOutput)*nbToAdd);
 	PxMemCopy(mNarrowPhasePairs.mCaches.begin() + existingSize, mNewNarrowPhasePairs.mCaches.begin(), sizeof(Gu::Cache)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mShapeInteractions.begin() + existingSize, mNewNarrowPhasePairs.mShapeInteractions.begin(), sizeof(Sc::ShapeInteraction*)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mRestDistances.begin() + existingSize, mNewNarrowPhasePairs.mRestDistances.begin(), sizeof(PxReal)*nbToAdd);
-	PxMemCopy(mNarrowPhasePairs.mTorsionalProperties.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalProperties.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
+	if(mGPU)
+	{
+		PxMemCopy(mNarrowPhasePairs.mShapeInteractions.begin() + existingSize, mNewNarrowPhasePairs.mShapeInteractions.begin(), sizeof(Sc::ShapeInteraction*)*nbToAdd);
+		PxMemCopy(mNarrowPhasePairs.mRestDistances.begin() + existingSize, mNewNarrowPhasePairs.mRestDistances.begin(), sizeof(PxReal)*nbToAdd);
+		PxMemCopy(mNarrowPhasePairs.mTorsionalProperties.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalProperties.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
+	}
 
 	PxU32* edgeNodeIndices = mIslandSim->getEdgeNodeIndexPtr();
 
@@ -977,9 +986,12 @@ void PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 	managers.mContactManagerMapping[index] = replaceManager;
 	managers.mCaches[index] = managers.mCaches[replaceIndex];
 	cmOutputs[index] = cmOutputs[replaceIndex];
-	managers.mShapeInteractions[index] = managers.mShapeInteractions[replaceIndex];
-	managers.mRestDistances[index] = managers.mRestDistances[replaceIndex];
-	managers.mTorsionalProperties[index] = managers.mTorsionalProperties[replaceIndex];
+	if(mGPU)
+	{
+		managers.mShapeInteractions[index] = managers.mShapeInteractions[replaceIndex];
+		managers.mRestDistances[index] = managers.mRestDistances[replaceIndex];
+		managers.mTorsionalProperties[index] = managers.mTorsionalProperties[replaceIndex];
+	}
 	managers.mCaches[replaceIndex].reset();
 	
 	PxcNpWorkUnit& replaceUnit = replaceManager->getWorkUnit();
@@ -1001,9 +1013,12 @@ void PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 
 	managers.mContactManagerMapping.forceSize_Unsafe(replaceIndex);
 	managers.mCaches.forceSize_Unsafe(replaceIndex);
-	managers.mShapeInteractions.forceSize_Unsafe(replaceIndex);
-	managers.mRestDistances.forceSize_Unsafe(replaceIndex);
-	managers.mTorsionalProperties.forceSize_Unsafe(replaceIndex);
+	if(mGPU)
+	{
+		managers.mShapeInteractions.forceSize_Unsafe(replaceIndex);
+		managers.mRestDistances.forceSize_Unsafe(replaceIndex);
+		managers.mTorsionalProperties.forceSize_Unsafe(replaceIndex);
+	}
 }
 
 PxsContactManagerOutput& PxsNphaseImplementationContext::getNewContactManagerOutput(PxU32 npId)
@@ -1018,8 +1033,16 @@ PxsContactManagerOutputIterator PxsNphaseImplementationContext::getContactManage
 	return PxsContactManagerOutputIterator(offsets, 1, mNarrowPhasePairs.mOutputContactManagers.begin());
 }
 
-PxvNphaseImplementationContextUsableAsFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator)
+PxvNphaseImplementationContextUsableAsFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics)
 {
-	return PxsNphaseImplementationContext::create(context, islandSim, allocator);
+	// PT: TODO: remove useless placement new
+
+	PxsNphaseImplementationContext* npImplContext = reinterpret_cast<PxsNphaseImplementationContext*>(
+		PX_ALLOC(sizeof(PxsNphaseImplementationContext), "PxsNphaseImplementationContext"));
+
+	if(npImplContext)
+		npImplContext = PX_PLACEMENT_NEW(npImplContext, PxsNphaseImplementationContext)(context, islandSim, allocator, 0, gpuDynamics);
+
+	return npImplContext;
 }
 

@@ -104,8 +104,8 @@ static void createScissorLift()
 	gDriveJoint = static_cast<PxArticulationJointReducedCoordinate*>(rightRoot->getInboundJoint());
 	gDriveJoint->setJointType(PxArticulationJointType::ePRISMATIC);
 	gDriveJoint->setMotion(PxArticulationAxis::eZ, PxArticulationMotion::eLIMITED);
-	gDriveJoint->setLimit(PxArticulationAxis::eZ, -1.4f, 0.2f);
-	gDriveJoint->setDrive(PxArticulationAxis::eZ, 100000.f, 0.f, PX_MAX_F32);
+	gDriveJoint->setLimitParams(PxArticulationAxis::eZ, PxArticulationLimit(-1.4f, 0.2f));
+	gDriveJoint->setDriveParams(PxArticulationAxis::eZ, PxArticulationDrive(100000.f, 0.f, PX_MAX_F32));
 
 	gDriveJoint->setParentPose(PxTransform(PxVec3(0.f, 0.25f, 0.9f)));
 	gDriveJoint->setChildPose(PxTransform(PxVec3(0.f, -0.05f, 0.f)));
@@ -133,7 +133,7 @@ static void createScissorLift()
 		leftParentRot = leftRot;
 
 		joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eLIMITED);
-		joint->setLimit(PxArticulationAxis::eTWIST, -PxPi, angle);
+		joint->setLimitParams(PxArticulationAxis::eTWIST, PxArticulationLimit(-PxPi, angle));
 
 
 		PxArticulationLink* rightLink = gArticulation->createLink(currRight, PxTransform(pos + PxVec3(0.f, sinAng*(2 * i + 1), 0.f), rightRot));
@@ -147,7 +147,7 @@ static void createScissorLift()
 		joint->setParentPose(PxTransform(currRight->getGlobalPose().transformInv(rightAnchorLocation), rightParentRot));
 		joint->setChildPose(PxTransform(PxVec3(0.f, 0.f, 1.f), leftRot));
 		joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eLIMITED);
-		joint->setLimit(PxArticulationAxis::eTWIST, -angle, PxPi);
+		joint->setLimitParams(PxArticulationAxis::eTWIST, PxArticulationLimit(-angle, PxPi));
 
 		rightParentRot = rightRot;
 
@@ -176,14 +176,12 @@ static void createScissorLift()
 	joint->setChildPose(PxTransform(PxVec3(0.5f, 0.f, 0.f), leftTop->getGlobalPose().q.getConjugate()));
 	joint->setJointType(PxArticulationJointType::eREVOLUTE);
 	joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE);
-	//joint->setDrive(PxArticulationAxis::eTWIST, 0.f, 10.f, PX_MAX_F32);
 
 	joint = static_cast<PxArticulationJointReducedCoordinate*>(rightTop->getInboundJoint());
 	joint->setParentPose(PxTransform(PxVec3(0.f, 0.f, 1.f), currRight->getGlobalPose().q.getConjugate()));
 	joint->setChildPose(PxTransform(PxVec3(0.5f, 0.f, 0.f), rightTop->getGlobalPose().q.getConjugate()));
 	joint->setJointType(PxArticulationJointType::eREVOLUTE);
 	joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE);
-	//joint->setDrive(PxArticulationAxis::eTWIST, 0.f, 10.f, PX_MAX_F32);
 
 
 	currLeft = leftRoot;
@@ -209,7 +207,7 @@ static void createScissorLift()
 		leftParentRot = leftRot;
 
 		joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eLIMITED);
-		joint->setLimit(PxArticulationAxis::eTWIST, -PxPi, angle);
+		joint->setLimitParams(PxArticulationAxis::eTWIST, PxArticulationLimit(-PxPi, angle));
 
 		PxArticulationLink* rightLink = gArticulation->createLink(currRight, PxTransform(pos + PxVec3(0.f, sinAng*(2 * i + 1), 0.f), rightRot));
 		PxRigidActorExt::createExclusiveShape(*rightLink, PxBoxGeometry(0.05f, 0.05f, 1.f), *gMaterial);
@@ -225,7 +223,7 @@ static void createScissorLift()
 		joint->setJointType(PxArticulationJointType::eREVOLUTE);
 		joint->setChildPose(PxTransform(PxVec3(0.f, 0.f, 1.f), leftRot));
 		joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eLIMITED);
-		joint->setLimit(PxArticulationAxis::eTWIST, -angle, PxPi);
+		joint->setLimitParams(PxArticulationAxis::eTWIST, PxArticulationLimit(-angle, PxPi));
 
 		rightParentRot = rightRot;
 

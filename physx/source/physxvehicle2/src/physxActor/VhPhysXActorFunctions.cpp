@@ -183,6 +183,7 @@ void PxVehiclePhysxActorKeepAwakeCheck
  const PxReal wakeCounterThreshold,
  const PxReal wakeCounterResetValue,
  const PxVehicleGearboxState* gearState,
+ const PxReal* throttle,
  PxRigidBody& physxActor)
 {
 	PX_CHECK_AND_RETURN(!(physxActor.getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC), "PxVehiclePhysxActorKeepAwakeCheck: physxActor is kinematic. This is not supported");
@@ -202,7 +203,8 @@ void PxVehiclePhysxActorKeepAwakeCheck
 
 	if (wakeCounter < wakeCounterThreshold)
 	{
-		if (gearState && (gearState->currentGear != gearState->targetGear))
+		if ((throttle && ((*throttle) > 0.0f)) ||
+			(gearState && (gearState->currentGear != gearState->targetGear)))
 		{
 			setWakeCounter(wakeCounterResetValue, rd, link);
 

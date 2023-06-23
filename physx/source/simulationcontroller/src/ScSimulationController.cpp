@@ -44,21 +44,20 @@ void Sc::SimulationController::updateScBodyAndShapeSim(PxsTransformCache& /*cach
 	mCallback->updateScBodyAndShapeSim(continuation);
 }
 
+namespace
+{
 class UpdateArticulationAfterIntegrationTask : public Cm::Task
 {
-	IG::IslandSim& mIslandSim;
-
+	IG::IslandSim&							mIslandSim;
 	const PxNodeIndex* const PX_RESTRICT	mNodeIndices;
-	const PxU32 mNbArticulations;
-	const PxReal mDt;
+	const PxU32								mNbArticulations;
+	const PxReal							mDt;
 
 	PX_NOCOPY(UpdateArticulationAfterIntegrationTask)
 public:
 	static const PxU32 NbArticulationsPerTask = 64;
 
-
-	UpdateArticulationAfterIntegrationTask(PxU64 contextId, PxU32 nbArticulations, PxReal dt,
-		const PxNodeIndex* nodeIndices, IG::IslandSim& islandSim) :
+	UpdateArticulationAfterIntegrationTask(PxU64 contextId, PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IG::IslandSim& islandSim) :
 		Cm::Task(contextId),
 		mIslandSim(islandSim),
 		mNodeIndices(nodeIndices),
@@ -81,7 +80,7 @@ public:
 
 	virtual const char* getName() const { return "UpdateArticulationAfterIntegrationTask"; }
 };
-
+}
 
 //KS - TODO - parallelize this bit!!!!!
 void Sc::SimulationController::updateArticulationAfterIntegration(
@@ -90,7 +89,7 @@ void Sc::SimulationController::updateArticulationAfterIntegration(
 	PxArray<Sc::BodySim*>& ccdBodies,
 	PxBaseTask* continuation,
 	IG::IslandSim& islandSim,
-	const float dt
+	float dt
 	)
 {
 	const PxU32 nbActiveArticulations = islandSim.getNbActiveNodes(IG::Node::eARTICULATION_TYPE);
@@ -104,8 +103,8 @@ void Sc::SimulationController::updateArticulationAfterIntegration(
 		UpdateArticulationAfterIntegrationTask* task =
 			PX_PLACEMENT_NEW(flushPool.allocate(sizeof(UpdateArticulationAfterIntegrationTask)), UpdateArticulationAfterIntegrationTask)(islandSim.getContextId(), PxMin(UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask, PxU32(nbActiveArticulations - i)), dt,
 				activeArticulations + i, islandSim);
-		task->setContinuation(continuation);
-		task->removeReference();
+
+		startTask(task, continuation);
 	}
 
 	llContext->getLock().lock();

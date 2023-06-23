@@ -42,28 +42,9 @@ namespace physx
 #endif
 
 /**
- * @brief  Base class to handle assert failures
- * @deprecated  
+ * @brief  Built-in assert function
  */
-class PX_DEPRECATED PxAssertHandler
-{
-  public:
-	virtual ~PxAssertHandler()
-	{
-	}
-	virtual void operator()(const char* exp, const char* file, int line, bool& ignore) = 0;
-};
-
-/**
- * @deprecated
- */
-PX_FOUNDATION_API PX_DEPRECATED PxAssertHandler& PxGetAssertHandler();
-
-/**
- * @deprecated
- */
-PX_FOUNDATION_API PX_DEPRECATED void PxSetAssertHandler(PxAssertHandler& handler);
-
+PX_FOUNDATION_API void PxAssert(const char* exp, const char* file, int line, bool& ignore);
 
 #if !PX_ENABLE_ASSERTS
 	#define PX_ASSERT(exp) ((void)0)
@@ -71,29 +52,29 @@ PX_FOUNDATION_API PX_DEPRECATED void PxSetAssertHandler(PxAssertHandler& handler
 	#define PX_ASSERT_WITH_MESSAGE(condition, message) ((void)0)
 #else
 #if PX_VC
-	#define PX_CODE_ANALYSIS_ASSUME(exp)                                                                                   \
+	#define PX_CODE_ANALYSIS_ASSUME(exp)	\
 		__analysis_assume(!!(exp)) // This macro will be used to get rid of analysis warning messages if a PX_ASSERT is used
 	// to "guard" illegal mem access, for example.
 #else
 	#define PX_CODE_ANALYSIS_ASSUME(exp)
 #endif
-	#define PX_ASSERT(exp)                                                                                                 \
-		{                                                                                                                  \
-			static bool _ignore = false;                                                                                   \
-			((void)((!!(exp)) || (!_ignore && (physx::PxGetAssertHandler()(#exp, __FILE__, __LINE__, _ignore), false))));  \
-			PX_CODE_ANALYSIS_ASSUME(exp);                                                                                  \
+	#define PX_ASSERT(exp)																			\
+		{																							\
+			static bool _ignore = false;															\
+			((void)((!!(exp)) || (!_ignore && (physx::PxAssert(#exp, PX_FL, _ignore), false))));	\
+			PX_CODE_ANALYSIS_ASSUME(exp);															\
 		}
-	#define PX_ALWAYS_ASSERT_MESSAGE(exp)                                                                                  \
-		{                                                                                                                  \
-			static bool _ignore = false;                                                                                   \
-			if(!_ignore)                                                                                                   \
-				physx::PxGetAssertHandler()(exp, __FILE__, __LINE__, _ignore);                                             \
+	#define PX_ALWAYS_ASSERT_MESSAGE(exp)															\
+		{																							\
+			static bool _ignore = false;															\
+			if(!_ignore)																			\
+				physx::PxAssert(exp, PX_FL, _ignore);												\
 		}
-	#define PX_ASSERT_WITH_MESSAGE(exp, message)                                                                             \
-		{                                                                                                                    \
-			static bool _ignore = false;                                                                                     \
-			((void)((!!(exp)) || (!_ignore && (physx::PxGetAssertHandler()(message, __FILE__, __LINE__, _ignore), false)))); \
-			PX_CODE_ANALYSIS_ASSUME(exp);                                                                                    \
+	#define PX_ASSERT_WITH_MESSAGE(exp, message)													\
+		{																							\
+			static bool _ignore = false;															\
+			((void)((!!(exp)) || (!_ignore && (physx::PxAssert(message, PX_FL, _ignore), false))));	\
+			PX_CODE_ANALYSIS_ASSUME(exp);															\
 		}
 #endif // !PX_ENABLE_ASSERTS
 

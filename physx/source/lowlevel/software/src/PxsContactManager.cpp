@@ -27,15 +27,10 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxsContactManager.h"
-#include "PxsRigidBody.h"
-#include "PxcContactMethodImpl.h"
-#include "PxvManager.h"
-#include "PxsIslandSim.h"
 
 using namespace physx;
 
-PxsContactManager::PxsContactManager(PxsContext*, PxU32 index) /*:
-	mUserData	(NULL)*/
+PxsContactManager::PxsContactManager(PxsContext*, PxU32 index)
 {
 	mFlags = 0;
 

@@ -53,7 +53,7 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 	const Vec3V u1 = transf1To0.getCol1();
 	const Vec3V u2 = transf1To0.getCol2();
 
-	//calcaulte the insident face for b
+	//calculate the insident face for b
 	const FloatV d0 = V3Dot(u0, axis);
 	const FloatV d1 = V3Dot(u1, axis);
 	const FloatV d2 = V3Dot(u2, axis);
@@ -82,7 +82,6 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 		pts[1] = V3Add(temp0, temp2);	// (-x/x,  y, -z)
 		pts[2] = V3Sub(temp0, temp1);	// (-x/x, -y, -z)
 		pts[3] = V3Sub(temp0, temp2);	// (-x/x, -y,  z)
-
 	}
 	else if(FAllGrtrOrEq(absd1, absd2))
 	{
@@ -331,7 +330,7 @@ static void calculateContacts( const aos::FloatVArg extentX_, const aos::FloatVA
 			{
 				const Vec3V intersectP = V3ScaleAdd(p0p1, tmax, p0);
 				manifoldContacts[numContacts].mLocalPointA = V3SetZ(intersectP, zero);
-				manifoldContacts[numContacts].mLocalPointB =  intersectP;
+				manifoldContacts[numContacts].mLocalPointB = intersectP;
 				manifoldContacts[numContacts++].mLocalNormalPen = V4SetW(Vec4V_From_Vec3V(localNormal), FNeg(V3GetZ(intersectP)));
 			}
 		}
@@ -384,7 +383,7 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		rb = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 
 		radiusSum = FAdd(ea0, rb);
-		overlap[0] =  FAdd(FSub(radiusSum, FAbs(sign[0])), contactDist);
+		overlap[0] = FAdd(FSub(radiusSum, FAbs(sign[0])), contactDist);
 		if(FAllGrtr(zero, overlap[0]))
 			return false;
 	}
@@ -397,7 +396,7 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		rb = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 
 		radiusSum = FAdd(ea1, rb);
-		overlap[1] =  FAdd(FSub(radiusSum, FAbs(sign[1])), contactDist);
+		overlap[1] = FAdd(FSub(radiusSum, FAbs(sign[1])), contactDist);
 		if(FAllGrtr(zero, overlap[1]))
 			return false;
 	}
@@ -411,7 +410,7 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		rb = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 
 		radiusSum = FAdd(ea2, rb);
-		overlap[2] =  FAdd(FSub(radiusSum, FAbs(sign[2])), contactDist);
+		overlap[2] = FAdd(FSub(radiusSum, FAbs(sign[2])), contactDist);
 		if(FAllGrtr(zero, overlap[2]))
 			return false;
 	}
@@ -421,10 +420,10 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		sign[3] = V3Dot(transform1To0.p, col0);
 
 		const Vec3V vtemp3 = V3Mul(abs1To0Col0, box0Extent);
-		ra =  FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
+		ra = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 
 		radiusSum = FAdd(ra, eb0);
-		overlap[3] =  FAdd(FSub(radiusSum, FAbs(sign[3])), contactDist);
+		overlap[3] = FAdd(FSub(radiusSum, FAbs(sign[3])), contactDist);
 		if(FAllGrtr(zero, overlap[3]))
 			return false;
 	}
@@ -434,10 +433,10 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		sign[4] = V3Dot(transform1To0.p, col1);
 
 		const Vec3V vtemp3 = V3Mul(abs1To0Col1, box0Extent);
-		ra =  FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
+		ra = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 
 		radiusSum = FAdd(ra, eb1);
-		overlap[4] =  FAdd(FSub(radiusSum, FAbs(sign[4])), contactDist);
+		overlap[4] = FAdd(FSub(radiusSum, FAbs(sign[4])), contactDist);
 		if(FAllGrtr(zero, overlap[4]))
 			return false;
 	}
@@ -447,10 +446,10 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 		sign[5] = V3Dot(transform1To0.p, col2);
 
 		const Vec3V vtemp3 = V3Mul(abs1To0Col2, box0Extent);
-		ra =  FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
+		ra = FAdd(V3GetX(vtemp3), FAdd(V3GetY(vtemp3), V3GetZ(vtemp3)));
 		
 		radiusSum = FAdd(ra, eb2);
-		overlap[5] =  FAdd(FSub(radiusSum, FAbs(sign[5])), contactDist);
+		overlap[5] = FAdd(FSub(radiusSum, FAbs(sign[5])), contactDist);
 		if(FAllGrtr(zero, overlap[5]))
 			return false;
 	}
@@ -757,7 +756,7 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.rot.col0 = V3Neg(axis12);
 				newTransformV.rot.col1 = axis11;
 				newTransformV.rot.col2 = axis10;
-				newTransformV.p =V3NegScaleSub(axis10, eb0, transform1.p);//transform0.p + extents0.x*axis00;
+				newTransformV.p = V3NegScaleSub(axis10, eb0, transform1.p);//transform0.p + extents0.x*axis00;
 			}
 
 			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
@@ -872,7 +871,6 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 	PX_ASSERT(transform1.q.isSane());
 	PX_ASSERT(transform0.q.isSane());
 
-
 	const FloatV contactDist = FLoad(params.mContactDistance);
 	const Vec3V boxExtents0 = V3LoadU(shapeBox0.halfExtents);
 	const Vec3V boxExtents1 = V3LoadU(shapeBox1.halfExtents);
@@ -950,7 +948,7 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 					const RelativeConvex<BoxV> convexA1(box0, aToB);
 					const LocalConvex<BoxV> convexB1(box1);
 
-					status=  epaPenetration(convexA1, convexB1, manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, 
+					status = epaPenetration(convexA1, convexB1, manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, 
 						true, FLoad(toleranceLength), output);
 				}
 
@@ -978,7 +976,7 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 	}
 	else if(manifold.getNumContacts() > 0)
 	{
-		const Vec3V worldNormal =  manifold.getWorldNormal(transf1);
+		const Vec3V worldNormal = manifold.getWorldNormal(transf1);
 		manifold.addManifoldContactsToContactBuffer(contactBuffer, worldNormal, transf1, contactDist);
 #if	PCM_LOW_LEVEL_DEBUG
 		manifold.drawManifold(*renderOutput, transf0, transf1);

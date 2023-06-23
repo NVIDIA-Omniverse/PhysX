@@ -31,7 +31,6 @@
 
 #include "foundation/Px.h"
 #include "ScInteractionFlags.h"
-#include "ScScene.h"
 #include "ScActorSim.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxUtilities.h"
@@ -43,19 +42,34 @@ namespace physx
 
 namespace Sc
 {
+	struct InteractionType
+	{
+		enum Enum
+		{
+			eOVERLAP		= 0,		// corresponds to ShapeInteraction
+			eTRIGGER,					// corresponds to TriggerInteraction
+			eMARKER,					// corresponds to ElementInteractionMarker
+			eTRACKED_IN_SCENE_COUNT,	// not a real type, interactions above this limit are tracked in the scene
+			eCONSTRAINTSHADER,			// corresponds to ConstraintInteraction
+			eARTICULATION,				// corresponds to ArticulationJointSim
+
+			eINVALID
+		};
+	};
+
 	// Interactions are used for connecting actors into activation groups. An interaction always connects exactly two actors. 
 	// An interaction is implicitly active if at least one of the two actors it connects is active.
 
+	// PT: we need PxUserAllocated only for ArticulationJointSim, which for some reason doesn't follow the same design as the others.
+	// The others are allocated from pools in NphaseCore.
 	class Interaction : public PxUserAllocated
 	{
 		PX_NOCOPY(Interaction)
-
-	protected:
 										Interaction(ActorSim& actor0, ActorSim& actor1, InteractionType::Enum interactionType, PxU8 flags);
 										~Interaction() { PX_ASSERT(!readInteractionFlag(InteractionFlag::eIN_DIRTY_LIST)); }
 	public:
 		// Interactions automatically register themselves in the actors here
-		PX_FORCE_INLINE bool			registerInActors(void* data = NULL);
+		PX_FORCE_INLINE void			registerInActors();
 
 		// Interactions automatically unregister themselves from the actors here
 		PX_FORCE_INLINE void			unregisterFromActors();
@@ -88,14 +102,6 @@ namespace Sc
 		PX_FORCE_INLINE PxIntBool		needsRefiltering() const { return (getDirtyFlags() & InteractionDirtyFlag::eFILTER_STATE); }
 
 		PX_FORCE_INLINE PxIntBool		isElementInteraction() const;
-
-		// Called when an interaction is activated or created.
-		// Return true if activation should proceed else return false (for example: joint interaction between two kinematics should not get activated)
-//		virtual			bool			onActivate_(void* data) = 0;
-
-		// Called when an interaction is deactivated.
-		// Return true if deactivation should proceed else return false (for example: joint interaction between two kinematics can ignore deactivation because it always is deactivated)
-//		virtual			bool			onDeactivate_() = 0;
 
 		PX_FORCE_INLINE	void			setInteractionId(PxU32 id)	{ mSceneId = id;										}
 		PX_FORCE_INLINE	PxU32			getInteractionId()	const	{ return mSceneId;										}
@@ -131,14 +137,10 @@ namespace Sc
 
 //////////////////////////////////////////////////////////////////////////
 
-PX_FORCE_INLINE bool Sc::Interaction::registerInActors(void* data)
+PX_FORCE_INLINE void Sc::Interaction::registerInActors()
 {
-	bool active = activateInteraction(this, data);
-
 	mActor0.registerInteractionInActor(this);
 	mActor1.registerInteractionInActor(this);
-
-	return active;
 }
 
 PX_FORCE_INLINE void Sc::Interaction::unregisterFromActors()
@@ -200,7 +202,6 @@ PX_FORCE_INLINE void Sc::Interaction::setDirty(PxU32 dirtyFlags)
 //
 //	mDirtyFlags = 0;
 //}
-
 
 }
 

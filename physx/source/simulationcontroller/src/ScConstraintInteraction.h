@@ -44,8 +44,8 @@ namespace Sc
 										ConstraintInteraction(ConstraintSim* shader, RigidSim& r0, RigidSim& r1);
 										~ConstraintInteraction();
 
-						bool			onActivate_(void* data);
-						bool			onDeactivate_();
+						bool			onActivate(void* data);
+						bool			onDeactivate();
 
 						void			updateState();
 						void			destroy();  // disables the interaction and unregisters from the system. Does NOT delete the object. This is used on destruction but also when a constraint breaks.

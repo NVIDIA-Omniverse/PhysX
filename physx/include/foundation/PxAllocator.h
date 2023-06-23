@@ -57,7 +57,6 @@
 #pragma warning(pop)
 #endif
 
-
 // PT: the rules are simple:
 // - PX_ALLOC/PX_ALLOCATE/PX_FREE is similar to malloc/free. Use that for POD/anything that doesn't need ctor/dtor.
 // - PX_NEW/PX_DELETE is similar to new/delete. Use that for anything that needs a ctor/dtor.
@@ -91,7 +90,7 @@ namespace physx
 {
 #endif
 	/**
-	Allocator used to access the global PxAllocatorCallback instance without providing additional information.
+	\brief Allocator used to access the global PxAllocatorCallback instance without providing additional information.
 	*/
 	class PxAllocator
 	{
@@ -110,8 +109,8 @@ namespace physx
 		}
 	};
 
-	/*
-	* Bootstrap allocator using malloc/free.
+	/**
+	* \brief Bootstrap allocator using malloc/free.
 	* Don't use unless your objects get allocated before foundation is initialized.
 	*/
 	class PxRawAllocator
@@ -132,7 +131,7 @@ namespace physx
 		}
 	};
 
-	/*
+	/**
 	\brief	Virtual allocator callback used to provide run-time defined allocators to foundation types like Array or Bitmap.
 	This is used by VirtualAllocator
 	*/
@@ -146,13 +145,11 @@ namespace physx
 		virtual void	deallocate(void* ptr) = 0;
 	};
 
-	/*
+	/**
 	\brief Virtual allocator to be used by foundation types to provide run-time defined allocators.
-	Due to the fact that Array extends its allocator, rather than contains a reference/pointer to it, the VirtualAllocator
-	must
+	Due to the fact that Array extends its allocator, rather than contains a reference/pointer to it, the VirtualAllocator must
 	be a concrete type containing a pointer to a virtual callback. The callback may not be available at instantiation time,
-	therefore
-	methods are provided to set the callback later.
+	therefore methods are provided to set the callback later.
 	*/
 	class PxVirtualAllocator
 	{
@@ -174,6 +171,16 @@ namespace physx
 				mCallback->deallocate(ptr);
 		}
 
+		void setCallback(PxVirtualAllocatorCallback* callback)
+		{
+			mCallback = callback;
+		}
+
+		PxVirtualAllocatorCallback* getCallback()
+		{
+			return mCallback;
+		}
+
 	private:
 		PxVirtualAllocatorCallback* mCallback;
 		const int mGroup;
@@ -181,14 +188,14 @@ namespace physx
 	};
 
 	/**
-	Allocator used to access the global PxAllocatorCallback instance using a static name derived from T.
+	\brief Allocator used to access the global PxAllocatorCallback instance using a static name derived from T.
 	*/
 	template <typename T>
 	class PxReflectionAllocator
 	{
-		static const char* getName()
+		static const char* getName(bool reportAllocationNames)
 		{
-			if (!PxGetFoundation().getReportAllocationNames())
+			if(!reportAllocationNames)
 				return "<allocation names disabled>";
 #if PX_GCC_FAMILY
 			return __PRETTY_FUNCTION__;
@@ -206,12 +213,18 @@ namespace physx
 
 		PX_FORCE_INLINE	void*	allocate(size_t size, const char* filename, int line)
 		{
-			return size ? PxGetBroadcastAllocator()->allocate(size, getName(), filename, line) : NULL;
+			if(!size)
+				return NULL;
+
+			bool reportAllocationNames;
+			PxAllocatorCallback* cb = PxGetBroadcastAllocator(&reportAllocationNames);
+
+			return cb->allocate(size, getName(reportAllocationNames), filename, line);
 		}
 
 		PX_FORCE_INLINE	void	deallocate(void* ptr)
 		{
-			if (ptr)
+			if(ptr)
 				PxGetBroadcastAllocator()->deallocate(ptr);
 		}
 	};

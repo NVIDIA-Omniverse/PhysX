@@ -50,13 +50,6 @@ namespace physx
 	template<class PxAllocator>
 	class PxBitMapBase : public PxUserAllocated
 	{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 		PX_NOCOPY(PxBitMapBase)
 
 	public:
@@ -64,7 +57,7 @@ namespace physx
 		// PX_SERIALIZATION
 		/* todo: explicit */ PxBitMapBase(const PxEMPTY)
 		{
-			if (mMap)
+			if(mMap)
 				mWordCount |= PX_SIGN_BITMASK;
 		}
 		//~PX_SERIALIZATION
@@ -80,12 +73,12 @@ namespace physx
 
 		PX_INLINE void release()
 		{
-			if (mMap && !isInUserMemory())
+			if(mMap && !isInUserMemory())
 				mAllocator.deallocate(mMap);
 			mMap = NULL;
 		}
 
-		PX_INLINE PxAllocator&	getAllocator() { return mAllocator; }
+		PX_FORCE_INLINE PxAllocator&	getAllocator() { return mAllocator; }
 
 		PX_INLINE void growAndSet(PxU32 index)
 		{
@@ -181,8 +174,7 @@ namespace physx
 		void setWords(PxU32* map, PxU32 wordCount)
 		{
 			mMap = map;
-			mWordCount = wordCount;
-			mWordCount |= PX_SIGN_BITMASK;
+			mWordCount = wordCount | PX_SIGN_BITMASK;
 		}
 
 		// !!! only sets /last/ bit to value
@@ -193,23 +185,23 @@ namespace physx
 			extend(newBitCount);
 		}
 
-		PxU32 size() const { return getWordCount() * 32; }
+		PX_FORCE_INLINE	PxU32 size() const { return getWordCount() * 32; }
 
 		void copy(const PxBitMapBase& a)
 		{
 			extendUninitialized(a.getWordCount() << 5);
 			PxMemCopy(mMap, a.mMap, a.getWordCount() * sizeof(PxU32));
-			if (getWordCount() > a.getWordCount())
+			if(getWordCount() > a.getWordCount())
 				PxMemSet(mMap + a.getWordCount(), 0, (getWordCount() - a.getWordCount()) * sizeof(PxU32));
 		}
 
 		PX_INLINE PxU32 count()		const
 		{
-			// NOTE: we can probably do this faster, since the last steps in PxcBitCount32 can be defered to
+			// NOTE: we can probably do this faster, since the last steps in PxBitCount can be defered to
 			// the end of the seq. + 64/128bits at a time + native bit counting instructions(360 is fast non micro code).
 			PxU32 count = 0;
 			const PxU32 wordCount = getWordCount();
-			for (PxU32 i = 0; i<wordCount; i++)
+			for(PxU32 i = 0; i<wordCount; i++)
 				count += PxBitCount(mMap[i]);
 
 			return count;
@@ -219,7 +211,7 @@ namespace physx
 		{
 			const PxU32 end = PxMin(getWordCount() << 5, start + length);
 			PxU32 count = 0;
-			for (PxU32 i = start; i<end; i++)
+			for(PxU32 i = start; i<end; i++)
 				count += (test(i) != 0);
 			return count;
 		}
@@ -228,9 +220,9 @@ namespace physx
 		PxU32 findLast() const
 		{
 			const PxU32 wordCount = getWordCount();
-			for (PxU32 i = wordCount; i-- > 0;)
+			for(PxU32 i = wordCount; i-- > 0;)
 			{
-				if (mMap[i])
+				if(mMap[i])
 					return (i << 5) + PxHighestSetBit(mMap[i]);
 			}
 			return PxU32(0);
@@ -273,7 +265,6 @@ namespace physx
 		This iterator is good because it finds the set bit without looping over the cached bits upto 31 times.
 		However it does require a variable shift.
 		*/
-
 		class Iterator
 		{
 		public:
@@ -294,13 +285,20 @@ namespace physx
 
 			PX_INLINE PxU32	getNext()
 			{
-				if (mBlock)
+				if(mBlock)
 				{
-					PxU32 bitIndex = mIndex << 5 | PxLowestSetBit(mBlock);
-					mBlock &= mBlock - 1;
+					PxU32 block = mBlock;
+					PxU32 index = mIndex;
+
+					const PxU32 bitIndex = index << 5 | PxLowestSetBit(block);
+					block &= block - 1;
 					PxU32 wordCount = mBitMap.getWordCount();
-					while (!mBlock && ++mIndex < wordCount)
-						mBlock = mBitMap.mMap[mIndex];
+					while(!block && ++index < wordCount)
+						block = mBitMap.mMap[index];
+
+					mBlock = block;
+					mIndex = index;
+
 					return bitIndex;
 				}
 				return DONE;
@@ -308,10 +306,15 @@ namespace physx
 
 			PX_INLINE void reset()
 			{
-				mIndex = mBlock = 0;
+				PxU32 index = 0;
+				PxU32 block = 0;
+
 				PxU32 wordCount = mBitMap.getWordCount();
-				while (mIndex < wordCount && ((mBlock = mBitMap.mMap[mIndex]) == 0))
-					++mIndex;
+				while(index < wordCount && ((block = mBitMap.mMap[index]) == 0))
+					++index;
+
+				mBlock = block;
+				mIndex = index;
 			}
 		private:
 			PxU32 mBlock, mIndex;
@@ -361,35 +364,50 @@ namespace physx
 
 			PX_INLINE PxCircularIterator(const PxBitMapBase &map, PxU32 index) : mBitMap(map)
 			{
-				mIndex = mBlock = mStartIndex = 0;
+				PxU32 localIndex = 0;
+				PxU32 startIndex = 0;
+
 				const PxU32 wordCount = mBitMap.getWordCount();
-				if ((index << 5) < wordCount)
+				if((index << 5) < wordCount)
 				{
-					mIndex = index << 5;
-					mStartIndex = mIndex;
+					localIndex = index << 5;
+					startIndex = localIndex;
 				}
 
-				if (mIndex < wordCount)
+				PxU32 block = 0;
+				if(localIndex < wordCount)
 				{
-					mBlock = mBitMap.mMap[mIndex];
-					if (mBlock == 0)
+					block = mBitMap.mMap[localIndex];
+					if(block == 0)
 					{
-						mIndex = (mIndex + 1) % wordCount;
-						while (mIndex != mStartIndex && (mBlock = mBitMap.mMap[mIndex]) == 0)
-							mIndex = (mIndex + 1) % wordCount;
+						localIndex = (localIndex + 1) % wordCount;
+						while(localIndex != startIndex && (block = mBitMap.mMap[localIndex]) == 0)
+							localIndex = (localIndex + 1) % wordCount;
 					}
 				}
+
+				mIndex = localIndex;
+				mBlock = block;
+				mStartIndex = startIndex;
 			}
 
 			PX_INLINE PxU32	getNext()
 			{
-				if (mBlock)
+				if(mBlock)
 				{
-					PxU32 bitIndex = mIndex << 5 | PxLowestSetBit(mBlock);
-					mBlock &= mBlock - 1;
+					PxU32 index = mIndex;
+					PxU32 block = mBlock;
+					const PxU32 startIndex = mStartIndex;
+
+					PxU32 bitIndex = index << 5 | PxLowestSetBit(block);
+					block &= block - 1;
 					PxU32 wordCount = mBitMap.getWordCount();
-					while (!mBlock && (mIndex = ((mIndex + 1) % wordCount)) != mStartIndex)
-						mBlock = mBitMap.mMap[mIndex];
+					while (!block && (index = ((index + 1) % wordCount)) != startIndex)
+						block = mBitMap.mMap[index];
+
+					mIndex = index;
+					mBlock = block;
+
 					return bitIndex;
 				}
 				return DONE;

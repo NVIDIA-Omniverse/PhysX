@@ -83,10 +83,7 @@ namespace physx
 		}
 		PX_CHECK_AND_RETURN(jointType != PxArticulationJointType::eUNDEFINED, "PxArticulationJointReducedCoordinate::setJointType valid joint type(ePRISMATIC, eREVOLUTE, eREVOLUTE_UNWRAPPED, eSPHERICAL, eFIX) need to be set");
 
-#if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
-		OMNI_PVD_SET(articulationjoint, type, joint, jointType)
-#endif
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, type, static_cast<PxArticulationJointReducedCoordinate&>(*this), jointType)
 
 		scSetJointType(jointType);
 	}
@@ -170,11 +167,10 @@ namespace physx
 		scSetMotion(axis, motion);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxArticulationMotion::Enum motions[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			motions[ax] = mCore.getMotion(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, motion, joint, motions, sizeof(motions));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, motion, static_cast<PxArticulationJointReducedCoordinate&>(*this), motions, sizeof(motions));
 #endif
 
 		static_cast<NpArticulationReducedCoordinate*>(&getChild().getArticulation())->mTopologyChanged = true;
@@ -191,10 +187,7 @@ namespace physx
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setFrictionCoefficient() not allowed while simulation is running. Call will be ignored.")
 
-#if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
-		OMNI_PVD_SET(articulationjoint, frictionCoefficient, joint, coefficient);
-#endif
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, frictionCoefficient, static_cast<PxArticulationJointReducedCoordinate&>(*this), coefficient);
 
 		scSetFrictionCoefficient(coefficient);
 	}
@@ -212,10 +205,7 @@ namespace physx
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setMaxJointVelocity() not allowed while simulation is running. Call will be ignored.")
 
-#if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
-		OMNI_PVD_SET(articulationjoint, maxJointVelocity, joint, maxJointV);
-#endif
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, maxJointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), maxJointV);
 
 		scSetMaxJointVelocity(maxJointV);
 	}
@@ -239,14 +229,14 @@ namespace physx
 		scSetLimit(axis, pair);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
+		PxArticulationJointReducedCoordinate& joint = *this;
 		PxReal limits[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			limits[ax] = mCore.getLimit(static_cast<PxArticulationAxis::Enum>(ax)).low;
-		OMNI_PVD_SETB(articulationjoint, limitLow, joint, limits, sizeof(limits));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitLow, joint, limits, sizeof(limits));
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			limits[ax] = mCore.getLimit(static_cast<PxArticulationAxis::Enum>(ax)).high;
-		OMNI_PVD_SETB(articulationjoint, limitHigh, joint, limits, sizeof(limits));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitHigh, joint, limits, sizeof(limits));
 #endif
 	}
 
@@ -265,23 +255,23 @@ namespace physx
 		scSetDrive(axis, drive);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
+		PxArticulationJointReducedCoordinate& joint = *this;
 		PxReal stiffnesss[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			stiffnesss[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).stiffness;
-		OMNI_PVD_SETB(articulationjoint, driveStiffness, joint, stiffnesss, sizeof(stiffnesss));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveStiffness, joint, stiffnesss, sizeof(stiffnesss));
 		PxReal dampings[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			dampings[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).damping;
-		OMNI_PVD_SETB(articulationjoint, driveDamping, joint, dampings, sizeof(dampings));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveDamping, joint, dampings, sizeof(dampings));
 		PxReal maxforces[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			maxforces[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).maxForce;
-		OMNI_PVD_SETB(articulationjoint, driveMaxForce, joint, maxforces, sizeof(maxforces));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveMaxForce, joint, maxforces, sizeof(maxforces));
 		PxArticulationDriveType::Enum drivetypes[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			drivetypes[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).driveType;
-		OMNI_PVD_SETB(articulationjoint, driveType, joint, drivetypes, sizeof(drivetypes));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveType, joint, drivetypes, sizeof(drivetypes));
 #endif
 	}
 
@@ -309,11 +299,10 @@ namespace physx
 		scSetDriveTarget(axis, target);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxReal targets[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			targets[ax] = mCore.getTargetP(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, driveTarget, joint, targets, sizeof(targets));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveTarget, static_cast<PxArticulationJointReducedCoordinate&>(*this), targets, sizeof(targets));
 #endif
 	}
 
@@ -332,11 +321,10 @@ namespace physx
 		scSetDriveVelocity(axis, targetVel);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxReal velocitys[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			velocitys[ax] = mCore.getTargetV(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, driveVelocity, joint, velocitys, sizeof(velocitys));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocitys, sizeof(velocitys));
 #endif
 	}
 
@@ -363,11 +351,10 @@ namespace physx
 		scSetArmature(axis, armature);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxReal armatures[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			armatures[ax] = mCore.getArmature(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, armature, joint, armatures, sizeof(armatures));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, armature, static_cast<PxArticulationJointReducedCoordinate&>(*this), armatures, sizeof(armatures));
 #endif
 	}
 
@@ -380,6 +367,7 @@ namespace physx
 	PxTransform	NpArticulationJointReducedCoordinate::getParentPose() const
 	{
 		NP_READ_CHECK(getNpScene());
+		// PT:: tag: scalar transform*transform
 		return mParent->getCMassLocalPose().transform(mCore.getParentPose());
 	}
 
@@ -391,9 +379,9 @@ namespace physx
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setParentPose() not allowed while simulation is running. Call will be ignored.")
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
-		OMNI_PVD_SET(articulationjoint, parentTranslation, joint, t.p)
-		OMNI_PVD_SET(articulationjoint, parentRotation, joint, t.q)
+		PxArticulationJointReducedCoordinate& joint = *this;
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, parentTranslation, joint, t.p)
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, parentRotation, joint, t.q)
 #endif
 
 		if (mParent == NULL)
@@ -406,6 +394,7 @@ namespace physx
 	{
 		NP_READ_CHECK(getNpScene());
 
+		// PT:: tag: scalar transform*transform
 		return mChild->getCMassLocalPose().transform(mCore.getChildPose());
 	}
 
@@ -417,9 +406,9 @@ namespace physx
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setChildPose() not allowed while simulation is running. Call will be ignored.")
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
-		OMNI_PVD_SET(articulationjoint, childTranslation, joint, t.p)
-		OMNI_PVD_SET(articulationjoint, childRotation, joint, t.q)
+		PxArticulationJointReducedCoordinate& joint = *this;
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, childTranslation, joint, t.p)
+		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, childRotation, joint, t.q)
 #endif
 
 		scSetChildPose(mChild->getCMassLocalPose().transformInv(t.getNormalized()));
@@ -437,11 +426,10 @@ namespace physx
 		scSetJointPosition(axis, jointPos);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxReal positions[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			positions[ax] = mCore.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, jointPosition, joint, positions, sizeof(positions));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointPosition, static_cast<PxArticulationJointReducedCoordinate&>(*this), positions, sizeof(positions));
 #endif
 	}
 
@@ -464,11 +452,10 @@ namespace physx
 		scSetJointVelocity(axis, jointVel);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationJointReducedCoordinate & joint = *this;
 		PxReal velocitys[6];
 		for (PxU32 ax = 0; ax < 6; ++ax)
 			velocitys[ax] = mCore.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(articulationjoint, jointVelocity, joint, velocitys, sizeof(velocitys));
+		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocitys, sizeof(velocitys));
 #endif
 	}
 

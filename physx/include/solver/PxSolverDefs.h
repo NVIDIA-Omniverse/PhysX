@@ -295,7 +295,7 @@ struct PxArticulationFlag
 		eFIX_BASE = (1 << 0),				//!< Set articulation base to be fixed.
 		eDRIVE_LIMITS_ARE_FORCES = (1<<1),	//!< Limits for drive effort are forces and torques rather than impulses, see PxArticulationDrive::maxForce.
 		eDISABLE_SELF_COLLISION = (1<<2),	//!< Disable collisions between the articulation's links (note that parent/child collisions are disabled internally in either case).
-		eCOMPUTE_JOINT_FORCES = (1<<3)		//!< Enable in order to be able to query joint solver (i.e. constraint) forces using PxArticulationCache::jointSolverForces.
+		eCOMPUTE_JOINT_FORCES = (1<<3)		//!< @deprecated Enable in order to be able to query joint solver (i.e. constraint) forces using PxArticulationCache::jointSolverForces.
 	};
 };
 

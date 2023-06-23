@@ -42,27 +42,88 @@ Principles:
 #if PX_SUPPORT_OMNI_PVD
 	// You can use this in conditional statements to check for a connection
 	#define OMNI_PVD_ACTIVE				(::OmniPvdPxExtensionsSampler::getInstance() != NULL)
-	// Create object reference o of PVD type c.  Example: 	OMNI_PVD_CREATE(scene, static_cast<PxScene &>(*npScene));
-	#define OMNI_PVD_CREATE(c, o)		if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->createObject(OmniPvdPxExtensionsSampler::classHandle_##c, o); }
-	// Destroy object reference o of PVD type c.  Example: OMNI_PVD_DESTROY(scene, static_cast<PxScene &>(*npScene));
-	#define OMNI_PVD_DESTROY(c, o)		if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->destroyObject(o); }
-	// Set PVD attribute a of object reference o of PVD type c to value v.  v is passed as reference to value; PVD object handles are passed as reference to POINTER here!
-	// Example: OMNI_PVD_SET(actor, isdynamic, a, false)  
-	#define OMNI_PVD_SET(c, a, o, v)	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->setAttribute(OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a, o, v); }
-	// Same as set, but for variable length attributes like vertex buffers.  pv is the address of the data, and n is the size in bytes.
-	#define OMNI_PVD_SETB(c, a, o, pv, n)if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->setAttributeBytes(OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a, o, pv, n); }
-	// Same as set, but for attribute sets of unique things like an array of references.  v is passed as a REFERENCE.
-	#define OMNI_PVD_ADD(c, a, o, v)	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->addToSet(OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a, o, v); }
-	// TO remove a member handle from the set.
-	#define OMNI_PVD_REMOVE(c, a, o, v)	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL)	{::OmniPvdPxExtensionsSampler::getInstance()->removeFromSet(OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a, o, v); }
+
+// Create object reference o of PVD type classT.  Example: 	OMNI_PVD_CREATE(scene, static_cast<PxScene &>(*npScene));
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_CREATE(classT, o) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->createObject(OmniPvdPxExtensionsSampler::classHandle_##classT, o); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_CREATE(classT, o) \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->createObject(OmniPvdPxExtensionsSampler::classHandle_##classT, o); }
+#endif
+
+// Destroy object reference o of PVD type classT.  Example: OMNI_PVD_DESTROY(scene, static_cast<PxScene &>(*npScene));
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_DESTROY(classT, o)	\
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->destroyObject(o); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_DESTROY(classT, o)	\
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->destroyObject(o); }
+#endif
+
+// Set PVD attribute a of object reference o of PVD type classT to value v.  v is passed as reference to value; PVD object handles are passed as reference to POINTER here!
+// Example: OMNI_PVD_SET(PxActor, isdynamic, a, false)  
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_SET(classT, a, o, v) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->setAttribute(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_SET(classT, a, o, v) \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->setAttribute(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); }
+#endif
+	
+// Same as set, but for variable length attributes like vertex buffers.  pv is the address of the data, and n is the size in bytes.
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_SETB(classT, a, o, pv, n) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->setAttributeBytes(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, pv, n); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_SETB(classT, a, o, pv, n) \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->setAttributeBytes(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, pv, n); }
+#endif
+
+// Same as set, but for attribute sets of unique things like an array of references.  v is passed as a REFERENCE.
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_ADD(classT, a, o, v) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->addToUniqueList(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_ADD(classT, a, o, v) \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->addToUniqueList(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); }
+#endif
+
+// TO remove a member handle from the set.
+#if PX_GCC_FAMILY
+	#define OMNI_PVD_REMOVE(classT, a, o, v) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wundefined-func-template\"") \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->removeFromUniqueList(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); } \
+	_Pragma("GCC diagnostic pop")
+#else
+	#define OMNI_PVD_REMOVE(classT, a, o, v) \
+	if (::OmniPvdPxExtensionsSampler::getInstance() != NULL) {::OmniPvdPxExtensionsSampler::getInstance()->removeFromUniqueList(OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a, o, v); }
+#endif
+
 #else
 	#define OMNI_PVD_ACTIVE				(false)
-	#define OMNI_PVD_CREATE(c, p)
-	#define OMNI_PVD_DESTROY(c, p)
-	#define OMNI_PVD_SET(c, a, p, v)
-	#define OMNI_PVD_SETB(c, a, p, v, n)
-	#define OMNI_PVD_ADD(c, a, p, v)
-	#define OMNI_PVD_REMOVE(c, a, p, v)
+	#define OMNI_PVD_CREATE(classT, p)
+	#define OMNI_PVD_DESTROY(classT, p)
+	#define OMNI_PVD_SET(classT, a, p, v)
+	#define OMNI_PVD_SETB(classT, a, p, v, n)
+	#define OMNI_PVD_ADD(classT, a, p, v)
+	#define OMNI_PVD_REMOVE(classT, a, p, v)
 #endif
 
 
@@ -86,29 +147,27 @@ public:
 	template <typename ClassType> void destroyObject(ClassType const & objectId);
 	template <typename ClassType, typename AttributeType> void setAttribute(OmniPvdAttributeHandle, ClassType const & objectId,  AttributeType const & value);
 	template <typename ClassType, typename AttributeType> void setAttributeBytes(OmniPvdAttributeHandle, ClassType const & objectId, AttributeType const * value, unsigned nBytes);
-	template <typename ClassType, typename AttributeType> void addToSet(OmniPvdAttributeHandle, ClassType const & objectId, AttributeType const & value);
-	template <typename ClassType, typename AttributeType> void removeFromSet(OmniPvdAttributeHandle, ClassType const & objectId, AttributeType const & value);
+	template <typename ClassType, typename AttributeType> void addToUniqueList(OmniPvdAttributeHandle, ClassType const & objectId, AttributeType const & value);
+	template <typename ClassType, typename AttributeType> void removeFromUniqueList(OmniPvdAttributeHandle, ClassType const & objectId, AttributeType const & value);
 
 	//handles for all Extensions classes and attributes
 
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) static OmniPvdClassHandle classHandle_##c;
-#define OMNI_PVD_CLASS(c, classT) static OmniPvdClassHandle classHandle_##c;
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_ENUM(c, classT) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_ENUM_VALUE(c, a, v)	
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) static OmniPvdAttributeHandle attributeHandle_##c##_##a;
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT) static OmniPvdAttributeHandle attributeHandle_##c##_##a;
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) static OmniPvdAttributeHandle attributeHandle_##c##_##a;
+#define OMNI_PVD_CLASS(classT) static OmniPvdClassHandle classHandle_##classT;
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_ENUM(classT) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_ENUM_VALUE(classT, a)	
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) static OmniPvdAttributeHandle attributeHandle_##classT##_##a;
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT) static OmniPvdAttributeHandle attributeHandle_##classT##_##a;
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) static OmniPvdAttributeHandle attributeHandle_##classT##_##a;
 
 #include "OmniPvdPxExtensionsTypes.h"	//Extensions classes and attributes declared here
 
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 #undef OMNI_PVD_ATTRIBUTE_FLAG
 
 	// OmniPvdPxExtensionsSampler singleton

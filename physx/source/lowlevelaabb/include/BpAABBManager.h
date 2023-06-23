@@ -45,7 +45,6 @@ namespace Bp
 {
 	struct BroadPhasePair;
 
-	// PT: TODO: revisit this.....
 	class Aggregate;
 	class PersistentPairs;
 	class PersistentActorAggregatePair;
@@ -141,9 +140,11 @@ namespace Bp
 		virtual			bool							addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userdata, AggregateHandle aggregateHandle, ElementType::Enum volumeType)	PX_OVERRIDE;
 		virtual			bool							removeBounds(BoundsIndex index)	PX_OVERRIDE;
 		virtual			void							updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool, bool hasContactDistanceUpdated, PxBaseTask* continuation)	PX_OVERRIDE;
-		virtual			void							updateBPSecondPass(PxU32 numCpuTasks, PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)	PX_OVERRIDE;
+		virtual			void							updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)	PX_OVERRIDE;
 		virtual			void							postBroadPhase(PxBaseTask*, Cm::FlushPool& flushPool)	PX_OVERRIDE;
 		virtual			void							reallocateChangedAABBMgActorHandleMap(const PxU32 size)	PX_OVERRIDE;
+		virtual			bool							getOutOfBoundsObjects(OutOfBoundsData& data)			PX_OVERRIDE;
+		virtual			void							clearOutOfBoundsObjects()								PX_OVERRIDE;
 		virtual			void							visualize(PxRenderOutput& out)	PX_OVERRIDE;
 		virtual			void							releaseDeferredAggregateIds()	PX_OVERRIDE{}
 		//~AABBManagerBase
@@ -177,9 +178,12 @@ namespace Bp
 
 						PxArray<ProcessAggPairsBase*>	mAggPairTasks;
 
-						PxHashSet<Pair>					mCreatedPairs;
+						PxHashSet<Pair>					mCreatedPairsTmp;	// PT: temp hashset for dubious post filtering, persistent to minimize allocs
 
 						PxSList							mBpThreadContextPool;
+
+						PxArray<void*>					mOutOfBoundsObjects;
+						PxArray<void*>					mOutOfBoundsAggregates;
 
 		PX_FORCE_INLINE	Aggregate*						getAggregateFromHandle(AggregateHandle handle)
 														{

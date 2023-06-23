@@ -84,10 +84,14 @@ void renderCallback()
 	Snippets::finishRender();
 }
 
-void exitCallback(void)
+void cleanup()
 {
 	delete sCamera;
 	cleanupPhysics(true);
+}
+
+void exitCallback(void)
+{
 }
 }
 
@@ -99,5 +103,7 @@ void renderLoop()
 
 	initPhysics(true);
 	glutMainLoop();
+
+	cleanup();
 }
 #endif

@@ -42,13 +42,14 @@
 #include "DyThresholdTable.h"
 #include "DySolverConstraintsShared.h"
 #include "DyFeatherstoneArticulation.h"
+#include "DyPGS.h"
 
 namespace physx
 {
 namespace Dy
 {
 
-void solveContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
+static void solveContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 {
 	PxSolverBody& b0 = *desc.bodyA;
 	PxSolverBody& b1 = *desc.bodyB;
@@ -98,7 +99,7 @@ void solveContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /*ca
 	PX_ASSERT(currPtr == last);
 }
 
-void solveFriction(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
+static void solveFriction(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 {
 	PxSolverBody& b0 = *desc.bodyA;
 	PxSolverBody& b1 = *desc.bodyB;
@@ -194,7 +195,7 @@ void solveFriction(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 	PX_ASSERT(currPtr == last);
 }
 
-void solveContactCoulomb_BStatic(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
+static void solveContactCoulomb_BStatic(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 {
 	PxSolverBody& b0 = *desc.bodyA;
 
@@ -240,7 +241,7 @@ void solveContactCoulomb_BStatic(const PxSolverConstraintDesc& desc, SolverConte
 	PX_ASSERT(currPtr == last);
 }
 
-void solveFriction_BStatic(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
+static void solveFriction_BStatic(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 {
 	PxSolverBody& b0 = *desc.bodyA;
 
@@ -323,7 +324,7 @@ void solveFriction_BStatic(const PxSolverConstraintDesc& desc, SolverContext& /*
 	PX_ASSERT(currPtr == last);
 }
 
-void concludeContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
+static void concludeContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /*cache*/)
 {
 	PxU8* PX_RESTRICT cPtr = desc.constraint;
 
@@ -355,7 +356,7 @@ void concludeContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& /
 	PX_ASSERT(cPtr == last);
 }
 
-void  writeBackContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache,
+static void  writeBackContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache,
 					  PxSolverBodyData& bd0, PxSolverBodyData& bd1)
 {
 	PxReal normalForce = 0.f;
@@ -367,7 +368,6 @@ void  writeBackContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext&
 
 	const PxU32 pointStride = firstHeader->type == DY_SC_TYPE_EXT_CONTACT ? sizeof(SolverContactPointExt)
 																	   : sizeof(SolverContactPoint);
-
 	bool hasForceThresholds = false;
 	while(cPtr < last)
 	{
@@ -414,55 +414,43 @@ void  writeBackContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext&
 	}
 }
 
-void solveFrictionBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveFrictionBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveFriction(desc[a], cache);
-	}
 }
 
-void solveFrictionBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveFrictionBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveFriction(desc[a], cache);
-	}
 }
 
-void solveFriction_BStaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveFriction_BStaticBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveFriction_BStatic(desc[a], cache);
-	}
 }
 
-void solveFriction_BStaticConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+/*void solveFriction_BStaticConcludeBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveFriction_BStatic(desc[a], cache);
-	}
-}
+}*/
 
-void solveFriction_BStaticBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveFriction_BStaticBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveFriction_BStatic(desc[a], cache);
-	}
 }
 
-void solveContactCoulombBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulombBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveContactCoulomb(desc[a], cache);
-	}
 }
 
-void solveContactCoulombConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulombConcludeBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
@@ -471,7 +459,7 @@ void solveContactCoulombConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 	}
 }
 
-void solveContactCoulombBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulombBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
@@ -493,15 +481,13 @@ void solveContactCoulombBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT
 	}
 }
 
-void solveContactCoulomb_BStaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulomb_BStaticBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveContactCoulomb_BStatic(desc[a], cache);
-	}
 }
 
-void solveContactCoulomb_BStaticConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulomb_BStaticConcludeBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
@@ -510,7 +496,7 @@ void solveContactCoulomb_BStaticConcludeBlock(const PxSolverConstraintDesc* PX_R
 	}
 }
 
-void solveContactCoulomb_BStaticBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveContactCoulomb_BStaticBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
@@ -533,7 +519,7 @@ void solveContactCoulomb_BStaticBlockWriteBack(const PxSolverConstraintDesc* PX_
 	}
 }
 
-void solveExtContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache)
+static void solveExtContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache)
 {
 	//We'll need this.
 //	const FloatV zero	= FZero();
@@ -759,45 +745,39 @@ void solveExtFriction(const PxSolverConstraintDesc& desc, SolverContext& cache)
 	PX_ASSERT(currPtr == last);
 }
 
-void solveExtFrictionBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveExtFrictionBlock(DY_PGS_SOLVE_METHOD_PARAMS)
+{
+	for(PxU32 a = 0; a < constraintCount; ++a)
+		solveExtFriction(desc[a], cache);
+}
+
+/*void solveExtFrictionConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
 		solveExtFriction(desc[a], cache);
 	}
-}
+}*/
 
-void solveExtFrictionConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveExtFrictionBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveExtFriction(desc[a], cache);
-	}
 }
 
-void solveExtFrictionBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
-{
-	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
-		solveExtFriction(desc[a], cache);
-	}
-}
-
-void solveConcludeExtContactCoulomb		(const PxSolverConstraintDesc& desc, SolverContext& cache)
+/*void solveConcludeExtContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache)
 {
 	solveExtContactCoulomb(desc, cache);
 	concludeContactCoulomb(desc, cache);
-}
+}*/
 
-void solveExtContactCoulombBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveExtContactCoulombBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
-	{
 		solveExtContactCoulomb(desc[a], cache);
-	}
 }
 
-void solveExtContactCoulombConcludeBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveExtContactCoulombConcludeBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{
@@ -806,7 +786,7 @@ void solveExtContactCoulombConcludeBlock(const PxSolverConstraintDesc* PX_RESTRI
 	}
 }
 
-void solveExtContactCoulombBlockWriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 constraintCount, SolverContext& cache)
+void solveExtContactCoulombBlockWriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
 	for(PxU32 a = 0; a < constraintCount; ++a)
 	{	
@@ -832,7 +812,7 @@ void solveExtContactCoulombBlockWriteBack(const PxSolverConstraintDesc* PX_RESTR
 	}
 }
 
-void solveConcludeContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache)
+/*void solveConcludeContactCoulomb(const PxSolverConstraintDesc& desc, SolverContext& cache)
 {
 	solveContactCoulomb(desc, cache);
 	concludeContactCoulomb(desc, cache);
@@ -842,7 +822,7 @@ void solveConcludeContactCoulomb_BStatic(const PxSolverConstraintDesc& desc, Sol
 {
 	solveContactCoulomb_BStatic(desc, cache);
 	concludeContactCoulomb(desc, cache);
-}
+}*/
 
 }
 

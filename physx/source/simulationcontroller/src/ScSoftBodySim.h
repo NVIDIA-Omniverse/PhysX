@@ -27,6 +27,8 @@
 #ifndef SC_SOFTBODY_SIM_H
 #define SC_SOFTBODY_SIM_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "foundation/PxUserAllocated.h"
 #include "DySoftBody.h"
 #include "ScSoftBodyCore.h" 
@@ -40,10 +42,10 @@ namespace physx
 
 		class SoftBodySim : public ActorSim
 		{
+			PX_NOCOPY(SoftBodySim)
 		public:
-			SoftBodySim(SoftBodyCore& core, Scene& scene);
-
-			~SoftBodySim();
+											SoftBodySim(SoftBodyCore& core, Scene& scene);
+											~SoftBodySim();
 
 			PX_INLINE	Dy::SoftBody*		getLowLevelSoftBody() const { return mLLSoftBody; }
 			PX_INLINE	SoftBodyCore&		getCore() const { return static_cast<SoftBodyCore&>(mCore); }
@@ -57,7 +59,7 @@ namespace physx
 			bool							isSleeping() const;
 			bool							isActive() const { return !isSleeping(); }
 		
-			void							setActive(const bool b, const PxU32 infoFlag = 0);
+			void							setActive(bool active, bool asPartOfCreation=false);
 
 			void							enableSelfCollision();
 			void							disableSelfCollision();
@@ -67,35 +69,28 @@ namespace physx
 			void							attachShapeCore(ShapeCore* core);
 			void							attachSimulationMesh(PxTetrahedronMesh* simulationMesh, PxSoftBodyAuxData* simulationState);
 			PxTetrahedronMesh*				getSimulationMesh();
-			PxSoftBodyAuxData*		getSoftBodyAuxData();
+			PxSoftBodyAuxData*				getSoftBodyAuxData();
 
 			PxTetrahedronMesh*				getCollisionMesh();
 
-			virtual			void			registerCountedInteraction() { mNumCountedInteractions++; }
-			virtual			void			unregisterCountedInteraction() { mNumCountedInteractions--; }
-			virtual			PxU32			getNumCountedInteractions()	const { return mNumCountedInteractions;  }
-
-			virtual			void			activate();
-			virtual			void			deactivate();
-
-			PxU32							getGpuSoftBodyIndex();
+			PxU32							getGpuSoftBodyIndex()	const;
 
 			SoftBodyShapeSim& getShapeSim() { return mShapeSim; }
 		
 		private:
-			SoftBodySim&		operator=(const SoftBodySim&);
-
 			Dy::SoftBody*									mLLSoftBody;
 	
 			SoftBodyShapeSim								mShapeSim;
 
-			PxU32											mNumCountedInteractions;
 			PxU32											mIslandNodeIndex;
 		
+// PT: as far as I can tell these are never actually called
+//							void			activate();
+//							void			deactivate();
 		};
 
 	} // namespace Sc
-
 }
+#endif
 
 #endif

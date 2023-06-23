@@ -34,7 +34,7 @@
 
 #include "GuVecConvex.h"
 #include "GuConvexSupportTable.h"
-#include "GuDistancePointTriangleSIMD.h"
+#include "GuDistancePointTriangle.h"
 
 namespace physx
 {

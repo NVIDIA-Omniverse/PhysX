@@ -28,6 +28,7 @@
 #define NP_HAIR_SYSTEM_H
 
 #include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #include "PxHairSystem.h"
 #include "ScHairSystemCore.h"
@@ -179,6 +180,10 @@ namespace physx
 		virtual void				setRigidAttachments(PxParticleRigidAttachment* attachments, PxU32 numAttachments, bool isGpuPtr) PX_OVERRIDE;
 		virtual PxParticleRigidAttachment* getRigidAttachmentsGpu(PxU32* numAttachments = NULL) PX_OVERRIDE;
 
+		virtual PxU32				addSoftbodyAttachment(const PxSoftBody& softbody, const PxU32* tetIds, const PxVec4* tetmeshBarycentrics,
+			const PxU32* hairVertices, PxU32 numAttachments) PX_OVERRIDE;
+		virtual void				removeSoftbodyAttachment(const PxSoftBody& softbody, PxU32 handle) PX_OVERRIDE;
+
 		virtual void				initFromDesc(const PxHairSystemDesc& desc) PX_OVERRIDE;
 
 		virtual void				setTopology(PxVec4* vertexPositionsInvMass, PxVec4* vertexVelocities,
@@ -239,6 +244,7 @@ namespace physx
 		const char*					getName() const;
 
 	private:
+		void init();
 		void setLlGridSize(const PxBounds3& bounds);
 		void createAllocator();
 		void releaseAllocator();
@@ -266,10 +272,13 @@ namespace physx
 		PxArray<PxReal> mLodProportionOfStrands;
 		PxArray<PxReal> mLodProportionOfVertices;
 
+		PxHashMap<PxU32, PxPair<PxU32, PxU32>> mSoftbodyAttachmentsOffsets; // map from handle to {offset, size}
+		PxPinnedArray<Dy::SoftbodyHairAttachment> mSoftbodyAttachments;
+
 		const PxRigidActor* mRestPositionActor;
 	};
 }
 
 #endif
-
+#endif
 #endif

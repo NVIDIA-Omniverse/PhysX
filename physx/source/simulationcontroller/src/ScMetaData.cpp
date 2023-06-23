@@ -115,7 +115,7 @@ namespace
 			PX_DEF_BIN_METADATA_ITEM(stream,		ShadowPxsBodyCore, PxU8,		isFastMoving,			0)
 			PX_DEF_BIN_METADATA_ITEM(stream,		ShadowPxsBodyCore, PxU8,		disableGravity,			0)
 			PX_DEF_BIN_METADATA_ITEM(stream,		ShadowPxsBodyCore, PxU8,		lockFlags,				0)
-			PX_DEF_BIN_METADATA_ITEM(stream,		ShadowPxsBodyCore, PxU8,		kinematicLink,			0)
+			PX_DEF_BIN_METADATA_ITEM(stream,		ShadowPxsBodyCore, PxU8,		fixedBaseLink,			0)
 		}
 	};
 }
@@ -185,7 +185,6 @@ void Sc::ConstraintCore::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxVec3,					mAppliedForce,			0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxVec3,					mAppliedTorque,			0)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxConstraintConnector,	mConnector,				PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxConstraintProject,	mProject,				PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxConstraintSolverPrep,	mSolverPrep,			PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxConstraintVisualize,	mVisualize,				PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,		ConstraintCore, PxU32,					mDataSize,				0)
@@ -265,7 +264,7 @@ void Sc::ShapeCore::getBinaryMetaData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,	ShapeCore, PxFilterData,	mSimulationFilterData,	0)
 	PX_DEF_BIN_METADATA_ITEM(stream,	ShapeCore, PxsShapeCore,	mCore,					0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	ShapeCore, ShapeSim,		mSimAndIsExclusive,		PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream,	ShapeCore, ShapeSim,		mExclusiveSim,			PxMetaDataFlag::ePTR)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,		ShapeCore, char,		mName,					PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_EXTRA_NAME(stream,	ShapeCore,				mName,					0)

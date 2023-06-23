@@ -62,7 +62,7 @@ fi
 fetch_file_from_s3()
 {
 	SOURCE=$1
-	SOURCE_URL=https://bootstrap.packman.nvidia.com/$SOURCE
+	SOURCE_URL=http://bootstrap.packman.nvidia.com/$SOURCE
 	TARGET=$2
 	echo "Fetching $SOURCE from bootstrap.packman.nvidia.com ..."
 	if command -v wget >/dev/null 2>&1; then

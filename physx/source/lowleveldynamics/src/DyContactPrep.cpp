@@ -53,8 +53,6 @@ PxcCreateFinalizeSolverContactMethod createFinalizeMethods[3] =
 	createFinalizeSolverContactsCoulomb2D
 };
 
-
-
 static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteraction,
 						    const PxContactPoint* buffer,
 							const CorrelationBuffer& c,
@@ -104,7 +102,6 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 	const FloatV invMass0_dom0fV = FMul(d0, invMass0);
 	const FloatV invMass1_dom1fV = FMul(nDom1fV, invMass1);
 
-
 	Vec4V staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4Zero();
 	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, invMass0_dom0fV);
 	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, invMass1_dom1fV);
@@ -150,7 +147,6 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 	const FloatV invDtp8 = FMul(invDt, p8);
 	const FloatV dt = FLoad(dtF32);
 
-
 	for(PxU32 i=0;i<c.frictionPatchCount;i++)
 	{
 		PxU32 contactCount = c.frictionPatchContactCounts[i];
@@ -163,10 +159,8 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 		PxU32 firstPatch = c.correlationListHeads[i];
 		const PxContactPoint* contactBase0 = buffer + c.contactPatches[firstPatch].start;
 
-		
 		SolverContactHeader* PX_RESTRICT header = reinterpret_cast<SolverContactHeader*>(ptr);
 		ptr += sizeof(SolverContactHeader);		
-
 
 		PxPrefetchLine(ptr, 128);
 		PxPrefetchLine(ptr, 256);
@@ -268,8 +262,7 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 
 			const Vec3V t1 = V3Cross(norCross, t0Cross);
 			const VecCrossV t1Cross = V3PrepareCross(t1);
-
-			
+		
 			// since we don't even have the body velocities we can't compute the tangent dirs, so 
 			// the only thing we can do right now is to write the geometric information (which is the
 			// same for both axis constraints of an anchor) We put ra in the raXn field, rb in the rbXn
@@ -322,7 +315,6 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 					const Vec3V raXnSqrtInertia = M33MulV3(invSqrtInertia0, raXn);
 					const Vec3V rbXnSqrtInertia = M33MulV3(invSqrtInertia1, rbXn);	
 
-
 					const FloatV resp0 = FAdd(invMass0_dom0fV, FMul(angD0, V3Dot(raXnSqrtInertia, raXnSqrtInertia)));
 					const FloatV resp1 = FSub(FMul(angD1, V3Dot(rbXnSqrtInertia, rbXnSqrtInertia)), invMass1_dom1fV);
 					const FloatV resp = FAdd(resp0, resp1);
@@ -344,7 +336,6 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 				}
 
 				{
-
 					Vec3V raXn = V3Cross(ra, t1Cross);
 					Vec3V rbXn = V3Cross(rb, t1Cross);
 
@@ -380,7 +371,6 @@ static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteractio
 	}
 }
 
-
 PX_FORCE_INLINE void computeBlockStreamByteSizes(const bool useExtContacts, const CorrelationBuffer& c,
 								PxU32& _solverConstraintByteSize, PxU32& _frictionPatchByteSize, PxU32& _numFrictionPatches,
 								PxU32& _axisConstraintCount)
@@ -395,7 +385,6 @@ PX_FORCE_INLINE void computeBlockStreamByteSizes(const bool useExtContacts, cons
 	PxU32 numFrictionPatches = 0;
 	PxU32 axisConstraintCount = 0;
 
-	
 	for(PxU32 i = 0; i < c.frictionPatchCount; i++)
 	{
 		//Friction patches.
@@ -421,7 +410,6 @@ PX_FORCE_INLINE void computeBlockStreamByteSizes(const bool useExtContacts, cons
 				solverConstraintByteSize += useExtContacts ? c.frictionPatches[i].anchorCount * 2 * sizeof(SolverContactFrictionExt)
 					: c.frictionPatches[i].anchorCount * 2 * sizeof(SolverContactFriction);
 				axisConstraintCount += c.frictionPatches[i].anchorCount * 2;
-
 			}
 		}
 	}
@@ -432,7 +420,7 @@ PX_FORCE_INLINE void computeBlockStreamByteSizes(const bool useExtContacts, cons
 
 	//16-byte alignment.
 	_frictionPatchByteSize = ((frictionPatchByteSize + 0x0f) & ~0x0f);
-	_solverConstraintByteSize =  ((solverConstraintByteSize + 0x0f) & ~0x0f);
+	_solverConstraintByteSize = ((solverConstraintByteSize + 0x0f) & ~0x0f);
 	PX_ASSERT(0 == (_solverConstraintByteSize & 0x0f));
 	PX_ASSERT(0 == (_frictionPatchByteSize & 0x0f));
 }
@@ -525,7 +513,6 @@ static bool reserveBlockStreams(const bool useExtContacts, Dy::CorrelationBuffer
 	return ((0==constraintBlockByteSize || constraintBlock) && (0==frictionPatchByteSize || frictionPatches));
 }
 
-
 bool createFinalizeSolverContacts(
 	PxSolverContactDesc& contactDesc,
 	CorrelationBuffer& c,
@@ -556,7 +543,6 @@ bool createFinalizeSolverContacts(
 
 	desc.constraintLengthOver16 = 0;
 
-
 	if (contactDesc.numContacts == 0)
 	{
 		contactDesc.frictionPtr = NULL;
@@ -576,10 +562,7 @@ bool createFinalizeSolverContacts(
 
 #if PX_CHECKED
 	if (overflow)
-	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
-			"Dropping contacts in solver because we exceeded limit of 32 friction patches.");
-	}
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, "Dropping contacts in solver because we exceeded limit of 32 friction patches.");
 #endif
 
 	growPatches(c, contactDesc.contacts, contactDesc.bodyFrame0, contactDesc.bodyFrame1, 0, frictionOffsetThreshold + contactDesc.restDistance);
@@ -718,9 +701,7 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 
 	const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
 
-	
-
-	FloatV velMultiplier, scaledBias, impulseMultiplier;
+	FloatV velMultiplier, impulseMultiplier;
 	FloatV biasedErr, unbiasedErr;
 
 	const FloatV tVel = FSel(isGreater2, FMul(FNeg(vrel), restitution), zero);
@@ -743,8 +724,8 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 		const FloatV x = FRecip(FScaleAdd(a, unitResponse, FOne()));
 
 		velMultiplier = FMul(x, a);
-		//scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
-		scaledBias = FMul(x, b);
+		//FloatV scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
+		const FloatV scaledBias = FMul(x, b);
 		impulseMultiplier = FSub(FOne(), x);
 
 		unbiasedErr = biasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(scaledBias));
@@ -752,19 +733,17 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 	else
 	{
 		const BoolV ccdSeparationCondition = FIsGrtrOrEq(ccdMaxSeparation, penetration);
-		velMultiplier = FSel(FIsGrtr(FLoad(DY_ARTICULATION_MIN_RESPONSE), unitResponse), zero, FRecip(FAdd(unitResponse, cfm)));
-		scaledBias = FMul(velMultiplier, FMax(maxPenBias, FMul(penetration, invDtp8)));
+		velMultiplier = FSel(FIsGrtr(unitResponse, FZero()), FRecip(FAdd(unitResponse, cfm)), zero);
+		FloatV scaledBias = FMul(velMultiplier, FMax(maxPenBias, FMul(penetration, invDtp8)));
 		scaledBias = FSel(BAnd(ccdSeparationCondition, isGreater2), zero, scaledBias);
 
 		biasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(scaledBias));
 		unbiasedErr = FScaleAdd(targetVelocity, velMultiplier, FSel(isGreater2, zero, FNeg(FMax(scaledBias, zero))));
 		impulseMultiplier = FOne();
-
 	}
 
 	const FloatV deltaF = FMax(FMul(FSub(tVel, FAdd(vrel, FMax(penetrationInvDt, zero))), velMultiplier), zero);
 
-	
 	FStore(biasedErr, &solverContact.biasedErr);
 	FStore(unbiasedErr, &solverContact.unbiasedErr);
 
@@ -778,7 +757,6 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 
 	return deltaF;
 }
-
 
 bool createFinalizeSolverContacts(PxSolverContactDesc& contactDesc,
 								  PxsContactManagerOutput& output,

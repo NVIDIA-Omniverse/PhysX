@@ -38,24 +38,8 @@ SphericalJoint::SphericalJoint(const PxTolerancesScale& /*scale*/, PxRigidActor*
 {
 	SphericalJointData* data = static_cast<SphericalJointData*>(mData);
 
-	data->projectionLinearTolerance	= 1e10f;
-	data->limit						= PxJointLimitCone(PxPi/2, PxPi/2);
-	data->jointFlags				= PxSphericalJointFlags();
-}
-
-void SphericalJoint::setProjectionLinearTolerance(PxReal tolerance)
-{	
-	PX_CHECK_AND_RETURN(PxIsFinite(tolerance) && tolerance >=0, "PxSphericalJoint::setProjectionLinearTolerance: invalid parameter");
-	data().projectionLinearTolerance = tolerance;
-	markDirty(); 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, sphericalProjectionLinearTolerance, static_cast<PxJoint&>(*this), tolerance)
-#endif
-}
-
-PxReal SphericalJoint::getProjectionLinearTolerance() const	
-{	
-	return data().projectionLinearTolerance;		
+	data->limit			= PxJointLimitCone(PxPi/2, PxPi/2);
+	data->jointFlags	= PxSphericalJointFlags();
 }
 
 void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
@@ -64,14 +48,13 @@ void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
 	data().limit = limit; 
 	markDirty();
 #if PX_SUPPORT_OMNI_PVD
-	PxJoint& j = static_cast<PxJoint&>(*this);
-	OMNI_PVD_SET(joint, sphericalLimitYAngle, j, limit.yAngle)
-	OMNI_PVD_SET(joint, sphericalLimitZAngle, j, limit.zAngle)
-	OMNI_PVD_SET(joint, sphericalLimitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(joint, sphericalLimitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(joint, sphericalLimitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(joint, sphericalLimitDamping, j, limit.damping)
-	OMNI_PVD_SET(joint, sphericalLimitContactDistance, j, limit.contactDistance_deprecated)
+	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(*this);
+	OMNI_PVD_SET(PxSphericalJoint, limitYAngle, j, limit.yAngle)
+	OMNI_PVD_SET(PxSphericalJoint, limitZAngle, j, limit.zAngle)
+	OMNI_PVD_SET(PxSphericalJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET(PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET(PxSphericalJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET(PxSphericalJoint, limitDamping, j, limit.damping)
 #endif
 }
 
@@ -87,10 +70,9 @@ PxSphericalJointFlags SphericalJoint::getSphericalJointFlags(void) const
 
 void SphericalJoint::setSphericalJointFlags(PxSphericalJointFlags flags)
 { 
-	data().jointFlags = flags; 
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, sphericalJointFlags, static_cast<PxJoint&>(*this), flags)
-#endif
+	data().jointFlags = flags;
+
+	OMNI_PVD_SET(PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), flags)
 }
 
 void SphericalJoint::setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool value)
@@ -100,9 +82,8 @@ void SphericalJoint::setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool
 	else
 		data().jointFlags &= ~flag;
 	markDirty();
-#if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_SET(joint, sphericalJointFlags, static_cast<PxJoint&>(*this), getSphericalJointFlags())
-#endif
+
+	OMNI_PVD_SET(PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), getSphericalJointFlags())
 }
 
 PxReal SphericalJoint::getSwingYAngle()	const
@@ -115,46 +96,24 @@ PxReal SphericalJoint::getSwingZAngle()	const
 	return getSwingZAngle_Internal();
 }
 
-static void SphericalJointProject(const void* constantBlock, PxTransform& bodyAToWorld, PxTransform& bodyBToWorld, bool projectToA)
-{
-	const SphericalJointData& data = *reinterpret_cast<const SphericalJointData*>(constantBlock);
-
-	PxTransform cA2w, cB2w, cB2cA, projected;
-	joint::computeDerived(data, bodyAToWorld, bodyBToWorld, cA2w, cB2w, cB2cA);
-
-	bool linearTrunc;
-	projected.p = joint::truncateLinear(cB2cA.p, data.projectionLinearTolerance, linearTrunc);
-
-	if(linearTrunc)
-	{
-		projected.q = cB2cA.q;
-		joint::projectTransforms(bodyAToWorld, bodyBToWorld, cA2w, cB2w, projected, data, projectToA);
-	}
-}
-
 static void SphericalJointVisualize(PxConstraintVisualizer& viz, const void* constantBlock, const PxTransform& body0Transform, const PxTransform& body1Transform, PxU32 flags)
 {
 	const SphericalJointData& data = *reinterpret_cast<const SphericalJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::computeJointFrames(cA2w, cB2w, data, body0Transform, body1Transform);
 	if(flags & PxConstraintVisualizationFlag::eLOCAL_FRAMES)
 		viz.visualizeJointFrames(cA2w, cB2w);
 
 	if((flags & PxConstraintVisualizationFlag::eLIMITS) && (data.jointFlags & PxSphericalJointFlag::eLIMIT_ENABLED))
 	{
-		if(cA2w.q.dot(cB2w.q)<0.0f)
-			cB2w.q = -cB2w.q;
+		joint::applyNeighborhoodOperator(cA2w, cB2w);
 
-		const PxTransform cB2cA = cA2w.transformInv(cB2w);	
+		const PxTransform cB2cA = cA2w.transformInv(cB2w);
 		PxQuat swing, twist;
-		PxSeparateSwingTwist(cB2cA.q,swing,twist);
+		PxSeparateSwingTwist(cB2cA.q, swing, twist);
 
-		// PT: TODO: refactor with D6 joint code
-		const PxReal pad = data.limit.isSoft() ? 0.0f : data.limit.contactDistance_deprecated;
-		const PxVec3 swingAngle(0.0f, computeSwingAngle(swing.y, swing.w), computeSwingAngle(swing.z, swing.w));
-		Cm::ConeLimitHelperTanLess coneHelper(data.limit.yAngle, data.limit.zAngle, pad);
-		viz.visualizeLimitCone(cA2w, PxTan(data.limit.zAngle/4), PxTan(data.limit.yAngle/4), !coneHelper.contains(swingAngle));
+		viz.visualizeLimitCone(cA2w, PxTan(data.limit.zAngle/4), PxTan(data.limit.yAngle/4));
 	}
 }
 
@@ -171,11 +130,10 @@ static PxU32 SphericalJointSolverPrep(Px1DConstraint* constraints,
 {
 	const SphericalJointData& data = *reinterpret_cast<const SphericalJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
-	if(cB2w.q.dot(cA2w.q)<0.0f)
-		cB2w.q = -cB2w.q;
+	joint::applyNeighborhoodOperator(cA2w, cB2w);
 
 	if(data.jointFlags & PxSphericalJointFlag::eLIMIT_ENABLED)
 	{
@@ -183,14 +141,11 @@ static PxU32 SphericalJointSolverPrep(Px1DConstraint* constraints,
 		PxSeparateSwingTwist(cA2w.q.getConjugate() * cB2w.q, swing, twist);
 		PX_ASSERT(PxAbs(swing.x)<1e-6f);
 
-		// PT: TODO: refactor with D6 joint code
 		PxVec3 axis;
 		PxReal error;
-		const PxReal pad = data.limit.isSoft() ? 0.0f : data.limit.contactDistance_deprecated;
-		const Cm::ConeLimitHelperTanLess coneHelper(data.limit.yAngle, data.limit.zAngle, pad);
-		const bool active = coneHelper.getLimit(swing, axis, error);				
-		if(active)
-			ch.angularLimit(cA2w.rotate(axis), error, data.limit);
+		const Cm::ConeLimitHelperTanLess coneHelper(data.limit.yAngle, data.limit.zAngle);
+		coneHelper.getLimit(swing, axis, error);
+		ch.angularLimit(cA2w.rotate(axis), error, data.limit);
 	}
 
 	PxVec3 ra, rb;
@@ -203,7 +158,7 @@ static PxU32 SphericalJointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gSphericalJointShaders = { SphericalJointSolverPrep, SphericalJointProject, SphericalJointVisualize, PxConstraintFlag::Enum(0) };
+static PxConstraintShaderTable gSphericalJointShaders = { SphericalJointSolverPrep, SphericalJointVisualize, PxConstraintFlag::Enum(0) };
 
 PxConstraintSolverPrep SphericalJoint::getPrep()	const	{ return gSphericalJointShaders.solverPrep; }
 
@@ -228,31 +183,30 @@ void SphericalJoint::resolveReferences(PxDeserializationContext& context)
 
 void SphericalJoint::updateOmniPvdProperties() const
 {
-	const PxJoint& j = static_cast<const PxJoint&>(*this);
-	OMNI_PVD_SET(joint, sphericalSwingYAngle, j, getSwingYAngle())
-	OMNI_PVD_SET(joint, sphericalSwingZAngle, j, getSwingZAngle())
+    const PxSphericalJoint& j = static_cast<const PxSphericalJoint&>(*this);
+	OMNI_PVD_SET(PxSphericalJoint, swingYAngle, j, getSwingYAngle())
+	OMNI_PVD_SET(PxSphericalJoint, swingZAngle, j, getSwingZAngle())
 }
 
 template<>
 void physx::Ext::omniPvdInitJoint<SphericalJoint>(SphericalJoint* joint)
 {
-	PxJoint& j = static_cast<PxJoint&>(*joint);
-	OMNI_PVD_SET(joint, type, j, PxJointConcreteType::eSPHERICAL)
-	OMNI_PVD_SET(joint, sphericalProjectionLinearTolerance, j, joint->getProjectionLinearTolerance())
+	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(*joint);
+	OMNI_PVD_CREATE(PxSphericalJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eSPHERICAL);
 
 	PxJointLimitCone limit = joint->getLimitCone();
-	OMNI_PVD_SET(joint, sphericalLimitYAngle, j, limit.yAngle)
-	OMNI_PVD_SET(joint, sphericalLimitZAngle, j, limit.zAngle)
-	OMNI_PVD_SET(joint, sphericalLimitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(joint, sphericalLimitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(joint, sphericalLimitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(joint, sphericalLimitDamping, j, limit.damping)
-	OMNI_PVD_SET(joint, sphericalLimitContactDistance, j, limit.contactDistance_deprecated)
+	OMNI_PVD_SET(PxSphericalJoint, limitYAngle, j, limit.yAngle)
+	OMNI_PVD_SET(PxSphericalJoint, limitZAngle, j, limit.zAngle)
+	OMNI_PVD_SET(PxSphericalJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET(PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET(PxSphericalJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET(PxSphericalJoint, limitDamping, j, limit.damping)
 
-	OMNI_PVD_SET(joint, sphericalJointFlags, j, joint->getSphericalJointFlags())
+	OMNI_PVD_SET(PxSphericalJoint, jointFlags, j, joint->getSphericalJointFlags())
 
-	OMNI_PVD_SET(joint, sphericalSwingYAngle, j, joint->getSwingYAngle())
-	OMNI_PVD_SET(joint, sphericalSwingZAngle, j, joint->getSwingZAngle())
+	OMNI_PVD_SET(PxSphericalJoint, swingYAngle, j, joint->getSwingYAngle())
+	OMNI_PVD_SET(PxSphericalJoint, swingZAngle, j, joint->getSwingZAngle())
 }
 
 #endif

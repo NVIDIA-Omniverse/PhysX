@@ -32,7 +32,6 @@
 #include "GuIntersectionRayTriangle.h"
 #include "GuIntersectionCapsuleTriangle.h"
 #include "GuIntersectionRayBox.h"
-#include "GuIntersectionRayBoxSIMD.h"
 #include "GuSphere.h"
 #include "GuBoxConversion.h"
 #include "GuConvexUtilsInternal.h"

@@ -30,6 +30,7 @@
 #define DY_ARTICULATION_INTERFACE_H
 
 #include "DyArticulationUtils.h"
+#include "DyFeatherstoneArticulation.h"
 
 namespace physx
 {
@@ -41,47 +42,6 @@ class ArticulationPImpl
 {
 public:
 
-	typedef PxU32 (*ComputeUnconstrainedVelocitiesFn)(const ArticulationSolverDesc& desc,
-													 PxReal dt,
-													 PxU32& acCount,
-													 const PxVec3& gravity, 
-													 Cm::SpatialVectorF* Z, Cm::SpatialVectorF* DeltaV, 
-													 const PxReal invLengthScale);
-
-	typedef void (*UpdateBodiesFn)(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* deltaV, PxReal dt);
-
-	typedef void (*SaveVelocityFn)(const ArticulationSolverDesc &m, Cm::SpatialVectorF* deltaV);
-
-	typedef void(*SaveVelocityTGSFn)(const ArticulationSolverDesc& m, PxReal invDtF32);
-
-	typedef PxU32(*SetupInternalConstraintsTGSFn)(const ArticulationSolverDesc& desc,
-		PxReal dt,
-		PxReal invDt,
-		PxReal totalDt,
-		const PxReal biasCoefficient,
-		PxU32& acCount,
-		Cm::SpatialVectorF* Z);
-
-	typedef void(*ComputeUnconstrainedVelocitiesTGSFn)(const ArticulationSolverDesc& desc,
-		PxReal dt,
-		const PxVec3& gravity, PxU64 contextID, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* DeltaV,
-		const PxReal invLengthScale);
-
-	typedef void(*UpdateDeltaMotionFn)(const ArticulationSolverDesc &m, const PxReal dt, Cm::SpatialVectorF* DeltaV, const PxReal totalInvDt);
-
-	typedef void(*DeltaMotionToMotionVelFn)(const ArticulationSolverDesc &m, const PxReal dt);
-
-	static ComputeUnconstrainedVelocitiesFn sComputeUnconstrainedVelocities;
-	static UpdateBodiesFn sUpdateBodies;
-	static UpdateBodiesFn sUpdateBodiesTGS;
-	static SaveVelocityFn sSaveVelocity;
-	static SaveVelocityTGSFn sSaveVelocityTGS;
-
-	static UpdateDeltaMotionFn sUpdateDeltaMotion;
-	static DeltaMotionToMotionVelFn sDeltaMotionToMotionVel;
-	static ComputeUnconstrainedVelocitiesTGSFn sComputeUnconstrainedVelocitiesTGS;
-	static SetupInternalConstraintsTGSFn sSetupInternalConstraintsTGS;
-
 	static PxU32 computeUnconstrainedVelocities(const ArticulationSolverDesc& desc,
 											PxReal dt,
 											PxU32& acCount,
@@ -90,45 +50,29 @@ public:
 											Cm::SpatialVectorF* deltaV,
 											const PxReal invLengthScale)
 	{
-		PX_ASSERT(sComputeUnconstrainedVelocities);
-		if (sComputeUnconstrainedVelocities)
-			return (sComputeUnconstrainedVelocities)(desc, dt,  acCount,
-				gravity, Z, deltaV, invLengthScale);
-		else
-			return 0;
+		return FeatherstoneArticulation::computeUnconstrainedVelocities(desc, dt,  acCount, gravity, Z, deltaV, invLengthScale);
 	}
 
 	static void	updateBodies(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* tempDeltaV,
 						 PxReal dt)
 	{
-		PX_ASSERT(sUpdateBodies);
-		if (sUpdateBodies)
-			(*sUpdateBodies)(desc, tempDeltaV, dt);
+		FeatherstoneArticulation::updateBodies(desc, tempDeltaV, dt);
 	}
 
 	static void	updateBodiesTGS(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* tempDeltaV,
 		PxReal dt)
 	{
-		PX_ASSERT(sUpdateBodiesTGS);
-		if (sUpdateBodiesTGS)
-			(*sUpdateBodiesTGS)(desc, tempDeltaV, dt);
+		FeatherstoneArticulation::updateBodiesTGS(desc, tempDeltaV, dt);
 	}
 
-	static void	saveVelocity(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* tempDeltaV)
+	static void	saveVelocity(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV)
 	{
-		PX_ASSERT(sSaveVelocity);
-		if (sSaveVelocity)
-			(*sSaveVelocity)(desc, tempDeltaV);
+		FeatherstoneArticulation::saveVelocity(articulation, tempDeltaV);
 	}
 
-
-	static void	saveVelocityTGS(const ArticulationSolverDesc& desc, PxReal invDtF32)
+	static void	saveVelocityTGS(FeatherstoneArticulation* articulation, PxReal invDtF32)
 	{
-		PX_UNUSED(desc);
-		PX_UNUSED(invDtF32);
-		PX_ASSERT(sSaveVelocityTGS);
-		if (sSaveVelocityTGS)
-			(*sSaveVelocityTGS)(desc, invDtF32);
+		FeatherstoneArticulation::saveVelocityTGS(articulation, invDtF32);
 	}
 
 	static void computeUnconstrainedVelocitiesTGS(const ArticulationSolverDesc& desc,
@@ -136,23 +80,17 @@ public:
 		const PxVec3& gravity, PxU64 contextID, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* DeltaV,
 		const PxReal invLengthScale)
 	{
-		PX_ASSERT(sComputeUnconstrainedVelocitiesTGS);
-		if (sComputeUnconstrainedVelocitiesTGS)
-			(sComputeUnconstrainedVelocitiesTGS)(desc, dt, gravity, contextID, Z, DeltaV, invLengthScale);
+		FeatherstoneArticulation::computeUnconstrainedVelocitiesTGS(desc, dt, gravity, contextID, Z, DeltaV, invLengthScale);
 	}
 
 	static void	updateDeltaMotion(const ArticulationSolverDesc& desc, const PxReal dt, Cm::SpatialVectorF* DeltaV, const PxReal totalInvDt)
 	{
-		PX_ASSERT(sUpdateDeltaMotion);
-		if (sUpdateDeltaMotion)
-			(*sUpdateDeltaMotion)(desc, dt, DeltaV, totalInvDt);
+		FeatherstoneArticulation::recordDeltaMotion(desc, dt, DeltaV, totalInvDt);
 	}
 
 	static void	deltaMotionToMotionVel(const ArticulationSolverDesc& desc, const PxReal invDt)
 	{
-		PX_ASSERT(sDeltaMotionToMotionVel);
-		if (sDeltaMotionToMotionVel)
-			(*sDeltaMotionToMotionVel)(desc, invDt);
+		FeatherstoneArticulation::deltaMotionToMotionVelocity(desc, invDt);
 	}
 
 	static PxU32 setupSolverInternalConstraintsTGS(const ArticulationSolverDesc& desc,
@@ -163,12 +101,7 @@ public:
 		PxU32& acCount,
 		Cm::SpatialVectorF* Z)
 	{
-		PX_ASSERT(sSetupInternalConstraintsTGS);
-		if (sSetupInternalConstraintsTGS)
-			return sSetupInternalConstraintsTGS(desc,  dt, invDt, 
-				totalDt, biasCoefficient, acCount,  Z);
-		return 0;
-
+		return FeatherstoneArticulation::setupSolverConstraintsTGS(desc,  dt, invDt, totalDt, biasCoefficient, acCount,  Z);
 	}
 };
 

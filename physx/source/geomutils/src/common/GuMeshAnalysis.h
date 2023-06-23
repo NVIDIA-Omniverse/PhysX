@@ -59,7 +59,7 @@ namespace Gu
 		};
 
 		template<typename T, typename S>
-		static void splitRanges(PxArray<Range>& mergeRanges, const PxArray<PxI32>& indexer, const PxArray<T>& points, PxI32 dimIndex, S tol)
+		static void splitRanges(PxArray<Range>& mergeRanges, const PxArray<PxI32>& indexer, const T* points, PxI32 dimIndex, S tol)
 		{
 			PxArray<Range> newMergeRanges;
 
@@ -106,25 +106,25 @@ namespace Gu
 
 	public:
 		template<typename T, typename S>
-		static void mapDuplicatePoints(const PxArray<T>& points, PxArray<PxI32>& result, S duplicateDistanceManhattanMetric = static_cast<S>(1e-6))
+		static void mapDuplicatePoints(const T* points, const PxU32 nbPoints, PxArray<PxI32>& result, S duplicateDistanceManhattanMetric = static_cast<S>(1e-6))
 		{
-			result.reserve(points.size());
-			result.forceSize_Unsafe(points.size());
+			result.reserve(nbPoints);
+			result.forceSize_Unsafe(nbPoints);
 
 			PxArray<PxI32> indexer;
-			indexer.reserve(points.size());
-			indexer.forceSize_Unsafe(points.size());
-			for (PxU32 i = 0; i < points.size(); ++i)
+			indexer.reserve(nbPoints);
+			indexer.forceSize_Unsafe(nbPoints);
+			for (PxU32 i = 0; i < nbPoints; ++i)
 			{
 				indexer[i] = i;
 				result[i] = i;
 			}
 
-			Comparer<T> comparer(points.begin(), 0);
+			Comparer<T> comparer(points, 0);
 			PxSort(indexer.begin(), indexer.size(), comparer);
 
 			PxArray<Range> mergeRanges;
-			mergeRanges.pushBack(Range(0, points.size()));
+			mergeRanges.pushBack(Range(0, nbPoints));
 			splitRanges<T>(mergeRanges, indexer, points, 0, duplicateDistanceManhattanMetric);
 
 			comparer.dimension = 1;
@@ -154,9 +154,11 @@ namespace Gu
 		}
 
 		PX_PHYSX_COMMON_API static bool buildTriangleAdjacency(const Triangle* tris, PxU32 numTriangles, PxArray<PxI32>& result, PxHashMap<PxU64, PxI32>& edges);
-		PX_PHYSX_COMMON_API static bool checkConsistentTriangleOrientation(const Triangle* tris, PxU32 numTriangles, PxArray<bool>& flip, PxHashMap<PxU64, PxI32>& edges);
+		PX_PHYSX_COMMON_API static bool checkConsistentTriangleOrientation(const Triangle* tris, PxU32 numTriangles);
+		PX_PHYSX_COMMON_API static bool buildConsistentTriangleOrientationMap(const Triangle* tris, PxU32 numTriangles, PxArray<bool>& flipMap, 
+			PxHashMap<PxU64, PxI32>& edges, PxArray<PxArray<PxU32>>& connectedTriangleGroups);
 		PX_PHYSX_COMMON_API static bool makeTriOrientationConsistent(Triangle* tris, PxU32 numTriangles, bool invertOrientation = false);
-		PX_PHYSX_COMMON_API static bool checkMeshWatertightness(const Triangle* tris, PxU32 numTriangles);
+		PX_PHYSX_COMMON_API static bool checkMeshWatertightness(const Triangle* tris, PxU32 numTriangles, bool treatInconsistentWindingAsNonWatertight = true);
 	};
 }
 }

@@ -78,7 +78,7 @@ class PxTransformV
 		q = QuatIdentity();
 	}
 
-	PX_FORCE_INLINE void Invalidate()
+	PX_FORCE_INLINE void invalidate()
 	{
 		p = V3Splat(FMax());
 		q = QuatIdentity();

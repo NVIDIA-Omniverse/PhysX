@@ -28,6 +28,7 @@
 
 #ifdef RENDER_SNIPPET
 
+#if PX_SUPPORT_OMNI_PVD
 #include <vector>
 
 #include "PxPhysicsAPI.h"
@@ -81,4 +82,6 @@ void renderLoop()
 	initPhysicsWithOmniPvd();
 	glutMainLoop();
 }
+#endif  // PX_SUPPORT_OMNI_PVD
+
 #endif

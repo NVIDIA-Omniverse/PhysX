@@ -27,6 +27,7 @@
 #include "ExtMeshSimplificator.h"
 #include "foundation/PxSort.h"
 
+
 namespace physx
 {
 	namespace Ext
@@ -204,11 +205,17 @@ namespace physx
 			return 0;
 		}
 
+		inline PxVec3Ex MeshSimplificator::projectPoint(const PxVec3& p)
+		{
+			PxU32 triangleId;
+			PxVec3 pos = projector->projectPoint(p, triangleId);
+			return PxVec3Ex(pos, triangleId);
+		}
+
 		// -------------------------------------------------------------------------------------
-		void MeshSimplificator::evalEdgeCost(PxI32 triNr, PxI32 edgeNr, PxReal &cost, PxReal &ratio)
+		PxVec3Ex MeshSimplificator::evalEdgeCost(PxI32 triNr, PxI32 edgeNr, PxReal &cost)
 		{
 			const PxI32 numSteps = 10;
-			ratio = -1.0f;
 			cost = -1.0f;
 			PxI32 id0 = triIds[3 * triNr + edgeNr];
 			PxI32 id1 = triIds[3 * triNr + (edgeNr + 1) % 3];
@@ -217,19 +224,22 @@ namespace physx
 			PxReal maxCost = -FLT_MAX;		
 
 			Quadric q; q = quadrics[id0] + quadrics[id1];
-			PxVec3 pos;
+			PxVec3Ex pos;
 
-			PxReal edgeLength = (vertices[id0] - vertices[id1]).magnitude();
+			PxReal edgeLength = (vertices[id0].p - vertices[id1].p).magnitude();
 
 			for (PxI32 i = 0; i <= numSteps; i++) 
 			{
 				float r = 1.0f / numSteps * i;
-				pos = vertices[id0] * (1.0f - r) + vertices[id1] * r;
-				float c = q.outerProduct(pos);
+				pos.p = vertices[id0].p * (1.0f - r) + vertices[id1].p * r;
+				if (projector)
+					pos = projectPoint(pos.p);
+
+				float c = q.outerProduct(pos.p);
 				c += edgeLengthCostWeight * edgeLength;
 				if (cost < 0.0f || c < cost) 
 				{
-					cost = c; ratio = r;
+					cost = c; 
 				}
 				if (cost > maxCost) 				
 					maxCost = cost; 				
@@ -240,10 +250,12 @@ namespace physx
 			if (maxCost - minCost < flatnessDetectionThreshold)
 			{
 				float r = 0.5f;
-				pos = vertices[id0] * (1.0f - r) + vertices[id1] * r;
-				cost = q.outerProduct(pos) + edgeLengthCostWeight * edgeLength;
-				ratio = r;
-			}
+				pos.p = vertices[id0].p * (1.0f - r) + vertices[id1].p * r;
+				if (projector)
+					pos = projectPoint(pos.p);
+				cost = q.outerProduct(pos.p) + edgeLengthCostWeight * edgeLength;
+			}			
+			return pos;
 		}
 
 		// -------------------------------------------------------------------------------------
@@ -295,10 +307,10 @@ namespace physx
 
 			// new center pos
 
-			float cost, ratio;
-			evalEdgeCost(triNr, edgeNr, cost, ratio);
-			PxVec3 newPos = vertices[id0] * (1.0f - ratio) + vertices[id1] * ratio;
-
+			PxReal cost;
+			PxVec3Ex newPos = evalEdgeCost(triNr, edgeNr, cost);
+			//PxVec3 newPos = vertices[id0] * (1.0f - ratio) + vertices[id1] * ratio;
+			
 			// any triangle flips?
 
 			for (PxI32 side = 0; side < 2; side++) 
@@ -315,8 +327,8 @@ namespace physx
 						PxI32 id = triIds[3 * adj + j];
 						if (id == other)
 							deleted = true;
-						p[j] = vertices[id];
-						q[j] = (id == id0 || id == id1) ? newPos : p[j];
+						p[j] = vertices[id].p;
+						q[j] = (id == id0 || id == id1) ? newPos.p : p[j];
 					}
 					if (!deleted)
 					{
@@ -416,7 +428,7 @@ namespace physx
 						PxI32 adj1 = triIds[3 * adj + (j + 1) % 3];
 						if (adj0 == id0 || adj1 == id0) 
 						{
-							evalEdgeCost(adj, j, cost, ratio);
+							evalEdgeCost(adj, j, cost);
 							PxI32 id = getEdgeId(adj, j);
 
 							heap.insert(HeapElem(adj, j, cost), id);
@@ -433,14 +445,14 @@ namespace physx
 #endif
 
 
-		void minMax(const PxArray<PxVec3>& points, PxVec3& min, PxVec3& max)
+		void minMax(const PxArray<PxVec3Ex>& points, PxVec3& min, PxVec3& max)
 		{
 			min = PxVec3(FLT_MAX, FLT_MAX, FLT_MAX);
 			max = PxVec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 			for (PxU32 i = 0; i < points.size(); ++i)
 			{
-				const PxVec3& p = points[i];				
+				const PxVec3& p = points[i].p;				
 				if (p.x > max.x) max.x = p.x; if (p.y > max.y) max.y = p.y; if (p.z > max.z) max.z = p.z;
 				if (p.x < min.x) min.x = p.x; if (p.y < min.y) min.y = p.y; if (p.z < min.z) min.z = p.z;
 			}
@@ -450,7 +462,7 @@ namespace physx
 #pragma GCC diagnostic pop
 #endif
 
-		void MeshSimplificator::transformPointsToUnitBox(PxArray<PxVec3>& points)
+		void MeshSimplificator::transformPointsToUnitBox(PxArray<PxVec3Ex>& points)
 		{
 			PxVec3 min, max;
 			minMax(points, min, max);
@@ -460,7 +472,7 @@ namespace physx
 			scaling = 1.0f / PxMax(PxMax(1e-6f, size.x), PxMax(size.y, size.z));
 
 			for (PxU32 i = 0; i < points.size(); ++i)
-				points[i] = (points[i] - min) * scaling;
+				points[i].p = (points[i].p - min) * scaling;
 		}
 
 		void MeshSimplificator::transformPointsToOriginalPosition(PxArray<PxVec3>& points)
@@ -471,14 +483,15 @@ namespace physx
 		}
 
 		// -------------------------------------------------------------------------------------
-		void MeshSimplificator::init(const PxSimpleTriangleMesh& inputMesh, PxReal edgeLengthCostWeight_, PxReal flatnessDetectionThreshold_)
+		void MeshSimplificator::init(const PxSimpleTriangleMesh& inputMesh, PxReal edgeLengthCostWeight_, 
+			PxReal flatnessDetectionThreshold_, bool projectSimplifiedPointsOnInputMeshSurface)
 		{
 			edgeLengthCostWeight = edgeLengthCostWeight_;
 			flatnessDetectionThreshold = flatnessDetectionThreshold_;
 
 			vertices.resize(inputMesh.points.count);
 			for (PxU32 i = 0; i < inputMesh.points.count; i++)
-				vertices[i] = inputMesh.points.at<PxVec3>(i);
+				vertices[i] = PxVec3Ex(inputMesh.points.at<PxVec3>(i));
 
 			transformPointsToUnitBox(vertices);
 
@@ -496,16 +509,38 @@ namespace physx
 					triIds[i] = PxI32(inputMesh.triangles.at<PxU32>(i));
 			}
 
+			for (PxU32 i = 0; i < triIds.size(); i++)
+				vertices[triIds[i]].i = i / 3;
+
+			if (projectSimplifiedPointsOnInputMeshSurface)
+			{
+				originalTriIds.resize(triIds.size());
+				for (PxU32 i = 0; i < triIds.size(); ++i)
+					originalTriIds[i] = triIds[i];
+				scaledOriginalVertices.resize(inputMesh.points.count);
+				for (PxU32 i = 0; i < inputMesh.points.count; i++)
+					scaledOriginalVertices[i] = vertices[i].p;
+				projector = Gu::PxCreatePointOntoTriangleMeshProjector(scaledOriginalVertices.begin(), originalTriIds.begin(), inputMesh.triangles.count);
+			}
+			else
+				projector = NULL;
+
 			init();
 		}
 
 		// -------------------------------------------------------------------------------------
-		void MeshSimplificator::init(const PxArray<PxVec3> &inputVertices, const PxArray<PxU32> &inputTriIds, PxReal edgeLengthCostWeight_, PxReal flatnessDetectionThreshold_)
+		void MeshSimplificator::init(const PxArray<PxVec3> &inputVertices, const PxArray<PxU32> &inputTriIds, PxReal edgeLengthCostWeight_, 
+			PxReal flatnessDetectionThreshold_, bool projectSimplifiedPointsOnInputMeshSurface)
 		{
 			edgeLengthCostWeight = edgeLengthCostWeight_;
 			flatnessDetectionThreshold = flatnessDetectionThreshold_;
 
-			vertices = inputVertices;
+			vertices.resize(inputVertices.size());
+			for (PxU32 i = 0; i < inputVertices.size(); i++)
+				vertices[i] = PxVec3Ex(inputVertices[i]);
+
+			for (PxU32 i = 0; i < inputTriIds.size(); i++)
+				vertices[inputTriIds[i]].i = i / 3;
 
 			transformPointsToUnitBox(vertices);
 
@@ -513,7 +548,25 @@ namespace physx
 			for (PxU32 i = 0; i < inputTriIds.size(); i++)
 				triIds[i] = PxI32(inputTriIds[i]);
 
+			if (projectSimplifiedPointsOnInputMeshSurface)
+			{
+				scaledOriginalVertices.resize(inputVertices.size());
+				for (PxU32 i = 0; i < inputVertices.size(); i++)
+					scaledOriginalVertices[i] = vertices[i].p;
+				projector = Gu::PxCreatePointOntoTriangleMeshProjector(scaledOriginalVertices.begin(), inputTriIds.begin(), inputTriIds.size() / 3);
+			}
+			else
+				projector = NULL;
+
 			init();
+		}
+
+		MeshSimplificator::~MeshSimplificator()
+		{
+			if (projector)
+			{
+				PX_RELEASE(projector)
+			}
 		}
 
 		// -------------------------------------------------------------------------------------
@@ -540,7 +593,7 @@ namespace physx
 				PxI32 id0 = triIds[3 * i];
 				PxI32 id1 = triIds[3 * i + 1];
 				PxI32 id2 = triIds[3 * i + 2];
-				q.setFromPlane(vertices[id0], vertices[id1], vertices[id2]);
+				q.setFromPlane(vertices[id0].p, vertices[id1].p, vertices[id2].p);
 				quadrics[id0] += q;
 				quadrics[id1] += q;
 				quadrics[id2] += q;
@@ -555,10 +608,10 @@ namespace physx
 				for (PxI32 j = 0; j < 3; j++) 
 				{
 					PxI32 n = triNeighbors[3 * i + j];
-					if (n < 0 || i < n) {
-
-						float cost, ratio;
-						evalEdgeCost(i, j, cost, ratio);
+					if (n < 0 || i < n) 
+					{
+						PxReal cost;
+						evalEdgeCost(i, j, cost);
 						heap.insert(HeapElem(i, j, cost), getEdgeId(i, j));
 					}
 				}
@@ -586,7 +639,7 @@ namespace physx
 
 				PxI32 id0 = triIds[3 * e.triNr + e.edgeNr];
 				PxI32 id1 = triIds[3 * e.triNr + (e.edgeNr + 1) % 3];
-				PxF32 length = (vertices[id0] - vertices[id1]).magnitude();
+				PxF32 length = (vertices[id0].p - vertices[id1].p).magnitude();
 				if (maximalEdgeLength == 0.0f || length < maximalEdgeLength) 
 				{
 					collapseEdge(e.triNr, e.edgeNr);
@@ -619,7 +672,7 @@ namespace physx
 		}
 
 		// -------------------------------------------------------------------------------------
-		void MeshSimplificator::readBack(PxArray<PxVec3>& outVertices, PxArray<PxU32>& outTriIds, PxArray<PxU32> *vertexMap)
+		void MeshSimplificator::readBack(PxArray<PxVec3>& outVertices, PxArray<PxU32>& outTriIds, PxArray<PxU32> *vertexMap, PxArray<PxU32> *outputVertexToInputTriangle)
 		{
 			outVertices.clear();
 			outTriIds.clear();
@@ -638,7 +691,9 @@ namespace physx
 					if (idMap[id] < 0) 
 					{
 						idMap[id] = outVertices.size();
-						outVertices.pushBack(vertices[id]);
+						outVertices.pushBack(vertices[id].p);
+						if(outputVertexToInputTriangle && projector)
+							outputVertexToInputTriangle->pushBack(vertices[id].i);
 					}
 					outTriIds.pushBack(PxU32(idMap[id]));
 				}

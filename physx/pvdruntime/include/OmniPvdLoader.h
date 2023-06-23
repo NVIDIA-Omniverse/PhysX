@@ -34,7 +34,9 @@
 #include <stdio.h>
 
 #ifdef OMNI_PVD_WIN
-	#include <windows.h>
+	#ifndef _WINDOWS_ // windows already included otherwise
+		#include <foundation/windows/PxWindowsInclude.h>
+	#endif
 #elif defined(__linux__)
 	#include <dlfcn.h>
 #endif

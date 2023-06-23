@@ -43,27 +43,27 @@ namespace physx
 	class XmlWriter;
 	class MemoryBuffer;
 				
-	struct PxMaterialRepXSerializer : RepXSerializerImpl<PxMaterial>
+	struct PX_DEPRECATED PxMaterialRepXSerializer : RepXSerializerImpl<PxMaterial>
 	{
 		PxMaterialRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxMaterial>( inCallback ) {}
 		virtual PxMaterial* allocateObject( PxRepXInstantiationArgs& );
 	};
 
-	struct PxShapeRepXSerializer : public RepXSerializerImpl<PxShape>
+	struct PX_DEPRECATED PxShapeRepXSerializer : public RepXSerializerImpl<PxShape>
 	{
 		PxShapeRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxShape>( inCallback ) {}
 		virtual PxRepXObject fileToObject( XmlReader&, XmlMemoryAllocator&, PxRepXInstantiationArgs&, PxCollection* );
 		virtual PxShape* allocateObject( PxRepXInstantiationArgs& ) { return NULL; }
 	};
 	
-	struct PxBVH33TriangleMeshRepXSerializer  : public RepXSerializerImpl<PxBVH33TriangleMesh>
+	struct PX_DEPRECATED PxBVH33TriangleMeshRepXSerializer  : public RepXSerializerImpl<PxBVH33TriangleMesh>
 	{
 		PxBVH33TriangleMeshRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxBVH33TriangleMesh>( inCallback ) {}
 		virtual void objectToFileImpl( const PxBVH33TriangleMesh*, PxCollection*, XmlWriter&, MemoryBuffer&, PxRepXInstantiationArgs& );
 		virtual PxRepXObject fileToObject( XmlReader&, XmlMemoryAllocator&, PxRepXInstantiationArgs&, PxCollection* );
 		virtual PxBVH33TriangleMesh* allocateObject( PxRepXInstantiationArgs&  ) { return NULL; }
 	};
-	struct PxBVH34TriangleMeshRepXSerializer  : public RepXSerializerImpl<PxBVH34TriangleMesh>
+	struct PX_DEPRECATED PxBVH34TriangleMeshRepXSerializer  : public RepXSerializerImpl<PxBVH34TriangleMesh>
 	{
 		PxBVH34TriangleMeshRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxBVH34TriangleMesh>( inCallback ) {}
 		virtual void objectToFileImpl( const PxBVH34TriangleMesh*, PxCollection*, XmlWriter&, MemoryBuffer&, PxRepXInstantiationArgs& );
@@ -71,7 +71,7 @@ namespace physx
 		virtual PxBVH34TriangleMesh* allocateObject( PxRepXInstantiationArgs&  ) { return NULL; }
 	};
 
-	struct PxHeightFieldRepXSerializer : public RepXSerializerImpl<PxHeightField>
+	struct PX_DEPRECATED PxHeightFieldRepXSerializer : public RepXSerializerImpl<PxHeightField>
 	{
 		PxHeightFieldRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxHeightField>( inCallback ) {}
 		virtual void objectToFileImpl( const PxHeightField*, PxCollection*, XmlWriter&, MemoryBuffer&, PxRepXInstantiationArgs& );
@@ -79,7 +79,7 @@ namespace physx
 		virtual PxHeightField* allocateObject( PxRepXInstantiationArgs& ) { return NULL; }
 	};
 	
-	struct PxConvexMeshRepXSerializer  : public RepXSerializerImpl<PxConvexMesh>
+	struct PX_DEPRECATED PxConvexMeshRepXSerializer  : public RepXSerializerImpl<PxConvexMesh>
 	{
 		PxConvexMeshRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxConvexMesh>( inCallback ) {}
 		virtual void objectToFileImpl( const PxConvexMesh*, PxCollection*, XmlWriter&, MemoryBuffer&, PxRepXInstantiationArgs& );
@@ -87,27 +87,27 @@ namespace physx
 		virtual PxConvexMesh* allocateObject( PxRepXInstantiationArgs& ) { return NULL; }
 	};
 
-	struct PxRigidStaticRepXSerializer : public RepXSerializerImpl<PxRigidStatic>
+	struct PX_DEPRECATED PxRigidStaticRepXSerializer : public RepXSerializerImpl<PxRigidStatic>
 	{
 		PxRigidStaticRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxRigidStatic>( inCallback ) {}
 		virtual PxRigidStatic* allocateObject( PxRepXInstantiationArgs& );
 	};
 
-	struct PxRigidDynamicRepXSerializer : public RepXSerializerImpl<PxRigidDynamic>
+	struct PX_DEPRECATED PxRigidDynamicRepXSerializer : public RepXSerializerImpl<PxRigidDynamic>
 	{
 		PxRigidDynamicRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxRigidDynamic>( inCallback ) {}
 		virtual PxRigidDynamic* allocateObject( PxRepXInstantiationArgs& );
 	};
 	
 	
-	struct PxArticulationReducedCoordinateRepXSerializer : public RepXSerializerImpl<PxArticulationReducedCoordinate>
+	struct PX_DEPRECATED PxArticulationReducedCoordinateRepXSerializer : public RepXSerializerImpl<PxArticulationReducedCoordinate>
 	{
 		PxArticulationReducedCoordinateRepXSerializer(PxAllocatorCallback& inCallback) : RepXSerializerImpl<PxArticulationReducedCoordinate>(inCallback) {}
 		virtual void objectToFileImpl(const PxArticulationReducedCoordinate*, PxCollection*, XmlWriter&, MemoryBuffer&, PxRepXInstantiationArgs&);
 		virtual PxArticulationReducedCoordinate* allocateObject(PxRepXInstantiationArgs&);
 	};
 	
-	struct PxAggregateRepXSerializer :  public RepXSerializerImpl<PxAggregate>
+	struct PX_DEPRECATED PxAggregateRepXSerializer :  public RepXSerializerImpl<PxAggregate>
 	{
 		PxAggregateRepXSerializer( PxAllocatorCallback& inCallback ) : RepXSerializerImpl<PxAggregate>( inCallback ) {}
 		virtual void objectToFileImpl( const PxAggregate*, PxCollection*, XmlWriter& , MemoryBuffer&, PxRepXInstantiationArgs& );

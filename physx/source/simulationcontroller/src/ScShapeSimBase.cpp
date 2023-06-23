@@ -63,10 +63,22 @@ PX_INLINE Bp::FilterGroup::Enum getBPGroup(const ShapeSimBase& shapeSim)
 	return Bp::getFilterGroup(rbSim.getActorType() == PxActorType::eRIGID_STATIC, rbSim.getActorID(), isKinematic);
 }
 
+static void setElementInteractionsDirty(Sc::ElementSim& elementSim, InteractionDirtyFlag::Enum flag, PxU8 interactionFlag)
+{
+	ElementSim::ElementInteractionIterator iter = elementSim.getElemInteractions();
+	ElementSimInteraction* interaction = iter.getNext();
+	while(interaction)
+	{
+		if(interaction->readInteractionFlag(interactionFlag))
+			interaction->setDirty(flag);
+
+		interaction = iter.getNext();
+	}
+}
 
 void ShapeSimBase::onFilterDataChange()
 {
-	setElementInteractionsDirty(InteractionDirtyFlag::eFILTER_STATE, InteractionFlag::eFILTERABLE);
+	setElementInteractionsDirty(*this, InteractionDirtyFlag::eFILTER_STATE, InteractionFlag::eFILTERABLE);
 }
 
 void ShapeSimBase::onResetFiltering()
@@ -77,12 +89,12 @@ void ShapeSimBase::onResetFiltering()
 
 void ShapeSimBase::onMaterialChange()
 {
-	setElementInteractionsDirty(InteractionDirtyFlag::eMATERIAL, InteractionFlag::eRB_ELEMENT);
+	setElementInteractionsDirty(*this, InteractionDirtyFlag::eMATERIAL, InteractionFlag::eRB_ELEMENT);
 }
 
 void ShapeSimBase::onRestOffsetChange()
 {
-	setElementInteractionsDirty(InteractionDirtyFlag::eREST_OFFSET, InteractionFlag::eRB_ELEMENT);
+	setElementInteractionsDirty(*this, InteractionDirtyFlag::eREST_OFFSET, InteractionFlag::eRB_ELEMENT);
 }
 
 void ShapeSimBase::onContactOffsetChange()
@@ -345,8 +357,8 @@ void ShapeSimBase::updateBPGroup()
 		scene.getAABBManager()->setBPGroup(getElementID(), getBPGroup(*this));
 
 		reinsertBroadPhase();
-		//		internalRemoveFromBroadPhase();
-		//		internalAddToBroadPhase();
+//		internalRemoveFromBroadPhase();
+//		internalAddToBroadPhase();
 	}
 }
 

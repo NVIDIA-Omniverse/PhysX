@@ -1251,7 +1251,7 @@ void ExtStressSolverImpl::setAllNodesInfoFromLL(float density)
         if (chunkIndex0 >= chunkCount)
         {
             // chunkIndex is invalid means it is static node (represents world)
-            m_graphProcessor->setNodeInfo(node0, 0.0f, 0.0f, NvVec3());
+            m_graphProcessor->setNodeInfo(node0, 0.0f, 0.0f, NvVec3(NvZero));
         }
         else
         {

@@ -306,9 +306,9 @@ namespace Dy
 		if (flag & PxArticulationCacheFlag::eROOT_TRANSFORM)
 		{
 			ArticulationLink& rLink = mArticulationData.getLink(0);
+			// PT:: tag: scalar transform*transform
 			rLink.bodyCore->body2World = cache.rootLinkData->transform * rLink.bodyCore->getBody2Actor();
 			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_TRANSFORM;
-
 		}
 
 		if(flag & PxArticulationCacheFlag::eROOT_VELOCITIES)
@@ -420,7 +420,23 @@ namespace Dy
 	void FeatherstoneArticulation::initializeCommonData()
 	{
 		jcalc(mArticulationData);
-		computeRelativeTransformC2P(mArticulationData);
+
+		{
+			//constants
+			const ArticulationLink* links = mArticulationData.getLinks();
+			const PxU32 linkCount = mArticulationData.getLinkCount();
+			const ArticulationJointCoreData* jointCoreDatas = mArticulationData.getJointData();
+			const Cm::UnAlignedSpatialVector* motionMatrices = mArticulationData.getMotionMatrix();
+
+			//outputs
+			PxTransform* accumulatedPoses = mArticulationData.getAccumulatedPoses();
+			PxVec3* rws = mArticulationData.getRw();
+			Cm::UnAlignedSpatialVector* motionMatricesW = mArticulationData.getWorldMotionMatrix();
+
+			computeRelativeTransformC2P(
+				links, linkCount, jointCoreDatas, motionMatrices,
+				accumulatedPoses, rws, motionMatricesW);
+		}
 
 		computeRelativeTransformC2B(mArticulationData);
 
@@ -1052,8 +1068,11 @@ namespace Dy
 		for (i0 = 0; linkID0 != common; linkID0 = links[linkID0].parent)
 		{
 			const PxU32 jointOffset = mArticulationData.getJointData(linkID0).jointOffset;
-			const PxU32 dofCount = mArticulationData.getJointData(linkID0).dof;
-			Z0 = FeatherstoneArticulation::propagateImpulseW(&data.getWorldIsInvD(jointOffset), data.getRw(linkID0), &data.getWorldMotionMatrix(jointOffset), Z0, dofCount);
+			const PxU8 dofCount = mArticulationData.getJointData(linkID0).dof;
+			Z0 = FeatherstoneArticulation::propagateImpulseW(
+					data.getRw(linkID0), 
+					Z0, 
+					&data.getWorldIsInvD(jointOffset), &data.getWorldMotionMatrix(jointOffset),dofCount);
 			Z[links[linkID0].parent] = Z0;
 			stack[i0++] = linkID0;
 		}
@@ -1061,8 +1080,11 @@ namespace Dy
 		for (i1 = i0; linkID1 != common; linkID1 = links[linkID1].parent)
 		{
 			const PxU32 jointOffset = mArticulationData.getJointData(linkID1).jointOffset;
-			const PxU32 dofCount = mArticulationData.getJointData(linkID1).dof;
-			Z1 = FeatherstoneArticulation::propagateImpulseW(&data.getWorldIsInvD(jointOffset), data.getRw(linkID1), &data.getWorldMotionMatrix(jointOffset), Z1, dofCount);
+			const PxU8 dofCount = mArticulationData.getJointData(linkID1).dof;
+			Z1 = FeatherstoneArticulation::propagateImpulseW(
+					data.getRw(linkID1), 
+					Z1, 
+					&data.getWorldIsInvD(jointOffset), &data.getWorldMotionMatrix(jointOffset), dofCount);
 			Z[links[linkID1].parent] = Z1;
 			stack[i1++] = linkID1;
 		}
@@ -1074,8 +1096,11 @@ namespace Dy
 		for (ic = i1; common; common = links[common].parent)
 		{
 			const PxU32 jointOffset = mArticulationData.getJointData(common).jointOffset;
-			const PxU32 dofCount = mArticulationData.getJointData(common).dof;
-			Z[links[common].parent] = FeatherstoneArticulation::propagateImpulseW(&data.getWorldIsInvD(jointOffset), data.getRw(common), &data.getMotionMatrix(jointOffset), Z[common], dofCount);
+			const PxU8 dofCount = mArticulationData.getJointData(common).dof;
+			Z[links[common].parent] = FeatherstoneArticulation::propagateImpulseW(
+				data.getRw(common), 
+				Z[common], 
+				&data.getWorldIsInvD(jointOffset), &data.getMotionMatrix(jointOffset), dofCount);
 			stack[ic++] = common;
 		}
 
@@ -1155,12 +1180,15 @@ namespace Dy
 			PX_ASSERT(linkID0 == link.parent);
 
 			const PxU32 jointOffset = mArticulationData.getJointData(linkID1).jointOffset;
-			const PxU32 dofCount = mArticulationData.getJointData(linkID1).dof;
+			const PxU8 dofCount = mArticulationData.getJointData(linkID1).dof;
 			
 			//initialize child link spatial zero acceleration impulse
 			Cm::SpatialVectorF Z1(-imp1.linear, -imp1.angular);
 			//this calculate parent link spatial zero acceleration impulse
-			Cm::SpatialVectorF Z0 = FeatherstoneArticulation::propagateImpulseW(&mArticulationData.mIsInvDW[jointOffset], mArticulationData.getRw(linkID1), &mArticulationData.mWorldMotionMatrix[jointOffset], Z1, dofCount);
+			Cm::SpatialVectorF Z0 = FeatherstoneArticulation::propagateImpulseW(
+				mArticulationData.getRw(linkID1), 
+				Z1,
+				&mArticulationData.mISInvStIS[jointOffset], &mArticulationData.mWorldMotionMatrix[jointOffset], dofCount);
 
 			//in parent space
 			const Cm::SpatialVectorF impulseDif = pImpulse - Z0;
@@ -1215,10 +1243,12 @@ namespace Dy
 		{
 			ArticulationLink& tLink = links[i];
 			const PxU32 jointOffset = mArticulationData.getJointData(i).jointOffset;
-			const PxU32 dofCount = mArticulationData.getJointData(i).dof;
+			const PxU8 dofCount = mArticulationData.getJointData(i).dof;
 			//ArticulationLinkData& tLinkDatum = linkData[i];
-			Z[tLink.parent] = propagateImpulseW(&mArticulationData.mIsInvDW[jointOffset], mArticulationData.getRw(i),
-				&mArticulationData.mWorldMotionMatrix[jointOffset], Z[i], dofCount);
+			Z[tLink.parent] = propagateImpulseW(
+				mArticulationData.getRw(i),
+				Z[i], 
+				&mArticulationData.mISInvStIS[jointOffset], &mArticulationData.mWorldMotionMatrix[jointOffset], dofCount);
 		}
 
 		//set velocity change of the root link to be zero
@@ -1752,11 +1782,46 @@ namespace Dy
 			computeLinkVelocities(mArticulationData, scratchData);
 			computeZ(mArticulationData, gravity, scratchData);
 			computeArticulatedSpatialZ(mArticulationData, scratchData);
-			computeLinkAcceleration(mArticulationData, scratchData, true);
-	
+
+			{
+			//Constant terms.
+			const bool doIC = true;
+			const PxArticulationFlags articulationFlags = mArticulationData.getArticulationFlags();
+			const ArticulationLink* links = mArticulationData.getLinks();
+			const ArticulationJointCoreData* jointDatas = mArticulationData.getJointData();
+			const Cm::SpatialVectorF* linkSpatialZAExtForces = scratchData.spatialZAVectors;
+			const Cm::SpatialVectorF* linkCoriolisForces = scratchData.coriolisVectors;
+			const PxVec3* linkRws = mArticulationData.getRw(); 
+			const Cm::UnAlignedSpatialVector* jointDofMotionMatrices = mArticulationData.getWorldMotionMatrix();
+			const SpatialMatrix& baseInvSpatialArticulatedInertiaW = mArticulationData.getBaseInvSpatialArticulatedInertiaW();
+
+			//Cached constant terms.
+			const InvStIs* linkInvStIs = mArticulationData.getInvStIS();
+			const Cm::SpatialVectorF* jointDofIsWs = mArticulationData.getIsW();
+			const PxReal* jointDofQstZics = mArticulationData.getQstZIc();	
+
+			//Output
+			Cm::SpatialVectorF* linkMotionVelocities = scratchData.motionVelocities;
+			Cm::SpatialVectorF* linkMotionAccelerations = scratchData.motionAccelerations;
+			PxReal* jointAccelerations = scratchData.jointAccelerations;
+			PxReal* jointVelocities = scratchData.jointVelocities;
+			PxReal* jointNewVelocities = mArticulationData.getJointNewVelocities();
+
+			computeLinkAcceleration(
+					doIC, dt, 
+					articulationFlags,
+					links, linkCount, jointDatas,
+					linkSpatialZAExtForces, linkCoriolisForces, linkRws,
+					jointDofMotionMatrices, baseInvSpatialArticulatedInertiaW,
+					linkInvStIs, jointDofIsWs, jointDofQstZics,
+					linkMotionAccelerations, linkMotionVelocities, 
+					jointAccelerations, jointVelocities, jointNewVelocities);			
+			}
+
 			//zero zero acceleration vector in the articulation data so that we can use this buffer to accumulated
 			//impulse for the contacts/constraints in the PGS/TGS solvers
 			PxMemZero(mArticulationData.getSpatialZAVectors(), sizeof(Cm::SpatialVectorF) * linkCount);		
+			PxMemZero(mArticulationData.getSolverSpatialForces(), sizeof(Cm::SpatialVectorF) * linkCount);
 		}
 		
 		allocator->free(constraintDescs);

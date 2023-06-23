@@ -105,6 +105,30 @@ namespace physx
 		return z * (width) * (height)+y * (width)+x;
 	}
 
+	void convert16To32Bits(PxSimpleTriangleMesh mesh, PxArray<PxU32>& indices32)
+	{
+		indices32.resize(3 * mesh.triangles.count);
+		if (mesh.flags & PxMeshFlag::e16_BIT_INDICES)
+		{
+			// conversion; 16 bit index -> 32 bit index & stride
+			PxU32* dest = indices32.begin();
+			const PxU32* pastLastDest = indices32.begin() + 3 * mesh.triangles.count;
+			const PxU8* source = reinterpret_cast<const PxU8*>(mesh.triangles.data);
+			while (dest < pastLastDest)
+			{
+				const PxU16 * trig16 = reinterpret_cast<const PxU16*>(source);
+				*dest++ = trig16[0];
+				*dest++ = trig16[1];
+				*dest++ = trig16[2];
+				source += mesh.triangles.stride;
+			}
+		}
+		else
+		{
+			immediateCooking::gatherStrided(mesh.triangles.data, indices32.begin(), mesh.triangles.count, sizeof(PxU32) * 3, mesh.triangles.stride);
+		}
+	}
+
 	static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdf, PxArray<PxU8>& sdfDataSubgrids,
 		PxArray<PxU32>& sdfSubgridsStartSlots)
 	{
@@ -169,8 +193,30 @@ namespace physx
 		PxReal subgridsMinSdfValue, subgridsMaxSdfValue;
 		PxArray<PxReal> denseSdf;
 		{		
+			PxArray<PxU32> indices32;
+			PxArray<PxVec3> vertices;
+			const PxVec3* verticesPtr = NULL;
+			bool baseMeshSpecified = sdfDesc.baseMesh.triangles.data && sdfDesc.baseMesh.points.data;
+			if (baseMeshSpecified)
+			{
+				convert16To32Bits(sdfDesc.baseMesh, indices32);
+
+				if (sdfDesc.baseMesh.points.stride != sizeof(PxVec3))
+				{
+					vertices.resize(sdfDesc.baseMesh.points.count);
+					immediateCooking::gatherStrided(sdfDesc.baseMesh.points.data, vertices.begin(), sdfDesc.baseMesh.points.count, sizeof(PxVec3), sdfDesc.baseMesh.points.stride);
+					verticesPtr = vertices.begin();
+				}
+				else
+					verticesPtr = reinterpret_cast<const PxVec3*>(sdfDesc.baseMesh.points.data);
+			}
+
 			PxArray<PxReal> sparseSdf;
-			Gu::SDFUsingWindingNumbersSparse(&mesh.m_positions[0], &mesh.m_indices[0], mesh.m_indices.size(), dx, dy, dz, 
+			Gu::SDFUsingWindingNumbersSparse(
+				baseMeshSpecified ? verticesPtr : &mesh.m_positions[0],
+				baseMeshSpecified ? indices32.begin() : &mesh.m_indices[0], 
+				baseMeshSpecified ? indices32.size() : mesh.m_indices.size(), 
+				dx, dy, dz,
 				meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize,
 				sdf, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, 16);
 

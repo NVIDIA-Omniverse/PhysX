@@ -34,6 +34,7 @@
 
 #include "foundation/PxAllocatorCallback.h"
 #include "foundation/PxAssert.h"
+#include "foundation/PxMemory.h"
 #include "common/PxPhysXCommonConfig.h"
 
 #include <stdlib.h>
@@ -91,6 +92,12 @@ public:
 	{
 		void* ptr = platformAlignedAlloc(size);
 		PX_ASSERT((size_t(ptr) & 15)==0);
+#if PX_STOMP_ALLOCATED_MEMORY
+		if(ptr != NULL)
+		{
+			PxMemSet(ptr, PxI32(0xcd), PxU32(size));
+		}
+#endif
 		return ptr;
 	}
 

@@ -176,7 +176,7 @@ namespace physx {
 			TMemoryPoolManager theManager(mAllocator);
 			MemoryBuffer theTempBuf( &theManager );
 			theTempBuf.clear();
-			inArgs.cooker->cookTriangleMesh( meshDesc, theTempBuf );
+			PxCookTriangleMesh( *inArgs.cooker, meshDesc, theTempBuf );
 
 			writeBuffer( inWriter, inTempBuffer, 16, theTempBuf.mBuffer, theTempBuf.mWriteOffset, "CookedData", writeDatatype<PxU8> );
 		}
@@ -215,13 +215,10 @@ namespace physx {
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
-			{
-				PxCookingParams params = inArgs.cooker->getParams();
-				params.midphaseDesc = PxMeshMidPhase::eBVH33;
-				inArgs.cooker->setParams(params);
-			}
+			PxCookingParams params = *inArgs.cooker;
+			params.midphaseDesc = PxMeshMidPhase::eBVH33;
 
-			inArgs.cooker->cookTriangleMesh( theDesc, theTempBuf );
+			PxCookTriangleMesh( params, theDesc, theTempBuf );
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH33TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
 		}					
@@ -280,7 +277,7 @@ namespace physx {
 			TMemoryPoolManager theManager(mAllocator);
 			MemoryBuffer theTempBuf( &theManager );
 			theTempBuf.clear();
-			inArgs.cooker->cookTriangleMesh( meshDesc, theTempBuf );
+			PxCookTriangleMesh( *inArgs.cooker, meshDesc, theTempBuf );
 
 			writeBuffer( inWriter, inTempBuffer, 16, theTempBuf.mBuffer, theTempBuf.mWriteOffset, "CookedData", writeDatatype<PxU8> );
 		}
@@ -319,13 +316,10 @@ namespace physx {
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
-			{
-				PxCookingParams params = inArgs.cooker->getParams();
-				params.midphaseDesc = PxMeshMidPhase::eBVH34;
-				inArgs.cooker->setParams(params);
-			}
+			PxCookingParams params = *inArgs.cooker;
+			params.midphaseDesc = PxMeshMidPhase::eBVH34;
 
-			inArgs.cooker->cookTriangleMesh( theDesc, theTempBuf );
+			PxCookTriangleMesh( params, theDesc, theTempBuf );
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH34TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
 		}					
@@ -368,7 +362,7 @@ namespace physx {
 		//Now read the data...
 		PxU32 count = 0; //ignored becaues numRows and numColumns tells the story
 		readStridedBufferProperty<PxHeightFieldSample>( inReader, "samples", theDesc.samples, count, inAllocator);
-		PxHeightField* retval = inArgs.cooker->createHeightField( theDesc, inArgs.physics.getPhysicsInsertionCallback() );
+		PxHeightField* retval = PxCreateHeightField( theDesc, inArgs.physics.getPhysicsInsertionCallback() );
 		return PxCreateRepXObject(retval);
 	}
 
@@ -390,7 +384,7 @@ namespace physx {
 			theDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 			TMemoryPoolManager theManager(mAllocator);
 			MemoryBuffer theTempBuf( &theManager );
-			inArgs.cooker->cookConvexMesh( theDesc, theTempBuf );
+			PxCookConvexMesh( *inArgs.cooker, theDesc, theTempBuf );
 
 			writeBuffer( inWriter, inTempBuffer, 16, theTempBuf.mBuffer, theTempBuf.mWriteOffset, "CookedData", writeDatatype<PxU8> );
 		}
@@ -425,7 +419,7 @@ namespace physx {
 			PX_ASSERT(inArgs.cooker);
 			theTempBuf.clear();
 
-			inArgs.cooker->cookConvexMesh( theDesc, theTempBuf );
+			PxCookConvexMesh( *inArgs.cooker, theDesc, theTempBuf );
 			theMesh = inArgs.physics.createConvexMesh( theTempBuf );
 		}					
 

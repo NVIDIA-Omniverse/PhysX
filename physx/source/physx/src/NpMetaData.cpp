@@ -114,6 +114,13 @@ static void getBinaryMetaData_PxTransform(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxTransform,	PxVec3,	p,	0)
 }
 
+static void getBinaryMetaData_PxTransform32(PxOutputStream& stream)
+{
+	PX_DEF_BIN_METADATA_CLASS(stream,	PxTransform32)
+	PX_DEF_BIN_METADATA_BASE_CLASS(stream, PxTransform32, PxTransform)
+	PX_DEF_BIN_METADATA_ITEM(stream,	PxTransform32,	PxU32,		padding,	0)
+}
+
 static void getBinaryMetaData_PxMat33(PxOutputStream& stream)
 {
 	PX_DEF_BIN_METADATA_CLASS(stream,	PxMat33)
@@ -247,16 +254,6 @@ void NpPBDMaterial::getBinaryMetaData(PxOutputStream& stream)
 
 ///////////////////////////////////////////////////////////////////////////////
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-void NpCustomMaterial::getBinaryMetaData(PxOutputStream& stream)
-{
-	PX_DEF_BIN_METADATA_VCLASS(stream, NpCustomMaterial)
-	PX_DEF_BIN_METADATA_BASE_CLASS(stream, NpCustomMaterial, PxBase)
-
-	PX_DEF_BIN_METADATA_ITEM(stream, NpCustomMaterial, void, userData, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, NpCustomMaterial, PxsCustomMaterialCore, mMaterial, 0)
-}
-
-///////////////////////////////////////////////////////////////////////////////
 
 void NpFLIPMaterial::getBinaryMetaData(PxOutputStream& stream)
 {
@@ -314,12 +311,12 @@ void NpShape::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	NpShape, NpBase)
 
 	// PxShape
-	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, void,			userData,			PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, void,			userData,				PxMetaDataFlag::ePTR)
 
 	// NpShape
-	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, PxRigidActor,	mActor,				PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, ShapeCore,		mCore,				0)
-	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, PxFilterData,	mQueryFilterData,	0)
+	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, PxRigidActor,	mExclusiveShapeActor,	PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, ShapeCore,		mCore,					0)
+	PX_DEF_BIN_METADATA_ITEM(stream,		NpShape, PxFilterData,	mQueryFilterData,		0)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -742,6 +739,7 @@ static void getFoundationMetaData(PxOutputStream& stream)
 	getBinaryMetaData_PxQuat(stream);
 	getBinaryMetaData_PxBounds3(stream);
 	getBinaryMetaData_PxTransform(stream);
+	getBinaryMetaData_PxTransform32(stream);
 	getBinaryMetaData_PxMat33(stream);
 	getBinaryMetaData_SpatialVectorF(stream);
 	getBinaryMetaData_BitMap(stream);
@@ -761,7 +759,6 @@ template<> void PxsMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 template<> void PxsFEMSoftBodyMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 template<> void PxsFEMClothMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 template<> void PxsPBDMaterialCore::getBinaryMetaData(PxOutputStream& stream);
-template<> void PxsCustomMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 template<> void PxsFLIPMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 template<> void PxsMPMMaterialCore::getBinaryMetaData(PxOutputStream& stream);
 }
@@ -781,7 +778,6 @@ void PxGetPhysicsBinaryMetaData(PxOutputStream& stream)
 	PxsFEMSoftBodyMaterialCore::getBinaryMetaData(stream);
 	PxsFEMClothMaterialCore::getBinaryMetaData(stream);
 	PxsPBDMaterialCore::getBinaryMetaData(stream);
-	PxsCustomMaterialCore::getBinaryMetaData(stream);
 	PxsFLIPMaterialCore::getBinaryMetaData(stream);
 	PxsMPMMaterialCore::getBinaryMetaData(stream);
 
@@ -813,7 +809,6 @@ void PxGetPhysicsBinaryMetaData(PxOutputStream& stream)
 #endif
 	NpPBDMaterial::getBinaryMetaData(stream);
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	NpCustomMaterial::getBinaryMetaData(stream);
 	NpFLIPMaterial::getBinaryMetaData(stream);
 	NpMPMMaterial::getBinaryMetaData(stream);
 #endif

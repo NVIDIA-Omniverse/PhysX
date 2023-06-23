@@ -67,7 +67,6 @@ static PxDefaultAllocator		    gAllocator;
 static PxDefaultErrorCallback	    gErrorCallback;
 static PxFoundation*			    gFoundation = NULL;
 static PxPhysics*				    gPhysics	= NULL;
-static PxCooking*				    gCooking	= NULL;
 static PxSerializationRegistry*		gSerializationRegistry = NULL;
 static PxDefaultCpuDispatcher*		gDispatcher = NULL;
 static PxScene*						gScene		= NULL;
@@ -231,7 +230,10 @@ static PxCollection* deserializeCollection(PxInputData& inputData, bool isBinary
 	}
 	else
 	{
-		collection = PxSerialization::createCollectionFromXml(inputData, *gCooking, sr, sharedCollection);		
+		PxTolerancesScale scale;
+		PxCookingParams params(scale);
+
+		collection = PxSerialization::createCollectionFromXml(inputData, params, sr, sharedCollection);		
 	}
 
 	return collection;
@@ -263,10 +265,7 @@ void initPhysics()
 		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
 
-	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));	
-	
 	gSerializationRegistry = PxSerialization::createSerializationRegistry(*gPhysics);
-
 }
 
 void cleanupPhysics()
@@ -277,7 +276,6 @@ void cleanupPhysics()
 	PxCloseExtensions();
 		
 	PX_RELEASE(gPhysics);	// releases of all objects	
-	PX_RELEASE(gCooking);
 
 	for(PxU32 i=0; i<gNbMemBlocks; i++)
 		free(gMemBlocks[i]); // now that the objects have been released, it's safe to release the space they occupy

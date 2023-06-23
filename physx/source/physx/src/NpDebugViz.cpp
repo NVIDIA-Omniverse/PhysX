@@ -327,77 +327,113 @@ static bool visualizeSDF(PxRenderOutput& out, const Gu::SDF& sdf, const PxMat34&
 {
 	bool dataReductionActive = false;
 
-	PxU32 subgridSize;
-	PxReal sdfSpacing;
-	PxU32 NbTargetSamples = limitNumberOfVisualizedSamples ? 128 : 4096;
-	PxU32 nbX, nbY, nbZ;
+	PxU32 upperByteLimit = 512u * 512u * 512u * sizeof(PxDebugPoint); //2GB - sizeof(PxDebugPoint)=16bytes
+
+	bool repeat = true;	
+
+	PxReal low = 0.0f, high = 0.0f;
+	PxU32 count = 0;
+	PxU32 upperLimit = limitNumberOfVisualizedSamples ? 128 : 4096;
+	PxReal sdfSpacing = 0.0f;
+	PxU32 strideX = 0;
+	PxU32 strideY = 0;
+	PxU32 strideZ = 0;
+	PxU32 nbX = 0, nbY = 0, nbZ = 0;
+	PxU32 subgridSize = 0;
 	PxU32 subgridStride = 1;
-	if (sdf.mSubgridSize == 0)
+
+	while (repeat)
 	{
-		subgridSize = 1;
-		sdfSpacing = sdf.mSpacing;
-		nbX = sdf.mDims.x;
-		nbY = sdf.mDims.y;
-		nbZ = sdf.mDims.z;
-	}
-	else
-	{
-		subgridSize = sdf.mSubgridSize;
-		sdfSpacing = subgridSize * sdf.mSpacing;
-		nbX = sdf.mDims.x / subgridSize + 1;
-		nbY = sdf.mDims.y / subgridSize + 1;
-		nbZ = sdf.mDims.z / subgridSize + 1;
-		//Limit the max number of visualized sparse grid samples
-		if (limitNumberOfVisualizedSamples && subgridSize > 4)
+		repeat = false;
+		
+		PxU32 nbTargetSamplesPerAxis = upperLimit;
+		subgridStride = 1;
+		if (sdf.mSubgridSize == 0)
 		{
-			subgridStride = (subgridSize + 3) / 4;
+			subgridSize = 1;
+			sdfSpacing = sdf.mSpacing;
+			nbX = sdf.mDims.x;
+			nbY = sdf.mDims.y;
+			nbZ = sdf.mDims.z;
+		}
+		else
+		{
+			subgridSize = sdf.mSubgridSize;
+			sdfSpacing = subgridSize * sdf.mSpacing;
+			nbX = sdf.mDims.x / subgridSize + 1;
+			nbY = sdf.mDims.y / subgridSize + 1;
+			nbZ = sdf.mDims.z / subgridSize + 1;
+			//Limit the max number of visualized sparse grid samples
+			if (limitNumberOfVisualizedSamples && subgridSize > 4)
+			{
+				subgridStride = (subgridSize + 3) / 4;
+				dataReductionActive = true;
+			}
+		}
+
+		//KS - a bit arbitrary, but let's limit how many points we churn out
+
+		strideX = (nbX + nbTargetSamplesPerAxis - 1) / nbTargetSamplesPerAxis;
+		strideY = (nbY + nbTargetSamplesPerAxis - 1) / nbTargetSamplesPerAxis;
+		strideZ = (nbZ + nbTargetSamplesPerAxis - 1) / nbTargetSamplesPerAxis;
+		if (strideX != 1 || strideY != 1 || strideZ != 1)
 			dataReductionActive = true;
+
+		low = PX_MAX_F32;
+		high = -PX_MAX_F32;
+
+		count = 0;
+
+
+
+		for (PxU32 k = 0; k < nbZ; k += strideZ) 
+		{
+			for (PxU32 j = 0; j < nbY; j += strideY)
+			{
+				for (PxU32 i = 0; i < nbX; i += strideX)
+				{
+					PxReal v = sdf.mSdf[k*nbX*nbY + j * nbX + i];
+					count++;
+
+					low = PxMin(low, v);
+					high = PxMax(high, v);
+
+					if (sdf.mSubgridSize > 0 && k < nbZ - 1 && j < nbY - 1 && i < nbX - 1)
+					{
+						PxU32 startId = sdf.mSubgridStartSlots[k*(nbX - 1)*(nbY - 1) + j * (nbX - 1) + i];
+						if (startId != 0xFFFFFFFFu)
+						{
+							PxU32 xBase, yBase, zBase;
+							decodeTriple(startId, xBase, yBase, zBase);
+
+							PX_ASSERT(xBase < sdf.mSdfSubgrids3DTexBlockDim.x);
+							PX_ASSERT(yBase < sdf.mSdfSubgrids3DTexBlockDim.y);
+							PX_ASSERT(zBase < sdf.mSdfSubgrids3DTexBlockDim.z);
+
+							PxU32 localCount = subgridSize / subgridStride + 1;
+							count += localCount * localCount * localCount;
+						}
+					}
+
+					if (count * sizeof(PxDebugPoint) > upperByteLimit)
+						break;
+				}
+				if (count * sizeof(PxDebugPoint) > upperByteLimit)
+					break;
+			}
+			if (count * sizeof(PxDebugPoint) > upperByteLimit)
+				break;
+		}
+
+		if (count * sizeof(PxDebugPoint) > upperByteLimit)
+		{
+			upperLimit /= 2;
+			repeat = true;
+
+			if (upperLimit == 1)
+				return true;
 		}
 	}
-	
-	//KS - a bit arbitrary, but let's limit how many points we churn out
-	
-	const PxU32 strideX = (nbX + NbTargetSamples - 1) / NbTargetSamples;
-	const PxU32 strideY = (nbY + NbTargetSamples - 1) / NbTargetSamples;
-	const PxU32 strideZ = (nbZ + NbTargetSamples - 1) / NbTargetSamples;
-	if (strideX != 1 || strideY != 1 || strideZ != 1)
-		dataReductionActive = true;
-	
-	PxReal low = PX_MAX_F32;
-	PxReal high = -PX_MAX_F32;
-
-	PxU32 count = 0;
-
-
-	
-	for (PxU32 k = 0; k < nbZ; k += strideZ)
-		for(PxU32 j = 0; j < nbY; j += strideY)
-			for (PxU32 i = 0; i < nbX; i += strideX)
-			{
-				PxReal v = sdf.mSdf[k*nbX*nbY + j*nbX + i];
-				count++;
-				
-				low = PxMin(low, v);
-				high = PxMax(high, v);
-
-				if (sdf.mSubgridSize > 0 && k < nbZ - 1 && j < nbY - 1 && i < nbX - 1)
-				{
-					PxU32 startId = sdf.mSubgridStartSlots[k*(nbX-1)*(nbY-1) + j * (nbX-1) + i];
-					if (startId != 0xFFFFFFFFu)
-					{
-						PxU32 xBase, yBase, zBase;
-						decodeTriple(startId, xBase, yBase, zBase);
-						
-						PX_ASSERT(xBase < sdf.mSdfSubgrids3DTexBlockDim.x); 
-						PX_ASSERT(yBase < sdf.mSdfSubgrids3DTexBlockDim.y);
-						PX_ASSERT(zBase < sdf.mSdfSubgrids3DTexBlockDim.z);							
-
-						PxU32 localCount = subgridSize / subgridStride + 1;						
-						count += localCount * localCount * localCount;
-					}
-				}
-			}
-
 
 	const PxReal range0 = high;
 	const PxReal range1 = low;
@@ -743,13 +779,16 @@ void NpShapeManager::visualize(PxRenderOutput& out, NpScene& scene, const PxRigi
 	const PxReal collisionAxes		= scale * scScene.getVisualizationParameter(PxVisualizationParameter::eCOLLISION_AXES);
 	const PxReal fscale				= scale * fNormals;
 
-	const PxTransform actorPose = actor.getGlobalPose();
+	const PxTransform32 actorPose(actor.getGlobalPose());
 
 	PxBounds3 compoundBounds(PxBounds3::empty());
 	for(PxU32 i=0;i<nbShapes;i++)
 	{
 		const NpShape& npShape = *shapes[i];
-		const PxTransform absPose = actorPose * npShape.getCore().getShape2Actor();
+
+		PxTransform32 absPose;
+		aos::transformMultiply<true, true>(absPose, actorPose, npShape.getCore().getShape2Actor());
+
 		const PxGeometry& geom = npShape.getCore().getGeometry();
 		const bool shapeDebugVizEnabled = npShape.getCore().getFlags() & PxShapeFlag::eVISUALIZATION;
 
@@ -832,6 +871,19 @@ void physx::visualizeRigidBody(PxRenderOutput& out, NpScene& scene, const PxRigi
 		out << 0x000000 << PxMat44(PxIdentity);
 		Cm::renderOutputDebugArrow(out, PxDebugArrow(body2World.p, core.getAngularVelocity() * angVelocity, 0.2f * angVelocity));
 	}
+
+	const PxReal massAxes = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES);
+	if(massAxes != 0.0f)
+	{
+		const PxReal sleepTime = core.getWakeCounter() / scene.getWakeCounterResetValueInternal();
+		PxU32 color = PxU32(0xff * (sleepTime>1.0f ? 1.0f : sleepTime));
+		color = core.isSleeping() ? 0xff0000 : (color<<16 | color<<8 | color);
+		PxVec3 dims = invertDiagInertia(core.getInverseInertia());
+		dims = getDimsFromBodyInertia(dims, 1.0f / core.getInverseMass());
+		out << color << core.getBody2World();
+		const PxVec3 extents = dims * 0.5f;
+		Cm::renderOutputDebugBox(out, PxBounds3(-extents, extents));
+	}
 }
 
 void NpRigidStatic::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
@@ -852,22 +904,108 @@ void NpRigidDynamic::visualize(PxRenderOutput& out, NpScene& scene, float scale)
 		return;
 
 	NpRigidDynamicT::visualize(out, scene, scale);
+}
+
+void NpArticulationLink::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
+{
+	PX_ASSERT(scale!=0.0f);	// Else we shouldn't have been called
+	if(!(mCore.getActorFlags() & PxActorFlag::eVISUALIZATION))
+		return;
+
+	NpArticulationLinkT::visualize(out, scene, scale);
 
 	const Sc::Scene& scScene = scene.getScScene();
 
-	// PT: TODO: why is this not in visualizeRigidBody ?
-	const PxReal massAxes = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES);
-	if(massAxes != 0.0f)
+	const PxReal frameScale = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES);
+	const PxReal limitScale = scale * scScene.getVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS);
+	if(frameScale != 0.0f || limitScale != 0.0f)
 	{
-		const PxReal sleepTime = mCore.getWakeCounter() / scene.getWakeCounterResetValueInternal();
-		PxU32 color = PxU32(0xff * (sleepTime>1.0f ? 1.0f : sleepTime));
-		color = mCore.isSleeping() ? 0xff0000 : (color<<16 | color<<8 | color);
-		PxVec3 dims = invertDiagInertia(mCore.getInverseInertia());
-		dims = getDimsFromBodyInertia(dims, 1.0f / mCore.getInverseMass());
-		out << color << mCore.getBody2World();
-		const PxVec3 extents = dims * 0.5f;
-		Cm::renderOutputDebugBox(out, PxBounds3(-extents, extents));
+		ConstraintImmediateVisualizer viz(frameScale, limitScale, out);
+		visualizeJoint(viz);
 	}
+}
+
+void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
+{
+	const NpArticulationLink* parent = getParent();
+	if(parent)
+	{
+		// PT:: tag: scalar transform*transform
+		PxTransform cA2w = getGlobalPose().transform(mInboundJoint->getChildPose());
+		// PT:: tag: scalar transform*transform
+		PxTransform cB2w = parent->getGlobalPose().transform(mInboundJoint->getParentPose());
+	
+		jointViz.visualizeJointFrames(cA2w, cB2w);
+
+		NpArticulationJointReducedCoordinate* impl = static_cast<NpArticulationJointReducedCoordinate*>(mInboundJoint);
+
+		PX_ASSERT(getArticulation().getConcreteType() == PxConcreteType::eARTICULATION_REDUCED_COORDINATE);
+		//(1) visualize any angular dofs/limits...
+
+		const PxMat33 cA2w_m(cA2w.q), cB2w_m(cB2w.q);
+
+		PxTransform parentFrame = cB2w;
+
+		if (cA2w.q.dot(cB2w.q) < 0)
+			cB2w.q = -cB2w.q;
+
+		//const PxTransform cB2cA = cA2w.transformInv(cB2w);
+
+		const PxTransform cA2cB = cB2w.transformInv(cA2w);
+
+		Sc::ArticulationJointCore& joint = impl->getCore();
+
+		if(joint.getMotion(PxArticulationAxis::eTWIST))
+		{
+			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eTWIST));
+
+			jointViz.visualizeAngularLimit(parentFrame, pair.low, pair.high);
+		}
+
+		if (joint.getMotion(PxArticulationAxis::eSWING1))
+		{
+			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING1));
+
+			PxTransform tmp = parentFrame;
+			tmp.q = tmp.q * PxQuat(-PxPiDivTwo, PxVec3(0.f, 0.f, 1.f));
+				
+			jointViz.visualizeAngularLimit(tmp, -pair.high, -pair.low);
+		}
+
+		if (joint.getMotion(PxArticulationAxis::eSWING2))
+		{
+			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING2));
+
+			PxTransform tmp = parentFrame;
+			tmp.q = tmp.q * PxQuat(PxPiDivTwo, PxVec3(0.f, 1.f, 0.f));
+
+			jointViz.visualizeAngularLimit(tmp, -pair.high, -pair.low);
+		}
+
+		for (PxU32 i = PxArticulationAxis::eX; i <= PxArticulationAxis::eZ; ++i)
+		{
+			if (joint.getMotion(PxArticulationAxis::Enum(i)) == PxArticulationMotion::eLIMITED)
+			{
+				const PxU32 index = i - PxArticulationAxis::eX;
+				
+				const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(i));
+				const PxReal ordinate = cA2cB.p[index];
+				const PxVec3& origin = cB2w.p;
+				const PxVec3& axis = cA2w_m[index];
+				const bool active = ordinate < pair.low || ordinate > pair.high;
+				const PxVec3 p0 = origin + axis * pair.low;
+				const PxVec3 p1 = origin + axis * pair.high;
+				jointViz.visualizeLine(p0, p1, active ? 0xff0000u : 0xffffffu);
+			}
+		}
+	}	
+}
+
+void NpArticulationReducedCoordinate::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
+{
+	const PxU32 nbLinks = mArticulationLinks.size();
+	for (PxU32 i = 0; i < nbLinks; i++)
+		mArticulationLinks[i]->visualize(out, scene, scale);
 }
 
 #else
@@ -956,9 +1094,7 @@ void NpScene::visualize()
 			const PxU32 particleSystemCount = mPBDParticleSystems.size();
 
 			for (PxU32 i = 0; i < particleSystemCount; i++)
-			{
 				static_cast<NpPBDParticleSystem*>(particleSystems[i])->visualize(out, *this);
-			}
 		}
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
@@ -967,10 +1103,7 @@ void NpScene::visualize()
 			const PxU32 particleSystemCount = mFLIPParticleSystems.size();
 
 			for (PxU32 i = 0; i < particleSystemCount; i++)
-			{
 				static_cast<NpFLIPParticleSystem*>(particleSystems[i])->visualize(out, *this);
-
-			}
 		}
 
 		{
@@ -978,19 +1111,7 @@ void NpScene::visualize()
 			const PxU32 particleSystemCount = mMPMParticleSystems.size();
 
 			for (PxU32 i = 0; i < particleSystemCount; i++)
-			{
 				static_cast<NpMPMParticleSystem*>(particleSystems[i])->visualize(out, *this);
-			}
-		}
-
-		{
-			PxCustomParticleSystem*const* particleSystems = mCustomParticleSystems.getEntries();
-			const PxU32 particleSystemCount = mCustomParticleSystems.size();
-
-			for (PxU32 i = 0; i < particleSystemCount; i++)
-			{
-				static_cast<NpCustomParticleSystem*>(particleSystems[i])->visualize(out, *this);
-			}
 		}
 #endif
 	}
@@ -1014,9 +1135,7 @@ void NpScene::visualize()
 		const PxU32 hairSystemCount = mHairSystems.size();
 		
 		for (PxU32 i = 0; i < hairSystemCount; i++)
-		{
 			static_cast<const NpHairSystem*>(hairSystems[i])->visualize(out, *this);
-		}
 #endif
 	}
 #endif

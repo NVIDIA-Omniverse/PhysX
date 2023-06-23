@@ -39,6 +39,7 @@
 #pragma warning(push)
 #pragma warning(disable : 4127) // conditional expression is constant
 #endif
+
 #if !PX_DOXYGEN
 namespace physx
 {
@@ -375,7 +376,7 @@ class PxHashBase : private PxAllocator
 		}
 
 		// initialize new hash table
-		intrinsics::memSet(newHash, uint32_t(EOL), newHashSize * sizeof(uint32_t));
+		intrinsics::memSet(newHash, int32_t(EOL), newHashSize * sizeof(uint32_t));
 
 		// iterate over old entries, re-hash and create new entries
 		if(resizeCompact)
@@ -789,4 +790,3 @@ class PxHashMapBase
 #pragma warning(pop)
 #endif
 #endif
-

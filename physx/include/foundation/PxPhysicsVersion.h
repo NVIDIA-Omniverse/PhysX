@@ -49,8 +49,8 @@ sometimes they are stored in a byte.
 */
 
 #define PX_PHYSICS_VERSION_MAJOR 5
-#define PX_PHYSICS_VERSION_MINOR 1
-#define PX_PHYSICS_VERSION_BUGFIX 3
+#define PX_PHYSICS_VERSION_MINOR 2
+#define PX_PHYSICS_VERSION_BUGFIX 1
 
 /**
 The constant PX_PHYSICS_VERSION is used when creating certain PhysX module objects.

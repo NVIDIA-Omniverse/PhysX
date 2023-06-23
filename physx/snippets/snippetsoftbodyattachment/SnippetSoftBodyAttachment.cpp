@@ -73,26 +73,33 @@ void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, PxFEMSo
 	const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount/*, PxMaterial* tetMeshMaterial*/)
 {
 	PxShape* shape = softBody->getShape();
-	PxTetrahedronMeshGeometry tetMeshGeom;
-	shape->getTetrahedronMeshGeometry(tetMeshGeom);
-	PxTetrahedronMesh* colTetMesh = tetMeshGeom.tetrahedronMesh;
-	const PxU32 numVerts = colTetMesh->getNbVertices();
 
-	PxBuffer* positionInvMassBuf = gPhysics->createBuffer(numVerts * sizeof(PxVec4), PxBufferType::eHOST, gCudaContextManager);
+	PxVec4* simPositionInvMassPinned;
+	PxVec4* simVelocityPinned;
+	PxVec4* collPositionInvMassPinned;
+	PxVec4* restPositionPinned;
 
+	PxSoftBodyExt::allocateAndInitializeHostMirror(*softBody, gCudaContextManager, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+	
 	const PxReal maxInvMassRatio = 50.f;
 
 	softBody->setParameter(femParams);
 	shape->setSoftBodyMaterials(&femMaterial, 1);
 	softBody->setSolverIterationCounts(iterCount);
 
-	PxSoftBodyExt::transform(*softBody, transform, scale);
-	PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio);
-	PxSoftBodyExt::commit(*softBody, PxSoftBodyData::eALL);
+	PxSoftBodyExt::transform(*softBody, transform, scale, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+	PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio, simPositionInvMassPinned);
+	PxSoftBodyExt::copyToDevice(*softBody, PxSoftBodyDataFlag::eALL, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
+
 		
-	SoftBody sBody(softBody, positionInvMassBuf);
+	SoftBody sBody(softBody, gCudaContextManager);
 
 	gSoftBodies.push_back(sBody);
+
+	PX_PINNED_HOST_FREE(gCudaContextManager, simPositionInvMassPinned);
+	PX_PINNED_HOST_FREE(gCudaContextManager, simVelocityPinned);
+	PX_PINNED_HOST_FREE(gCudaContextManager, collPositionInvMassPinned);
+	PX_PINNED_HOST_FREE(gCudaContextManager, restPositionPinned);
 }
 
 static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)

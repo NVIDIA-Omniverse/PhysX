@@ -44,7 +44,7 @@ NpMPMMaterial::NpMPMMaterial(const PxsMPMMaterialCore& desc) :
 
 NpMPMMaterial::~NpMPMMaterial()
 {
-	NpPhysics::getInstance().removeMPMMaterialFromTable(*this);
+	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
 
 // PX_SERIALIZATION
@@ -101,7 +101,7 @@ PxU32 NpMPMMaterial::getReferenceCount() const
 
 PX_INLINE void NpMPMMaterial::updateMaterial()
 {
-	NpPhysics::getInstance().updateMPMMaterial(*this);
+	NpPhysics::getInstance().updateMaterial(*this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

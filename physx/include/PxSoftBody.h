@@ -34,6 +34,7 @@
 #include "PxFEMParameter.h"
 #include "PxActor.h"
 #include "PxConeLimitedConstraint.h"
+#include "PxSoftBodyFlag.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -46,7 +47,6 @@ namespace physx
 #endif
 
 	class PxCudaContextManager;
-	class PxBuffer;
 	class PxTetrahedronMesh;
 	class PxSoftBodyAuxData;
 	class PxFEMCloth;
@@ -56,28 +56,6 @@ namespace physx
 	\brief The maximum tetrahedron index supported in the model.
 	*/
 	#define	PX_MAX_TETID	0x000fffff
-
-	/**
-	\brief Identifies input and output buffers for PxSoftBody.
-
-	@see PxSoftBodyData::readData(), PxSoftBodyData::writeData(), PxBuffer.
-	*/
-	struct PxSoftBodyData
-	{
-		enum Enum
-		{
-			eNONE = 0,
-
-			ePOSITION_INVMASS = 1 << 0,		//!< Flag to request access to the collision mesh's positions; read only @see PxSoftBody::writeData
-			eSIM_POSITION_INVMASS = 1 << 2,	//!< Flag to request access to the simulation mesh's positions and inverse masses
-			eSIM_VELOCITY = 1 << 3,			//!< Flag to request access to the simulation mesh's velocities and inverse masses
-			eSIM_KINEMATIC_TARGET = 1 << 4,	//!< Flag to request access to the simulation mesh's kinematic target position
-
-			eALL = ePOSITION_INVMASS | eSIM_POSITION_INVMASS | eSIM_VELOCITY | eSIM_KINEMATIC_TARGET
-		};
-	};
-
-	typedef PxFlags<PxSoftBodyData::Enum, PxU32> PxSoftBodyDataFlags;
 
 	/**
 	\brief Flags to enable or disable special modes of a SoftBody
@@ -91,7 +69,7 @@ namespace physx
 			eENABLE_CCD = 1 << 2,					//!< Enables support for continuous collision detection
 			eDISPLAY_SIM_MESH = 1 << 3,				//!< Enable debug rendering to display the simulation mesh
 			eKINEMATIC = 1 << 4,					//!< Enables support for kinematic motion of the collision and simulation mesh.
-			ePARTIALLY_KINEMATIC = 1 << 5			//!< Enables partially kinematic motion of the collisios and simulation mesh.
+			ePARTIALLY_KINEMATIC = 1 << 5			//!< Enables partially kinematic motion of the collision and simulation mesh.
 		};
 	};
 
@@ -108,7 +86,7 @@ namespace physx
 
 		/**
 		\brief Set a single softbody flag
-
+		
 		\param[in] flag The flag to set or clear
 		\param[in] val The new state of the flag
 		*/
@@ -133,7 +111,7 @@ namespace physx
 
 		\param[in] parameters The FEM parameters
 		*/
-		virtual void					setParameter(const PxFEMParameters parameters) = 0;
+		virtual 	void				setParameter(PxFEMParameters parameters) = 0;
 
 		/**
 		\brief Get parameter for FEM internal solve
@@ -143,80 +121,179 @@ namespace physx
 		virtual PxFEMParameters			getParameter() const = 0;
 
 		/**
-		\brief Issues a read command to the PxSoftBody.
+		\brief Get a pointer to a device buffer containing positions and inverse masses of the 
+		collision mesh.
 
-		Read operations are scheduled and then flushed in PxScene::simulate().
-		Read operations are known to be finished when PxBuffer::map() returns.
+		This function returns a pointer to device memory for the positions and inverse masses of
+		the soft body. This buffer is used to both initialize/update the collision mesh vertices
+		of the soft body and read the simulation results.
 
-		PxSoftBodyData::ePOSITION_INVMASS, PxSoftBodyData::eSIM_POSITION_INVMASS and PxSoftBodyData::eSIM_VELOCITY can be read from the PxSoftBody.
+		\note It is mandatory to call PxSoftBody::markDirty() with PxSoftBodyDataFlag::ePOSITION_INVMASS
+		when updating data in this buffer. 
 
-		The softbody class offers internal cpu buffers that can be used to hold the data. The cpu buffers are accessible through getPositionInvMassCPU(),
-		getSimPositionInvMassCPU() and getSimVelocityInvMassCPU().
+		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary.
+		The first 3 floats specify the vertex position and the last float contains the inverse mass of the
+		vertex. The size of the buffer is the number of vertices of the collision mesh * sizeof(PxVec4).
+		@see PxTetrahedronMesh::getNbVertices().
 
-		\param[in] flags Specifies which PxSoftBody data to read from.
-		\param[in] buffer Specifies buffer to which data is written to.
-		\param[in] flush If set to true the command gets executed immediately, otherwise it will get executed the next time copy commands are flushed.
+		The device memory pointed to by this pointer is allocated when a shape is attached to the 
+		softbody. Calling PxSoftBody::detachShape() will deallocate the memory.
 
-		@see writeData(), PxBuffer, PxSoftBodyData
+		It is not allowed to write to this buffer from the start of the PxScene::simulate() call
+		until PxScene::fetchResults() returns. Reading the data is allowed once all the PhysX tasks
+		have finished, reading the data during a completion task is explicitly allowed. The 
+		simulation will read and write directly from/into this buffer.
+
+		It is the users' responsibility to initialize this buffer with the initial positions of 
+		the vertices of the collision mesh. See PxSoftBodyExt::allocateAndInitializeHostMirror(),
+		PxSoftBodyExt::copyToDevice().
+		
+		\return PxVec4* A pointer to a device buffer containing positions and inverse masses of
+		the collision mesh.
 		*/
-		virtual		void				readData(PxSoftBodyData::Enum flags, PxBuffer& buffer, bool flush = false) = 0;
+		virtual 	PxVec4*	            getPositionInvMassBufferD() = 0;
 
 		/**
-		\brief Issues a read command to the PxSoftBody.
+		\brief Get a pointer to a device buffer containing rest positions of the collision mesh vertices.
 
-		Read operations are scheduled and then flushed in PxScene::simulate().
-		Read operations are known to be finished when PxBuffer::map() returns.
+		This function returns a pointer to device memory for the rest positions of the softbody collision
+		mesh. This buffer is used to initialize the rest positions of the collision mesh vertices.
 
-		PxSoftBodyData::ePOSITION_INVMASS, PxSoftBodyData::eSIM_POSITION_INVMASS and PxSoftBodyData::eSIM_VELOCITY can be read from the PxSoftBody.
+		\note It is mandatory to call PxSoftBody::markDirty() with PxSoftBodyDataFlag::eREST_POSITION when
+		updating data in this buffer.
 
-		The data to read from the GPU is written to the corresponding cpu buffer that a softbody provides. Those cpu buffers are accessible through
-		getPositionInvMassCPU(), getSimPositionInvMassCPU() or getSimVelocityInvMassCPU().
+		The simulation expects 4 floats per vertex, aligned to a 16B boundary. The first 3 specify the 
+		rest position. The last float is unused. The size of the buffer is the number of vertices in 
+		the collision mesh * sizeof(PxVec4). @see PxTetrahedronMesh::getNbVertices().
 
-		\param[in] flags Specifies which PxSoftBody data to read from.
-		\param[in] flush If set to true the command gets executed immediately, otherwise it will get executed the next time copy commands are flushed.
+		The device memory pointed to by this pointer is allocated when a shape is attached to the softbody.
+		Calling PxSoftBody::detachShape() will deallocate the memory.
 
-		@see writeData(), PxSoftBodyData
-		*/
-		virtual		void				readData(PxSoftBodyData::Enum flags, bool flush = false) = 0;
+		It is not allowed to write data into this buffer from the start of PxScene::simulate() until
+		PxScene::fetchResults() returns.
 
-		/**
-		\brief Issues a write command to the PxSoftBody.
-
-		Write operations are scheduled and then flushed in PxScene::simulate().
-		Write operations are known to be finished when PxScene::fetchResult() returns.
-
-		PxSoftBodyData::eSIM_POSITION_INVMASS and PxSoftBodyData::eSIM_VELOCITY can be written to the PxSoftBody. PxSoftBodyData::ePOSITION_INVMASS is read only,
-		because the collision-mesh vertices are driven by the simulation-mesh vertices, which can be written to with PxSoftBodyData::eSIM_POSITION_INVMASS.
-
-		The softbody class offers internal cpu buffers that can be used to hold the data. The cpu buffers are accessible through getPositionInvMassCPU(),
-		getSimPositionInvMassCPU() and getSimVelocityInvMassCPU(). Consider to use the PxSoftBodyExt::commit() extension method if all buffers should get written.
-
-		\param[in] flags Specifies which PxSoftBody data to write to.
-		\param[in] buffer Specifies buffer from which data is read.
-		\param[in] flush If set to true the command gets executed immediately, otherwise it will get executed the next time copy commands are flushed.
-
-		@see readData(), PxBuffer, PxSoftBodyData, PxSoftBodyExt::commit
-		*/
-		virtual		void				writeData(PxSoftBodyData::Enum flags, PxBuffer& buffer, bool flush = false) = 0;
+		It is the users' responsibility to initialize this buffer with the initial rest positions of the 
+		vertices of the collision mesh. See PxSoftBodyExt::allocateAndInitializeHostMirror(),
+		PxSoftBodyExt::copyToDevice().
+		
+		\return PxVec4* A pointer to a device buffer containing the rest positions of the collision mesh. 
+		 */
+		virtual 	PxVec4*	            getRestPositionBufferD() = 0;
 
 		/**
-		\brief Issues a write command to the PxSoftBody.
+		\brief Get a pointer to a device buffer containing the vertex positions of the simulation mesh.
 
-		Write operations are scheduled and then flushed in PxScene::simulate().
-		Write operations are known to be finished when PxScene::fetchResult() returns.
+		This function returns a pointer to device memory for the positions and inverse masses of the softbody
+		simulation mesh. This buffer is used to both initialize/update the simulation mesh vertices
+		of the softbody and read the simulation results.
 
-		PxSoftBodyData::eSIM_POSITION_INVMASS and PxSoftBodyData::eSIM_VELOCITY can be written to the PxSoftBody. PxSoftBodyData::ePOSITION_INVMASS is read only,
-		because the collision-mesh vertices are driven by the simulation-mesh vertices, which can be written to with PxSoftBodyData::eSIM_POSITION_INVMASS.
+		\note It is mandatory to call PxSoftBody::markDirty() with PxSoftBodyDataFlag::eSIM_POSITION_INVMASS when
+		updating data in this buffer.
 
-		The data to write to the GPU is taken from the corresponding cpu buffer that a softbody provides. Those cpu buffers are accessible through
-		getPositionInvMassCPU(), getSimPositionInvMassCPU() or getSimVelocityInvMassCPU().
+		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary. The 
+		first 3 floats specify the positions and the last float specifies the inverse mass of the vertex.
+		The size of the buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
+		@see PxTetrahedronMesh::getNbVertices().
 
-		\param[in] flags Specifies which PxSoftBody data to write to.
-		\param[in] flush If set to true the command gets executed immediately, otherwise it will get executed the next time copy commands are flushed.
+		The device memory pointed to by this pointer is allocated when a simulation mesh is attached to the 
+		softbody. Calling PxSoftBody::detachSimulationMesh() will deallocate the memory.
 
-		@see readData(), PxSoftBodyData
+		It is not allowed to write to this buffer from the start of the PxScene::simulate() call
+		until PxScene::fetchResults() returns. Reading the data is allowed once all the PhysX tasks
+		have finished, reading the data during a completion task is explicitly allowed. The 
+		simulation will read and write directly from/into this buffer.
+
+		It is the users' responsibility to initialize this buffer with the initial positions of 
+		the vertices of the simulation mesh. See PxSoftBodyExt::allocateAndInitializeHostMirror(),
+		PxSoftBodyExt::copyToDevice().
+		
+		\return PxVec4* A pointer to a device buffer containing the vertex positions of the simulation mesh.
 		*/
-		virtual		void				writeData(PxSoftBodyData::Enum flags, bool flush = false) = 0;
+		virtual 	PxVec4*	            getSimPositionInvMassBufferD() = 0;
+
+		/**
+		\brief Get a pointer to a device buffer containing the vertex velocities of the simulation mesh.
+
+		This function returns a pointer to device memory for the velocities of the softbody simulation mesh 
+		vertices. This buffer is used to both initialize/update the simulation mesh vertex velocities
+		of the soft body and read the simulation results.
+
+		\note It is mandatory to call PxSoftBody::markDirty() with PxSoftBodyDataFlag::eSIM_VELOCITY when
+		updating data in this buffer.
+
+		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary. The 
+		first 3 specify the velocities for each vertex. The final float is unused. The size of the 
+		buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
+		@see PxTetrahedronMesh::getNbVertices().
+
+		The device memory pointed to by this pointer is allocated when a simulation mesh is attached to the 
+		softbody. Calling PxSoftBody::detachSimulationMesh() will deallocate the memory.
+
+		It is not allowed to write to this buffer from the start of the PxScene::simulate() call
+		until PxScene::fetchResults() returns. Reading the data is allowed once all the PhysX tasks
+		have finished, reading the data during a completion task is explicitly allowed. The 
+		simulation will read and write directly from/into this buffer.
+
+		It is the users' responsibility to initialize this buffer with the initial velocities of 
+		the vertices of the simulation mesh. See PxSoftBodyExt::allocateAndInitializeHostMirror(),
+		PxSoftBodyExt::copyToDevice().
+		
+		\return PxVec4*  A pointer to a device buffer containing the vertex velocities of the simulation mesh.
+		*/
+		virtual 	PxVec4*	            getSimVelocityBufferD() = 0;
+
+		/**
+		\brief Marks per-vertex simulation state and configuration buffers dirty to signal to the simulation
+		that changes have been made.
+
+		Calling this function is mandatory to notify the simulation of changes made in the positionInvMass,
+		simPositionInvMass, simVelocity and rest position buffers.
+
+		This function can be called multiple times, and dirty flags are accumulated internally until 
+		PxScene::simulate() is called.
+
+		@see getPositionInvMassBufferD, getSimVelocityBufferD, getRestPositionBufferD, getSimPositionInvMassBufferD
+		
+		\param flags The buffers that have been updated.
+		*/
+		virtual     void                markDirty(PxSoftBodyDataFlags flags) = 0;
+
+		/**
+		\brief Set the device buffer containing the kinematic targets for this softbody.
+
+		This function sets the kinematic targets for a softbody to a user-provided device buffer. This buffer is
+		read by the simulation to obtain the target position for each vertex of the simulation mesh.
+
+		The simulation expects 4 consecutive float for each vertex, aligned to a 16B boundary. The first 3
+		floats specify the target positions. The last float determines (together with the flag argument)
+		if the target is active or not.
+		For a softbody with the flag PxSoftBodyFlag::eKINEMATIC raised, all target positions are considered
+		valid. In case a softbody has the PxSoftBodyFlag::ePARTIALLY_KINEMATIC raised, only target 
+		positions whose corresponding last float has been set to 0.f are considered valid target positions.
+		@see PxConfigureSoftBodyKinematicTarget
+
+		The size of the buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
+		@see PxTetrahedronMesh::getNbVertices().
+
+		It is the users responsibility to manage the memory pointed to by the input to this function,
+		as well as guaranteeing the integrity of the input data. In particular, this means that it is
+		not allowed to write this data from from the start of PxScene::simulate() until PxScene::fetchResults()
+		returns. The memory is not allowed to be deallocated until PxScene::fetchResults() returns.
+
+		Calling this function with a null pointer for the positions will clear the input and resume normal
+		simulation. This will also clear both the PxSoftBodyFlag::eKINEMATIC and PxSoftBodyFlag::ePARTIALLY_KINEMATIC
+		flags of the softbody.
+
+		This call is persistent across calls to PxScene::simulate(). Once this function is called, the 
+		simulation will look up the target positions from the same buffer for every call to PxScene::simulate().
+		The user is allowed to update the target positions without calling this function again, provided that
+		the synchronization requirements are adhered to (no changes between start of PxScene::simulate() until 
+		PxScene::fetchResults() returns).
+
+		\param positions A pointer to a device buffer containing the kinematic targets for this softbody.
+		\param flags Flags specifying the type of kinematic softbody: this function ignores all flags except PxSoftBodyFlag::eKINEMATIC and PxSoftBodyFlag::ePARTIALLY_KINEMATIC.
+		 */
+		virtual 	void                    setKinematicTargetBufferD(const PxVec4* positions, PxSoftBodyFlags flags) = 0;
 
 		/**
 		\brief Return the cuda context manager
@@ -325,6 +402,9 @@ namespace physx
 		*/
 		virtual PxTetrahedronMesh*		getCollisionMesh() = 0;
 
+		//! \brief Const version of getCollisionMesh()
+		virtual const PxTetrahedronMesh* getCollisionMesh() const = 0;
+
 		/**
 		\brief Retrieves the simulation mesh pointer.
 
@@ -333,6 +413,9 @@ namespace physx
 		\return Pointer to the simulation mesh
 		*/
 		virtual PxTetrahedronMesh*		getSimulationMesh() = 0;
+
+		//! \brief Const version of getSimulationMesh()
+		virtual const PxTetrahedronMesh* getSimulationMesh() const = 0;
 
 		/**
 		\brief Retrieves the simulation state pointer.
@@ -344,6 +427,8 @@ namespace physx
 		*/
 		virtual PxSoftBodyAuxData* getSoftBodyAuxData() = 0;
 
+		//! \brief const version of getSoftBodyAuxData()
+		virtual const PxSoftBodyAuxData* getSoftBodyAuxData() const = 0;
 
 		/**
 		\brief Attaches a shape
@@ -563,10 +648,11 @@ namespace physx
 		\param[in] tetIdx1 The index of a tetrahedron in the softbody's collision mesh that contains the point to be attached to the softbody0
 		\param[in] tetBarycentric1 The barycentric coordinates of the attachment point inside the tetrahedron specified by tetIdx1
 		\param[in] constraint The user defined cone distance limit constraint to limit the movement between tets.
+		\param[in] constraintOffset Offsets the cone and distance limit constraint along its axis, in order to specify the location of the cone tip.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
 		virtual		PxU32					addSoftBodyAttachment(PxSoftBody* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-											PxConeLimitedConstraint* constraint = NULL) = 0;
+											PxConeLimitedConstraint* constraint = NULL, PxReal constraintOffset = 0.0f) = 0;
 
 		/**
 		\brief Releases an attachment between a soft body and the other soft body.
@@ -599,7 +685,6 @@ namespace physx
 		*/
 		virtual		void					removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
 
-
 		/**
 		\brief Creates an attachment between a soft body and a cloth.
 		Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash.
@@ -615,10 +700,11 @@ namespace physx
 		\param[in] tetIdx The index of a tetrahedron in the softbody's collision mesh that contains the point to be attached to the cloth
 		\param[in] tetBarycentric The barycentric coordinates of the attachment point inside the tetrahedron specified by tetIdx
 		\param[in] constraint The user defined cone distance limit constraint to limit the movement between a triangle in the fem cloth and a tet in the soft body.
+		\param[in] constraintOffset Offsets the cone and distance limit constraint along its axis, in order to specify the location of the cone tip.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
 		virtual		PxU32					addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
-											PxConeLimitedConstraint* constraint = NULL) = 0;
+											PxConeLimitedConstraint* constraint = NULL, PxReal constraintOffset = 0.0f) = 0;
 
 		/**
 		\brief Releases an attachment between a cloth and a soft body.
@@ -633,71 +719,6 @@ namespace physx
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addClothAttachment when the attachment is created
 		*/
 		virtual		void					removeClothAttachment(PxFEMCloth* cloth, PxU32 handle) = 0;
-
-		/**
-		\brief Access to the vertices of the simulation mesh on the host
-
-		Each element uses 4 float values containing position and inverseMass per vertex [x, y, z, inverseMass]
-		The inverse mass must match the inverse mass in the simVelocityCPU buffer at the same index. A copy of this value
-		is stored in the simVelocityCPU buffer to allow for faster access on the GPU. If the inverse masses in those two buffers
-		don't match, the simulation may produce wrong results
-
-		Allows to access the CPU buffer of the simulation mesh's vertices
-
-		\return The buffer that contains the simulation mesh's vertex positions (x, y, z) and the inverse mass as 4th component
-		*/
-		virtual		PxBuffer*				getSimPositionInvMassCPU() = 0;
-
-		/**
-		\brief Access to the vertices of the simulation mesh on the host
-
-		Each element uses 4 float values containing position and inverseMass per vertex [x, y, z, inverseMass]
-		The inverse mass must match the inverse mass in the simVelocityCPU buffer at the same index. A copy of this value
-		is stored in the simVelocityCPU buffer to allow for faster access on the GPU. If the inverse masses in those two buffers
-		don't match, the simulation may produce wrong results
-
-		Allows to access the CPU buffer of the simulation mesh's vertices
-
-		\return The buffer that contains the simulation mesh's vertex positions (x, y, z) and the inverse mass as 4th component
-		*/
-		virtual		PxBuffer*				getKinematicTargetCPU() = 0;
-		/**
-		\brief Access to the velocities of the simulation mesh on the host
-
-		Each element uses 4 float values containing velocity and inverseMass per vertex [x, y, z, inverseMass]
-		The inverse mass must match the inverse mass in the simPositionInvMassCPU buffer at the same index. A copy of this value
-		is stored in the simPositionInvMassCPU buffer to allow for faster access on the GPU. If the inverse masses in those two buffers
-		don't match, the simulation may produce wrong results
-
-		Allows to access the CPU buffer of the simulation mesh's vertices
-
-		\return The buffer that contains the simulation mesh's velocities (x, y, z) and the inverse mass as 4th component
-		*/
-		virtual		PxBuffer*				getSimVelocityInvMassCPU() = 0;
-
-		/**
-		\brief Access to the vertices of the collision mesh on the host
-
-		Each element uses 4 float values containing position and inverseMass per vertex [x, y, z, inverseMass]
-		The inverse mass on the collision mesh has no effect, it can be set to an arbitrary value.
-
-		Allows to access the CPU buffer of the collision mesh's vertices
-
-		\return The buffer that contains the collision mesh's vertex positions (x, y, z) and the inverse mass as 4th component
-		*/
-		virtual		PxBuffer*				getPositionInvMassCPU() = 0;
-
-		/**
-		\brief Access to the rest vertices of the collision mesh on the host
-
-		Each element uses 4 float values containing position and inverseMass per vertex [x, y, z, inverseMass]
-		The inverse mass on the collision mesh has no effect, it can be set to an arbitrary value.
-
-		Allows to access the CPU buffer of the collision mesh's rest vertices
-
-		\return The buffer that contains the collision mesh's rest vertex positions (x, y, z) and the inverse mass as 4th component
-		*/
-		virtual		PxBuffer*				getRestPositionInvMassCPU() = 0;
 
 		/**
 		\brief Retrieves the axis aligned bounding box enclosing the soft body.
@@ -722,12 +743,44 @@ namespace physx
 	
 		virtual		const char*		getConcreteTypeName() const PX_OVERRIDE { return "PxSoftBody";  }
 
-
 	protected:
 		PX_INLINE					PxSoftBody(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
 		PX_INLINE					PxSoftBody(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
 		virtual		bool			isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxSoftBody", name) || PxActor::isKindOf(name); }
 	};
+
+	/**
+	\brief Adjusts a softbody kinematic target such that it is properly set as active or inactive. Inactive targets will not affect vertex position, they are ignored by the solver.
+
+	\param[in] target The kinematic target
+	\param[in] isActive A boolean indicating if the returned target should be marked as active or not
+	\return The target with adjusted w component
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec4 PxConfigureSoftBodyKinematicTarget(const PxVec4& target, bool isActive)
+	{
+		PxVec4 result = target;
+		if (isActive)
+			result.w = 0.0f;
+		else
+		{
+			//Any non-zero value will mark the target as inactive
+			if (result.w == 0.0f)
+				result.w = 1.0f;
+		}
+		return result;
+	}
+
+	/**
+	\brief Sets up a softbody kinematic target such that it is properly set as active or inactive. Inactive targets will not affect vertex position, they are ignored by the solver.
+
+	\param[in] target The kinematic target
+	\param[in] isActive A boolean indicating if the returned target should be marked as active or not
+	\return The target with configured w component
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec4 PxConfigureSoftBodyKinematicTarget(const PxVec3& target, bool isActive)
+	{
+		return PxConfigureSoftBodyKinematicTarget(PxVec4(target, 0.0f), isActive);
+	}
 
 #if PX_VC
 #pragma warning(pop)

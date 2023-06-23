@@ -55,9 +55,15 @@ def get_packages_root(conf_dir: str) -> str:
             root = os.path.join(drive, "packman-repo")
         elif platform_name == "Darwin":
             # macOS
-            root = "/Library/Caches/packman"
+            root = os.path.join(
+                os.path.expanduser("~"), "/Library/Application Support/packman-cache"
+            )
         elif platform_name == "Linux":
-            root = "/var/tmp/packman"
+            try:
+                cache_root = os.environ["XDG_HOME_CACHE"]
+            except KeyError:
+                cache_root = os.path.join(os.path.expanduser("~"), ".cache")
+            return os.path.join(cache_root, "packman")
         else:
             raise RuntimeError(f"Unsupported platform '{platform_name}'")
     # make sure the path exists:

@@ -38,7 +38,6 @@ Sc::ConstraintCore::ConstraintCore(PxConstraintConnector& connector, const PxCon
 	mAppliedForce			(PxVec3(0.0f)),
 	mAppliedTorque			(PxVec3(0.0f)),
 	mConnector				(&connector),
-	mProject				(shaders.project),
 	mSolverPrep				(shaders.solverPrep),
 	mVisualize				(shaders.visualize),
 	mDataSize				(dataSize),

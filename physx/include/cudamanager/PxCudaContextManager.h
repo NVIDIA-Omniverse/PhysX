@@ -44,23 +44,6 @@ namespace physx
 
 class PxCudaContext;
 
-/** \brief Possible graphic/CUDA interoperability modes for context */
-struct PxCudaInteropMode
-{
-    /**
-     * \brief Possible graphic/CUDA interoperability modes for context
-     */
-	enum Enum
-	{
-		NO_INTEROP = 0,
-		D3D10_INTEROP,
-		D3D11_INTEROP,
-		OGL_INTEROP,
-
-		COUNT
-	};
-};
-
 struct PxCudaInteropRegisterFlag
 {
 	enum Enum
@@ -156,21 +139,11 @@ public:
 	  */
 	PxDeviceAllocatorCallback*	deviceAllocator;
 
-	/**
-     * \brief The CUDA/Graphics interop mode of this context
-     *
-     * If ctx is NULL, this value describes the nature of the graphicsDevice
-     * pointer provided by the user.  Else it describes the nature of the
-     * context provided by the user.
-     */
-	PxCudaInteropMode::Enum interopMode;
-
 	PX_INLINE PxCudaContextManagerDesc() :
 		ctx				(NULL),
 		graphicsDevice	(NULL),
 		appGUID			(NULL),
-		deviceAllocator	(NULL),
-		interopMode		(PxCudaInteropMode::NO_INTEROP)
+		deviceAllocator	(NULL)
 	{
 	}
 };
@@ -409,64 +382,12 @@ public:
 	virtual unsigned int getMaxThreadsPerBlock() const = 0; //!< returns the maximum number of threads per block
     virtual const char *getDeviceName() const = 0; //!< returns device name retrieved from driver
 	virtual CUdevice getDevice() const = 0; //!< returns device handle retrieved from driver
-	virtual PxCudaInteropMode::Enum getInteropMode() const = 0; //!< interop mode the context was created with
 
 	virtual void setUsingConcurrentStreams(bool) = 0; //!< turn on/off using concurrent streams for GPU work
 	virtual bool getUsingConcurrentStreams() const = 0; //!< true if GPU work can run in concurrent streams
     /* End query methods that don't require context to be acquired */
 
-    /**
-     * \brief Register a rendering resource with CUDA
-     *
-     * This function is called to register render resources (allocated
-     * from OpenGL) with CUDA so that the memory may be shared
-     * between the two systems.  This is only required for render
-     * resources that are designed for interop use.  In APEX, each
-     * render resource descriptor that could support interop has a
-     * 'registerInCUDA' boolean variable.
-     *
-     * The function must be called again any time your graphics device
-     * is reset, to re-register the resource.
-     *
-     * Returns true if the registration succeeded.  A registered
-     * resource must be unregistered before it can be released.
-     *
-     * \param resource [OUT] the handle to the resource that can be used with CUDA
-     * \param buffer [IN] GLuint buffer index to be mapped to cuda
-     * \param flags [IN] cuda interop registration flags
-     */
-    virtual bool registerResourceInCudaGL(CUgraphicsResource& resource, uint32_t buffer, PxCudaInteropRegisterFlags flags = PxCudaInteropRegisterFlags()) = 0;
-
-     /**
-     * \brief Register a rendering resource with CUDA
-     *
-     * This function is called to register render resources (allocated
-     * from Direct3D) with CUDA so that the memory may be shared
-     * between the two systems.  This is only required for render
-     * resources that are designed for interop use.  In APEX, each
-     * render resource descriptor that could support interop has a
-     * 'registerInCUDA' boolean variable.
-     *
-     * The function must be called again any time your graphics device
-     * is reset, to re-register the resource.
-     *
-     * Returns true if the registration succeeded.  A registered
-     * resource must be unregistered before it can be released.
-     *
-     * \param resource [OUT] the handle to the resource that can be used with CUDA
-     * \param resourcePointer [IN] A pointer to either IDirect3DResource9, or ID3D10Device, or ID3D11Resource to be registered.
-     * \param flags [IN] cuda interop registration flags
-     */
-    virtual bool registerResourceInCudaD3D(CUgraphicsResource& resource, void* resourcePointer, PxCudaInteropRegisterFlags flags = PxCudaInteropRegisterFlags()) = 0;
-
-    /**
-     * \brief Unregister a rendering resource with CUDA
-     *
-     * If a render resource was successfully registered with CUDA using
-     * the registerResourceInCuda***() methods, this function must be called
-     * to unregister the resource before the it can be released.
-     */
-    virtual bool unregisterResourceInCuda(CUgraphicsResource resource) = 0;
+	virtual void getDeviceMemoryInfo(size_t& free, size_t& total) const = 0; //!< get currently available and total memory
 
 	/**
 	 * \brief Determine if the user has configured a dedicated PhysX GPU in the NV Control Panel

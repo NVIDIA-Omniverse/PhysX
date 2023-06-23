@@ -715,10 +715,9 @@ void PxVehicleWheels::onConstraintRelease()
 	}
 }
 
-static PxConstraintShaderTable t = 
+static PxConstraintShaderTable table = 
 		{ 
 			PxVehicleConstraintShader::vehicleSuspLimitConstraintSolverPrep,
-			0,
 			PxVehicleConstraintShader::visualiseConstraint,
 			PxConstraintFlag::Enum(0)
 		};
@@ -784,7 +783,7 @@ void PxVehicleWheels::setup
 		}
 
 
-		shader.mConstraint=physics->createConstraint(vehActor, NULL, shader, t, sizeof(PxVehicleConstraintShader::VehicleConstraintData));
+		shader.mConstraint=physics->createConstraint(vehActor, NULL, shader, table, sizeof(PxVehicleConstraintShader::VehicleConstraintData));
 		shader.mConstraint->markDirty();
 	}
 
@@ -848,7 +847,7 @@ void PxVehicleWheels::resolveReferences(PxDeserializationContext& context)
 	for(PxU32 i=0;i<mWheelsSimData.mNbWheels4;i++)
 	{
 		PxVehicleConstraintShader& shader=mWheelsDynData.mWheels4DynData[i].getVehicletConstraintShader();
-		shader.setPxConstraint(resolveConstraintPtr(context,shader.getPxConstraint(), shader.getConnector(), t));
+		shader.setPxConstraint(resolveConstraintPtr(context,shader.getPxConstraint(), shader.getConnector(), table));
 	}
 
 	//Set up the shader data ptrs.

@@ -37,9 +37,9 @@
 #error "Only include windows.h through this file!!"
 #endif
 
-// We only support >= Windows XP, and we need this for critical section and
+// We only support >= Windows 7, and we need this for critical section and
 // Setting this hides some important APIs (e.g. LoadPackagedLibrary), so don't do it
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0601
 
 // turn off as much as we can for windows. All we really need is the thread functions(critical sections/Interlocked*
 // etc)

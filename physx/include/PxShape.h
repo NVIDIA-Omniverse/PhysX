@@ -182,189 +182,6 @@ public:
 	virtual		const PxGeometry&	getGeometry() const = 0;
 
 	/**
-	\brief Get the geometry type of the shape.
-
-	\return Type of shape geometry.
-
-	@see PxGeometryType
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE	PxGeometryType::Enum	getGeometryType() const
-	{
-		return getGeometry().getType();
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getBoxGeometry(PxBoxGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eBOX, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getSphereGeometry(PxSphereGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eSPHERE, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getCapsuleGeometry(PxCapsuleGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eCAPSULE, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getPlaneGeometry(PxPlaneGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::ePLANE, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getConvexMeshGeometry(PxConvexMeshGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eCONVEXMESH, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getTriangleMeshGeometry(PxTriangleMeshGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eTRIANGLEMESH, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getTetrahedronMeshGeometry(PxTetrahedronMeshGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eTETRAHEDRONMESH, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getParticleSystemGeometry(PxParticleSystemGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::ePARTICLESYSTEM, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getHeightFieldGeometry(PxHeightFieldGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eHEIGHTFIELD, geometry);
-	}
-
-	/**
-	\brief Fetch the geometry of the shape.
-
-	\note If the type of geometry to extract does not match the geometry type of the shape
-	then the method will return false and the passed in geometry descriptor is not modified.
-
-	\param[in] geometry The descriptor to save the shape's geometry data to.
-	\return True on success else false
-
-	@see PxGeometry PxGeometryType getGeometryType()
-	@deprecated
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE bool	getCustomGeometry(PxCustomGeometry& geometry)	const
-	{
-		return getGeometryT(PxGeometryType::eCUSTOM, geometry);
-	}
-
-	/**
 	\brief Retrieves the actor which this shape is associated with.
 
 	\return The actor this shape is associated with, if it is an exclusive shape, else NULL
@@ -701,6 +518,17 @@ public:
 	*/
 	virtual		PxReal	getMinTorsionalPatchRadius() const = 0;
 
+	/**
+	\brief Gets internal shape id
+
+	The internal shape id can be used to reference a specific shape when processing data on the gpu.
+	
+	\return The shape id
+
+	@see PxScene evaluateSDFDistances()
+	*/
+	virtual		PxU32	getInternalShapeIndex() const = 0;
+
 /************************************************************************************************/
 
 	/**
@@ -774,16 +602,6 @@ protected:
 	PX_INLINE				PxShape(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags), userData(NULL) {}
 	virtual					~PxShape() {}
 	virtual		bool		isKindOf(const char* name) const { return !::strcmp("PxShape", name) || PxRefCounted::isKindOf(name); }
-
-	template<class T>
-	PX_FORCE_INLINE bool getGeometryT(PxGeometryType::Enum type, T& geom)	const
-	{
-		if(getGeometryType() != type)
-			return false;
-
-		geom = static_cast<const T&>(getGeometry());
-		return true;
-	}
 };
 
 #if !PX_DOXYGEN

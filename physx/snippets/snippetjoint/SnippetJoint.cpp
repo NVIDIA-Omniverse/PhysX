@@ -63,7 +63,7 @@ static PxRigidDynamic* createDynamic(const PxTransform& t, const PxGeometry& geo
 static PxJoint* createLimitedSpherical(PxRigidActor* a0, const PxTransform& t0, PxRigidActor* a1, const PxTransform& t1)
 {
 	PxSphericalJoint* j = PxSphericalJointCreate(*gPhysics, a0, t0, a1, t1);
-	j->setLimitCone(PxJointLimitCone(PxPi/4, PxPi/4, 0.05f));
+	j->setLimitCone(PxJointLimitCone(PxPi/4, PxPi/4));
 	j->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
 	return j;
 }

@@ -31,27 +31,15 @@
 
 #include "common/PxMetaData.h"
 #include "PxActor.h"
-#include "foundation/PxUserAllocated.h"
 
 namespace physx
 {
-
-class PxActor;
-
 namespace Sc
 {
-
-	class Scene;
 	class ActorSim;
 
-	class ActorCore : public PxUserAllocated
+	class ActorCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 // PX_SERIALIZATION
 											ActorCore(const PxEMPTY) :	mSim(NULL), mActorFlags(PxEmpty)
@@ -59,9 +47,8 @@ namespace Sc
 											}
 		static			void				getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
-											ActorCore(PxActorType::Enum actorType, PxU8 actorFlags, 
-													  PxClientID owner, PxDominanceGroup dominanceGroup);
-		/*virtual*/							~ActorCore();
+											ActorCore(PxActorType::Enum actorType, PxU8 actorFlags, PxClientID owner, PxDominanceGroup dominanceGroup);
+											~ActorCore();
 
 		PX_FORCE_INLINE	ActorSim*			getSim()						const	{ return mSim;							}
 		PX_FORCE_INLINE	void				setSim(ActorSim* sim)
@@ -104,9 +91,6 @@ namespace Sc
 												const PxU32 id = mAggregateIDOwnerClient & 0x00ffffff;
 												return id == 0x00ffffff ? PX_INVALID_U32 : id;
 											}
-		//virtual		PxActor*				getPxActor() const = 0;
-		//virtual		PxIntBool				isFrozen() const { return IntTrue; };
-
 	private:
 						ActorSim*			mSim;						// 
 						PxU32				mAggregateIDOwnerClient;	// PxClientID (8bit) | aggregate ID (24bit)

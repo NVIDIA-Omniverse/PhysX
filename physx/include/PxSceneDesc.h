@@ -88,7 +88,7 @@ struct PxSolverType
 	enum Enum
 	{
 		ePGS,	//!< Projected Gauss-Seidel iterative solver
-		eTGS	//!< Default Temporal Gauss-Seidel solver
+		eTGS	//!< Temporal Gauss-Seidel solver
 	};
 };
 
@@ -279,17 +279,37 @@ struct PxSceneFlag
 		eENABLE_FRICTION_EVERY_ITERATION = (1 << 15),
 
 		/*
+		\brief Enables the direct-GPU API. Raising this flag is only allowed if eENABLE_GPU_DYNAMICS is raised and 
+		PxBroadphaseType::eGPU is used.
+
+		This is useful if your application only needs to communicate to the GPU via GPU buffers. Can be significantly
+		faster.
+		
+		\note Enabling the direct-GPU API will disable the readback of simulation state from GPU to CPU. Simulation outputs
+		can only be accessed using the direct-GPU API functions in PxScene (PxScene::copyBodyData(), PxScene::copyArticulationData(),
+		PxScene::copySoftbodyData(), PxScene::copyContactData()), and reading state directly from the actor is not allowed.
+
+		\note This flag is not mutable and must be set in PxSceneDesc at scene creation.
+
+		*/
+		eENABLE_DIRECT_GPU_API = (1 << 16),
+
+		/*
 		\brief Disables GPU readback of articulation data when running on GPU.
 		Useful if your application only needs to communicate to the GPU via GPU buffers. Can be significantly faster
+
+		@deprecated. Use PxSceneFlag::eENABLE_DIRECT_GPU_API instead.
 		*/
-		eSUPPRESS_READBACK = (1<<16),
+		eSUPPRESS_READBACK = eENABLE_DIRECT_GPU_API,
 
 		/*
 		\brief Forces GPU readback of articulation data when user raise eSUPPRESS_READBACK.
+
+		@deprecated. There will be no replacement.
 		*/
 		eFORCE_READBACK = (1 << 17),
 
-		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS|eSUPPRESS_READBACK
+		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};
 };
 
@@ -1021,7 +1041,7 @@ PX_INLINE bool PxSceneDesc::isValid() const
 	if(!gpuDynamicsConfig.isValid())
 		return false;
 
-	if (flags & PxSceneFlag::eSUPPRESS_READBACK)
+	if (flags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 	{
 		if(!(flags & PxSceneFlag::eENABLE_GPU_DYNAMICS && broadPhaseType == PxBroadPhaseType::eGPU))
 			return false;

@@ -118,10 +118,13 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DySolverControlPF.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverCore.h
 	${LLDYNAMICS_BASE_DIR}/src/DySolverExt.h
-	${LLDYNAMICS_BASE_DIR}/src/DySpatial.h
 	${LLDYNAMICS_BASE_DIR}/src/DyThreadContext.h
 	${LLDYNAMICS_BASE_DIR}/src/DyTGSDynamics.h
     ${LLDYNAMICS_BASE_DIR}/src/DyTGSContactPrep.h
+    ${LLDYNAMICS_BASE_DIR}/src/DyTGS.h
+    ${LLDYNAMICS_BASE_DIR}/src/DyPGS.h
+	${LLDYNAMICS_BASE_DIR}/src/DySleep.h
+	${LLDYNAMICS_BASE_DIR}/src/DySleep.cpp
 )
 SOURCE_GROUP("src" FILES ${LLDYNAMICS_SOURCE})
 

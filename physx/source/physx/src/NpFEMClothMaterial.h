@@ -45,12 +45,6 @@ namespace physx
 
 	class NpFEMClothMaterial : public PxFEMClothMaterial, public PxUserAllocated
 	{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
 	public:
 		// PX_SERIALIZATION            
 										NpFEMClothMaterial(PxBaseFlags baseFlags) : PxFEMClothMaterial(baseFlags), mMaterial(PxEmpty) {}
@@ -88,10 +82,6 @@ namespace physx
 		// PxFEMClothMaterial
 		virtual		void				setThickness(PxReal thickness)	PX_OVERRIDE;
 		virtual		PxReal				getThickness() const	PX_OVERRIDE;
-		virtual		void				setElasticityDamping(PxReal damping)	PX_OVERRIDE;
-		virtual		PxReal				getElasticityDamping() const	PX_OVERRIDE;
-		virtual		void				setBendingDamping(PxReal damping)	PX_OVERRIDE;
-		virtual		PxReal				getBendingDamping() const	PX_OVERRIDE;
 		//~PxFEMClothMaterial
 
 		PX_FORCE_INLINE static void		getMaterialIndices(PxFEMClothMaterial*const* materials, PxU16* materialIndices, PxU32 materialCount);

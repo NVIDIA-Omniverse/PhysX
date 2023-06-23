@@ -34,29 +34,15 @@
 #include "PxRigidDynamic.h"
 #include "PxvDynamics.h"
 #include "PxvConfig.h"
-#include "foundation/PxPool.h"
 
 namespace physx
 {
-class PxRigidBodyDesc;
-
 namespace Sc
 {
 	class BodySim;
-	struct SimStateData;
 
 	class BodyCore : public RigidCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
-		//---------------------------------------------------------------------------------
-		// Construction, destruction & initialization
-		//---------------------------------------------------------------------------------
 	public:
 // PX_SERIALIZATION
 											BodyCore(const PxEMPTY) : RigidCore(PxEmpty), mCore(PxEmpty) {}
@@ -91,10 +77,10 @@ namespace Sc
 		PX_FORCE_INLINE	const PxTransform&	getBody2Actor()				const	{ return mCore.getBody2Actor();			}
 						void				setBody2Actor(const PxTransform& p);
 
-						void				addSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc);
-						void				setSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc);
+						void				addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc);
+						void				setSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc);
 						void				clearSpatialAcceleration(bool force, bool torque);
-						void				addSpatialVelocity(PxPool<SimStateData>* simStateDataPool, const PxVec3* linVelDelta, const PxVec3* angVelDelta);
+						void				addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta);
 						void				clearSpatialVelocity(bool force, bool torque);
 
 		PX_FORCE_INLINE PxReal				getMaxPenetrationBias() const		{ return mCore.maxPenBias; }
@@ -112,7 +98,7 @@ namespace Sc
 						void				setAngularDamping(PxReal d);
 
 		PX_FORCE_INLINE	PxRigidBodyFlags	getFlags()					const	{ return mCore.mFlags;		}
-						void				setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyFlags f);
+						void				setFlags(PxRigidBodyFlags f);
 
 		PX_FORCE_INLINE	PxRigidDynamicLockFlags	getRigidDynamicLockFlags()					const	{ return mCore.lockFlags; }
 
@@ -184,7 +170,7 @@ namespace Sc
 			return *reinterpret_cast<BodyCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
 		}
 
-						void				setKinematicLink(const bool value);
+						void				setFixedBaseLink(bool value);
 	private:
 						PX_ALIGN_PREFIX(16) PxsBodyCore mCore PX_ALIGN_SUFFIX(16);
 	};

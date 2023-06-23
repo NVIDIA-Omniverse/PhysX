@@ -46,7 +46,7 @@ namespace physx
 	/**
 	Output stream to fill RenderBuffer
 	*/
-	class PX_PHYSX_COMMON_API PxRenderOutput
+	class PxRenderOutput
 	{
 	public:
 
@@ -226,7 +226,7 @@ namespace physx
 	};
 	PX_FORCE_INLINE PxRenderOutput& operator<<(PxRenderOutput& out, const PxDebugCircle& circle)
 	{
-		const PxF32 step = PxTwoPi / circle.nSegments;
+		const PxF32 step = PxTwoPi / PxF32(circle.nSegments);
 		PxF32 angle = 0;
 		out << PxRenderOutput::LINESTRIP;
 		for (PxU32 i = 0; i < circle.nSegments; i++, angle += step)
@@ -245,7 +245,7 @@ namespace physx
 	};
 	PX_FORCE_INLINE PxRenderOutput& operator<<(PxRenderOutput& out, const PxDebugArc& arc)
 	{
-		const PxF32 step = (arc.maxAngle - arc.minAngle) / arc.nSegments;
+		const PxF32 step = (arc.maxAngle - arc.minAngle) / PxF32(arc.nSegments);
 		PxF32 angle = arc.minAngle;
 		out << PxRenderOutput::LINESTRIP;
 		for (PxU32 i = 0; i < arc.nSegments; i++, angle += step)

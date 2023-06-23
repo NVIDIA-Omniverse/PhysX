@@ -40,14 +40,13 @@ namespace Sc
 
 	class ArticulationJointSim : public Interaction
 	{
-		ArticulationJointSim&	operator=(const ArticulationJointSim &);
-
+		PX_NOCOPY(ArticulationJointSim)
 	public:
 												ArticulationJointSim(ArticulationJointCore& joint, ActorSim& parent, ActorSim& child);
 												~ArticulationJointSim();
 
-						bool					onActivate_(void*);
-						bool					onDeactivate_();
+						bool					onActivate(void*);
+						bool					onDeactivate();
 
 		PX_FORCE_INLINE	ArticulationJointCore&	getCore()	const	{ return mCore; }
 
@@ -55,10 +54,6 @@ namespace Sc
 						BodySim&				getChild()	const;
 
 						void					setDirty();
-
-		//---------------------------------------------------------------------------------
-		// Low Level data access
-		//---------------------------------------------------------------------------------
 	private:
 						ArticulationJointCore&	mCore;
 	};

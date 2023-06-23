@@ -137,18 +137,18 @@ void Sc::BodyCore::setBody2Actor(const PxTransform& p)
 	}
 }
 
-void Sc::BodyCore::addSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc)
+void Sc::BodyCore::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
 	BodySim* sim = getSim();
 	PX_ASSERT(sim);
-	sim->addSpatialAcceleration(simStateDataPool, linAcc, angAcc);
+	sim->addSpatialAcceleration(linAcc, angAcc);
 }
 
-void Sc::BodyCore::setSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc)
+void Sc::BodyCore::setSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
 	BodySim* sim = getSim();
 	PX_ASSERT(sim);
-	sim->setSpatialAcceleration(simStateDataPool, linAcc, angAcc);
+	sim->setSpatialAcceleration(linAcc, angAcc);
 }
 
 void Sc::BodyCore::clearSpatialAcceleration(bool force, bool torque)
@@ -159,11 +159,11 @@ void Sc::BodyCore::clearSpatialAcceleration(bool force, bool torque)
 	sim->clearSpatialAcceleration(force, torque);
 }
 
-void Sc::BodyCore::addSpatialVelocity(PxPool<SimStateData>* simStateDataPool, const PxVec3* linVelDelta, const PxVec3* angVelDelta)
+void Sc::BodyCore::addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta)
 {
 	BodySim* sim = getSim();
 	PX_ASSERT(sim);
-	sim->addSpatialVelocity(simStateDataPool, linVelDelta, angVelDelta);
+	sim->addSpatialVelocity(linVelDelta, angVelDelta);
 }
 
 void Sc::BodyCore::clearSpatialVelocity(bool force, bool torque)
@@ -372,7 +372,7 @@ void Sc::BodyCore::setMaxLinVelSq(PxReal v)
 	}
 }
 
-void Sc::BodyCore::setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyFlags f)
+void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 {
 	const PxRigidBodyFlags old = mCore.mFlags;
 	if(f != old)
@@ -386,8 +386,6 @@ void Sc::BodyCore::setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyF
 		BodySim* sim = getSim();
 		if (sim)
 		{
-			PX_ASSERT(simStateDataPool);
-
 			const PxU32 posePreviewFlag = f & PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW;
 			if(PxU32(old & PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW) != posePreviewFlag)
 				sim->postPosePreviewChange(posePreviewFlag);
@@ -397,13 +395,9 @@ void Sc::BodyCore::setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyF
 			// Thus, the kinematic data should only be created/destroyed when we know for sure that we are in a scene.
 
 			if(switchToKinematic)
-			{
-				sim->switchToKinematic(simStateDataPool);
-			}
+				sim->switchToKinematic();
 			else if(switchToDynamic)
-			{
-				sim->switchToDynamic(simStateDataPool);
-			}
+				sim->switchToDynamic();
 
 			const PxU32 wasSpeculativeCCD = old & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
 			const PxU32 isSpeculativeCCD = f & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
@@ -412,23 +406,15 @@ void Sc::BodyCore::setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyF
 			{
 				if(wasSpeculativeCCD)
 				{
-					if(sim->isArticulationLink())
-						sim->getScene().resetSpeculativeCCDArticulationLink(sim->getNodeIndex().index());
-					else
-						sim->getScene().resetSpeculativeCCDRigidBody(sim->getNodeIndex().index());
+					sim->removeFromSpeculativeCCDMap();
 
 					sim->getLowLevelBody().mInternalFlags &= (~PxsRigidBody::eSPECULATIVE_CCD);
 				}
 				else
 				{
 					//Kinematic body switch puts the body to sleep, so we do not mark the speculative CCD bitmap for this actor to true in this case.
-					if (!switchToKinematic)
-					{
-						if (sim->isArticulationLink())
-							sim->getScene().setSpeculativeCCDArticulationLink(sim->getNodeIndex().index());
-						else
-							sim->getScene().setSpeculativeCCDRigidBody(sim->getNodeIndex().index());
-					}
+					if(!switchToKinematic)
+						sim->addToSpeculativeCCDMap();
 
 					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eSPECULATIVE_CCD);
 				}
@@ -439,9 +425,9 @@ void Sc::BodyCore::setFlags(PxPool<SimStateData>* simStateDataPool, PxRigidBodyF
 			if (wasIntegrateGyroscopic ^ isIntegrateGyroscopic)
 			{
 				if(wasIntegrateGyroscopic)
-					sim->getLowLevelBody().mInternalFlags &= (PxsRigidBody::eENABLE_GYROSCROPIC);
+					sim->getLowLevelBody().mInternalFlags &= (PxsRigidBody::eENABLE_GYROSCOPIC);
 				else
-					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eENABLE_GYROSCROPIC);				
+					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eENABLE_GYROSCOPIC);				
 			}
 
 			const PxU32 wasRetainAccel = old & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
@@ -599,12 +585,12 @@ void Sc::BodyCore::invalidateKinematicTarget()
 	simStateInvalidateKinematicTarget(sim->getSimStateData_Unchecked());
 }
 
-void Sc::BodyCore::setKinematicLink(const bool value)
+void Sc::BodyCore::setFixedBaseLink(bool value)
 {
 	BodySim* sim = getSim();
 
-	if (sim)
-		sim->getLowLevelBody().mCore->kinematicLink = PxU8(value);
+	if(sim)
+		sim->getLowLevelBody().mCore->fixedBaseLink = PxU8(value);
 }
 
 void Sc::BodyCore::onRemoveKinematicFromScene()

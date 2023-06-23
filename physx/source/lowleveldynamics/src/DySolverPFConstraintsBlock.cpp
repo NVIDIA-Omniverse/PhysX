@@ -26,7 +26,6 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
 #include "foundation/PxFPU.h"
@@ -40,10 +39,10 @@
 #include "DyConstraint.h"
 #include "foundation/PxAtomic.h"
 #include "DySolverContact.h"
+#include "DyPGS.h"
 
 namespace physx
 {
-
 namespace Dy
 {
 
@@ -81,20 +80,15 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 	Vec4V angState30 = V4LoadA(&b30.angularState.x);
 	Vec4V angState31 = V4LoadA(&b31.angularState.x);
 
-
 	Vec4V linVel0T0, linVel0T1, linVel0T2, linVel0T3;
 	Vec4V linVel1T0, linVel1T1, linVel1T2, linVel1T3;
 	Vec4V angState0T0, angState0T1, angState0T2, angState0T3;
 	Vec4V angState1T0, angState1T1, angState1T2, angState1T3;
 
-
 	PX_TRANSPOSE_44(linVel00, linVel10, linVel20, linVel30, linVel0T0, linVel0T1, linVel0T2, linVel0T3);
 	PX_TRANSPOSE_44(linVel01, linVel11, linVel21, linVel31, linVel1T0, linVel1T1, linVel1T2, linVel1T3);
 	PX_TRANSPOSE_44(angState00, angState10, angState20, angState30, angState0T0, angState0T1, angState0T2, angState0T3);
 	PX_TRANSPOSE_44(angState01, angState11, angState21, angState31, angState1T0, angState1T1, angState1T2, angState1T3);
-
-
-	
 
 	//hopefully pointer aliasing doesn't bite.
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
@@ -105,11 +99,9 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 
 	//const PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
 
-
 	//TODO - can I avoid this many tests???
 	while(currPtr < last)
 	{
-
 		SolverContactCoulombHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverContactCoulombHeader4*>(currPtr);
 
 		Vec4V* appliedForceBuffer = reinterpret_cast<Vec4V*>(currPtr + hdr->frictionOffset + sizeof(SolverFrictionHeader4));
@@ -165,16 +157,13 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 			const Vec4V rbXnT0 = c.rbXnX;
 			const Vec4V rbXnT1 = c.rbXnY;
 			const Vec4V rbXnT2 = c.rbXnZ;
-
-			
+		
 			const Vec4V normalVel2_tmp2 = V4Mul(raXnT0, angState0T0);
 			const Vec4V normalVel4_tmp2 = V4Mul(rbXnT0, angState1T0);
-
-			
+		
 			const Vec4V normalVel2_tmp1 = V4MulAdd(raXnT1, angState0T1, normalVel2_tmp2);
 			const Vec4V normalVel4_tmp1 = V4MulAdd(rbXnT1, angState1T1, normalVel4_tmp2);
-
-			
+		
 			const Vec4V normalVel2 = V4MulAdd(raXnT2, angState0T2, normalVel2_tmp1);
 			const Vec4V normalVel4 = V4MulAdd(rbXnT2, angState1T2, normalVel4_tmp1);
 
@@ -228,7 +217,6 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 
 	PX_ASSERT(currPtr == last);
 	
-
 	//KS - we need to use PX_TRANSPOSE_44 here instead of the 34_43 variants because the W components are being used to 
 	//store the bodies' progress counters.
 
@@ -236,7 +224,6 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 	PX_TRANSPOSE_44(linVel1T0, linVel1T1, linVel1T2, linVel1T3, linVel01, linVel11, linVel21, linVel31);
 	PX_TRANSPOSE_44(angState0T0, angState0T1, angState0T2, angState0T3, angState00, angState10, angState20, angState30);
 	PX_TRANSPOSE_44(angState1T0, angState1T1, angState1T2, angState1T3, angState01, angState11, angState21, angState31);
-
 
 	// Write back
 	V4StoreA(linVel00, &b00.linearVelocity.x);
@@ -260,7 +247,6 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 	V4StoreA(angState31, &b31.angularState.x);
 }
 
-
 static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
@@ -283,15 +269,12 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 	Vec4V linVel30 = V4LoadA(&b30.linearVelocity.x);
 	Vec4V angState30 = V4LoadA(&b30.angularState.x);
 
-
 	Vec4V linVel0T0, linVel0T1, linVel0T2, linVel0T3;
 	Vec4V angState0T0, angState0T1, angState0T2, angState0T3;
-
 
 	PX_TRANSPOSE_44(linVel00, linVel10, linVel20, linVel30, linVel0T0, linVel0T1, linVel0T2, linVel0T3);
 	PX_TRANSPOSE_44(angState00, angState10, angState20, angState30, angState0T0, angState0T1, angState0T2, angState0T3);
 	
-
 	//hopefully pointer aliasing doesn't bite.
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
 
@@ -299,11 +282,9 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 
 	const PxU8* PX_RESTRICT last = desc[0].constraint + firstHeader->frictionOffset;
 
-
 	//TODO - can I avoid this many tests???
 	while(currPtr < last)
 	{
-
 		SolverContactCoulombHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverContactCoulombHeader4*>(currPtr);
 
 		Vec4V* appliedForceBuffer = reinterpret_cast<Vec4V*>(currPtr + hdr->frictionOffset + sizeof(SolverFrictionHeader4));
@@ -347,8 +328,7 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 			const Vec4V raXnT0 = c.raXnX;
 			const Vec4V raXnT1 = c.raXnY;
 			const Vec4V raXnT2 = c.raXnZ;
-
-			
+		
 			const Vec4V normalVel2_tmp2 = V4Mul(raXnT0, angState0T0);
 			
 			const Vec4V normalVel2_tmp1 = V4MulAdd(raXnT1, angState0T1, normalVel2_tmp2);
@@ -420,7 +400,6 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	PxSolverBody& b30 = *desc[3].bodyA;
 	PxSolverBody& b31 = *desc[3].bodyB;
 
-
 	Vec4V linVel00 = V4LoadA(&b00.linearVelocity.x);
 	Vec4V linVel01 = V4LoadA(&b01.linearVelocity.x);
 	Vec4V angState00 = V4LoadA(&b00.angularState.x);
@@ -441,12 +420,10 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	Vec4V angState30 = V4LoadA(&b30.angularState.x);
 	Vec4V angState31 = V4LoadA(&b31.angularState.x);
 
-
 	Vec4V linVel0T0, linVel0T1, linVel0T2, linVel0T3;
 	Vec4V linVel1T0, linVel1T1, linVel1T2, linVel1T3;
 	Vec4V angState0T0, angState0T1, angState0T2, angState0T3;
 	Vec4V angState1T0, angState1T1, angState1T2, angState1T3;
-
 
 	PX_TRANSPOSE_44(linVel00, linVel10, linVel20, linVel30, linVel0T0, linVel0T1, linVel0T2, linVel0T3);
 	PX_TRANSPOSE_44(linVel01, linVel11, linVel21, linVel31, linVel1T0, linVel1T1, linVel1T2, linVel1T3);
@@ -456,7 +433,6 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
 	PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
 	
-
 	while(currPtr < endPtr)
 	{
 		SolverFrictionHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverFrictionHeader4*>(currPtr);
@@ -497,7 +473,7 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 
 			const Vec4V appliedImpulse = appliedImpulses[i>>hdr->frictionPerContact];
 
-			const Vec4V maxFriction =  V4Mul(staticFric, appliedImpulse);
+			const Vec4V maxFriction = V4Mul(staticFric, appliedImpulse);
 
 			const Vec4V nMaxFriction = V4Neg(maxFriction); 
 
@@ -534,7 +510,6 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 			const Vec4V normalVel3 = V4MulAdd(linVel1T2, normalZ, normalVel3_tmp1);
 			const Vec4V normalVel4 = V4MulAdd(rbXnZ, angState1T2, normalVel4_tmp1);
 
-
 			const Vec4V normalVel_tmp2 = V4Add(normalVel1, normalVel2);
 			const Vec4V normalVel_tmp1 = V4Add(normalVel3, normalVel4);
 
@@ -550,7 +525,6 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 
 			const Vec4V deltaAngF0 = V4Mul(angD0, deltaF);
 			const Vec4V deltaAngF1 = V4Mul(angD1, deltaF);
-
 
 			linVel0T0 = V4MulAdd(normalX, deltaLinF0, linVel0T0);
 			linVel1T0 = V4NegMulSub(normalX, deltaLinF1, linVel1T0);
@@ -581,7 +555,6 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	PX_TRANSPOSE_44(angState0T0, angState0T1, angState0T2, angState0T3, angState00, angState10, angState20, angState30);
 	PX_TRANSPOSE_44(angState1T0, angState1T1, angState1T2, angState1T3, angState01, angState11, angState21, angState31);
 
-
 	// Write back
 	// Write back
 	V4StoreA(linVel00, &b00.linearVelocity.x);
@@ -603,18 +576,14 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	V4StoreA(angState11, &b11.angularState.x);
 	V4StoreA(angState21, &b21.angularState.x);
 	V4StoreA(angState31, &b31.angularState.x);
-
 }
-
 
 static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
 {
-
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b10 = *desc[1].bodyA;
 	PxSolverBody& b20 = *desc[2].bodyA;
 	PxSolverBody& b30 = *desc[3].bodyA;
-
 
 	Vec4V linVel00 = V4LoadA(&b00.linearVelocity.x);
 	Vec4V angState00 = V4LoadA(&b00.angularState.x);
@@ -628,10 +597,8 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 	Vec4V linVel30 = V4LoadA(&b30.linearVelocity.x);
 	Vec4V angState30 = V4LoadA(&b30.angularState.x);
 
-
 	Vec4V linVel0T0, linVel0T1, linVel0T2, linVel0T3;
 	Vec4V angState0T0, angState0T1, angState0T2, angState0T3;
-
 
 	PX_TRANSPOSE_44(linVel00, linVel10, linVel20, linVel30, linVel0T0, linVel0T1, linVel0T2, linVel0T3);
 	PX_TRANSPOSE_44(angState00, angState10, angState20, angState30, angState0T0, angState0T1, angState0T2, angState0T3);
@@ -639,7 +606,6 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
 	PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
 	
-
 	while(currPtr < endPtr)
 	{
 		SolverFrictionHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverFrictionHeader4*>(currPtr);
@@ -676,7 +642,7 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 
 			const Vec4V appliedImpulse = appliedImpulses[i>>hdr->frictionPerContact];
 
-			const Vec4V maxFriction =  V4Mul(staticFric, appliedImpulse);
+			const Vec4V maxFriction = V4Mul(staticFric, appliedImpulse);
 
 			const Vec4V nMaxFriction = V4Neg(maxFriction); 
 
@@ -787,7 +753,7 @@ static void concludeContactCoulomb4(const PxSolverConstraintDesc* desc, SolverCo
 	PX_ASSERT(cPtr == last);
 }
 
-void  writeBackContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext& cache,
+static void writeBackContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext& cache,
 					  const PxSolverBodyData** PX_RESTRICT bd0, const PxSolverBodyData** PX_RESTRICT bd1)
 {
 	Vec4V normalForceV = V4Zero();
@@ -805,7 +771,6 @@ void  writeBackContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext
 
 	bool writeBackThresholds[4] = {false, false, false, false};
 
-
 	while(cPtr < last)
 	{
 		const SolverContactCoulombHeader4* PX_RESTRICT hdr = reinterpret_cast<const SolverContactCoulombHeader4*>(cPtr);
@@ -820,8 +785,7 @@ void  writeBackContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext
 
 		PxPrefetchLine(cPtr, 256);
 		PxPrefetchLine(cPtr, 384);
-
-		
+	
 		for(PxU32 i=0; i<numNormalConstr; i++)
 		{
 			SolverContact4Base* c = reinterpret_cast<SolverContact4Base*>(cPtr);
@@ -867,61 +831,37 @@ void  writeBackContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext
 	}
 }
 
-void solveContactCoulombPreBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveContactCoulomb4_Block(desc, cache);
 }
 
-void solveContactCoulombPreBlock_Static(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock_Static(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveContactCoulomb4_StaticBlock(desc, cache);
 }
 
-void solveContactCoulombPreBlock_Conclude(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock_Conclude(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveContactCoulomb4_Block(desc, cache);
 	concludeContactCoulomb4(desc, cache);
 }
 
-void solveContactCoulombPreBlock_ConcludeStatic(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock_ConcludeStatic(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveContactCoulomb4_StaticBlock(desc, cache);
 	concludeContactCoulomb4(desc, cache);
 }
 
-void solveContactCoulombPreBlock_WriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock_WriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveContactCoulomb4_Block(desc, cache);
 
-	const PxSolverBodyData* bd0[4] = {	&cache.solverBodyArray[desc[0].bodyADataIndex], 
-										&cache.solverBodyArray[desc[1].bodyADataIndex],
-										&cache.solverBodyArray[desc[2].bodyADataIndex],
-										&cache.solverBodyArray[desc[3].bodyADataIndex]};
-
-	const PxSolverBodyData* bd1[4] = {	&cache.solverBodyArray[desc[0].bodyBDataIndex], 
-										&cache.solverBodyArray[desc[1].bodyBDataIndex],
-										&cache.solverBodyArray[desc[2].bodyBDataIndex],
-										&cache.solverBodyArray[desc[3].bodyBDataIndex]};
-
-
-
-	writeBackContactCoulomb4(desc, cache, bd0, bd1);
-
-	if(cache.mThresholdStreamIndex > (cache.mThresholdStreamLength - 4))
-	{
-		//Write back to global buffer
-		PxI32 threshIndex = physx::PxAtomicAdd(cache.mSharedOutThresholdPairs, PxI32(cache.mThresholdStreamIndex)) - PxI32(cache.mThresholdStreamIndex);
-		for(PxU32 a = 0; a < cache.mThresholdStreamIndex; ++a)
-		{
-			cache.mSharedThresholdStream[a + threshIndex] = cache.mThresholdStream[a];
-		}
-		cache.mThresholdStreamIndex = 0;
-	}
-}
-
-void solveContactCoulombPreBlock_WriteBackStatic(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32 /*constraintCount*/, SolverContext& cache)
-{
-	solveContactCoulomb4_StaticBlock(desc, cache);
 	const PxSolverBodyData* bd0[4] = {	&cache.solverBodyArray[desc[0].bodyADataIndex], 
 										&cache.solverBodyArray[desc[1].bodyADataIndex],
 										&cache.solverBodyArray[desc[2].bodyADataIndex],
@@ -946,36 +886,69 @@ void solveContactCoulombPreBlock_WriteBackStatic(const PxSolverConstraintDesc* P
 	}
 }
 
-void solveFrictionCoulombPreBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveContactCoulombPreBlock_WriteBackStatic(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
+	solveContactCoulomb4_StaticBlock(desc, cache);
+	const PxSolverBodyData* bd0[4] = {	&cache.solverBodyArray[desc[0].bodyADataIndex], 
+										&cache.solverBodyArray[desc[1].bodyADataIndex],
+										&cache.solverBodyArray[desc[2].bodyADataIndex],
+										&cache.solverBodyArray[desc[3].bodyADataIndex]};
+
+	const PxSolverBodyData* bd1[4] = {	&cache.solverBodyArray[desc[0].bodyBDataIndex], 
+										&cache.solverBodyArray[desc[1].bodyBDataIndex],
+										&cache.solverBodyArray[desc[2].bodyBDataIndex],
+										&cache.solverBodyArray[desc[3].bodyBDataIndex]};
+
+	writeBackContactCoulomb4(desc, cache, bd0, bd1);
+
+	if(cache.mThresholdStreamIndex > (cache.mThresholdStreamLength - 4))
+	{
+		//Write back to global buffer
+		PxI32 threshIndex = physx::PxAtomicAdd(cache.mSharedOutThresholdPairs, PxI32(cache.mThresholdStreamIndex)) - PxI32(cache.mThresholdStreamIndex);
+		for(PxU32 a = 0; a < cache.mThresholdStreamIndex; ++a)
+		{
+			cache.mSharedThresholdStream[a + threshIndex] = cache.mThresholdStream[a];
+		}
+		cache.mThresholdStreamIndex = 0;
+	}
+}
+
+void solveFrictionCoulombPreBlock(DY_PGS_SOLVE_METHOD_PARAMS)
+{
+	PX_UNUSED(constraintCount);
 	solveFriction4_Block(desc, cache);
 }
 
-void solveFrictionCoulombPreBlock_Static(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveFrictionCoulombPreBlock_Static(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveFriction4_StaticBlock(desc, cache);
 }
 
-void solveFrictionCoulombPreBlock_Conclude(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveFrictionCoulombPreBlock_Conclude(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveFriction4_Block(desc, cache);
 }
 
-void solveFrictionCoulombPreBlock_ConcludeStatic(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveFrictionCoulombPreBlock_ConcludeStatic(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveFriction4_StaticBlock(desc, cache);
 }
 
-void solveFrictionCoulombPreBlock_WriteBack(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveFrictionCoulombPreBlock_WriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveFriction4_Block(desc, cache);
 }
 
-void solveFrictionCoulombPreBlock_WriteBackStatic(const PxSolverConstraintDesc* PX_RESTRICT desc, const PxU32  /*constraintCount*/, SolverContext& cache)
+void solveFrictionCoulombPreBlock_WriteBackStatic(DY_PGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(constraintCount);
 	solveFriction4_StaticBlock(desc, cache);
 }
-
 
 }
 

@@ -115,7 +115,7 @@ void Sc::ParticleSystemShapeSim::createLowLevelVolume()
 		getScene().getAABBManager()->reserveSpaceForBounds(index);
 
 	{
-		const PxU32 group = Bp::FilterGroup::ePARTICLES;
+		const PxU32 group = Bp::FilterGroup::eDYNAMICS_BASE + getActor().getActorID();
 		const PxU32 type = Bp::FilterType::PARTICLESYSTEM;
 		const PxReal contactOffset = getBodySim().getCore().getContactOffset();
 		addToAABBMgr(contactOffset, Bp::FilterGroup::Enum((group << BP_FILTERING_TYPE_SHIFT_BIT) | type), Bp::ElementType::eSHAPE);

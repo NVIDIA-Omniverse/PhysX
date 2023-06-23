@@ -44,16 +44,8 @@ namespace physx
 {
 	namespace Sn
 	{
-
 		struct ManifestEntry
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 			PX_FORCE_INLINE	ManifestEntry(PxU32 _offset, PxType _type)
 			{
 				PxMarkSerializedMemory(this, sizeof(ManifestEntry));
@@ -72,13 +64,6 @@ namespace physx
 
 		struct ImportReference
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 			PX_FORCE_INLINE	ImportReference(PxSerialObjectId _id, PxType _type)
 			{ 
 				PxMarkSerializedMemory(this, sizeof(ImportReference));
@@ -97,13 +82,6 @@ namespace physx
 #define SERIAL_OBJECT_INDEX_TYPE_BIT (1u<<31)
 		struct SerialObjectIndex
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 			PX_FORCE_INLINE	SerialObjectIndex(PxU32 index, bool external) { setIndex(index, external); }
 			PX_FORCE_INLINE	SerialObjectIndex(const SerialObjectIndex& objIndex) : mObjIndex(objIndex.mObjIndex) {}
 			PX_FORCE_INLINE	SerialObjectIndex() : mObjIndex(PX_INVALID_U32) {}
@@ -132,13 +110,6 @@ namespace physx
 
 		struct ExportReference
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 			PX_FORCE_INLINE	ExportReference(PxSerialObjectId _id, SerialObjectIndex _objIndex)
 			{
 				PxMarkSerializedMemory(this, sizeof(ExportReference));
@@ -156,13 +127,6 @@ namespace physx
 
 		struct InternalReferencePtr
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-			
 			PX_FORCE_INLINE	InternalReferencePtr() {}
 			
 			PX_FORCE_INLINE	InternalReferencePtr(size_t _reference, SerialObjectIndex _objIndex) :
@@ -183,13 +147,6 @@ namespace physx
 
 		struct InternalReferenceHandle16
 		{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
-
 			PX_FORCE_INLINE	InternalReferenceHandle16() {}
 
 			PX_FORCE_INLINE	InternalReferenceHandle16(PxU16 _reference, SerialObjectIndex _objIndex) :

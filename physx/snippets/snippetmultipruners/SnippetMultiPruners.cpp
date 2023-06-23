@@ -425,8 +425,7 @@ void Streamer::addRegion(StreamRegion& region)
 			PxShape* shape;
 			regionData->mObjects[i]->getShapes(&shape, 1);
 
-			PxBoxGeometry boxGeom;
-			shape->getBoxGeometry(boxGeom);
+			const PxBoxGeometry& boxGeom = static_cast<const PxBoxGeometry&>(shape->getGeometry());
 
 			const PxVec3 minimum = c - boxGeom.halfExtents;
 			const PxVec3 maximum = c + boxGeom.halfExtents;

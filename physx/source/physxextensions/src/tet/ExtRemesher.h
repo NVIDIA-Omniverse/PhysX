@@ -44,7 +44,8 @@ namespace physx
 			Remesher() {}
 			~Remesher() {}
 
-			void remesh(const PxArray<PxVec3>& verts, const PxArray<PxU32>& triIds, PxI32 resolution = 100, PxArray<PxU32> *vertexMap = nullptr);
+			void remesh(const PxVec3* verts, PxU32 nbVertices, const PxU32* triIds, PxU32 nbTriangleIndices, PxU32 resolution = 100, PxArray<PxU32> *vertexMap = nullptr);
+			void remesh(const PxArray<PxVec3>& verts, const PxArray<PxU32>& triIds, PxU32 resolution = 100, PxArray<PxU32> *vertexMap = nullptr);
 
 			void clear();
 			void readBack(PxArray<PxVec3>& vertices, PxArray<PxU32>& triIds);
@@ -62,10 +63,10 @@ namespace physx
 			void computeNormals();
 			void findTriNeighbors();
 
-			void project(const PxArray<PxVec3>& inputVerts, const PxArray<PxU32>& inputTriIds,
+			void project(const PxVec3* inputVerts, const PxU32* inputTriIds, PxU32 nbTriangleIndices,
 				float searchDist, float surfaceDist);
 
-			void createVertexMap(const PxArray<PxVec3>& inputVerts, const PxVec3 &gridOrigin, PxF32 &gridSpacing,
+			void createVertexMap(const PxVec3* verts, PxU32 nbVertices, const PxVec3 &gridOrigin, PxF32 &gridSpacing,
 				PxArray<PxU32> &vertexMap);
 
 			// -------------------------------------------------------------------------------------

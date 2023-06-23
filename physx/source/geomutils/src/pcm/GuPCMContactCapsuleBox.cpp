@@ -48,7 +48,7 @@ static bool fullContactsGenerationCapsuleBox(const CapsuleV& capsule, const BoxV
 	PCMPolygonalBox polyBox(halfExtents);
 	polyBox.getPolygonalData(&polyData);
 
-	Mat33V identity = M33Identity();
+	const Mat33V identity = M33Identity();
 	SupportLocalImpl<BoxV> map(box, transf1, identity, identity);
 
 	PxU32 origContacts = numContacts;
@@ -129,7 +129,7 @@ bool Gu::pcmContactCapsuleBox(GU_CONTACT_METHOD_ARGS)
 		GjkOutput output;
 
 		const Vec3V initialSearchDir = V3Sub(capsule.getCenter(), box.getCenter());
-		status =  gjkPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, contactDist, true, 
+		status = gjkPenetration<LocalConvex<CapsuleV>, LocalConvex<BoxV> >(convexA, convexB, initialSearchDir, contactDist, true, 
 			manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, output);
 
 		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);

@@ -53,22 +53,21 @@
 
 using namespace physx;
 
-PxsContext::PxsContext(const PxSceneDesc& desc, PxTaskManager* taskManager, Cm::FlushPool& taskPool, PxCudaContextManager* cudaContextManager, 
-	const PxU32 poolSlabSize, PxU64 contextID) :
-	mNpThreadContextPool		(this),
-	mContactManagerPool			("mContactManagerPool", this, poolSlabSize),
-	mManifoldPool				("mManifoldPool", poolSlabSize),
-	mSphereManifoldPool			("mSphereManifoldPool", poolSlabSize),
-	mContactModifyCallback		(NULL),
-	mNpImplementationContext	(NULL),
+PxsContext::PxsContext(const PxSceneDesc& desc, PxTaskManager* taskManager, Cm::FlushPool& taskPool, PxCudaContextManager* cudaContextManager, PxU32 poolSlabSize, PxU64 contextID) :
+	mNpThreadContextPool			(this),
+	mContactManagerPool				("mContactManagerPool", this, poolSlabSize),
+	mManifoldPool					("mManifoldPool", poolSlabSize),
+	mSphereManifoldPool				("mSphereManifoldPool", poolSlabSize),
+	mContactModifyCallback			(NULL),
+	mNpImplementationContext		(NULL),
 	mNpFallbackImplementationContext(NULL),
-	mTaskManager				(taskManager),
-	mTaskPool					(taskPool),
-	mCudaContextManager			(cudaContextManager),
-	mPCM						(desc.flags & PxSceneFlag::eENABLE_PCM),
-	mContactCache				(false),
-	mCreateAveragePoint			(desc.flags & PxSceneFlag::eENABLE_AVERAGE_POINT),
-	mContextID					(contextID)
+	mTaskManager					(taskManager),
+	mTaskPool						(taskPool),
+	mCudaContextManager				(cudaContextManager),
+	mPCM							(desc.flags & PxSceneFlag::eENABLE_PCM),
+	mContactCache					(false),
+	mCreateAveragePoint				(desc.flags & PxSceneFlag::eENABLE_AVERAGE_POINT),
+	mContextID						(contextID)
 {
 	clearManagerTouchEvents();
 	mVisualizationCullingBox.setEmpty();
@@ -262,7 +261,7 @@ void PxsContext::createTransformCache(PxVirtualAllocatorCallback& allocatorCallb
 	mTransformCache = PX_NEW(PxsTransformCache)(allocatorCallback);
 }
 
-PxsContactManager* PxsContext::createContactManager(PxsContactManager* contactManager, const bool useCCD)
+PxsContactManager* PxsContext::createContactManager(PxsContactManager* contactManager, bool useCCD)
 {
 	PxsContactManager* cm = contactManager? contactManager : mContactManagerPool.get();
 	if(cm)
@@ -570,61 +569,6 @@ bool PxsContext::fillManagerTouchEvents(PxvContactManagerTouchEvent* newTouch, P
 		{
 			PX_ASSERT(lostTouch < lostTouchEnd);
 			lostTouch->setCMTouchEventUserData(cm->getShapeInteraction());
-			lostTouch++;
-		}
-	}
-
-	newTouchCount = PxI32(newTouch - newTouchStart);
-	lostTouchCount = PxI32(lostTouch - lostTouchStart);
-	ccdTouchCount = PxI32(ccdTouch - ccdTouchStart);
-	return true;
-}
-
-bool PxsContext::fillManagerTouchEvents2(PxvContactManagerTouchEvent* newTouch, PxI32& newTouchCount, PxvContactManagerTouchEvent* lostTouch, PxI32& lostTouchCount,
-	PxvContactManagerTouchEvent* ccdTouch, PxI32& ccdTouchCount)
-{
-	const PxvContactManagerTouchEvent* newTouchStart = newTouch;
-	const PxvContactManagerTouchEvent* lostTouchStart = lostTouch;
-	const PxvContactManagerTouchEvent* ccdTouchStart = ccdTouch;
-
-	const PxvContactManagerTouchEvent* newTouchEnd = newTouch + newTouchCount;
-	const PxvContactManagerTouchEvent* lostTouchEnd = lostTouch + lostTouchCount;
-	const PxvContactManagerTouchEvent* ccdTouchEnd = ccdTouch + ccdTouchCount;
-
-	PX_UNUSED(newTouchEnd);
-	PX_UNUSED(lostTouchEnd);
-	PX_UNUSED(ccdTouchEnd);
-
-	PxsContactManagerOutputCounts* counts = getNphaseImplementationContext()->getFoundPatchOutputCounts();
-	PxsContactManager** managers = getNphaseImplementationContext()->getFoundPatchManagers();
-	PxU32 nbFoundLost = getNphaseImplementationContext()->getNbFoundPatchManagers();
-
-	for (PxU32 i = 0; i < nbFoundLost; ++i)
-	{
-		//PxsContactManager* cm = managers[i];
-		//if (cm->getTouchStatus())
-		if (counts[i].statusFlag & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
-		{
-			//if (!cm->getHasCCDRetouch())
-			if (!(counts[i].statusFlag & PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH))
-			{
-				PX_ASSERT(newTouch < newTouchEnd);
-				newTouch->setCMTouchEventUserData(managers[i]->getShapeInteraction());
-				newTouch++;
-			}
-			else
-			{
-				PX_ASSERT(ccdTouch);
-				PX_ASSERT(ccdTouch < ccdTouchEnd);
-				ccdTouch->setCMTouchEventUserData(managers[i]->getShapeInteraction());
-				managers[i]->clearCCDRetouch();
-				ccdTouch++;
-			}
-		}
-		else
-		{
-			PX_ASSERT(lostTouch < lostTouchEnd);
-			lostTouch->setCMTouchEventUserData(managers[i]->getShapeInteraction());
 			lostTouch++;
 		}
 	}

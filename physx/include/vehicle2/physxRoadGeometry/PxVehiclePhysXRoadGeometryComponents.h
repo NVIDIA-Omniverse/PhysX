@@ -112,9 +112,12 @@ public:
 			{
 				const PxU32 wheelId = axleDescription->wheelIdsInAxleOrder[i];
 
+				const PxQueryFilterData* fdPtr = roadGeomParams->filterDataEntries ? (roadGeomParams->filterDataEntries + wheelId) : &roadGeomParams->defaultFilterData;
+
 				PxVehiclePhysXRoadGeometryQueryUpdate(
 					wheelParams[wheelId], suspensionParams[wheelId], 
-					*roadGeomParams, materialFrictionParams[wheelId],
+					roadGeomParams->roadGeometryQueryType, roadGeomParams->filterCallback, *fdPtr,
+					materialFrictionParams[wheelId],
 					steerResponseStates[wheelId], *rigidBodyState,
 					*physxContext.physxScene, physxContext.physxUnitCylinderSweepMesh, context.frame,
 					roadGeometryStates[wheelId], 

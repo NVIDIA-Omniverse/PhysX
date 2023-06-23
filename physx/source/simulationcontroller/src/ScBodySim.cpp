@@ -45,23 +45,33 @@ using namespace Sc;
 #define PX_SLEEP_DAMPING	0.5f
 #define PX_FREEZE_SCALE		0.9f
 
+static void updateBPGroup(ActorSim* sim)
+{
+	PxU32 nbElems = sim->getNbElements();
+	ElementSim** elems = sim->getElements();
+	while (nbElems--)
+	{
+		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
+		current->updateBPGroup();
+	}
+}
+
 BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
-	RigidSim				(scene, core),
-	mLLBody					(&core.getCore(), PX_FREEZE_INTERVAL),
-	mSimStateData			(NULL),
-	mVelModState			(VMF_GRAVITY_DIRTY),
-	mArticulation			(NULL),
-	mConstraintGroup		(NULL)
+	RigidSim		(scene, core),
+	mLLBody			(&core.getCore(), PX_FREEZE_INTERVAL),
+	mSimStateData	(NULL),
+	mVelModState	(VMF_GRAVITY_DIRTY),
+	mArticulation	(NULL)
 {
 	core.getCore().numCountedInteractions = 0;
 	core.getCore().disableGravity = core.getActorFlags() & PxActorFlag::eDISABLE_GRAVITY;
 	if(core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
 		mLLBody.mInternalFlags |= PxsRigidBody::eSPECULATIVE_CCD;
 
-	if (core.getFlags() & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES)
-		mLLBody.mInternalFlags |= PxsRigidBody::eENABLE_GYROSCROPIC;
+	if(core.getFlags() & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES)
+		mLLBody.mInternalFlags |= PxsRigidBody::eENABLE_GYROSCOPIC;
 
-	if (core.getFlags() & PxRigidBodyFlag::eRETAIN_ACCELERATIONS)
+	if(core.getFlags() & PxRigidBodyFlag::eRETAIN_ACCELERATIONS)
 		mLLBody.mInternalFlags |= PxsRigidBody::eRETAIN_ACCELERATION;
 
 	// PT: don't read the core ptr we just wrote, use input param
@@ -73,7 +83,7 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	const bool isKine = isKinematic();
 
 	IG::SimpleIslandManager* simpleIslandManager = scene.getSimpleIslandManager();
-	if (!isArticulationLink())
+	if(!isArticulationLink())
 	{
 		mNodeIndex = simpleIslandManager->addRigidBody(&mLLBody, isKine, isAwake);
 	}
@@ -81,8 +91,8 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	{
 		if(mArticulation)
 		{
-			PxU32 linkIndex = mArticulation->findBodyIndex(*this);
-			PxNodeIndex index = mArticulation->getIslandNodeIndex();
+			const PxU32 linkIndex = mArticulation->findBodyIndex(*this);
+			const PxNodeIndex index = mArticulation->getIslandNodeIndex();
 			mNodeIndex.setIndices(index.index(), linkIndex);
 		}
 	}
@@ -94,9 +104,9 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	if(compound)
 		raiseInternalFlag(BF_IS_COMPOUND_RIGID);
 
-	setActive(isAwake, ActorSim::AS_PART_OF_CREATION);
+	setActive(isAwake, true);
 
-	if (isAwake)
+	if(isAwake)
 	{
 		scene.addToActiveList(*this);
 		PX_ASSERT(isActive());
@@ -110,28 +120,28 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 		simpleIslandManager->deactivateNode(mNodeIndex);
 	}
 
-	if (isKine)
+	if(isKine)
 	{
 		initKinematicStateBase(core, true);
-		setupSimStateData(scene.getSimStateDataPool(), true);
+		setupSimStateData(true);
 		notifyPutToSleep();  // sleep state of kinematics is fully controlled by the simulation controller not the island manager
+
+		mFilterFlags |= PxFilterObjectFlag::eKINEMATIC;
 	}
 }
 
 BodySim::~BodySim()
 {
-	Scene& scene = getScene();
+	Scene& scene = mScene;
 	const bool active = isActive();
 
-	tearDownSimStateData(scene.getSimStateDataPool(), isKinematic() ? true : false);
+	tearDownSimStateData(isKinematic());
 	PX_ASSERT(!mSimStateData);
 
 	PX_ASSERT(!readInternalFlag(BF_ON_DEATHROW)); // Before 3.0 it could happen that destroy could get called twice. Assert to make sure this is fixed.
 	raiseInternalFlag(BF_ON_DEATHROW);
 
 	scene.removeBody(*this);
-	PX_ASSERT(!getConstraintGroup());  // Removing from scene should erase constraint group node if it existed
-
 
 	//Articulations are represented by a single node, so they must only be removed by the articulation and not the links!
 	if(mArticulation == NULL && mNodeIndex.articulationLinkId() == 0) //If it wasn't an articulation link, then we can remove it
@@ -175,23 +185,17 @@ void BodySim::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& b
 	}
 }
 
-//--------------------------------------------------------------
-//
-// BodyCore interface implementation
-//
-//--------------------------------------------------------------
-
-bool BodySim::setupSimStateData(PxPool<SimStateData>* simStateDataPool, const bool isKinematic)
+bool BodySim::setupSimStateData(bool isKinematic)
 {
 	SimStateData* data = mSimStateData;
-	if (!data)
+	if(!data)
 	{
-		data = simStateDataPool->construct();
-		if (!data)
+		data = mScene.getSimStateDataPool()->construct();
+		if(!data)
 			return false;
 	}
 
-	if (isKinematic)
+	if(isKinematic)
 	{
 		PX_ASSERT(!mSimStateData || !mSimStateData->isKine());
 
@@ -212,7 +216,7 @@ bool BodySim::setupSimStateData(PxPool<SimStateData>* simStateDataPool, const bo
 	return true;
 }
 
-void BodySim::tearDownSimStateData(PxPool<SimStateData>* simStateDataPool, const bool isKinematic)
+void BodySim::tearDownSimStateData(bool isKinematic)
 {
 	PX_ASSERT(!mSimStateData || mSimStateData->isKine() == isKinematic);
 
@@ -221,23 +225,62 @@ void BodySim::tearDownSimStateData(PxPool<SimStateData>* simStateDataPool, const
 		if (isKinematic)
 			simStateRestoreBodyProperties(mSimStateData, getBodyCore().getCore());
 
-		simStateDataPool->destroy(mSimStateData);
+		mScene.getSimStateDataPool()->destroy(mSimStateData);
 		mSimStateData = NULL;
 	}
 }
 
-void BodySim::switchToKinematic(PxPool<SimStateData>* simStateDataPool)
+void BodySim::switchToKinematic()
 {
-	setupSimStateData(simStateDataPool, true);
-	postSwitchToKinematic();
-	getScene().setDynamicsDirty();
+	setupSimStateData(true);
+
+	{
+		initKinematicStateBase(getBodyCore(), false);
+
+		// - interactions need to get refiltered to make sure that kinematic-kinematic and kinematic-static pairs get suppressed
+		// - unlike postSwitchToDynamic(), constraint interactions are not marked dirty here because a transition to kinematic will put the object asleep which in turn 
+		//   triggers onDeactivate() on the constraint pairs that are active. If such pairs get deactivated, they will get removed from the list of active breakable
+		//   constraints automatically.
+		setActorsInteractionsDirty(InteractionDirtyFlag::eBODY_KINEMATIC, NULL, InteractionFlag::eFILTERABLE);
+
+		mScene.getSimpleIslandManager()->setKinematic(mNodeIndex);
+
+		updateBPGroup(this);
+	}
+
+	mScene.setDynamicsDirty();
+
+	mFilterFlags |= PxFilterObjectFlag::eKINEMATIC;
 }
 
-void BodySim::switchToDynamic(PxPool<SimStateData>* simStateDataPool)
+void BodySim::switchToDynamic()
 {
-	tearDownSimStateData(simStateDataPool, true);
-	postSwitchToDynamic();
-	getScene().setDynamicsDirty();
+	tearDownSimStateData(true);
+
+	{
+		mScene.getSimpleIslandManager()->setDynamic(mNodeIndex);
+
+		setForcesToDefaults(true);
+
+		// - interactions need to get refiltered to make sure that former kinematic-kinematic and kinematic-static pairs get enabled
+		// - switching from kinematic to dynamic does not change the sleep state of the body. The constraint interactions are marked dirty
+		//   to check later whether they need to be activated plus potentially tracked for constraint break testing. This special treatment
+		//   is necessary because constraints between two kinematic bodies are considered inactive, no matter whether one of the kinematics
+		//   is active (has a target) or not.
+		setActorsInteractionsDirty(InteractionDirtyFlag::eBODY_KINEMATIC, NULL, InteractionFlag::eFILTERABLE | InteractionFlag::eCONSTRAINT);
+
+		clearInternalFlag(BF_KINEMATIC_MOVE_FLAGS);
+
+		if(isActive())
+			mScene.swapInActiveBodyList(*this);
+
+		//
+		updateBPGroup(this);
+	}
+
+	mScene.setDynamicsDirty();
+
+	mFilterFlags &= ~PxFilterObjectFlag::eKINEMATIC;
 }
 
 void BodySim::setKinematicTarget(const PxTransform& p)
@@ -251,24 +294,24 @@ void BodySim::setKinematicTarget(const PxTransform& p)
 	clearInternalFlag(BF_KINEMATIC_SURFACE_VELOCITY);
 }
 
-void BodySim::addSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc)
+void BodySim::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
 	notifyAddSpatialAcceleration();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
-		setupSimStateData(simStateDataPool, false);
+		setupSimStateData(false);
 
 	VelocityMod* velmod = mSimStateData->getVelocityModData();
 	if (linAcc) velmod->accumulateLinearVelModPerSec(*linAcc);
 	if (angAcc) velmod->accumulateAngularVelModPerSec(*angAcc);
 }
 
-void BodySim::setSpatialAcceleration(PxPool<SimStateData>* simStateDataPool, const PxVec3* linAcc, const PxVec3* angAcc)
+void BodySim::setSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
 	notifyAddSpatialAcceleration();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
-		setupSimStateData(simStateDataPool, false);
+		setupSimStateData(false);
 
 	VelocityMod* velmod = mSimStateData->getVelocityModData();
 	if (linAcc) velmod->setLinearVelModPerSec(*linAcc);
@@ -292,12 +335,12 @@ void BodySim::clearSpatialAcceleration(bool force, bool torque)
 	}
 }
 
-void BodySim::addSpatialVelocity(PxPool<SimStateData>* simStateDataPool, const PxVec3* linVelDelta, const PxVec3* angVelDelta)
+void BodySim::addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta)
 {
 	notifyAddSpatialVelocity();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
-		setupSimStateData(simStateDataPool, false);
+		setupSimStateData(false);
 
 	VelocityMod* velmod = mSimStateData->getVelocityModData();
 	if (linVelDelta)
@@ -330,9 +373,9 @@ void BodySim::raiseVelocityModFlagAndNotify(VelocityModFlags flag)
 	raiseVelocityModFlag(flag);
 
 	if (!isArticulationLink())
-		getScene().getVelocityModifyMap().growAndSet(getNodeIndex().index());
+		mScene.getVelocityModifyMap().growAndSet(getNodeIndex().index());
 	else
-		getScene().addDirtyArticulationSim(getArticulation());
+		mScene.addDirtyArticulationSim(getArticulation());
 }
 
 void BodySim::postActorFlagChange(PxU32 oldFlags, PxU32 newFlags)
@@ -368,78 +411,23 @@ void BodySim::postSetWakeCounter(PxReal t, bool forceWakeUp)
 	}
 }
 
-static void updateBPGroup(ActorSim* sim)
-{
-	PxU32 nbElems = sim->getNbElements();
-	ElementSim** elems = sim->getElements();
-	while (nbElems--)
-	{
-		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-		current->updateBPGroup();
-	}
-}
-
-void BodySim::postSwitchToKinematic()
-{
-	initKinematicStateBase(getBodyCore(), false);
-
-	// - interactions need to get refiltered to make sure that kinematic-kinematic and kinematic-static pairs get suppressed
-	// - unlike postSwitchToDynamic(), constraint interactions are not marked dirty here because a transition to kinematic will put the object asleep which in turn 
-	//   triggers onDeactivate_() on the constraint pairs that are active. If such pairs get deactivated, they will get removed from the list of active breakable
-	//   constraints automatically.
-	setActorsInteractionsDirty(InteractionDirtyFlag::eBODY_KINEMATIC, NULL, InteractionFlag::eFILTERABLE);
-
-	getScene().getSimpleIslandManager()->setKinematic(mNodeIndex);
-
-	updateBPGroup(this);
-}
-
-void BodySim::postSwitchToDynamic()
-{
-	mScene.getSimpleIslandManager()->setDynamic(mNodeIndex);
-
-	setForcesToDefaults(true);
-
-	if(getConstraintGroup())
-		getConstraintGroup()->markForProjectionTreeRebuild(mScene.getProjectionManager());
-
-	// - interactions need to get refiltered to make sure that former kinematic-kinematic and kinematic-static pairs get enabled
-	// - switching from kinematic to dynamic does not change the sleep state of the body. The constraint interactions are marked dirty
-	//   to check later whether they need to be activated plus potentially tracked for constraint break testing. This special treatment
-	//   is necessary because constraints between two kinematic bodies are considered inactive, no matter whether one of the kinematics
-	//   is active (has a target) or not.
-	setActorsInteractionsDirty(InteractionDirtyFlag::eBODY_KINEMATIC, NULL, InteractionFlag::eFILTERABLE | InteractionFlag::eCONSTRAINT);
-
-	clearInternalFlag(BF_KINEMATIC_MOVE_FLAGS);
-
-	if(isActive())
-		mScene.swapInActiveBodyList(*this);
-
-	//
-	updateBPGroup(this);
-}
-
-void BodySim::postPosePreviewChange(const PxU32 posePreviewFlag)
+void BodySim::postPosePreviewChange(PxU32 posePreviewFlag)
 {
 	if (isActive())
 	{
 		if (posePreviewFlag & PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW)
-			getScene().addToPosePreviewList(*this);
+			mScene.addToPosePreviewList(*this);
 		else
-			getScene().removeFromPosePreviewList(*this);
+			mScene.removeFromPosePreviewList(*this);
 	}
 	else
-		PX_ASSERT(!getScene().isInPosePreviewList(*this));
+		PX_ASSERT(!mScene.isInPosePreviewList(*this));
 }
-
-//--------------------------------------------------------------
-//
-// Sleeping
-//
-//--------------------------------------------------------------
 
 void BodySim::activate()
 {
+	BodyCore& core = getBodyCore();
+
 	// Activate body
 	{
 		PX_ASSERT((!isKinematic()) || notInScene() || readInternalFlag(InternalFlags(BF_KINEMATIC_MOVED | BF_KINEMATIC_SURFACE_VELOCITY)));	// kinematics should only get activated when a target is set.
@@ -448,14 +436,13 @@ void BodySim::activate()
 		{
 			mLLBody.mInternalFlags &= (~PxsRigidBody::eFROZEN);
 			// Put in list of activated bodies. The list gets cleared at the end of a sim step after the sleep callbacks have been fired.
-			getScene().onBodyWakeUp(this);
+			mScene.onBodyWakeUp(this);
 		}
 
-		BodyCore& core = getBodyCore();
 		if(core.getFlags() & PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW)
 		{
-			PX_ASSERT(!getScene().isInPosePreviewList(*this));
-			getScene().addToPosePreviewList(*this);
+			PX_ASSERT(!mScene.isInPosePreviewList(*this));
+			mScene.addToPosePreviewList(*this);
 		}
 		createSqBounds();
 	}
@@ -463,30 +450,20 @@ void BodySim::activate()
 	activateInteractions(*this);
 
 	//set speculative CCD bit map if speculative CCD flag is on
-	{
-		BodyCore& core = getBodyCore();
-		if (core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
-		{
-			if (isArticulationLink())
-			{
-				if (getNodeIndex().isValid())
-					getScene().setSpeculativeCCDArticulationLink(getNodeIndex().index());
-			}
-			else
-				getScene().setSpeculativeCCDRigidBody(getNodeIndex().index());
-		}
-	}
+	if(core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
+		addToSpeculativeCCDMap();
 }
 
 void BodySim::deactivate()
 {
 	deactivateInteractions(*this);
 
+	BodyCore& core = getBodyCore();
+
 	// Deactivate body
 	{
 		PX_ASSERT((!isKinematic()) || notInScene() || !readInternalFlag(BF_KINEMATIC_MOVED));	// kinematics should only get deactivated when no target is set.
 																								// exception: object gets newly added, then the state change will happen later
-		BodyCore& core = getBodyCore();
 		if(!readInternalFlag(BF_ON_DEATHROW))
 		{
 			// Set velocity to 0.
@@ -500,32 +477,20 @@ void BodySim::deactivate()
 		}
 
 		if(!isArticulationLink())  // Articulations have their own sleep logic.
-			getScene().onBodySleep(this);
+			mScene.onBodySleep(this);
 
 		if(core.getFlags() & PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW)
 		{
-			PX_ASSERT(getScene().isInPosePreviewList(*this));
-			getScene().removeFromPosePreviewList(*this);
+			PX_ASSERT(mScene.isInPosePreviewList(*this));
+			mScene.removeFromPosePreviewList(*this);
 		}
 		destroySqBounds();
 	}
 
 	// reset speculative CCD bit map if speculative CCD flag is on
-	{
-		BodyCore& core = getBodyCore();
-		if (core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
-		{
-			if (isArticulationLink())
-			{
-				if (getNodeIndex().isValid())
-					getScene().resetSpeculativeCCDArticulationLink(getNodeIndex().index());
-			}
-			else
-				getScene().resetSpeculativeCCDRigidBody(getNodeIndex().index());
-		}
-	}
+	if(core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
+		removeFromSpeculativeCCDMap();
 }
-
 
 void BodySim::wakeUp()
 {
@@ -581,31 +546,26 @@ void BodySim::internalWakeUpBase(PxReal wakeCounterValue)	//this one can only in
 void BodySim::notifyReadyForSleeping()
 {
 	if(mArticulation == NULL)
-		getScene().getSimpleIslandManager()->deactivateNode(mNodeIndex);
+		mScene.getSimpleIslandManager()->deactivateNode(mNodeIndex);
 }
 
 void BodySim::notifyNotReadyForSleeping()
 {
-	getScene().getSimpleIslandManager()->activateNode(mNodeIndex);
+	mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
 }
 
 void BodySim::notifyWakeUp()
 {
-	getScene().getSimpleIslandManager()->activateNode(mNodeIndex);
+	mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
 }
 
 void BodySim::notifyPutToSleep()
 {
-	getScene().getSimpleIslandManager()->putNodeToSleep(mNodeIndex);
-}
-
-void BodySim::resetSleepFilter()
-{
-	mLLBody.sleepAngVelAcc = PxVec3(0.0f);
-	mLLBody.sleepLinVelAcc = PxVec3(0.0f);
+	mScene.getSimpleIslandManager()->putNodeToSleep(mNodeIndex);
 }
 
 //This function will be called by CPU sleepCheck code
+// PT: TODO: actually this seems to be only called by the articulation sim code, while regular rigid bodies use a copy of that code in LowLevelDynamics?
 PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::SpatialVector& motionVelocity)
 {
 	// update the body's sleep state and 
@@ -648,7 +608,7 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 			if (normalizedEnergy >= threshold)
 			{
 				PX_ASSERT(isActive());
-				resetSleepFilter();
+				mLLBody.resetSleepFilter();
 				const float factor = threshold == 0.0f ? 2.0f : PxMin(normalizedEnergy/threshold, 2.0f);
 				PxReal oldWc = wc;
 				wc = factor * 0.5f * wakeCounterResetTime + dt * (clusterFactor - 1.0f);
@@ -669,142 +629,17 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 	return wc;
 }
 
-//--------------------------------------------------------------
-//
-// Kinematics
-//
-//--------------------------------------------------------------
-
 PX_FORCE_INLINE void BodySim::initKinematicStateBase(BodyCore&, bool asPartOfCreation)
 {
 	PX_ASSERT(!readInternalFlag(BF_KINEMATIC_MOVED));
 
 	if (!asPartOfCreation && isActive())
-		getScene().swapInActiveBodyList(*this);
+		mScene.swapInActiveBodyList(*this);
 
 	//mLLBody.setAccelerationV(Cm::SpatialVector::zero());
 
 	// Need to be before setting setRigidBodyFlag::KINEMATIC
-
-	if (getConstraintGroup())
-		getConstraintGroup()->markForProjectionTreeRebuild(getScene().getProjectionManager());
 }
-
-void BodySim::calculateKinematicVelocity(PxReal oneOverDt)
-{
-	PX_ASSERT(isKinematic());
-	
-	/*------------------------------------------------\
-	| kinematic bodies are moved directly by the user and are not influenced by external forces
-	| we simply determine the distance moved since the last simulation frame and 
-	| assign the appropriate delta to the velocity. This vel will be used to shove dynamic
-	| objects in the solver.
-	| We have to do this like so in a delayed way, because when the user sets the target pos the dt is not
-	| yet known.
-	\------------------------------------------------*/
-	PX_ASSERT(isActive());
-
-	BodyCore& core = getBodyCore();
-
-	if (readInternalFlag(BF_KINEMATIC_MOVED))
-	{
-		clearInternalFlag(InternalFlags(BF_KINEMATIC_SETTLING | BF_KINEMATIC_SETTLING_2));
-		const SimStateData* kData = getSimStateData(true);
-		PX_ASSERT(kData);
-		PX_ASSERT(kData->isKine());
-		PX_ASSERT(kData->getKinematicData()->targetValid);
-		PxVec3 linVelLL, angVelLL;
-		const PxTransform targetPose = kData->getKinematicData()->targetPose;
-		const PxTransform& currBody2World = getBody2World();
-
-		//the kinematic target pose is now the target of the body (CoM) and not the actor.
-
-		PxVec3 deltaPos = targetPose.p;
-		deltaPos -= currBody2World.p;
-		linVelLL = deltaPos * oneOverDt;
-
-		PxQuat q = targetPose.q * currBody2World.q.getConjugate();
-
-		if (q.w < 0)	//shortest angle.
-			q = -q;
-
-		PxReal angle;
- 		PxVec3 axis;
-		q.toRadiansAndUnitAxis(angle, axis);
-		angVelLL = axis * angle * oneOverDt;
-
-		core.getCore().linearVelocity = linVelLL;
-		core.getCore().angularVelocity = angVelLL;
-
-		// Moving a kinematic should trigger a wakeUp call on a higher level.
-		PX_ASSERT(core.getWakeCounter()>0);
-		PX_ASSERT(isActive());
-		
-	}
-	else if (!readInternalFlag(BF_KINEMATIC_SURFACE_VELOCITY))
-	{
-		core.setLinearVelocity(PxVec3(0.0f), true);
-		core.setAngularVelocity(PxVec3(0.0f), true);
-	}
-}
-
-void BodySim::updateKinematicPose()
-{
-	/*------------------------------------------------\
-	| kinematic bodies are moved directly by the user and are not influenced by external forces
-	| we simply determine the distance moved since the last simulation frame and 
-	| assign the appropriate delta to the velocity. This vel will be used to shove dynamic
-	| objects in the solver.
-	| We have to do this like so in a delayed way, because when the user sets the target pos the dt is not
-	| yet known.
-	\------------------------------------------------*/
-
-	PX_ASSERT(isKinematic());
-	PX_ASSERT(isActive());
-
-	if (readInternalFlag(BF_KINEMATIC_MOVED))
-	{
-		clearInternalFlag(InternalFlags(BF_KINEMATIC_SETTLING | BF_KINEMATIC_SETTLING_2));
-		const SimStateData* kData = getSimStateData(true);
-		PX_ASSERT(kData);
-		PX_ASSERT(kData->isKine());
-		PX_ASSERT(kData->getKinematicData()->targetValid);
-		
-		const PxTransform targetPose = kData->getKinematicData()->targetPose;
-		getBodyCore().getCore().body2World = targetPose;
-	}
-}
-
-bool BodySim::deactivateKinematic()
-{
-	BodyCore& core = getBodyCore();
-	if(readInternalFlag(BF_KINEMATIC_SETTLING_2))
-	{
-		clearInternalFlag(BF_KINEMATIC_SETTLING_2);
-		core.setWakeCounterFromSim(0);	// For sleeping objects the wake counter must be 0. This needs to hold for kinematics too.
-		notifyReadyForSleeping();
-		notifyPutToSleep();
-		setActive(false);
-		return true;
-	}
-	else if (readInternalFlag(BF_KINEMATIC_SETTLING))
-	{
-		clearInternalFlag(BF_KINEMATIC_SETTLING);
-		raiseInternalFlag(BF_KINEMATIC_SETTLING_2);
-	}
-	else if (!readInternalFlag(BF_KINEMATIC_SURFACE_VELOCITY))
-	{
-		clearInternalFlag(BF_KINEMATIC_MOVED);
-		raiseInternalFlag(BF_KINEMATIC_SETTLING);
-	}
-	return false;
-}
-
-//--------------------------------------------------------------
-//
-// Miscellaneous
-//
-//--------------------------------------------------------------
 
 void BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration)
 {
@@ -883,7 +718,7 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 		getBodyCore().setWakeCounterFromSim(wakeCounter);
 
 		if (getFlagsFast() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
-			getScene().setSpeculativeCCDArticulationLink(mNodeIndex.index());
+			mScene.setSpeculativeCCDArticulationLink(mNodeIndex.index());
 
 		//Articulations defer registering their shapes with the nphaseContext until the IG node index is known.
 		{
@@ -892,7 +727,7 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 			while (nbElements--)
 			{
 				ShapeSim* sim = static_cast<ShapeSim*>(*current++);
-				getScene().getLowLevelContext()->getNphaseImplementationContext()->registerShape(mNodeIndex, sim->getCore().getCore(), sim->getElementID(), sim->getActor().getPxActor());
+				mScene.getLowLevelContext()->getNphaseImplementationContext()->registerShape(mNodeIndex, sim->getCore().getCore(), sim->getElementID(), sim->getActor().getPxActor());
 			}
 		}
 
@@ -905,7 +740,7 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 			ElementSim** current = getElements();
 			PxU32 nbElements = getNbElements();
 
-			Bp::AABBManagerBase* aabbMgr = getScene().getAABBManager();
+			Bp::AABBManagerBase* aabbMgr = mScene.getAABBManager();
 			
 			Bp::FilterGroup::Enum rootGroup = Bp::getFilterGroup(false, a->getRootActorIndex(), false);
 
@@ -978,7 +813,7 @@ void BodySim::freezeTransforms(PxBitMapPinned* shapeChangedMap)
 void BodySim::disableCompound()
 {
 	if(isActive())
-		getScene().removeFromActiveCompoundBodyList(*this);
+		mScene.removeFromActiveCompoundBodyList(*this);
 	clearInternalFlag(BF_IS_COMPOUND_RIGID);
 }
 

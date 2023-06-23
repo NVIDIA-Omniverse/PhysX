@@ -37,18 +37,18 @@ class OmniPvdFileWriteStream;
 class OmniPvdMemoryStream;
 
 typedef OmniPvdReader* (OMNI_PVD_CALL *createOmniPvdReaderFp)();
-typedef void (OMNI_PVD_CALL *destroyOmniPvdReaderFp)(OmniPvdReader *reader);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdReaderFp)(OmniPvdReader& reader);
 
 typedef OmniPvdWriter* (OMNI_PVD_CALL *createOmniPvdWriterFp)();
-typedef void (OMNI_PVD_CALL *destroyOmniPvdWriterFp)(OmniPvdWriter *writer);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdWriterFp)(OmniPvdWriter& writer);
 
 typedef OmniPvdFileReadStream* (OMNI_PVD_CALL *createOmniPvdFileReadStreamFp)();
-typedef void (OMNI_PVD_CALL *destroyOmniPvdFileReadStreamFp)(OmniPvdFileReadStream *fileReadStream);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdFileReadStreamFp)(OmniPvdFileReadStream& fileReadStream);
 
 typedef OmniPvdFileWriteStream* (OMNI_PVD_CALL *createOmniPvdFileWriteStreamFp)();
-typedef void (OMNI_PVD_CALL *destroyOmniPvdFileWriteStreamFp)(OmniPvdFileWriteStream *fileWriteStream);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdFileWriteStreamFp)(OmniPvdFileWriteStream& fileWriteStream);
 
 typedef OmniPvdMemoryStream* (OMNI_PVD_CALL *createOmniPvdMemoryStreamFp)();
-typedef void (OMNI_PVD_CALL *destroyOmniPvdMemoryStreamFp)(OmniPvdMemoryStream *memoryStream);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdMemoryStreamFp)(OmniPvdMemoryStream& memoryStream);
 
 #endif

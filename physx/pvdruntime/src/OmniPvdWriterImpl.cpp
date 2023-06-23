@@ -26,6 +26,7 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
+#include "OmniPvdDefinesInternal.h"
 #include "OmniPvdWriterImpl.h"
 #include "OmniPvdCommands.h"
 #include <string.h>
@@ -58,7 +59,7 @@ void OmniPvdWriterImpl::setVersionHelper()
 	}
 }
 
-void OmniPvdWriterImpl::setVersion(const OmniPvdVersionType majorVersion, const OmniPvdVersionType minorVersion, const OmniPvdVersionType patch)
+void OmniPvdWriterImpl::setVersion(OmniPvdVersionType majorVersion, OmniPvdVersionType minorVersion, OmniPvdVersionType patch)
 {	
 	if (mStream && mIsFirstWrite)
 	{ 
@@ -66,9 +67,9 @@ void OmniPvdWriterImpl::setVersion(const OmniPvdVersionType majorVersion, const 
 		{
 			return;
 		}
-		mStream->writeBytes((unsigned char*)&majorVersion, sizeof(OmniPvdVersionType));
-		mStream->writeBytes((unsigned char*)&minorVersion, sizeof(OmniPvdVersionType));
-		mStream->writeBytes((unsigned char*)&patch, sizeof(OmniPvdVersionType));
+		mStream->writeBytes((const uint8_t*)&majorVersion, sizeof(OmniPvdVersionType));
+		mStream->writeBytes((const uint8_t*)&minorVersion, sizeof(OmniPvdVersionType));
+		mStream->writeBytes((const uint8_t*)&patch, sizeof(OmniPvdVersionType));
 
 		mLog.outputLine("OmniPvdRuntimeWriterImpl::setVersion majorVersion(%lu), minorVersion(%lu), patch(%lu)", static_cast<unsigned long>(majorVersion), static_cast<unsigned long>(minorVersion), static_cast<unsigned long>(patch));
 		
@@ -76,15 +77,21 @@ void OmniPvdWriterImpl::setVersion(const OmniPvdVersionType majorVersion, const 
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::setWriteStream(const OmniPvdWriteStream* stream)
+void OMNI_PVD_CALL OmniPvdWriterImpl::setWriteStream(OmniPvdWriteStream& stream)
 {
 	mLog.outputLine("OmniPvdRuntimeWriterImpl::setWriteStream");
-	mStream = (OmniPvdWriteStream*)stream;
+	mStream = &stream;
 }
 
 OmniPvdWriteStream* OMNI_PVD_CALL OmniPvdWriterImpl::getWriteStream()
 {
 	return mStream;
+}
+
+static void writeCommand(OmniPvdWriteStream& stream, OmniPvdCommand::Enum command)
+{
+	const OmniPvdCommandStorageType commandTmp = static_cast<OmniPvdCommandStorageType>(command);
+	stream.writeBytes((const uint8_t*)&commandTmp, sizeof(OmniPvdCommandStorageType));
 }
 
 OmniPvdClassHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClass(const char* className, OmniPvdClassHandle baseClass)
@@ -95,36 +102,40 @@ OmniPvdClassHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClass(const char* cl
 		mLog.outputLine("OmniPvdWriterImpl::registerClass className(%s)", className);
 
 		int classNameLen = (int)strlen(className);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterClass;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_CLASS);
 		mLastClassHandle++;
-		mStream->writeBytes((unsigned char*)&mLastClassHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&baseClass, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&classNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)className, classNameLen);
+		mStream->writeBytes((const uint8_t*)&mLastClassHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&baseClass, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&classNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)className, classNameLen);
 		return mLastClassHandle;
 	} else {
 		return 0;
 	}	
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, const OmniPvdAttributeDataType attributeDataType, const uint32_t nbrFields)
+static void writeDataType(OmniPvdWriteStream& stream, OmniPvdDataType::Enum attributeDataType)
+{
+	const OmniPvdDataTypeStorageType dataType = static_cast<OmniPvdDataTypeStorageType>(attributeDataType);
+	stream.writeBytes((const uint8_t*)&dataType, sizeof(OmniPvdDataTypeStorageType));
+}
+
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdDataType::Enum attributeDataType, uint32_t nbElements)
 {
 	setVersionHelper();
 	if (mStream) {
 
-		mLog.outputLine("OmniPvdWriterImpl::registerAttribute classHandle(%llu), attributeName(%s), attributeDataType(%d), nbrFields(%llu)", static_cast<unsigned long long>(classHandle), attributeName, static_cast<int>(attributeDataType), static_cast<unsigned long long>(nbrFields));
+		mLog.outputLine("OmniPvdWriterImpl::registerAttribute classHandle(%llu), attributeName(%s), attributeDataType(%d), nbrFields(%llu)", static_cast<unsigned long long>(classHandle), attributeName, static_cast<int>(attributeDataType), static_cast<unsigned long long>(nbElements));
 
 		int attribNameLen = (int)strlen(attributeName);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
-		mStream->writeBytes((unsigned char*)&attributeDataType, sizeof(OmniPvdAttributeDataType));
-		mStream->writeBytes((unsigned char*)&nbrFields, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)&attribNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)attributeName, attribNameLen);
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
+		writeDataType(*mStream, attributeDataType);
+		mStream->writeBytes((const uint8_t*)&nbElements, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
 	else {
@@ -132,7 +143,7 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerAttribute(const 
 	}
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(const OmniPvdClassHandle classHandle, const OmniPvdClassHandle enumClassHandle, const char* attributeName)
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdClassHandle enumClassHandle)
 {
 	setVersionHelper();
 	if (mStream) {
@@ -140,16 +151,14 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(c
 		mLog.outputLine("OmniPvdWriterImpl::registerFlagsAttribute classHandle(%llu), enumClassHandle(%llu), attributeName(%s)", static_cast<unsigned long long>(classHandle), static_cast<unsigned long long>(enumClassHandle), attributeName);
 
 		int attribNameLen = (int)strlen(attributeName);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterAttribute;
-		const OmniPvdAttributeDataType attributeDataType = OmniPvdDataTypeEnum::eFLAGS_WORD;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
-		mStream->writeBytes((unsigned char*)&attributeDataType, sizeof(OmniPvdAttributeDataType));
-		mStream->writeBytes((unsigned char*)&enumClassHandle, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)&attribNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)attributeName, attribNameLen);
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
+		writeDataType(*mStream, OmniPvdDataType::eFLAGS_WORD);
+		mStream->writeBytes((const uint8_t*)&enumClassHandle, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
 	else {
@@ -157,21 +166,19 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(c
 	}
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(const OmniPvdClassHandle classHandle, const char* attributeName, uint32_t value)
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, uint32_t value)
 {
 	setVersionHelper();
 	if (mStream) {
 		int attribNameLen = (int)strlen(attributeName);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterAttribute;
-		OmniPvdAttributeDataType attributeDataType = OmniPvdDataTypeEnum::eENUM_VALUE;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_ATTRIBUTE);
 		mLastAttributeHandle++;
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
-		mStream->writeBytes((unsigned char*)&attributeDataType, sizeof(OmniPvdAttributeDataType));
-		mStream->writeBytes((unsigned char*)&value, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)&attribNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)attributeName, attribNameLen);
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
+		writeDataType(*mStream, OmniPvdDataType::eENUM_VALUE);
+		mStream->writeBytes((const uint8_t*)&value, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
 	else {
@@ -179,20 +186,19 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(const 
 	}
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClassAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdClassHandle classAttributeHandle)
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClassAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdClassHandle classAttributeHandle)
 {
 	setVersionHelper();
 	if (mStream)
 	{
 		int attribNameLen = (int)strlen(attributeName);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterClassAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_CLASS_ATTRIBUTE);
 		mLastAttributeHandle++;
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
-		mStream->writeBytes((unsigned char*)&classAttributeHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&attribNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)attributeName, attribNameLen);
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
+		mStream->writeBytes((const uint8_t*)&classAttributeHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
 	else {
@@ -200,20 +206,19 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerClassAttribute(c
 	}
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerSetAttribute(const OmniPvdClassHandle classHandle, const char* attributeName, const OmniPvdAttributeDataType attributeDataType)
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerUniqueListAttribute(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdDataType::Enum attributeDataType)
 {
 	setVersionHelper();
 	if (mStream)
 	{
 		int attribNameLen = (int)strlen(attributeName);
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRegisterSetAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
+		writeCommand(*mStream, OmniPvdCommand::eREGISTER_UNIQUE_LIST_ATTRIBUTE);
 		mLastAttributeHandle++;
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
-		mStream->writeBytes((unsigned char*)&attributeDataType, sizeof(OmniPvdAttributeDataType));
-		mStream->writeBytes((unsigned char*)&attribNameLen, sizeof(uint16_t));
-		mStream->writeBytes((unsigned char*)attributeName, attribNameLen);
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
+		writeDataType(*mStream, attributeDataType);
+		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
+		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
 	}
 	else
@@ -222,140 +227,115 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerSetAttribute(con
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::setAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t* data, const uint32_t nbrBytes)
+void OMNI_PVD_CALL OmniPvdWriterImpl::setAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t* data, uint32_t nbrBytes)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdSetAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		mStream->writeBytes((unsigned char*)&handleDepth, sizeof(uint8_t));
-		for (int i = 0; i < handleDepth; i++)
+		writeCommand(*mStream, OmniPvdCommand::eSET_ATTRIBUTE);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
+		mStream->writeBytes((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		for (int i = 0; i < nbAttributeHandles; i++)
 		{
-			mStream->writeBytes((unsigned char*)attributeHandles, sizeof(OmniPvdAttributeHandle));
+			mStream->writeBytes((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		mStream->writeBytes((unsigned char*)&nbrBytes, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)data, nbrBytes);
+		mStream->writeBytes((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)data, nbrBytes);
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::setAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t *data, const uint32_t nbrBytes)
-{
-	const uint8_t handleDepth = 1;
-	setAttribute(contextHandle, objectHandle, handleDepth, &attributeHandle, data, nbrBytes);
-}
-
-void OMNI_PVD_CALL OmniPvdWriterImpl::addToSetAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t* data, const uint32_t nbrBytes)
+void OMNI_PVD_CALL OmniPvdWriterImpl::addToUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t* data, uint32_t nbrBytes)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdAddToSetAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		mStream->writeBytes((unsigned char*)&handleDepth, sizeof(uint8_t));
-		for (int i = 0; i < handleDepth; i++)
+		writeCommand(*mStream, OmniPvdCommand::eADD_TO_UNIQUE_LIST_ATTRIBUTE);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
+		mStream->writeBytes((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		for (int i = 0; i < nbAttributeHandles; i++)
 		{
-			mStream->writeBytes((unsigned char*)attributeHandles, sizeof(OmniPvdAttributeHandle));
+			mStream->writeBytes((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		mStream->writeBytes((unsigned char*)&nbrBytes, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)data, nbrBytes);
+		mStream->writeBytes((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)data, nbrBytes);
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::addToSetAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t* data, const uint32_t nbrBytes)
-{
-	const uint8_t handleDepth = 1;
-	addToSetAttribute(contextHandle, objectHandle, handleDepth, &attributeHandle, data, nbrBytes);
-}
-
-void OMNI_PVD_CALL OmniPvdWriterImpl::removeFromSetAttribute(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const uint8_t handleDepth, const OmniPvdAttributeHandle* attributeHandles, const uint8_t* data, const uint32_t nbrBytes)
+void OMNI_PVD_CALL OmniPvdWriterImpl::removeFromUniqueListAttribute(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle* attributeHandles, uint8_t nbAttributeHandles, const uint8_t* data, uint32_t nbrBytes)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdRemoveFromSetAttribute;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&objectHandle, sizeof(OmniPvdObjectHandle));
-		mStream->writeBytes((unsigned char*)&handleDepth, sizeof(uint8_t));
-		for (int i = 0; i < handleDepth; i++)
+		writeCommand(*mStream, OmniPvdCommand::eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTE);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
+		mStream->writeBytes((const uint8_t*)&nbAttributeHandles, sizeof(uint8_t));
+		for (int i = 0; i < nbAttributeHandles; i++)
 		{
-			mStream->writeBytes((unsigned char*)attributeHandles, sizeof(OmniPvdAttributeHandle));
+			mStream->writeBytes((const uint8_t*)attributeHandles, sizeof(OmniPvdAttributeHandle));
 			attributeHandles++;
 		}
-		mStream->writeBytes((unsigned char*)&nbrBytes, sizeof(uint32_t));
-		mStream->writeBytes((unsigned char*)data, nbrBytes);
+		mStream->writeBytes((const uint8_t*)&nbrBytes, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)data, nbrBytes);
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::removeFromSetAttributeShallow(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle, const OmniPvdAttributeHandle attributeHandle, const uint8_t* data, const uint32_t nbrBytes)
-{
-	const uint8_t handleDepth = 1;
-	removeFromSetAttribute(contextHandle, objectHandle, handleDepth, &attributeHandle, data, nbrBytes);
-}
-
-void OMNI_PVD_CALL OmniPvdWriterImpl::createObject(const OmniPvdContextHandle contextHandle, const OmniPvdClassHandle classHandle, const OmniPvdObjectHandle objectHandle, const char* objectName)
+void OMNI_PVD_CALL OmniPvdWriterImpl::createObject(OmniPvdContextHandle contextHandle, OmniPvdClassHandle classHandle, OmniPvdObjectHandle objectHandle, const char* objectName)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdCreateObject;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&classHandle, sizeof(OmniPvdClassHandle));
-		mStream->writeBytes((unsigned char*)&objectHandle, sizeof(OmniPvdObjectHandle));
+		writeCommand(*mStream, OmniPvdCommand::eCREATE_OBJECT);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
+		mStream->writeBytes((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
 		int objectNameLen = 0;
 		if (objectName)
 		{
 			objectNameLen = (int)strlen(objectName);
-			mStream->writeBytes((unsigned char*)&objectNameLen, sizeof(uint16_t));
-			mStream->writeBytes((unsigned char*)objectName, objectNameLen);
+			mStream->writeBytes((const uint8_t*)&objectNameLen, sizeof(uint16_t));
+			mStream->writeBytes((const uint8_t*)objectName, objectNameLen);
 		}
 		else
 		{
-			mStream->writeBytes((unsigned char*)&objectNameLen, sizeof(uint16_t));
+			mStream->writeBytes((const uint8_t*)&objectNameLen, sizeof(uint16_t));
 		}
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::destroyObject(const OmniPvdContextHandle contextHandle, const OmniPvdObjectHandle objectHandle)
+void OMNI_PVD_CALL OmniPvdWriterImpl::destroyObject(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdDestroyObject;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&objectHandle, sizeof(OmniPvdObjectHandle));
+		writeCommand(*mStream, OmniPvdCommand::eDESTROY_OBJECT);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&objectHandle, sizeof(OmniPvdObjectHandle));
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::startFrame(const OmniPvdContextHandle contextHandle, const uint64_t timeStamp)
+void OMNI_PVD_CALL OmniPvdWriterImpl::startFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdStartFrame;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&timeStamp, sizeof(uint64_t));
+		writeCommand(*mStream, OmniPvdCommand::eSTART_FRAME);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&timeStamp, sizeof(uint64_t));
 	}
 }
 
-void OMNI_PVD_CALL OmniPvdWriterImpl::stopFrame(const OmniPvdContextHandle contextHandle, const uint64_t timeStamp)
+void OMNI_PVD_CALL OmniPvdWriterImpl::stopFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp)
 {
 	setVersionHelper();
 	if (mStream)
 	{
-		unsigned char command = OmniPvdCommandEnum::eOmniPvdStopFrame;
-		mStream->writeBytes(&command, sizeof(uint8_t));
-		mStream->writeBytes((unsigned char*)&contextHandle, sizeof(OmniPvdContextHandle));
-		mStream->writeBytes((unsigned char*)&timeStamp, sizeof(uint64_t));
+		writeCommand(*mStream, OmniPvdCommand::eSTOP_FRAME);
+		mStream->writeBytes((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+		mStream->writeBytes((const uint8_t*)&timeStamp, sizeof(uint64_t));
 	}
 }

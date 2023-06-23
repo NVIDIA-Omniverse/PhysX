@@ -30,6 +30,7 @@
 #include "extensions/PxDefaultSimulationFilterShader.h"
 #include "PxRigidActor.h"
 #include "PxShape.h"
+#include "PxSoftBody.h"
 
 #include "foundation/PxIntrinsics.h"
 #include "foundation/PxAllocator.h"
@@ -200,6 +201,22 @@ namespace
 				}
 			}
 			break;
+			case PxActorType::eSOFTBODY:
+			{
+				PxSoftBody& sActor = static_cast<PxSoftBody&>(actor);
+
+				PxShape* shape = sActor.getShape();
+
+				// retrieve current group mask
+				PxFilterData resultFd = shape->getSimulationFilterData();
+
+				adjustFilterData(TGroupsMask, fd, resultFd);
+
+				// set new filter data
+				shape->setSimulationFilterData(resultFd);				
+			}
+			break;
+			break;			
 			default:
 			break;
 		}

@@ -35,203 +35,21 @@
 using namespace physx;
 using namespace Gu;
 
-///////////////////////////////////////////////////////////////////////////////
-
-void Cooking::setParams(const PxCookingParams& params)
-{
-	mParams = params;
-}
-
-const PxCookingParams& Cooking::getParams() const
-{
-	return mParams;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool Cooking::platformMismatch() const
-{
-	return immediateCooking::platformMismatch();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void Cooking::release()
-{
-	PX_DELETE_THIS;
-
-	PxDecFoundationRefCount();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool Cooking::validateTriangleMesh(const PxTriangleMeshDesc& desc) const
-{
-	return immediateCooking::validateTriangleMesh(mParams, desc);
-}
-
-bool Cooking::cookTriangleMesh(const PxTriangleMeshDesc& desc, PxOutputStream& stream, PxTriangleMeshCookingResult::Enum* condition) const
-{
-	return immediateCooking::cookTriangleMesh(mParams, desc, stream, condition);
-}
-
-PxTriangleMesh* Cooking::createTriangleMesh(const PxTriangleMeshDesc& desc, PxInsertionCallback& insertionCallback, PxTriangleMeshCookingResult::Enum* condition) const
-{
-	return immediateCooking::createTriangleMesh(mParams, desc, insertionCallback, condition);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-PxTetrahedronMesh* Cooking::createTetrahedronMesh(const PxTetrahedronMeshDesc& meshDesc, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::createTetrahedronMesh(mParams, meshDesc, insertionCallback);
-}
-
-bool Cooking::cookTetrahedronMesh(const PxTetrahedronMeshDesc& meshDesc, PxOutputStream& stream) const
-{
-	return immediateCooking::cookTetrahedronMesh(mParams, meshDesc, stream);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool Cooking::cookSoftBodyMesh(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-	const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxOutputStream& stream) const
-{
-	return immediateCooking::cookSoftBodyMesh(mParams, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, stream);
-}
-
-PxCollisionMeshMappingData* Cooking::computeModelsMapping(PxTetrahedronMeshData& simulationMesh, const PxTetrahedronMeshData& collisionMesh, const PxSoftBodyCollisionData& collisionData, const PxBoundedData* vertexToTet) const
-{
-	return immediateCooking::computeModelsMapping(mParams, simulationMesh, collisionMesh, collisionData, vertexToTet);
-}
-
-PxCollisionTetrahedronMeshData* Cooking::computeCollisionData(const PxTetrahedronMeshDesc& collisionMeshDesc) const
-{
-	return immediateCooking::computeCollisionData(mParams, collisionMeshDesc);
-}
-
-PxSimulationTetrahedronMeshData* Cooking::computeSimulationData(const PxTetrahedronMeshDesc& simulationMeshDesc) const
-{
-	return immediateCooking::computeSimulationData(mParams, simulationMeshDesc);
-}
-
-PxSoftBodyMesh* Cooking::assembleSoftBodyMesh(PxTetrahedronMeshData& simulationMesh, PxSoftBodySimulationData& simulationData, PxTetrahedronMeshData& collisionMesh,
-	PxSoftBodyCollisionData& collisionData, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::assembleSoftBodyMesh(simulationMesh, simulationData, collisionMesh, collisionData, mappingData, insertionCallback);
-}
-
-PxSoftBodyMesh* Cooking::assembleSoftBodyMesh(PxSimulationTetrahedronMeshData& simulationMesh, PxCollisionTetrahedronMeshData& collisionMesh, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::assembleSoftBodyMesh_Sim(simulationMesh, collisionMesh, mappingData, insertionCallback);
-}
-
-PxSoftBodyMesh* Cooking::createSoftBodyMesh(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-	const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::createSoftBodyMesh(mParams, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, insertionCallback);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-// cook convex mesh from given desc, save the results into stream
-bool Cooking::cookConvexMesh(const PxConvexMeshDesc& desc, PxOutputStream& stream, PxConvexMeshCookingResult::Enum* condition) const
-{	
-	return immediateCooking::cookConvexMesh(mParams, desc, stream, condition);
-}
-
-// cook convex mesh from given desc, copy the results into internal convex mesh
-// and insert the mesh into PxPhysics
-PxConvexMesh* Cooking::createConvexMesh(const PxConvexMeshDesc& desc, PxInsertionCallback& insertionCallback, PxConvexMeshCookingResult::Enum* condition) const
-{
-	return immediateCooking::createConvexMesh(mParams, desc, insertionCallback, condition);
-}
-
-bool Cooking::validateConvexMesh(const PxConvexMeshDesc& desc) const
-{
-	return immediateCooking::validateConvexMesh(mParams, desc);
-}
-
-bool Cooking::computeHullPolygons(const PxSimpleTriangleMesh& mesh, PxAllocatorCallback& inCallback,PxU32& nbVerts, PxVec3*& vertices,
-									PxU32& nbIndices, PxU32*& indices, PxU32& nbPolygons, PxHullPolygon*& hullPolygons) const
-{
-	return immediateCooking::computeHullPolygons(mParams, mesh, inCallback, nbVerts, vertices, nbIndices, indices, nbPolygons, hullPolygons);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool Cooking::cookHeightField(const PxHeightFieldDesc& desc, PxOutputStream& stream) const
-{
-	return immediateCooking::cookHeightField(desc, stream);
-}
-
-PxHeightField* Cooking::createHeightField(const PxHeightFieldDesc& desc, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::createHeightField(desc, insertionCallback);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool Cooking::cookBVH(const PxBVHDesc& desc, PxOutputStream& stream) const
-{
-	return immediateCooking::cookBVH(desc, stream);
-}
-
-PxBVH* Cooking::createBVH(const PxBVHDesc& desc, PxInsertionCallback& insertionCallback) const
-{
-	return immediateCooking::createBVH(desc, insertionCallback);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-PxInsertionCallback& Cooking::getStandaloneInsertionCallback()
-{
-	return *immediateCooking::getInsertionCallback();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-PxCooking* PxCreateCooking(PxU32 /*version*/, PxFoundation& foundation, const PxCookingParams& params)
-{
-	PX_ASSERT(&foundation == &PxGetFoundation());
-	PX_UNUSED(foundation);
-
-	PxIncFoundationRefCount();
-
-	return PX_NEW(Cooking)(params);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-// PT: temporary for Kit
-
 #include "cooking/PxCookingInternal.h"
 #include "GuTriangleMeshBV4.h"
-PxTriangleMesh* Cooking::createTriangleMesh(const PxTriangleMeshInternalData& data) const
+physx::PxTriangleMesh* PxCreateTriangleMeshInternal(const physx::PxTriangleMeshInternalData& data)
 {
 	TriangleMesh* np;
 	PX_NEW_SERIALIZED(np, BV4TriangleMesh)(data);
 	return np;
 }
 
-PxBVH* Cooking::createBVH(const PxBVHInternalData& data) const
+physx::PxBVH* PxCreateBVHInternal(const physx::PxBVHInternalData& data)
 {
 	BVH* np;
 	PX_NEW_SERIALIZED(np, BVH)(data);
 	return np;
 }
-
-physx::PxTriangleMesh* PxCreateTriangleMeshInternal(const physx::PxTriangleMeshInternalData& data, const physx::PxCooking& cooking)
-{
-	return static_cast<const Cooking&>(cooking).createTriangleMesh(data);
-}
-
-physx::PxBVH* PxCreateBVHInternal(const physx::PxBVHInternalData& data, const physx::PxCooking& cooking)
-{
-	return static_cast<const Cooking&>(cooking).createBVH(data);
-}
-
-//~ PT: temporary for Kit
 
 ///////////////////////////////////////////////////////////////////////////////
 

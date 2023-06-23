@@ -43,19 +43,11 @@ namespace Ext
 {
 	struct DistanceJointData : public JointData
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		PxReal					minDistance;
 		PxReal					maxDistance;
 		PxReal					tolerance;
 		PxReal					stiffness;
 		PxReal					damping;
-		PxReal					contactDistance;
 
 		PxDistanceJointFlags	jointFlags;
 	};
@@ -63,12 +55,6 @@ namespace Ext
     typedef JointT<PxDistanceJoint, DistanceJointData, PxDistanceJointGeneratedValues> DistanceJointT;
 	class DistanceJoint : public DistanceJointT
 	{
-		//= ATTENTION! =====================================================================================
-		// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-		// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-		// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-		// accordingly.
-		//==================================================================================================
 	public:
 		// PX_SERIALIZATION
 										DistanceJoint(PxBaseFlags baseFlags) : DistanceJointT(baseFlags) {}
@@ -89,8 +75,6 @@ namespace Ext
 		virtual	PxReal					getStiffness()	const	PX_OVERRIDE;
 		virtual	void					setDamping(PxReal damping)	PX_OVERRIDE;
 		virtual	PxReal					getDamping()	const	PX_OVERRIDE;
-		virtual void					setContactDistance(PxReal contactDistance)	PX_OVERRIDE;
-		virtual PxReal					getContactDistance()	const	PX_OVERRIDE;
 		virtual	void					setDistanceJointFlags(PxDistanceJointFlags flags)	PX_OVERRIDE;
 		virtual	void					setDistanceJointFlag(PxDistanceJointFlag::Enum flag, bool value)	PX_OVERRIDE;
 		virtual	PxDistanceJointFlags	getDistanceJointFlags()	const	PX_OVERRIDE;

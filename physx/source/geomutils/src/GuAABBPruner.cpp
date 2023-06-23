@@ -339,10 +339,9 @@ void AABBPruner::commit()
 
 	if(!mAABBTree || !mIncrementalRebuild)
 	{
-#if PX_CHECKED
 		if(!mIncrementalRebuild && mAABBTree)
 			PxGetFoundation().error(PxErrorCode::ePERF_WARNING, PX_FL, "SceneQuery static AABB Tree rebuilt, because a shape attached to a static actor was added, removed or moved, and PxSceneQueryDesc::staticStructure is set to eSTATIC_AABB_TREE.");
-#endif
+
 		fullRebuildAABBTree();
 		return;
 	}

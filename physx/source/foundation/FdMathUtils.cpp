@@ -175,35 +175,6 @@ PxVec3 physx::PxOptimizeBoundingBox(PxMat33& basis)
 	return magnitude;
 }
 
-PxQuat physx::PxSlerp(const PxReal t, const PxQuat& left, const PxQuat& right)
-{
-	const PxReal quatEpsilon = (PxReal(1.0e-8f));
-
-	PxReal cosine = left.dot(right);
-	PxReal sign = PxReal(1);
-	if(cosine < 0)
-	{
-		cosine = -cosine;
-		sign = PxReal(-1);
-	}
-
-	PxReal sine = PxReal(1) - cosine * cosine;
-
-	if(sine >= quatEpsilon * quatEpsilon)
-	{
-		sine = PxSqrt(sine);
-		const PxReal angle = PxAtan2(sine, cosine);
-		const PxReal i_sin_angle = PxReal(1) / sine;
-
-		const PxReal leftw = PxSin(angle * (PxReal(1) - t)) * i_sin_angle;
-		const PxReal rightw = PxSin(angle * t) * i_sin_angle * sign;
-
-		return left * leftw + right * rightw;
-	}
-
-	return left;
-}
-
 void physx::PxIntegrateTransform(const PxTransform& curTrans, const PxVec3& linvel, const PxVec3& angvel,
 	PxReal timeStep, PxTransform& result)
 {

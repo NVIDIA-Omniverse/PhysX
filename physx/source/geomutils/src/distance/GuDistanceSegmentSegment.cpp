@@ -27,7 +27,6 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "GuDistanceSegmentSegment.h"
-#include "GuDistanceSegmentSegmentSIMD.h"
 
 using namespace physx;
 using namespace aos;

@@ -43,86 +43,20 @@ namespace Ext
 {
 	namespace joint
 	{
-		PX_INLINE void computeJointFrames(PxTransform& cA2w, PxTransform& cB2w, const JointData& data, const PxTransform& bA2w, const PxTransform& bB2w)
+		PX_FORCE_INLINE void applyNeighborhoodOperator(const PxTransform32& cA2w, PxTransform32& cB2w)
+		{
+			if(cA2w.q.dot(cB2w.q)<0.0f)	// minimum dist quat (equiv to flipping cB2bB.q, which we don't use anywhere)
+				cB2w.q = -cB2w.q;
+		}
+
+		PX_INLINE void computeJointFrames(PxTransform32& cA2w, PxTransform32& cB2w, const JointData& data, const PxTransform& bA2w, const PxTransform& bB2w)
 		{
 			PX_ASSERT(bA2w.isValid() && bB2w.isValid());
 
-			cA2w = bA2w.transform(data.c2b[0]);
-			cB2w = bB2w.transform(data.c2b[1]);
+			aos::transformMultiply<false, true>(cA2w, bA2w, data.c2b[0]);
+			aos::transformMultiply<false, true>(cB2w, bB2w, data.c2b[1]);
 
 			PX_ASSERT(cA2w.isValid() && cB2w.isValid());
-		}
-
-		PX_INLINE void computeDerived(const JointData& data, 
-									  const PxTransform& bA2w, const PxTransform& bB2w,
-									  PxTransform& cA2w, PxTransform& cB2w, PxTransform& cB2cA,
-									  bool useShortestPath=true)
-		{
-			computeJointFrames(cA2w, cB2w, data, bA2w, bB2w);
-
-			if(useShortestPath)
-			{
-				if(cA2w.q.dot(cB2w.q)<0.0f)	// minimum error quat
-					cB2w.q = -cB2w.q;
-			}
-
-			cB2cA = cA2w.transformInv(cB2w);
-			PX_ASSERT(cB2cA.isValid());
-		}
-
-		PX_INLINE PxVec3 truncateLinear(const PxVec3& in, PxReal tolerance, bool& truncated)
-		{		
-			const PxReal m = in.magnitudeSquared();
-			truncated = m>tolerance * tolerance;
-			return truncated ? in * PxRecipSqrt(m) * tolerance : in;
-		}
-
-		PX_INLINE PxQuat truncateAngular(const PxQuat& in, PxReal sinHalfTol, PxReal cosHalfTol, bool& truncated)
-		{
-			truncated = false;
-
-			if(sinHalfTol > 0.9999f)	// fixes numerical tolerance issue of projecting because quat is not exactly normalized
-				return in;
-
-			const PxQuat q = in.w>=0.0f ? in : -in;
-					
-			const PxVec3 im = q.getImaginaryPart();
-			const PxReal m = im.magnitudeSquared();
-			truncated = m>sinHalfTol*sinHalfTol;
-			if(!truncated)
-				return in;
-
-			const PxVec3 outV = im * sinHalfTol * PxRecipSqrt(m);			
-			return PxQuat(outV.x, outV.y, outV.z, cosHalfTol);
-		}
-
-		PX_FORCE_INLINE void projectTransforms(PxTransform& bA2w, PxTransform& bB2w, 
-											   const PxTransform& cA2w, const PxTransform& cB2w, 
-											   const PxTransform& cB2cA, const JointData& data, bool projectToA)
-		{
-			PX_ASSERT(cB2cA.isValid());
-
-			// normalization here is unfortunate: long chains of projected constraints can result in
-			// accumulation of error in the quaternion which eventually leaves the quaternion
-			// magnitude outside the validation range. The approach here is slightly overconservative
-			// in that we could just normalize the quaternions which are out of range, but since we
-			// regard projection as an occasional edge case it shouldn't be perf-sensitive, and
-			// this way we maintain the invariant (also maintained by the dynamics integrator) that
-			// body quats are properly normalized up to FP error.
-
-			if(projectToA)
-			{
-				bB2w = cA2w.transform(cB2cA.transform(data.c2b[1].getInverse()));
-				bB2w.q.normalize();
-			}
-			else
-			{
-				bA2w = cB2w.transform(cB2cA.transformInv(data.c2b[0].getInverse()));
-				bA2w.q.normalize();
-			}
-
-			PX_ASSERT(bA2w.isValid());
-			PX_ASSERT(bB2w.isValid());
 		}
 
 		PX_INLINE void computeJacobianAxes(PxVec3 row[3], const PxQuat& qa, const PxQuat& qb)
@@ -184,15 +118,17 @@ namespace Ext
 		{
 			Px1DConstraint* mConstraints;
 			Px1DConstraint* mCurrent;
-			PxVec3 mRa, mRb;
-			PxVec3 mCA2w, mCB2w;
+			PX_ALIGN(16, PxVec3p	mRa);
+			PX_ALIGN(16, PxVec3p	mRb);
+			PX_ALIGN(16, PxVec3p	mCA2w);
+			PX_ALIGN(16, PxVec3p	mCB2w);
 
 		public:
 			ConstraintHelper(Px1DConstraint* c, const PxVec3& ra, const PxVec3& rb)
 				: mConstraints(c), mCurrent(c), mRa(ra), mRb(rb)	{}
 
 			/*PX_NOINLINE*/	ConstraintHelper(Px1DConstraint* c, PxConstraintInvMassScale& invMassScale,
-					PxTransform& cA2w, PxTransform& cB2w, PxVec3p& body0WorldOffset,
+					PxTransform32& cA2w, PxTransform32& cB2w, PxVec3p& body0WorldOffset,
 					const JointData& data, const PxTransform& bA2w, const PxTransform& bB2w)
 				: mConstraints(c), mCurrent(c)
 			{
@@ -202,14 +138,33 @@ namespace Ext
 
 				computeJointFrames(cA2w, cB2w, data, bA2w, bB2w);
 
-				const PxVec3 ra = cB2w.p - bA2w.p;
-				body0WorldOffset = ra;
+				if(1)
+				{
+					const Vec4V cB2wV = V4LoadA(&cB2w.p.x);
+					const Vec4V raV = V4Sub(cB2wV, V4LoadU(&bA2w.p.x));	// const PxVec3 ra = cB2w.p - bA2w.p;
 
-				mRa = ra;
-				mRb = cB2w.p - bB2w.p;
+					V4StoreU(raV, &body0WorldOffset.x);					// body0WorldOffset = ra;
 
-				mCA2w = cA2w.p;
-				mCB2w = cB2w.p;
+					V4StoreA(raV, &mRa.x);								// mRa = ra;
+
+					V4StoreA(V4Sub(cB2wV, V4LoadU(&bB2w.p.x)), &mRb.x);	// mRb = cB2w.p - bB2w.p;
+
+					V4StoreA(V4LoadA(&cA2w.p.x), &mCA2w.x);				// mCA2w = cA2w.p;
+					V4StoreA(cB2wV, &mCB2w.x);							// mCB2w = cB2w.p;
+				}
+				else
+				{
+					const PxVec3 ra = cB2w.p - bA2w.p;
+
+					body0WorldOffset = ra;
+
+					mRa = ra;
+
+					mRb = cB2w.p - bB2w.p;
+
+					mCA2w = cA2w.p;
+					mCB2w = cB2w.p;
+				}
 			}
 
 			PX_FORCE_INLINE const PxVec3& getRa()	const	{ return mRa; }
@@ -231,18 +186,13 @@ namespace Ext
 			// limited linear & angular
 			PX_FORCE_INLINE void linearLimit(const PxVec3& axis, PxReal ordinate, PxReal limitValue, const PxJointLimitParameters& limit)
 			{
-				const PxReal pad = limit.isSoft() ? 0.0f : limit.contactDistance_deprecated;
-
-				if(ordinate + pad > limitValue)
+				if(!limit.isSoft() || ordinate > limitValue)
 					addLimit(linear(axis, limitValue - ordinate, PxConstraintSolveHint::eNONE), limit);
 			}
 
-			PX_FORCE_INLINE void angularLimit(const PxVec3& axis, PxReal ordinate, PxReal limitValue, PxReal pad, const PxJointLimitParameters& limit)
+			PX_FORCE_INLINE void angularLimit(const PxVec3& axis, PxReal ordinate, PxReal limitValue, const PxJointLimitParameters& limit)
 			{
-				if(limit.isSoft())
-					pad = 0.0f;
-
-				if(ordinate + pad > limitValue)
+				if(!limit.isSoft() || ordinate > limitValue)
 					addLimit(angular(axis, limitValue - ordinate, PxConstraintSolveHint::eNONE), limit);
 			}
 
@@ -251,15 +201,14 @@ namespace Ext
 				addLimit(angular(axis, error, PxConstraintSolveHint::eNONE), limit);
 			}
 
-			PX_FORCE_INLINE void anglePair(PxReal angle, PxReal lower, PxReal upper, PxReal pad, const PxVec3& axis, const PxJointLimitParameters& limit)
+			PX_FORCE_INLINE void anglePair(PxReal angle, PxReal lower, PxReal upper, const PxVec3& axis, const PxJointLimitParameters& limit)
 			{
 				PX_ASSERT(lower<upper);
-				if(limit.isSoft())
-					pad = 0;
+				const bool softLimit = limit.isSoft();
 
-				if(angle < lower+pad)
+				if(!softLimit || angle < lower)
 					angularLimit(-axis, -(lower - angle), limit);
-				if(angle > upper-pad)
+				if(!softLimit || angle > upper)
 					angularLimit(axis, (upper - angle), limit);
 			}
 
@@ -277,7 +226,7 @@ namespace Ext
 
 			PX_FORCE_INLINE PxU32 getCount()	const	{ return PxU32(mCurrent - mConstraints); }
 
-			void prepareLockedAxes(const PxQuat& qA, const PxQuat& qB, const PxVec3& cB2cAp, PxU32 lin, PxU32 ang, PxVec3& raOut, PxVec3& rbOut)
+			void prepareLockedAxes(const PxQuat& qA, const PxQuat& qB, const PxVec3& cB2cAp, PxU32 lin, PxU32 ang, PxVec3& raOut, PxVec3& rbOut, PxVec3* axis=NULL)
 			{
 				Px1DConstraint* current = mCurrent;
 				
@@ -288,6 +237,8 @@ namespace Ext
 				if(lin)
 				{
 					const PxMat33Padded axes(qA);
+					if(axis)
+						*axis = axes.column0;
 					
 					if(lin&1) errorVector -= axes.column0 * cB2cAp.x;
 					if(lin&2) errorVector -= axes.column1 * cB2cAp.y;

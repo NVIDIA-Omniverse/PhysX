@@ -134,7 +134,7 @@ void CustomSuspensionVehicle::initComponentSequence(const bool addPhysXBeginEndC
 	//In this example, we perform 3 updates of the suspensions, tires and wheels without recalculating 
 	//the plane underneath the wheel.  This is useful for stability at low forward speeds and is
 	//computationally cheaper than simulating the entire sequence.
-	mComponentSequence.beginSubstepGroup(3);
+	mComponentSequenceSubstepGroupHandle = mComponentSequence.beginSubstepGroup(3);
 
 		//Update the suspension compression given the plane under each wheel.
 		//Update the kinematic compliance from the compression state of each suspension.

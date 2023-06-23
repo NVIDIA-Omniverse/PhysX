@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.0.1] - 22-June-2023
+
+### Bugfixes
+- Use proper constructors for NvTransform and NvVec3 to avoid using garbage data
+
+
 ## [5.0.0] - 23-Jan-2023
 
 ### Changes

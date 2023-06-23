@@ -56,9 +56,9 @@ void renderCallback()
 	static float time = 0.0f;
 	time += 0.003f;
 
-	const PxQuat qx = SnippetUtils::getRotXQuat(time);
-	const PxQuat qy = SnippetUtils::getRotYQuat(time*1.7f);
-	const PxQuat qz = SnippetUtils::getRotZQuat(time*1.33f);
+	const PxQuat qx = PxGetRotXQuat(time);
+	const PxQuat qy = PxGetRotYQuat(time*1.7f);
+	const PxQuat qz = PxGetRotZQuat(time*1.33f);
 
 	const PxTransform pose(PxVec3(0.0f), qx*qy*qz);
 

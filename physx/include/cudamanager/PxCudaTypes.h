@@ -37,9 +37,9 @@
 
 #include "foundation/PxSimpleTypes.h"
 
-#if PX_LINUX && !PX_A64
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wc++98-compat-pedantic"
+#if PX_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
 #if PX_P64_FAMILY
@@ -48,8 +48,8 @@ typedef unsigned long long CUdeviceptr;
 typedef unsigned int CUdeviceptr;
 #endif
 
-#if PX_LINUX && !PX_A64
-#pragma GCC diagnostic pop
+#if PX_CLANG
+#pragma clang diagnostic pop
 #endif
 
 typedef int CUdevice;

@@ -53,7 +53,7 @@ namespace physx
 				eNONE =							0,						//!> default, everything up-to-date
 				ePARAMETERS =					1 <<  0,				//!> Parameters were changed
 				eGRID_SIZE =					1 <<  1 | ePARAMETERS,	//!> Grid size was changed. sets ePARAMETERS because settings are stored there
-				eATTACHMENT =					1 <<  2,				//!> Attachment was changed
+				eRIGID_ATTACHMENTS =			1 <<  2,				//!> Rigid attachment was changed
 				ePOSITIONS_VELOCITIES_MASS =	1 <<  3, 				//!> Positions, velocities or masses changed
 				eREST_POSITION_TRANSFORM =		1 <<  4,				//!> Transform of the rest positions changed
 				eLOD_SWITCH =					1 <<  5,				//!> Level of detail was changed, update lodX pos/vel from lod0
@@ -66,8 +66,9 @@ namespace physx
 				eNUM_STRANDS_OR_VERTS =			1 << 12 | eSHAPE_MATCHING_SIZES
 				| ePOSITIONS_VELOCITIES_MASS | eBENDING_REST_ANGLES | eTWISTING_REST_POSITIONS
 				| eREST_POSITIONS | eLOD_DATA | eSTRAND_LENGTHS, //!> Number of strands or vertices changed
+				eSOFTBODY_ATTACHMENTS =			1 << 13,				//!> Softbody attachments added or removed
 
-				eALL = (1 << 13) - 1									//!> everything needs updating
+				eALL = (1 << 14) - 1									//!> everything needs updating
 			};
 		};
 

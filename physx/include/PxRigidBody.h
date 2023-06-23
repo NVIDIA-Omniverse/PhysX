@@ -328,7 +328,7 @@ public:
 
 	Zero represents no damping. The damping coefficient must be nonnegative.
 
-	<b>Default:</b> 0.0
+	<b>Default:</b> 0.05 for PxArticulationLink, 0.0 for PxRigidDynamic 
 
 	\param[in] linDamp Linear damping coefficient. <b>Range:</b> [0, PX_MAX_F32)
 
@@ -402,14 +402,14 @@ public:
 	\brief Lets you set the maximum linear velocity permitted for this actor.
 
 	With this function, you can set the  maximum linear velocity permitted for this rigid body.
-	Higher angular velocities are clamped to this value.
+	Higher linear velocities are clamped to this value.
 
-	Note: The angular velocity is clamped to the set value <i>before</i> the solver, which means that
+	Note: The linear velocity is clamped to the set value <i>before</i> the solver, which means that
 	the limit may still be momentarily exceeded.
 
-	<b>Default:</b> PX_MAX_F32
+	<b>Default:</b> 100*PxTolerancesScale::length for PxArticulationLink, 1e^16 for PxRigidDynamic
 
-	\param[in] maxLinVel Max allowable linear velocity for actor. <b>Range:</b> [0, PX_MAX_F32)
+	\param[in] maxLinVel Max allowable linear velocity for actor. <b>Range:</b> [0, 1e^16)
 
 	@see getMaxAngularVelocity()
 	*/
@@ -436,9 +436,11 @@ public:
 	Note: The angular velocity is clamped to the set value <i>before</i> the solver, which means that
 	the limit may still be momentarily exceeded.
 
-	<b>Default:</b> 100.0
+	<b>Default:</b> 50.0 for PxArticulationLink, 100.0 for PxRigidDynamic
 
-	\param[in] maxAngVel Max allowable angular velocity for actor. <b>Range:</b> [0, PX_MAX_F32)
+	<b>Range:</b> [0, 1e^16)
+
+	\param[in] maxAngVel Max allowable angular velocity for actor. 
 
 	@see getMaxAngularVelocity()
 	*/

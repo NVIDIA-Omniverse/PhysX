@@ -80,10 +80,10 @@ class PvdUserRenderer : public PxUserAllocated
 
 	// Constraint visualization routines
 	virtual void visualizeJointFrames(const PxTransform& parent, const PxTransform& child) = 0;
-	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, float value, bool active) = 0;
-	virtual void visualizeAngularLimit(const PxTransform& t0, float lower, float upper, bool active) = 0;
-	virtual void visualizeLimitCone(const PxTransform& t, float tanQSwingY, float tanQSwingZ, bool active) = 0;
-	virtual void visualizeDoubleCone(const PxTransform& t, float angle, bool active) = 0;
+	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, float value) = 0;
+	virtual void visualizeAngularLimit(const PxTransform& t0, float lower, float upper) = 0;
+	virtual void visualizeLimitCone(const PxTransform& t, float tanQSwingY, float tanQSwingZ) = 0;
+	virtual void visualizeDoubleCone(const PxTransform& t, float angle) = 0;
 
 	// Clear the immedate buffer.
 	virtual void flushRenderEvents() = 0;

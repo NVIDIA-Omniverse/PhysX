@@ -295,11 +295,7 @@ SET(PHYSXCOMMON_GU_DISTANCE_SOURCE
 	${GU_SOURCE_DIR}/src/distance/GuDistancePointTetrahedron.cpp
 	${GU_SOURCE_DIR}/src/distance/GuDistancePointBox.h
 	${GU_SOURCE_DIR}/src/distance/GuDistancePointSegment.h
-	${GU_SOURCE_DIR}/src/distance/GuDistancePointTriangle.h
-	${GU_SOURCE_DIR}/src/distance/GuDistancePointTriangleSIMD.h
-	${GU_SOURCE_DIR}/src/distance/GuDistanceSegmentSegmentSIMD.h
 	${GU_SOURCE_DIR}/src/distance/GuDistanceSegmentTriangle.h
-	${GU_SOURCE_DIR}/src/distance/GuDistanceSegmentTriangleSIMD.h
 	${GU_SOURCE_DIR}/src/distance/GuDistancePointTetrahedron.h
 )
 SOURCE_GROUP(geomutils\\src\\distance FILES ${PHYSXCOMMON_GU_DISTANCE_SOURCE})
@@ -356,7 +352,6 @@ SET(PHYSXCOMMON_GU_INTERSECTION_SOURCE
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionEdgeEdge.h
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRay.h
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRayBox.h
-	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRayBoxSIMD.h
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRayCapsule.h
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRayPlane.h
 	${GU_SOURCE_DIR}/src/intersection/GuIntersectionRaySphere.h
@@ -396,6 +391,7 @@ SET(PHYSXCOMMON_GU_MESH_SOURCE
 	${GU_SOURCE_DIR}/src/mesh/GuBV32.cpp
 	${GU_SOURCE_DIR}/src/mesh/GuBV32Build.cpp
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMesh.cpp
+	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMeshUtils.cpp
 	${GU_SOURCE_DIR}/src/mesh/GuBV32.h
 	${GU_SOURCE_DIR}/src/mesh/GuBV32Build.h
 	${GU_SOURCE_DIR}/src/mesh/GuBV4.h
@@ -434,6 +430,7 @@ SET(PHYSXCOMMON_GU_MESH_SOURCE
 	${GU_SOURCE_DIR}/src/mesh/GuTriangleMeshRTree.h
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedron.h
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMesh.h
+	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMeshUtils.h
 )
 SOURCE_GROUP(geomutils\\src\\mesh FILES ${PHYSXCOMMON_GU_MESH_SOURCE})
 

@@ -28,7 +28,6 @@
 
 #include "foundation/PxVec3.h"
 #include "GuDistancePointTriangle.h"
-#include "GuDistancePointTriangleSIMD.h"
 
 using namespace physx;
 

@@ -243,7 +243,7 @@ bool Gu::pcmContactBoxHeightField(GU_CONTACT_METHOD_ARGS)
 	PCMPolygonalBox polyBox(shapeBox.halfExtents);
 	polyBox.getPolygonalData(&polyData);
 
-	const Mat33V identity =  M33Identity();
+	const Mat33V identity = M33Identity();
 	//SupportLocalImpl<BoxV> boxMap(boxV, boxTransform, identity, identity);
 	SupportLocalImpl<BoxV> boxMap(boxV, boxTransform, identity, identity, true);
 

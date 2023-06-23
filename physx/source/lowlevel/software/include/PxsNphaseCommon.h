@@ -38,8 +38,7 @@ namespace physx
 	struct PxsContactManagerBase
 	{
 		static const PxU32 NEW_CONTACT_MANAGER_MASK = 0x80000000;
-		static const PxU32 MaxBucketBits = 6;
-		static const PxU32 GPU_NP_OFFSET = 32;// GPU_BUCKET_ID::eCount;
+		static const PxU32 MaxBucketBits = 7;
 
 		const PxU32									mBucketId;
 

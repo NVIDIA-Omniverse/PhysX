@@ -27,10 +27,11 @@
 #ifndef SC_HAIRSYSTEM_SHAPE_SIM_H
 #define SC_HAIRSYSTEM_SHAPE_SIM_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "PxPhysXConfig.h"
 #include "ScElementSim.h"
 #include "ScShapeSimBase.h"
-
 
 namespace physx
 {
@@ -66,8 +67,8 @@ namespace physx
 		};
 
 	} // namespace Sc
-
 }
+#endif
 
 #endif
 

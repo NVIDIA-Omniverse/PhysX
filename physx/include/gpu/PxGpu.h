@@ -129,6 +129,14 @@ PX_C_EXPORT PX_PHYSX_CORE_API physx::PxKernelIndex* PX_CALL_CONV PxGetCudaFuncti
 PX_C_EXPORT PX_PHYSX_CORE_API physx::PxU32 PX_CALL_CONV  PxGetCudaFunctionTableSize();
 
 
+namespace physx
+{
+	class PxPhysicsGpu;
+}
+
+PX_C_EXPORT PX_PHYSX_CORE_API physx::PxPhysicsGpu* PX_CALL_CONV  PxGetPhysicsGpu();
+
+
 #endif // PX_SUPPORT_GPU_PHYSX
 
 #endif

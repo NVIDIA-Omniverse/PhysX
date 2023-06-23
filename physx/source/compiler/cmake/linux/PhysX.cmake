@@ -30,6 +30,7 @@
 
 SET(PHYSX_GPU_HEADERS
 	${PHYSX_ROOT_DIR}/include/gpu/PxGpu.h
+    ${PHYSX_ROOT_DIR}/include/gpu/PxPhysicsGpu.h
 )
 SOURCE_GROUP(include\\gpu FILES ${PHYSX_GPU_HEADERS})
 

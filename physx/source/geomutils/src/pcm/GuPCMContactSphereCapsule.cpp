@@ -62,7 +62,7 @@ bool Gu::pcmContactSphereCapsule(GU_CONTACT_METHOD_ARGS)
 	const PxCapsuleGeometry& shapeCapsule = checkedCast<PxCapsuleGeometry>(shape1);
 
 	//Sphere in world space
-	const Vec3V sphereCenter =  V3LoadA(&transform0.p.x);
+	const Vec3V sphereCenter = V3LoadA(&transform0.p.x);
 	const QuatV q1 = QuatVLoadA(&transform1.q.x);
 	const Vec3V p1 = V3LoadA(&transform1.p.x);
 

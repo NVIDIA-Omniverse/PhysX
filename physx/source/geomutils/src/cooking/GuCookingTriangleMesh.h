@@ -76,7 +76,7 @@ namespace physx
 
 				bool						loadFromDescInternal(PxTriangleMeshDesc&, PxTriangleMeshCookingResult::Enum* condition, bool validate = false);
 
-				void						buildInertiaTensor();
+				void						buildInertiaTensor(bool flipNormals = false);
 				void						buildInertiaTensorFromSDF();
 
 				TriangleMeshBuilder& operator=(const TriangleMeshBuilder&);

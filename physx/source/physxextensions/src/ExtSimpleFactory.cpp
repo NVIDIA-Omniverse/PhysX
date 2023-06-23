@@ -104,7 +104,7 @@ PxRigidDynamic* PxCreateKinematic(PxPhysics& sdk,
 {
 	PX_CHECK_AND_RETURN_NULL(transform.isValid(), "PxCreateKinematic: transform is not valid.");
 
-	bool isDynGeom = isDynamicGeometry(shape.getGeometryType());
+	bool isDynGeom = isDynamicGeometry(shape.getGeometry().getType());
 	if(isDynGeom && density <= 0.0f)
 	    return NULL;
 

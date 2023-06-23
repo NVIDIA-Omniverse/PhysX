@@ -29,7 +29,6 @@
 #ifndef GU_PCM_CONTACT_GEN_H
 #define GU_PCM_CONTACT_GEN_H
 
-
 #include "GuConvexSupportTable.h"
 #include "GuPersistentContactManifold.h"
 #include "GuShapeConvex.h"
@@ -39,23 +38,20 @@
 
 namespace physx
 {
-
 namespace Gu
 {
-
-
 	//full contact gen code for box/convexhull vs convexhull
-	bool generateFullContactManifold(Gu::PolygonalData& polyData0, Gu::PolygonalData& polyData1, Gu::SupportLocal* map0, Gu::SupportLocal* map1, Gu::PersistentContact* manifoldContacts, 
+	bool generateFullContactManifold(const Gu::PolygonalData& polyData0, const Gu::PolygonalData& polyData1, const Gu::SupportLocal* map0, const Gu::SupportLocal* map1, Gu::PersistentContact* manifoldContacts, 
 		PxU32& numContacts, const aos::FloatVArg contactDist, const aos::Vec3VArg normal, const aos::Vec3VArg closestA, const aos::Vec3VArg closestB, 
-		const PxReal toleranceA, const PxReal toleranceB, bool doOverlapTest, PxRenderOutput* renderOutput, const PxReal toleranceLength);
+		PxReal toleranceA, PxReal toleranceB, bool doOverlapTest, PxRenderOutput* renderOutput, PxReal toleranceLength);
 
 	//full contact gen code for capsule vs convexhulll
-	bool generateFullContactManifold(const Gu::CapsuleV& capsule, Gu::PolygonalData& polyData, Gu::SupportLocal* map, const aos::PxMatTransformV& aToB,  Gu::PersistentContact* manifoldContacts, 
-		PxU32& numContacts, const aos::FloatVArg contactDist, aos::Vec3V& normal, const aos::Vec3VArg closest, const PxReal tolerance, bool doOverlapTest, const PxReal toleranceScale);
+	bool generateFullContactManifold(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, const aos::PxMatTransformV& aToB, Gu::PersistentContact* manifoldContacts, 
+		PxU32& numContacts, const aos::FloatVArg contactDist, aos::Vec3V& normal, const aos::Vec3VArg closest, PxReal tolerance, bool doOverlapTest, PxReal toleranceScale);
 
 	//full contact gen code for capsule vs box
-	bool generateCapsuleBoxFullContactManifold(const Gu::CapsuleV& capsule, Gu::PolygonalData& polyData, Gu::SupportLocal* map, const aos::PxMatTransformV& aToB, Gu::PersistentContact* manifoldContacts, PxU32& numContacts,
-		const aos::FloatVArg contactDist, aos::Vec3V& normal, const aos::Vec3VArg closest, const PxReal boxMargin, const bool doOverlapTest, const PxReal toeranceScale, PxRenderOutput* renderOutput);
+	bool generateCapsuleBoxFullContactManifold(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, const aos::PxMatTransformV& aToB, Gu::PersistentContact* manifoldContacts, PxU32& numContacts,
+		const aos::FloatVArg contactDist, aos::Vec3V& normal, const aos::Vec3VArg closest, PxReal boxMargin, bool doOverlapTest, PxReal toleranceScale, PxRenderOutput* renderOutput);
 
 	//based on the gjk status to decide whether we should do full contact gen with GJK/EPA normal. Also, this method store
 	//GJK/EPA point to the manifold in case full contact gen doesn't generate any contact
@@ -64,17 +60,16 @@ namespace Gu
 		Gu::PersistentContactManifold& manifold);
 
 	//MTD code for box/convexhull vs box/convexhull
-	bool computeMTD(Gu::PolygonalData& polyData0, Gu::PolygonalData& polyData1,  SupportLocal* map0, SupportLocal* map1, aos::FloatV& penDepth, aos::Vec3V& normal);
+	bool computeMTD(const Gu::PolygonalData& polyData0, const Gu::PolygonalData& polyData1, const SupportLocal* map0, const SupportLocal* map1, aos::FloatV& penDepth, aos::Vec3V& normal);
 	
 	//MTD code for capsule vs box/convexhull
-	bool computeMTD(const Gu::CapsuleV& capsule, Gu::PolygonalData& polyData, Gu::SupportLocal* map, aos::FloatV& penDepth, aos::Vec3V& normal);
+	bool computeMTD(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, aos::FloatV& penDepth, aos::Vec3V& normal);
 
-	void buildPartialHull(const Gu::PolygonalData& polyData, SupportLocal* map, Gu::SeparatingAxes& validAxes, const aos::Vec3VArg v, const aos::Vec3VArg _dir);
+	void buildPartialHull(const Gu::PolygonalData& polyData, const SupportLocal* map, Gu::SeparatingAxes& validAxes, const aos::Vec3VArg v, const aos::Vec3VArg _dir);
 
 	//full contact gen code for sphere vs convexhull
-	bool generateSphereFullContactManifold(const Gu::CapsuleV& capsule, Gu::PolygonalData& polyData, Gu::SupportLocal* map, Gu::PersistentContact* manifoldContacts, PxU32& numContacts,
-		const aos::FloatVArg contactDist, aos::Vec3V& normal, const bool doOverlapTest);
-
+	bool generateSphereFullContactManifold(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, Gu::PersistentContact* manifoldContacts, PxU32& numContacts,
+		const aos::FloatVArg contactDist, aos::Vec3V& normal, bool doOverlapTest);
 }  
 }
 

@@ -29,7 +29,6 @@
 #include "GuSweepCapsuleTriangle.h"
 #include "GuIntersectionCapsuleTriangle.h"
 #include "GuDistanceSegmentTriangle.h"
-#include "GuDistanceSegmentTriangleSIMD.h"
 #include "GuIntersectionTriangleBox.h"
 #include "GuSweepSphereTriangle.h"
 #include "GuInternal.h"

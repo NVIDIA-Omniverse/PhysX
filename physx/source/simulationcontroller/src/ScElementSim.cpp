@@ -81,17 +81,17 @@ namespace
 		~ElemSimPtrTableStorageManager() {}
 
 		// PtrTableStorageManager
-		virtual	void**	allocate(PxU32 capacity)
+		virtual	void**	allocate(PxU32 capacity)	PX_OVERRIDE
 		{
 			return PX_ALLOCATE(void*, capacity, "CmPtrTable pointer array");
 		}
 
-		virtual	void	deallocate(void** addr, PxU32 /*capacity*/)
+		virtual	void	deallocate(void** addr, PxU32 /*capacity*/)	PX_OVERRIDE
 		{
 			PX_FREE(addr);
 		}
 
-		virtual	bool canReuse(PxU32 /*originalCapacity*/, PxU32 /*newCapacity*/)
+		virtual	bool canReuse(PxU32 /*originalCapacity*/, PxU32 /*newCapacity*/)	PX_OVERRIDE
 		{
 			return false;
 		}
@@ -141,19 +141,6 @@ Sc::ElementSim::~ElementSim()
 	PX_ASSERT(!mInBroadPhase);
 	releaseID();
 	mActor.onElementDetach(*this);
-}
-
-void Sc::ElementSim::setElementInteractionsDirty(InteractionDirtyFlag::Enum flag, PxU8 interactionFlag)
-{
-	ElementSim::ElementInteractionIterator iter = getElemInteractions();
-	ElementSimInteraction* interaction = iter.getNext();
-	while(interaction)
-	{
-		if(interaction->readInteractionFlag(interactionFlag))
-			interaction->setDirty(flag);
-
-		interaction = iter.getNext();
-	}
 }
 
 void Sc::ElementSim::addToAABBMgr(PxReal contactDistance, Bp::FilterGroup::Enum group, Bp::ElementType::Enum type)

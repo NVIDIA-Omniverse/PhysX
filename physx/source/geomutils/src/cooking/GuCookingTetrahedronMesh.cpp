@@ -168,6 +168,10 @@ struct SortedTriangleIndsHash
 	}
 };
 
+#if PX_CHECKED
+bool checkInputFloats(PxU32 nb, const float* values, const char* file, PxU32 line, const char* errorMsg);
+#endif
+
 bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMeshDesc, const PxCookingParams& params, 
 	TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, bool validateMesh)
 {
@@ -188,17 +192,15 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 		
 #if PX_CHECKED
 	// PT: check all input vertices are valid
-	for (PxU32 i = 0; i < collisionMeshDesc.points.count; i++)
-	{
-		const PxVec3& p = verts[i];
-		if (!PxIsFinite(p.x) || !PxIsFinite(p.y) || !PxIsFinite(p.z))
-			return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, "input mesh contains corrupted vertex data");
-	}
+	if(!checkInputFloats(collisionMeshDesc.points.count*3, &verts->x, PX_FL, "input mesh contains corrupted vertex data"))
+		return false;
 #endif
 
 	TetrahedronT<PxU32>* dest = tets;
 	const TetrahedronT<PxU32>* pastLastDest = tets + collisionMesh.mNbTetrahedrons;
 	const PxU8* source = reinterpret_cast<const PxU8*>(collisionMeshDesc.tetrahedrons.data);
+
+	PX_ASSERT(source);
 
 	//4 combos of 16 vs 32, feed in collisionMesh.mTetrahedrons
 	if (collisionMeshDesc.flags & PxMeshFlag::e16_BIT_INDICES)
@@ -366,12 +368,19 @@ void computeRestPoseAndPointMass(TetrahedronT<PxU32>* tetIndices, const PxU32 nb
 	for (PxU32 i = 0; i < nbTets; ++i)
 	{
 		TetrahedronT<PxU32>& tetInd = tetIndices[i];
-		PxMat33 Q;
+		PxMat33 Q, QInv;
 		const PxReal volume = computeTetrahedronVolume(verts[tetInd.v[0]], verts[tetInd.v[1]], verts[tetInd.v[2]], verts[tetInd.v[3]], Q);
 		if (volume <= 1.e-9f)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeRestPoseAndPointMass(): tretrahedron is degenerate or inverted");
+			//Neo-hookean model can deal with bad tets, so not issueing this error anymore
+			//PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeRestPoseAndPointMass(): tretrahedron is degenerate or inverted");
+			if (volume == 0)
+				QInv = PxMat33(PxZero);
+			else
+				QInv = Q.getInverse();
 		}
+		else
+			QInv = Q.getInverse();
 
 		// add volume fraction to particles
 		if (invMasses != NULL) 
@@ -382,7 +391,7 @@ void computeRestPoseAndPointMass(TetrahedronT<PxU32>* tetIndices, const PxU32 nb
 			invMasses[tetInd.v[3]] += volume * 0.25f;
 		}
 
-		restPoses[i] = Q.getInverse();
+		restPoses[i] = QInv;
 	}
 }
 

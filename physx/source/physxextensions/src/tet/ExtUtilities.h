@@ -55,10 +55,10 @@ namespace Ext
 			return ((PxU64(b)) << 32) | (PxU64(a));
 	}
 
-	void buildTree(const PxU32* triangles, const PxU32 numTriangles, const Vec3* points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement = 1e-4f);
+	void buildTree(const PxU32* triangles, const PxU32 numTriangles, const PxVec3d* points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement = 1e-4f);
 	
 	//Builds a BVH from a set of triangles
-	PX_FORCE_INLINE void buildTree(const PxArray<Triangle>& triangles, const PxArray<Vec3>& points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement = 1e-4f)
+	PX_FORCE_INLINE void buildTree(const PxArray<Triangle>& triangles, const PxArray<PxVec3d>& points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement = 1e-4f)
 	{
 		buildTree(reinterpret_cast<const PxU32*>(triangles.begin()), triangles.size(), points.begin(), tree, enlargement);
 	}

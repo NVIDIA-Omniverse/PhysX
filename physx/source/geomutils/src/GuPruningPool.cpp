@@ -230,7 +230,7 @@ static void updateAndInflateBounds(PruningPool& pool, const PrunerHandle* PX_RES
 			const PxU32 remappedIndex = *boundsIndices++;
 
 			if(hasTransforms)
-				transforms[poolIndex] = newTransforms[remappedIndex].transform;
+				transforms[poolIndex] = newTransforms[remappedIndex];
 
 			inflateBounds<true>(bounds[poolIndex], newBounds[remappedIndex], epsilon);
 		}
@@ -244,7 +244,7 @@ static void updateAndInflateBounds(PruningPool& pool, const PrunerHandle* PX_RES
 
 			if(hasTransforms)
 			{
-				transforms[poolIndex] = newTransforms->transform;
+				transforms[poolIndex] = *newTransforms;
 				newTransforms++;
 			}
 

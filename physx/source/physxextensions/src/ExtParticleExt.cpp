@@ -240,18 +240,27 @@ void PxParticleAttachmentBuffer::copyToDevice(CUstream stream)
 
 void PxParticleAttachmentBuffer::addRigidAttachment(PxRigidActor* rigidActor, const PxU32 particleID, const PxVec3& localPose, PxConeLimitedConstraint* coneLimit)
 {
-	PX_ASSERT(particleID < mParticleBuffer.getNbActiveParticles());
-	PxParticleRigidAttachment attachment;
+	PX_CHECK_AND_RETURN(coneLimit == NULL || coneLimit->isValid(), "PxParticleAttachmentBuffer::addRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.");
 
+	PX_ASSERT(particleID < mParticleBuffer.getNbActiveParticles());
+	PxParticleRigidAttachment attachment(PxConeLimitedConstraint(), PxVec4(0.0f));
+
+	if (rigidActor == NULL)
+	{
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+				"PxParticleAttachmentBuffer::addRigidAttachment: rigidActor cannot be NULL.");
+			return;
+	}
+		
 	if (coneLimit)
 	{
-		attachment.mParams.axisAngle = PxVec4(coneLimit->mAxis, coneLimit->mAngle);
-		attachment.mParams.lowHighLimits = PxVec4(coneLimit->mLowLimit, coneLimit->mHighLimit, 0.f, 0.f);
+		attachment.mConeLimitParams.axisAngle = PxVec4(coneLimit->mAxis, coneLimit->mAngle);
+		attachment.mConeLimitParams.lowHighLimits = PxVec4(coneLimit->mLowLimit, coneLimit->mHighLimit, 0.f, 0.f);
 	}
 	else
 	{
-		attachment.mParams.axisAngle = PxVec4(0.f);
-		attachment.mParams.lowHighLimits = PxVec4(0.f);
+		attachment.mConeLimitParams.axisAngle = PxVec4(0.f, 0.f, 0.f, -1.f);
+		attachment.mConeLimitParams.lowHighLimits = PxVec4(0.f);
 	}
 
 	if (rigidActor->getType() == PxActorType::eRIGID_STATIC)
@@ -309,6 +318,13 @@ void PxParticleAttachmentBuffer::addRigidAttachment(PxRigidActor* rigidActor, co
 bool PxParticleAttachmentBuffer::removeRigidAttachment(PxRigidActor* rigidActor, const PxU32 particleID)
 {
 	PX_ASSERT(particleID < mParticleBuffer.getNbActiveParticles());
+
+	if (rigidActor == NULL)
+	{
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+				"PxParticleAttachmentBuffer::removeRigidAttachment: rigidActor cannot be NULL.");
+		return false;
+	}
 
 	if (rigidActor)
 	{

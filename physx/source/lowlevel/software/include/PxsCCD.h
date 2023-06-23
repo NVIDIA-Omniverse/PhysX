@@ -30,7 +30,6 @@
 #include "foundation/PxHashMap.h"
 #include "foundation/PxUserAllocated.h"
 #include "GuCCDSweepConvexMesh.h"
-#include "PxsIslandSim.h"
 
 #ifndef PXS_CCD_H
 #define PXS_CCD_H
@@ -99,21 +98,9 @@ counter to determine if the shape needs its transforms re-calculated. This avoid
 */
 struct PxsCCDShape : public Gu::CCDShape
 {
-public:
 	const PxsShapeCore*		mShapeCore;		//Shape core (can be shared)
 	const PxsRigidCore*		mRigidCore;		//Rigid body core
 	PxNodeIndex				mNodeIndex;
-
-	/**
-	\brief Returns the world-space pose for this shape
-	\param[in] atom The rigid body that this CCD shape is associated with
-	*/
-	PxTransform				getAbsPose(const PxsRigidBody* atom)			const;
-	/**
-	\brief Returns the world-space previous pose for this shape
-	\param[in] atom The rigid body that this CCD shape is associated with
-	*/
-	PxTransform				getLastCCDAbsPose(const PxsRigidBody* atom)		const;						
 };
 
 /**
@@ -595,10 +582,7 @@ private:
 	PX_NOCOPY(PxsCCDContext)
 };
 
-
 }
-
-
 
 #endif
 

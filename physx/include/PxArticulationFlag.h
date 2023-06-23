@@ -54,14 +54,16 @@ namespace physx
 			eJOINT_VELOCITY,			//!< The joint velocities, read and write,  see PxScene::copyArticulationData(), PxScene::applyArticulationData()
 			eJOINT_ACCELERATION,		//!< The joint accelerations, read only, see PxScene::copyArticulationData()
 			eJOINT_FORCE,				//!< The applied joint forces, write only, see PxScene::applyArticulationData()
-			eJOINT_SOLVER_FORCE,		//!< The computed joint constraint solver forces, read only, see PxScene::copyArticulationData()()
+			eJOINT_SOLVER_FORCE,		//!< @deprecated The computed joint constraint solver forces, read only, see PxScene::copyArticulationData()
 			eJOINT_TARGET_VELOCITY,		//!< The velocity targets for the joint drives, write only, see PxScene::applyArticulationData()
 			eJOINT_TARGET_POSITION,		//!< The position targets for the joint drives, write only, see PxScene::applyArticulationData()
-			eSENSOR_FORCE,				//!< The spatial sensor forces, read only, see PxScene::copyArticulationData()
+			eSENSOR_FORCE,				//!< @deprecated The spatial sensor forces, read only, see PxScene::copyArticulationData()
 			eROOT_TRANSFORM,			//!< The root link transform, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
 			eROOT_VELOCITY,				//!< The root link velocity, read and write, see PxScene::copyArticulationData(), PxScene::applyArticulationData()
 			eLINK_TRANSFORM,			//!< The link transforms including root link, read only, see PxScene::copyArticulationData()
 			eLINK_VELOCITY,				//!< The link velocities including root link, read only, see PxScene::copyArticulationData()
+			eLINK_ACCELERATION,			//!< The link accelerations including root link, read only, see PxScene::copyArticulationData()
+			eLINK_INCOMING_JOINT_FORCE,	//!< The link incoming jont forces including root link, read only, see PxScene::copyArticulationData()
 			eLINK_FORCE,				//!< The forces to apply to links, write only, see PxScene::applyArticulationData()
 			eLINK_TORQUE,				//!< The torques to apply to links, write only, see PxScene::applyArticulationData()
 			eFIXED_TENDON,				//!< Fixed tendon data, write only, see PxScene::applyArticulationData()
@@ -82,16 +84,17 @@ namespace physx
 	public:
 		enum Enum
 		{
-			eVELOCITY = (1 << 0),				//!< The joint velocities, see PxArticulationCache::jointVelocity.
-			eACCELERATION = (1 << 1),			//!< The joint accelerations, see PxArticulationCache::jointAcceleration.
-			ePOSITION = (1 << 2),				//!< The joint positions, see PxArticulationCache::jointPosition.
-			eFORCE = (1 << 3),					//!< The joint forces, see PxArticulationCache::jointForce.
-			eLINK_VELOCITY = (1 << 4),			//!< The link velocities, see PxArticulationCache::linkVelocity.
-			eLINK_ACCELERATION = (1 << 5),		//!< The link accelerations, see PxArticulationCache::linkAcceleration.
-			eROOT_TRANSFORM = (1 << 6),			//!< Root link transform, see PxArticulationCache::rootLinkData.
-			eROOT_VELOCITIES = (1 << 7),		//!< Root link velocities (read/write) and accelerations (read), see PxArticulationCache::rootLinkData.
-			eSENSOR_FORCES = (1 << 8),			//!< The spatial sensor forces, see PxArticulationCache::sensorForces.
-			eJOINT_SOLVER_FORCES = (1 << 9),	//!< Solver constraint joint forces, see PxArticulationCache::jointSolverForces.
+			eVELOCITY = (1 << 0),						//!< The joint velocities, see PxArticulationCache::jointVelocity.
+			eACCELERATION = (1 << 1),					//!< The joint accelerations, see PxArticulationCache::jointAcceleration.
+			ePOSITION = (1 << 2),						//!< The joint positions, see PxArticulationCache::jointPosition.
+			eFORCE = (1 << 3),							//!< The joint forces, see PxArticulationCache::jointForce.
+			eLINK_VELOCITY = (1 << 4),					//!< The link velocities, see PxArticulationCache::linkVelocity.
+			eLINK_ACCELERATION = (1 << 5),				//!< The link accelerations, see PxArticulationCache::linkAcceleration.
+			eROOT_TRANSFORM = (1 << 6),					//!< Root link transform, see PxArticulationCache::rootLinkData.
+			eROOT_VELOCITIES = (1 << 7),				//!< Root link velocities (read/write) and accelerations (read), see PxArticulationCache::rootLinkData.
+			eSENSOR_FORCES = (1 << 8),					//!< @deprecated The spatial sensor forces, see PxArticulationCache::sensorForces.
+			eJOINT_SOLVER_FORCES = (1 << 9),			//!< @deprecated Solver constraint joint forces, see PxArticulationCache::jointSolverForces.
+			eLINK_INCOMING_JOINT_FORCE = (1 << 10),		//!< Link incoming joint forces, see PxArticulationCache::linkIncomingJointForce.
 			eALL = (eVELOCITY | eACCELERATION | ePOSITION | eLINK_VELOCITY | eLINK_ACCELERATION | eROOT_TRANSFORM | eROOT_VELOCITIES)
 		};
 	};

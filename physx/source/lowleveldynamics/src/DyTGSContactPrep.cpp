@@ -42,6 +42,7 @@ using namespace Gu;
 
 #include "DySolverContext.h"
 #include "DySolverConstraint1DStep.h"
+#include "DyTGS.h"
 
 using namespace aos;
 
@@ -49,11 +50,6 @@ namespace physx
 {
 namespace Dy
 {
-	PX_FORCE_INLINE PxReal safeRecip(const PxReal x)
-	{
-		return x > PX_EPS_F32 ? 1.f/x : 0.f;
-	}
-
 	PX_FORCE_INLINE void computeBlockStreamByteSizesStep(const bool useExtContacts, const CorrelationBuffer& c,
 		PxU32& _solverConstraintByteSize, PxU32& _frictionPatchByteSize, PxU32& _numFrictionPatches,
 		PxU32& _axisConstraintCount, PxReal torsionalPatchRadius)
@@ -67,7 +63,6 @@ namespace Dy
 		PxU32 solverConstraintByteSize = 0;
 		PxU32 numFrictionPatches = 0;
 		PxU32 axisConstraintCount = 0;
-
 
 		for (PxU32 i = 0; i < c.frictionPatchCount; i++)
 		{
@@ -97,7 +92,6 @@ namespace Dy
 					solverConstraintByteSize += useExtContacts ? nbAnchors * sizeof(SolverContactFrictionStepExt)
 						: nbAnchors * sizeof(SolverContactFrictionStep);
 					axisConstraintCount += nbAnchors;
-
 				}
 			}
 		}
@@ -298,7 +292,6 @@ namespace Dy
 				Cm::SpatialVectorF Z[64];
 				articulation->getImpulseResponse(b1.mLinkIndex, Z, impulse1.scale(dom1, angDom1), deltaV1);
 				//ArticulationHelper::getImpulseResponse(*b1.mFsData, b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
-
 			}
 			response += impulse1.dot(deltaV1);
 		}
@@ -312,7 +305,6 @@ namespace Dy
 	{
 		Vec3V response;
 		{
-
 			if (b0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 			{
 				deltaV0.linear = V3Scale(impulse0.linear, FMul(FLoad(b0.mData->invMass), dom0));
@@ -339,8 +331,6 @@ namespace Dy
 		return V3SumElems(response);
 	}
 
-
-
 	PxReal SolverExtBodyStep::projectVelocity(const PxVec3& linear, const PxVec3& angular) const
 	{
 		if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
@@ -357,8 +347,6 @@ namespace Dy
 			return f;
 		}
 	}
-
-
 
 	static FloatV constructContactConstraintStep(const Mat33V& sqrtInvInertia0, const Mat33V& sqrtInvInertia1, const FloatVArg invMassNorLenSq0,
 		const FloatVArg invMassNorLenSq1, const FloatVArg angD0, const FloatVArg angD1, const Vec3VArg bodyFrame0p, const Vec3VArg bodyFrame1p,
@@ -409,7 +397,6 @@ namespace Dy
 
 		const FloatV unitResponse = FAdd(resp0, resp1);
 
-
 		const FloatV penetration = FSub(separation, restDistance);
 
 		const BoolV isSeparated = FIsGrtr(penetration, zero);
@@ -417,7 +404,6 @@ namespace Dy
 		const FloatV penetrationInvDt = FMul(penetration, invTotalDt);
 
 		const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
-
 
 		//The following line was replaced by an equivalent to avoid triggering an assert when FAdd sums totalDt to infinity which happens if vrel==0
 		//const FloatV ratio = FSel(isGreater2, FAdd(totalDt, FDiv(penetration, vrel)), zero);
@@ -440,7 +426,6 @@ namespace Dy
 			velMultiplier = FMul(x, a);
 			//scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
 			scaledBias = FMul(nrdt, FMul(x, unitResponse));
-
 		}
 		else
 		{
@@ -475,9 +460,7 @@ namespace Dy
 		solverContact.maxImpulse = contact.maxImpulse;
 
 		return penetration;
-
 	}
-
 
 	static void setupFinalizeSolverConstraints(Sc::ShapeInteraction* shapeInteraction,
 		const PxContactPoint* buffer,
@@ -507,7 +490,7 @@ namespace Dy
 		const PxReal biasCoefficient,
 		const PxReal solverOffsetSlop)
 	{
-		bool hasTorsionalFriction = torsionalPatchRadiusF32 > 0.f || minTorsionalPatchRadiusF32 > 0.f;
+		const bool hasTorsionalFriction = torsionalPatchRadiusF32 > 0.f || minTorsionalPatchRadiusF32 > 0.f;
 
 		// NOTE II: the friction patches are sparse (some of them have no contact patches, and
 		// therefore did not get written back to the cache) but the patch addresses are dense,
@@ -518,12 +501,11 @@ namespace Dy
 
 		const FloatV ccdMaxSeparation = FLoad(maxCCDSeparation);
 
-		PxU8 flags = PxU8(hasForceThreshold ? SolverContactHeaderStep::eHAS_FORCE_THRESHOLDS : 0);
+		const PxU8 flags = PxU8(hasForceThreshold ? SolverContactHeaderStep::eHAS_FORCE_THRESHOLDS : 0);
 
 		PxU8* PX_RESTRICT ptr = workspace;
 
-		PxU8 type = PxTo8(staticOrKinematicBody ? DY_SC_TYPE_STATIC_CONTACT
-			: DY_SC_TYPE_RB_CONTACT);
+		const PxU8 type = PxTo8(staticOrKinematicBody ? DY_SC_TYPE_STATIC_CONTACT : DY_SC_TYPE_RB_CONTACT);
 
 		const FloatV zero = FZero();
 
@@ -556,8 +538,6 @@ namespace Dy
 		const QuatV bodyFrame1q = QuatVLoadU(&bodyFrame1.q.x);
 		const Vec3V bodyFrame1p = V3LoadU(bodyFrame1.p);
 
-		
-
 		PxU32 frictionPatchWritebackAddrIndex = 0;
 
 		PxPrefetchLine(c.contactID);
@@ -568,12 +548,10 @@ namespace Dy
 		//const Vec3V angVel0 = V3LoadU_SafeReadW(b0.angularVelocity);	// PT: safe because 'reportThreshold' follows 'initialAngVel' in PxSolverBodyData
 		//const Vec3V angVel1 = V3LoadU_SafeReadW(b1.angularVelocity);	// PT: safe because 'reportThreshold' follows 'initialAngVel' in PxSolverBodyData
 
-
 		const Vec3V linVel0 = V3LoadU_SafeReadW(data0.originalLinearVelocity);	// PT: safe because 'invMass' follows 'initialLinVel' in PxSolverBodyData
 		const Vec3V linVel1 = V3LoadU_SafeReadW(data1.originalLinearVelocity);	// PT: safe because 'invMass' follows 'initialLinVel' in PxSolverBodyData
 		const Vec3V angVel0 = V3LoadU_SafeReadW(data0.originalAngularVelocity);	// PT: safe because 'reportThreshold' follows 'initialAngVel' in PxSolverBodyData
 		const Vec3V angVel1 = V3LoadU_SafeReadW(data1.originalAngularVelocity);	// PT: safe because 'reportThreshold' follows 'initialAngVel' in PxSolverBodyData
-
 
 		PX_ALIGN(16, const Mat33V sqrtInvInertia0)
 			(
@@ -604,7 +582,6 @@ namespace Dy
 
 		const PxReal frictionBiasScale = disableStrongFriction ? 0.f : invDtF32 * scale;
 
-
 		for (PxU32 i = 0; i<c.frictionPatchCount; i++)
 		{
 			PxU32 contactCount = c.frictionPatchContactCounts[i];
@@ -622,7 +599,6 @@ namespace Dy
 
 			SolverContactHeaderStep* PX_RESTRICT header = reinterpret_cast<SolverContactHeaderStep*>(ptr);
 			ptr += sizeof(SolverContactHeaderStep);
-
 
 			PxPrefetchLine(ptr, 128);
 			PxPrefetchLine(ptr, 256);
@@ -705,8 +681,6 @@ namespace Dy
 
 			if (haveFriction)
 			{
-				
-
 				const Vec3V linVrel = V3Sub(linVel0, linVel1);
 				//const Vec3V normal = Vec3V_From_PxVec3_Aligned(buffer.contacts[c.contactPatches[c.correlationListHeads[i]].start].normal);
 
@@ -730,7 +704,6 @@ namespace Dy
 				const Vec3V t1 = V3Normalize(V3Cross(norCross, t0Cross));
 				//const VecCrossV t1Cross = V3PrepareCross(t1);
 
-
 				// since we don't even have the body velocities we can't compute the tangent dirs, so 
 				// the only thing we can do right now is to write the geometric information (which is the
 				// same for both axis constraints of an anchor) We put ra in the raXn field, rb in the rbXn
@@ -744,8 +717,6 @@ namespace Dy
 				//except on spu where one is local store memory and the other is the effective address in main memory.
 				//Using the value stored in the work unit guarantees that the main memory address is used on all platforms.
 				PxU8* PX_RESTRICT writeback = frictionDataPtr + frictionPatchWritebackAddrIndex*sizeof(FrictionPatch);
-
-				
 
 				const FloatV norVel00 = V3Dot(linVel0, t0);
 				const FloatV norVel01 = V3Dot(linVel1, t0);
@@ -780,8 +751,6 @@ namespace Dy
 					const Vec3V tvel = V3LoadA(buffer[index].targetVel);
 
 					const Vec3V error = V3Add(V3Sub(ra, rb), relTr);
-
-					
 
 					{
 						Vec3V raXn = V3Cross(ra, t0);
@@ -823,7 +792,6 @@ namespace Dy
 					{
 						FloatV targetVel = V3Dot(tvel, t1);
 
-
 						Vec3V raXn = V3Cross(ra, t1);
 						Vec3V rbXn = V3Cross(rb, t1);
 
@@ -845,7 +813,6 @@ namespace Dy
 							targetVel = FSub(targetVel, FAdd(norVel10, V3Dot(raXn, angVel0)));
 						if (isKinematic1)
 							targetVel = FAdd(targetVel, FAdd(norVel11, V3Dot(rbXn, angVel1)));
-
 
 						f1->normalXYZ_ErrorW = V4SetW(t1, V3Dot(error, t1));
 						//f1->raXnXYZ_targetVelW = V4SetW(body0Anchor, targetVel);
@@ -899,7 +866,6 @@ namespace Dy
 		}
 	}
 
-
 	static FloatV setupExtSolverContactStep(const SolverExtBodyStep& b0, const SolverExtBodyStep& b1,
 		const FloatV& d0, const FloatV& d1, const FloatV& angD0, const FloatV& angD1, const Vec3V& bodyFrame0p, const Vec3V& bodyFrame1p,
 		const Vec3VArg normal, const FloatVArg invDt, const FloatVArg invDtp8, const FloatVArg invStepDt, const FloatVArg totalDt,
@@ -922,8 +888,6 @@ namespace Dy
 
 		Cm::SpatialVectorV deltaV0, deltaV1;
 
-		
-
 		const FloatV vRelAng = V3SumElems(V3Sub(V3Mul(v0.angular, raXn), V3Mul(v1.angular, rbXn)));
 		const FloatV vRelLin = FSub(norVel0, norVel1);
 
@@ -938,16 +902,16 @@ namespace Dy
 		const Cm::SpatialVectorV resp0 = createImpulseResponseVector(normal, raXn, b0);
 		const Cm::SpatialVectorV resp1 = createImpulseResponseVector(V3Neg(normal), V3Neg(rbXn), b1);
 
-		FloatV unitResponse = getImpulseResponse(b0, resp0, deltaV0, d0, angD0,
-			b1, resp1, deltaV1, d1, angD1, false);
-
+		FloatV unitResponse = getImpulseResponse(
+			b0, resp0, deltaV0, d0, angD0,
+			b1, resp1, deltaV1, d1, angD1, 
+			false);
 
 		const FloatV vrel = FAdd(vRelAng, vRelLin);
 
 		FloatV scaledBias, velMultiplier;
 
-		FloatV recipResponse = FSel(FIsGrtr(unitResponse, FEps()), FRecip(FAdd(unitResponse, cfm)), zero);
-
+		FloatV recipResponse = FSel(FIsGrtr(unitResponse, FZero()), FRecip(FAdd(unitResponse, cfm)), zero);
 
 		if (FAllGrtr(zero, restitution))
 		{
@@ -960,7 +924,6 @@ namespace Dy
 			velMultiplier = FMul(x, a);
 			//scaledBias = FSel(isSeparated, FNeg(invStepDt), FDiv(FMul(nrdt, FMul(x, unitResponse)), velMultiplier));
 			scaledBias = FMul(nrdt, FMul(x, unitResponse));
-
 		}
 		else
 		{
@@ -971,7 +934,6 @@ namespace Dy
 		const FloatV penetrationInvDt = FMul(penetration, invDt);
 
 		const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
-
 
 		FloatV targetVelocity = FSel(isGreater2, FMul(FNeg(vrel), restitution), zero);
 
@@ -1047,8 +1009,6 @@ namespace Dy
 		else
 			return mArticulation->getLinkVelocity(mLinkIndex);
 	}
-
-
 
 	void setupFinalizeExtSolverContactsStep(
 		const PxContactPoint* buffer,
@@ -1162,7 +1122,6 @@ namespace Dy
 			SolverContactHeaderStep* PX_RESTRICT header = reinterpret_cast<SolverContactHeaderStep*>(ptr);
 			ptr += sizeof(SolverContactHeaderStep);
 
-
 			PxPrefetchLine(ptr + 128);
 			PxPrefetchLine(ptr + 256);
 			PxPrefetchLine(ptr + 384);
@@ -1219,7 +1178,6 @@ namespace Dy
 						cfm, v0, v1, offsetSlop, norVel0, norVel1));
 
 					maxPenetration = FMin(FLoad(contact.separation), maxPenetration);
-
 				}
 
 				ptr = p;
@@ -1319,14 +1277,12 @@ namespace Dy
 					}
 
 					{
-
 						Vec3V raXn = V3Cross(ra, t1Cross);
 						Vec3V rbXn = V3Cross(rb, t1Cross);
 						raXn = V3Sel(V3IsGrtr(offsetSlop, V3Abs(raXn)), V3Zero(), raXn);
 						rbXn = V3Sel(V3IsGrtr(offsetSlop, V3Abs(rbXn)), V3Zero(), rbXn);
 
 						Cm::SpatialVectorV deltaV0, deltaV1;
-
 
 						const Cm::SpatialVectorV resp0 = createImpulseResponseVector(t1, raXn, b0);
 						const Cm::SpatialVectorV resp1 = createImpulseResponseVector(V3Neg(t1), V3Neg(rbXn), b1);
@@ -1388,17 +1344,12 @@ namespace Dy
 					f->linDeltaVB = V3LoadA(deltaV1.linear);
 					f->angDeltaVA = V3LoadA(deltaV0.angular);
 					f->angDeltaVB = V3LoadA(deltaV1.angular);
-
 				}
-
 			}
 
 			frictionPatchWritebackAddrIndex++;
 		}
 	}
-
-
-
 
 	bool createFinalizeSolverContactsStep(
 		PxTGSSolverContactDesc& contactDesc,
@@ -1430,7 +1381,6 @@ namespace Dy
 
 		desc.constraintLengthOver16 = 0;
 
-
 		if (contactDesc.numContacts == 0)
 		{
 			contactDesc.frictionPtr = NULL;
@@ -1450,10 +1400,7 @@ namespace Dy
 
 #if PX_CHECKED
 		if (overflow)
-		{
-			PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
-				"Dropping contacts in solver because we exceeded limit of 32 friction patches.");
-		}
+			PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, "Dropping contacts in solver because we exceeded limit of 32 friction patches.");
 #endif
 
 		growPatches(c, contactDesc.contacts, contactDesc.bodyFrame0, contactDesc.bodyFrame1, 0, frictionOffsetThreshold + contactDesc.restDistance);
@@ -1515,8 +1462,7 @@ namespace Dy
 
 			//Initialise solverConstraint buffer.
 			if (solverConstraint)
-			{
-				
+			{				
 				if (useExtContacts)
 				{
 					const SolverExtBodyStep b0(reinterpret_cast<const void*>(contactDesc.body0), contactDesc.body0TxI, contactDesc.bodyData0, desc.linkIndexA);
@@ -1530,7 +1476,6 @@ namespace Dy
 				}
 				else
 				{
-
 					const PxTGSSolverBodyVel& b0 = *contactDesc.body0;
 					const PxTGSSolverBodyVel& b1 = *contactDesc.body1;
 
@@ -1549,9 +1494,6 @@ namespace Dy
 
 		return successfulReserve;
 	}
-
-
-
 
 	bool createFinalizeSolverContactsStep(PxTGSSolverContactDesc& contactDesc,
 		PxsContactManagerOutput& output,
@@ -1604,7 +1546,6 @@ namespace Dy
 			frictionOffsetThreshold, correlationDistance, biasCoefficient, constraintAllocator);
 	}
 
-
 	static FloatV solveDynamicContactsStep(SolverContactPointStep* contacts, const PxU32 nbContactPoints, const Vec3VArg contactNormal,
 		const FloatVArg invMassA, const FloatVArg invMassB, Vec3V& linVel0_, Vec3V& angState0_,
 		Vec3V& linVel1_, Vec3V& angState1_, PxF32* PX_RESTRICT forceBuffer,
@@ -1629,7 +1570,6 @@ namespace Dy
 		{
 			SolverContactPointStep& c = contacts[i];
 			PxPrefetchLine(&contacts[i], 128);
-
 
 			const Vec3V raXnI = V3LoadA(c.raXnI);
 			const Vec3V rbXnI = V3LoadA(c.rbXnI);
@@ -1688,7 +1628,6 @@ namespace Dy
 		angState1_ = angState1;
 		return accumulatedNormalImpulse;
 	}
-
 
 	void solveContact(const PxSolverConstraintDesc& desc, bool doFriction, const PxReal minPenetration,
 		const PxReal elapsedTimeF32)
@@ -1778,7 +1717,6 @@ namespace Dy
 
 					const FloatV frictionScale = FLoad(f0.frictionScale);
 
-
 					const Vec4V normalXYZ_ErrorW0 = f0.normalXYZ_ErrorW;
 					const Vec4V raXnI_targetVelW0 = f0.raXnI_targetVelW;
 					const Vec4V rbXnI_velMultiplierW0 = f0.rbXnI_velMultiplierW;
@@ -1835,8 +1773,6 @@ namespace Dy
 					const Vec3V v11 = V3MulAdd(linVel1, normal1, V3Mul(angState1, rbXnI1));
 					const FloatV normalVel1 = V3SumElems(V3Sub(v01, v11));
 
-
-
 					// appliedForce -bias * velMultiplier - a hoisted part of the total impulse computation
 					const FloatV tmp10 = FNegScaleSub(FSub(bias0, targetVel0), velMultiplier0, appliedForce0);
 					const FloatV tmp11 = FNegScaleSub(FSub(bias1, targetVel1), velMultiplier1, appliedForce1);
@@ -1890,7 +1826,6 @@ namespace Dy
 
 					const FloatV frictionScale = FLoad(f.frictionScale);
 
-
 					const Vec4V raXnI_targetVelW = f.raXnI_targetVelW;
 					const Vec4V rbXnI_velMultiplierW = f.rbXnI_velMultiplierW;
 
@@ -1941,12 +1876,9 @@ namespace Dy
 					angState1 = V3NegScaleSub(rbXnI, FMul(deltaF, angDom1), angState1);
 
 					f.setAppliedForce(newAppliedForce);
-
-
 				}
 				Store_From_BoolV(broken, &hdr->broken);
 			}
-
 		}
 
 		PX_ASSERT(b0.linearVelocity.isFinite());
@@ -1968,9 +1900,8 @@ namespace Dy
 		PX_ASSERT(currPtr == last);
 	}
 
-	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext* cache)
+	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext* /*cache*/)
 	{
-		PX_UNUSED(cache);
 		// PxReal normalForce = 0;
 
 		PxU8* PX_RESTRICT cPtr = desc.constraint;
@@ -2059,15 +1990,12 @@ void setSolverConstantsStep(PxReal& error,
 	PxReal minRowResponse,
 	PxReal erp,
 	PxReal dt,
-	PxReal totalDt,
+	PxReal /*totalDt*/,
 	PxReal biasClamp,
 	PxReal recipdt,
 	PxReal recipTotalDt,
 	PxReal velTarget)
 {
-	PX_UNUSED(dt);
-	PX_UNUSED(totalDt);
-	PX_UNUSED(minRowResponse);
 	PX_ASSERT(PxIsFinite(unitResponse));
 	PxReal recipResponse = unitResponse <= minRowResponse ? 0 : 1.0f / unitResponse;
 	//PX_ASSERT(recipResponse < 1e5f);  
@@ -2075,13 +2003,11 @@ void setSolverConstantsStep(PxReal& error,
 
 	rcpResponse = recipResponse;
 
-	
-
 	if (c.flags & Px1DConstraintFlag::eSPRING)
 	{
-		PxReal a = dt * (dt*c.mods.spring.stiffness + c.mods.spring.damping);
-		PxReal aDamp = dt * dt * (c.mods.spring.damping + c.mods.spring.stiffness);
-		PxReal b = dt * (c.mods.spring.damping * (c.velocityTarget));// - c.mods.spring.stiffness * geomError);
+		const PxReal a = dt * (dt*c.mods.spring.stiffness + c.mods.spring.damping);
+		const PxReal aDamp = dt * dt * (c.mods.spring.damping + c.mods.spring.stiffness);
+		const PxReal b = dt * (c.mods.spring.damping * (c.velocityTarget));// - c.mods.spring.stiffness * geomError);
 		maxBias = PX_MAX_F32;
 		PxReal errorTerm;
 
@@ -2104,8 +2030,7 @@ void setSolverConstantsStep(PxReal& error,
 			biasScale = errorTerm - xDamp*c.mods.spring.damping*unitResponse*dt;
 		}
 
-		error = geomError * errorTerm;
-		
+		error = geomError * errorTerm;	
 	}
 	else
 	{
@@ -2120,8 +2045,7 @@ void setSolverConstantsStep(PxReal& error,
 			maxBias = 0.f;
 		}
 		else
-		{
-			
+		{		
 			biasScale = -recipdt*erp;// *recipResponse;
 			if (c.flags & Px1DConstraintFlag::eDRIVE_ROW)
 			{
@@ -2141,13 +2065,10 @@ void setSolverConstantsStep(PxReal& error,
 			/*PxReal errorBias = PxClamp(geomError*erp*recipdt, -biasClamp, biasClamp);
 
 			constant = (c.velocityTarget - errorBias) * recipResponse;*/
-
 		}
 	}
 	targetVel -= velMultiplier * velTarget;
 }
-
-
 
 PxU32 setupSolverConstraintStep(
 	const PxTGSSolverConstraintPrepDesc& prepDesc,
@@ -2155,7 +2076,6 @@ PxU32 setupSolverConstraintStep(
 	const PxReal dt, const PxReal totalDt, const PxReal invdt, const PxReal invTotalDt,
 	const PxReal lengthScale, const PxReal biasCoefficient)
 {
-
 	if (prepDesc.numRows == 0)
 	{
 		prepDesc.desc->constraint = NULL;
@@ -2175,7 +2095,7 @@ PxU32 setupSolverConstraintStep(
 	const bool isKinematic1 = desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY &&
 		desc.tgsBodyB->isKinematic;
 
-	PxU32 stride = isExtended ? sizeof(SolverConstraint1DExtStep) : sizeof(SolverConstraint1DStep);
+	const PxU32 stride = isExtended ? sizeof(SolverConstraint1DExtStep) : sizeof(SolverConstraint1DStep);
 	const PxU32 constraintLength = sizeof(SolverConstraint1DHeaderStep) + stride * prepDesc.numRows;
 
 	//KS - +16 is for the constraint progress counter, which needs to be the last element in the constraint (so that we
@@ -2246,7 +2166,7 @@ PxU32 setupSolverConstraintStep(
 		prepDesc.body0TxI->sqrtInvInertia, prepDesc.body1TxI->sqrtInvInertia, prepDesc.bodyData0->invMass, prepDesc.bodyData1->invMass,
 		prepDesc.invMassScales, isExtended || prepDesc.disablePreprocessing, prepDesc.improvedSlerp);
 
-	PxReal erp = 0.5f * biasCoefficient;
+	const PxReal erp = 0.5f * biasCoefficient;
 
 	const PxReal recipDt = invdt;
 
@@ -2306,8 +2226,7 @@ PxU32 setupSolverConstraintStep(
 				s.ang0 = PxVec3(0.f);
 				s.ang1 = PxVec3(0.f);
 				s.angularErrorScale = 0.f;
-			}
-			
+			}		
 		}
 		else
 		{
@@ -2332,9 +2251,7 @@ PxU32 setupSolverConstraintStep(
 			}
 			else
 				unitResponse += cfm;
-
-
-		
+	
 			{
 				vel0 = eb0.projectVelocity(s.lin0, s.ang0);
 				vel1 = eb1.projectVelocity(s.lin1, s.ang1);
@@ -2362,10 +2279,6 @@ PxU32 setupSolverConstraintStep(
 			velTarget);
 
 		s.recipResponse = recipResponse;
-
-		
-
-		
 
 		if (c.flags & Px1DConstraintFlag::eOUTPUT_FORCE)
 			s.flags |= DY_SC_FLAG_OUTPUT_FORCE;
@@ -2402,20 +2315,15 @@ PxU32 setupSolverConstraintStep(
 				s.flags |= DY_SC_FLAG_ORTHO_TARGET;
 		}
 		
-
-
-
 		constraints += stride;
 		outCount++;
 	}
-
 
 	//KS - we now need to re-set count because we may have skipped degenerate rows when solving articulation constraints.
 	//In this case, the degenerate rows would have produced no force. Skipping them is just an optimization
 	header->count = PxU8(outCount);
 	return prepDesc.numRows;
 }
-
 
 PxU32 SetupSolverConstraintStep(SolverConstraintShaderPrepDesc& shaderDesc,
 	PxTGSSolverConstraintPrepDesc& prepDesc,
@@ -2483,7 +2391,8 @@ void solveExt1D(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& linVe
 
 	Vec3V li0 = V3Zero(), li1 = V3Zero(), ai0 = V3Zero(), ai1 = V3Zero();
 
-	for (PxU32 i = 0; i<header->count; ++i, base++)
+	const PxU32 count = header->count;
+	for (PxU32 i = 0; i<count; ++i, base++)
 	{
 		PxPrefetchLine(base + 1);
 
@@ -2657,9 +2566,6 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 	}
 }
 
-
-
-
 //Port of scalar implementation to SIMD maths with some interleaving of instructions
 void solve1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxInertia* const txInertias, const PxReal elapsedTime)
 {
@@ -2736,7 +2642,8 @@ void solve1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxIner
 	FloatV error1 = FAdd(V4GetW(ang1Ortho1_Error1), FSub(V3Dot(ang0Ortho1, ang0), V3Dot(ang1Ortho1, ang1)));
 	FloatV error2 = FAdd(V4GetW(ang1Ortho2_Error2), FSub(V3Dot(ang0Ortho2, ang0), V3Dot(ang1Ortho2, ang1)));
 
-	for (PxU32 i = 0; i<header->count; ++i, base++)
+	const PxU32 count = header->count;
+	for (PxU32 i = 0; i<count; ++i, base++)
 	{
 		PxPrefetchLine(base + 1);
 		SolverConstraint1DStep& c = *base;
@@ -2833,7 +2740,6 @@ void solve1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxIner
 	PX_ASSERT(b1.angularVelocity.isFinite());
 }
 
-
 //Port of scalar implementation to SIMD maths with some interleaving of instructions
 void conclude1DStep(const PxSolverConstraintDesc& desc)
 {
@@ -2845,7 +2751,8 @@ void conclude1DStep(const PxSolverConstraintDesc& desc)
 	PxU8* PX_RESTRICT base = bPtr + sizeof(SolverConstraint1DHeaderStep);
 	const PxU32 stride = header->type == DY_SC_TYPE_RB_1D ? sizeof(SolverConstraint1DStep) : sizeof(SolverConstraint1DExtStep);
 
-	for (PxU32 i = 0; i<header->count; ++i, base+=stride)
+	const PxU32 count = header->count;
+	for (PxU32 i = 0; i<count; ++i, base+=stride)
 	{
 		SolverConstraint1DStep& c = *reinterpret_cast<SolverConstraint1DStep*>(base);
 		PxPrefetchLine(&c + 1);
@@ -2910,9 +2817,6 @@ void concludeContact(const PxSolverConstraintDesc& desc)
 	//PX_ASSERT(currPtr == last);
 }
 
-
-
-
 void writeBack1D(const PxSolverConstraintDesc& desc)
 {
 	ConstraintWriteback* writeback = reinterpret_cast<ConstraintWriteback*>(desc.writeBack);
@@ -2920,10 +2824,11 @@ void writeBack1D(const PxSolverConstraintDesc& desc)
 	{
 		SolverConstraint1DHeaderStep* header = reinterpret_cast<SolverConstraint1DHeaderStep*>(desc.constraint);
 		PxU8* base = desc.constraint + sizeof(SolverConstraint1DHeaderStep);
-		PxU32 stride = header->type == DY_SC_TYPE_EXT_1D ? sizeof(SolverConstraint1DExtStep) : sizeof(SolverConstraint1DStep);
+		const PxU32 stride = header->type == DY_SC_TYPE_EXT_1D ? sizeof(SolverConstraint1DExtStep) : sizeof(SolverConstraint1DStep);
 
 		PxVec3 lin(0), ang(0);
-		for (PxU32 i = 0; i<header->count; i++)
+		const PxU32 count = header->count;
+		for (PxU32 i = 0; i<count; i++)
 		{
 			const SolverConstraint1DStep* c = reinterpret_cast<SolverConstraint1DStep*>(base);
 			if (c->flags & DY_SC_FLAG_OUTPUT_FORCE)
@@ -2955,7 +2860,6 @@ static FloatV solveExtContactsStep(SolverContactPointStepExt* contacts, const Px
 	const FloatV& minPen,
 	const FloatV& elapsedTime)
 {
-	PX_UNUSED(elapsedTime);
 	const FloatV deltaV = V3Dot(contactNormal, V3Sub(linDeltaA, linDeltaB));
 
 	FloatV accumulatedNormalImpulse = FZero();
@@ -2971,6 +2875,8 @@ static FloatV solveExtContactsStep(SolverContactPointStepExt* contacts, const Px
 		const FloatV velMultiplier = FLoad(c.velMultiplier);
 		const FloatV recipResponse = FLoad(c.recipResponse);
 
+		//Component of relative velocity at contact point that is along the contact normal.
+		//n.[(va + wa X ra) - (vb + wb X rb)]
 		Vec3V v = V3MulAdd(linVel0, contactNormal, V3Mul(angVel0, raXn));
 		v = V3Sub(v, V3MulAdd(linVel1, contactNormal, V3Mul(angVel1, rbXn)));
 		const FloatV normalVel = V3SumElems(v);
@@ -3018,11 +2924,13 @@ static FloatV solveExtContactsStep(SolverContactPointStepExt* contacts, const Px
 	return accumulatedNormalImpulse;
 }
 
-void solveExtContactStep(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& linVel1, Vec3V& angVel0, Vec3V& angVel1,
-	Vec3V& linDelta0, Vec3V& linDelta1, Vec3V& angDelta0, Vec3V& angDelta1, Vec3V& linImpulse0, Vec3V& linImpulse1, Vec3V& angImpulse0, Vec3V& angImpulse1, 
-	bool doFriction, const PxReal minPenetration, const PxReal elapsedTimeF32)
+void solveExtContactStep(
+const PxSolverConstraintDesc& desc, 
+Vec3V& linVel0, Vec3V& linVel1, Vec3V& angVel0, Vec3V& angVel1,
+Vec3V& linDelta0, Vec3V& linDelta1, Vec3V& angDelta0, Vec3V& angDelta1, 
+Vec3V& linImpulse0, Vec3V& linImpulse1, Vec3V& angImpulse0, Vec3V& angImpulse1, 
+bool /*doFriction*/, const PxReal minPenetration, const PxReal elapsedTimeF32)
 {
-	PX_UNUSED(doFriction);
 	const FloatV elapsedTime = FLoad(elapsedTimeF32);
 	const FloatV minPen = FLoad(minPenetration);
 
@@ -3057,9 +2965,13 @@ void solveExtContactStep(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec
 
 		const Vec3V contactNormal = V3LoadA(hdr->normal);
 
-		const FloatV accumulatedNormalImpulse = FMax(solveExtContactsStep(contacts, numNormalConstr, contactNormal, linVel0, angVel0, linVel1,
-			angVel1, li0, ai0, li1, ai1, linDelta0, linDelta1, angDelta0, angDelta1, FLoad(hdr->maxPenBias), appliedForceBuffer, minPen, elapsedTime),
-			FLoad(hdr->minNormalForce));
+		const FloatV accumulatedNormalImpulse = FMax(solveExtContactsStep(
+				contacts, numNormalConstr, contactNormal, 
+				linVel0, angVel0, linVel1, angVel1, 
+				li0, ai0, li1, ai1, 
+				linDelta0, linDelta1, angDelta0, angDelta1, 
+				FLoad(hdr->maxPenBias), appliedForceBuffer, minPen, elapsedTime),
+				FLoad(hdr->minNormalForce));
 
 		if (numFrictionConstr)
 		{
@@ -3257,9 +3169,7 @@ void solveExtContactStep(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec
 	PX_ASSERT(currPtr == last);
 }
 
-
-void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFriction, const PxReal minPenetration,
-	const PxReal elapsedTimeF32, SolverContext& cache)
+static void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFriction, PxReal minPenetration, PxReal elapsedTimeF32, SolverContext& cache)
 {
 	Vec3V linVel0, angVel0, linVel1, angVel1;
 	Vec3V linDelta0, angDelta0, linDelta1, angDelta1;
@@ -3328,7 +3238,6 @@ void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFriction, co
 
 	Vec3V linImpulse0 = V3Zero(), linImpulse1 = V3Zero(), angImpulse0 = V3Zero(), angImpulse1 = V3Zero();
 
-
 	solveExtContactStep(desc, linVel0, linVel1, angVel0, angVel1, linDelta0, linDelta1, angDelta0, angDelta1, linImpulse0, linImpulse1, angImpulse0,
 		angImpulse1, doFriction, minPenetration, elapsedTimeF32);
 
@@ -3339,7 +3248,6 @@ void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFriction, co
 	}
 	else
 	{
-
 		if (desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY)
 		{
 			V3StoreA(linVel0, desc.tgsBodyA->linearVelocity);
@@ -3362,61 +3270,58 @@ void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFriction, co
 	}
 }
 
-void solveContactBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const /*txInertias*/, const PxReal minPenetration, const PxReal elapsedTime, SolverContext& /*cache*/)
+void solveContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
+	PX_UNUSED(cache);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		solveContact(desc[i], true, minPenetration, elapsedTime);
-	}
 }
 
-void solve1DBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const txInertias, const PxReal /*minPenetration*/, const PxReal elapsedTime, SolverContext& /*cache*/)
+void solve1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(minPenetration);
+	PX_UNUSED(cache);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		solve1DStep(desc[i], txInertias, elapsedTime);
-	}
 }
 
-void solveExtContactBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const /*txInertias*/, const PxReal minPenetration, const PxReal elapsedTime, SolverContext& cache)
+void solveExtContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		solveExtContactStep(desc[i], true, minPenetration, elapsedTime, cache);
-	}
 }
 
-void solveExt1DBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const txInertias, const PxReal /*minPenetration*/, const PxReal elapsedTime, SolverContext& cache)
+void solveExt1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
+	PX_UNUSED(minPenetration);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		solveExt1DStep(desc[i], elapsedTime, cache, txInertias);
-	}
 }
 
-void writeBackContact(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc, SolverContext* cache)
+void writeBackContact(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		writeBackContact(desc[i], cache);
-	}
 }
 
-void writeBack1D(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc, SolverContext* /*cache*/)
+void writeBack1D(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
+	PX_UNUSED(cache);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-	{
 		writeBack1D(desc[i]);
-	}
 }
 
-void solveConclude1DBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const txInertias, const PxReal elapsedTime, SolverContext& /*cache*/)
+void solveConclude1DBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
+	PX_UNUSED(cache);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
 		solve1DStep(desc[i], txInertias, elapsedTime);
@@ -3424,8 +3329,7 @@ void solveConclude1DBlock(const PxConstraintBatchHeader& hdr, const PxSolverCons
 	}
 }
 
-void solveConclude1DBlockExt(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const txInertias, const PxReal elapsedTime, SolverContext& cache)
+void solveConclude1DBlockExt(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
@@ -3434,10 +3338,11 @@ void solveConclude1DBlockExt(const PxConstraintBatchHeader& hdr, const PxSolverC
 	}
 }
 
-
-void solveConcludeContactBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const /*txInertias*/, const PxReal elapsedTime, SolverContext& /*cache*/)
+void solveConcludeContactBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
+	PX_UNUSED(cache);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
 		solveContact(desc[i], true, -PX_MAX_F32, elapsedTime);
@@ -3445,16 +3350,16 @@ void solveConcludeContactBlock(const PxConstraintBatchHeader& hdr, const PxSolve
 	}
 }
 
-void solveConcludeContactExtBlock(const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc,
-	const PxTGSSolverBodyTxInertia* const /*txInertias*/, const PxReal elapsedTime, SolverContext& cache)
+void solveConcludeContactExtBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
+
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
 		solveExtContactStep(desc[i], true, -PX_MAX_F32, elapsedTime, cache);
 		concludeContact(desc[i]);
 	}
 }
-
 
 }
 }

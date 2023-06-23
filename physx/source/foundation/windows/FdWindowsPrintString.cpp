@@ -28,10 +28,7 @@
 
 #include "foundation/PxString.h"
 #include <stdio.h>
-#pragma warning(push)
-#pragma warning(disable : 4668) //'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
-#include <windows.h>
-#pragma warning(pop)
+#include "foundation/windows/PxWindowsInclude.h"
 
 #include <stdio.h>
 #include <string.h>

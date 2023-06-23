@@ -43,7 +43,6 @@ static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
 static PxFoundation*			gFoundation = NULL;
 static PxPhysics*				gPhysics	= NULL;
-static PxCooking*				gCooking	= NULL;
 
 float rand(float loVal, float hiVal)
 {
@@ -149,7 +148,8 @@ void createBV33TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 	meshDesc.triangles.data = indices;
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
 
-	PxCookingParams params = gCooking->getParams();
+	PxTolerancesScale scale;
+	PxCookingParams params(scale);
 
 	// Create BVH33 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH33;
@@ -175,14 +175,12 @@ void createBV33TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 		params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff = 0.55f;
 	}
 
-	gCooking->setParams(params);
-
 #if defined(PX_CHECKED) || defined(PX_DEBUG)
 	// If DISABLE_CLEAN_MESH is set, the mesh is not cleaned during the cooking. 
 	// We should check the validity of provided triangles in debug/checked builds though.
 	if (skipMeshCleanup)
 	{
-		PX_ASSERT(gCooking->validateTriangleMesh(meshDesc));
+		PX_ASSERT(PxValidateTriangleMesh(params, meshDesc));
 	}
 #endif // DEBUG
 
@@ -193,12 +191,12 @@ void createBV33TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 	// The cooked mesh may either be saved to a stream for later loading, or inserted directly into PxPhysics.
 	if (inserted)
 	{
-		triMesh = gCooking->createTriangleMesh(meshDesc, gPhysics->getPhysicsInsertionCallback());
+		triMesh = PxCreateTriangleMesh(params, meshDesc, gPhysics->getPhysicsInsertionCallback());
 	}
 	else
 	{
 		PxDefaultMemoryOutputStream outBuffer;
-		gCooking->cookTriangleMesh(meshDesc, outBuffer);
+		PxCookTriangleMesh(params, meshDesc, outBuffer);
 
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
@@ -239,7 +237,8 @@ void createBV34TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 	meshDesc.triangles.data = indices;
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
 
-	PxCookingParams params = gCooking->getParams();
+	PxTolerancesScale scale;
+	PxCookingParams params(scale);
 
 	// Create BVH34 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH34;
@@ -251,14 +250,12 @@ void createBV34TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 	// and worse cooking performance. Cooking time is better when more triangles per leaf are used.
 	params.midphaseDesc.mBVH34Desc.numPrimsPerLeaf = numTrisPerLeaf;
 
-	gCooking->setParams(params);
-
 #if defined(PX_CHECKED) || defined(PX_DEBUG)
 	// If DISABLE_CLEAN_MESH is set, the mesh is not cleaned during the cooking. 
 	// We should check the validity of provided triangles in debug/checked builds though.
 	if (skipMeshCleanup)
 	{
-		PX_ASSERT(gCooking->validateTriangleMesh(meshDesc));
+		PX_ASSERT(PxValidateTriangleMesh(params, meshDesc));
 	}
 #endif // DEBUG
 
@@ -269,12 +266,12 @@ void createBV34TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 	// The cooked mesh may either be saved to a stream for later loading, or inserted directly into PxPhysics.
 	if (inserted)
 	{
-		triMesh = gCooking->createTriangleMesh(meshDesc, gPhysics->getPhysicsInsertionCallback());
+		triMesh = PxCreateTriangleMesh(params, meshDesc, gPhysics->getPhysicsInsertionCallback());
 	}
 	else
 	{
 		PxDefaultMemoryOutputStream outBuffer;
-		gCooking->cookTriangleMesh(meshDesc, outBuffer);
+		PxCookTriangleMesh(params, meshDesc, outBuffer);
 
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
@@ -366,7 +363,6 @@ void initPhysics()
 {
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(),true);
-	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
 	
 	createTriangleMeshes();
 }
@@ -374,7 +370,6 @@ void initPhysics()
 void cleanupPhysics()
 {
 	PX_RELEASE(gPhysics);
-	gCooking->release();
 	PX_RELEASE(gFoundation);
 	
 	printf("SnippetTriangleMeshCreate done.\n");

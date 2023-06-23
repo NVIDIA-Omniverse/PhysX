@@ -335,7 +335,7 @@ namespace Ext
 
 	//Splits all tets according to the specification in tetSubdivisionInfos. The resulting mesh will be watertight if the tetSubdivisionInfos are specified such
 	//that all tets sharing and edge will get the same point inserted on their corresponding edge
-	void split(PxArray<Tetrahedron>& tets, const PxArray<Vec3>& points, const PxArray<TetSubdivisionInfo>& tetSubdivisionInfos)
+	void split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxArray<TetSubdivisionInfo>& tetSubdivisionInfos)
 	{
 		PxU32 originalNumTets = tets.size();
 		for (PxU32 i = 0; i < originalNumTets; ++i)
@@ -769,7 +769,7 @@ namespace Ext
 		}
 	}
 
-	void split(PxArray<Tetrahedron>& tets, const PxArray<Vec3>& points, const PxHashMap<PxU64, PxI32>& edgesToSplit)
+	void split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxHashMap<PxU64, PxI32>& edgesToSplit)
 	{
 		PxArray<TetSubdivisionInfo> subdivisionInfos;
 		subdivisionInfos.resize(tets.size());

@@ -297,7 +297,7 @@ static PX_FORCE_INLINE PxReal maxComponentDeltaRot(const PxTransform& t0, const 
 }
 
 bool physx::PxcCacheLocalContacts(	PxcNpThreadContext& context, Cache& pairContactCache,
-									const PxTransform& tm0, const PxTransform& tm1,
+									const PxTransform32& tm0, const PxTransform32& tm1,
 									const PxcContactMethod conMethod,
 									const PxGeometry& shape0, const PxGeometry& shape1)
 {

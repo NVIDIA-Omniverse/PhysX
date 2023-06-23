@@ -24,11 +24,7 @@
 ##
 ## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 
-IF(TARGET_BUILD_PLATFORM STREQUAL "mac")
-	cmake_minimum_required(VERSION 3.12)
-ELSE()
-	cmake_minimum_required(VERSION 3.11)
-ENDIF()
+cmake_minimum_required(VERSION 3.7)
 
 project(PhysXSDK C CXX)
 
@@ -36,14 +32,12 @@ OPTION(PX_BUILDSNIPPETS "Generate the snippets" OFF)
 OPTION(PX_BUILDPVDRUNTIME "Generate the OmniPVD project" OFF)
 OPTION(PX_CMAKE_SUPPRESS_REGENERATION "Disable zero_check projects" OFF)
 
-IF(NOT DEFINED CMAKEMODULES_VERSION)
-	SET(CMAKEMODULES_PATH $ENV{PM_CMakeModules_PATH} CACHE INTERNAL "Path to CMakeModules")
-	SET(CMAKEMODULES_NAME "CMakeModules" CACHE INTERNAL "CMakeModules name")
-	SET(CMAKEMODULES_VERSION "1.27" CACHE INTERNAL "CMakeModules version from generation batch")
+IF(DEFINED ENV{PM_cmake_PATH} AND NOT "$ENV{PM_cmake_PATH}" STREQUAL "")
+	SET(CMAKEMODULES_PATH "$ENV{PM_cmake_PATH}/share/cmake-3.25/Modules")
 ENDIF()
 
-SET(CMAKE_MODULE_PATH ${CMAKEMODULES_PATH})
-
+LIST(APPEND CMAKEMODULES_PATH ${PHYSX_ROOT_DIR}/source/compiler/cmake/modules)
+SET(CMAKE_MODULE_PATH ${CMAKEMODULES_PATH} CACHE INTERNAL "Path to CMakeModules")
 
 IF(PX_CMAKE_SUPPRESS_REGENERATION)
 	SET(CMAKE_SUPPRESS_REGENERATION true)
@@ -89,6 +83,6 @@ ENDIF()
 
 
 IF(TARGET_BUILD_PLATFORM STREQUAL "switch")
-	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ALL_BUILD.vcxproj.user" INPUT  "${CMAKE_MODULE_PATH}/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
-	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/INSTALL.vcxproj.user" INPUT  "${CMAKE_MODULE_PATH}/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
+	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ALL_BUILD.vcxproj.user" INPUT  "${PHYSX_ROOT_DIR}/source/compiler/cmake/modules/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
+	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/INSTALL.vcxproj.user" INPUT  "${PHYSX_ROOT_DIR}/source/compiler/cmake/modules/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
 ENDIF()

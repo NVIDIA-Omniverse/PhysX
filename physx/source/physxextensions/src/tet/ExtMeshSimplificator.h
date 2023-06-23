@@ -34,6 +34,7 @@
 
 #include "ExtQuadric.h"
 #include "ExtRandomAccessHeap.h"
+#include "GuSDF.h"
 
 // ------------------------------------------------------------------------------
 
@@ -43,6 +44,19 @@ namespace physx
 {
 	namespace Ext
 	{
+		struct PxVec3Ex
+		{
+			PxVec3 p;
+			PxU32 i = 0xFFFFFFFF;
+			
+			explicit PxVec3Ex() : p(0.0f), i(0xFFFFFFFF)
+			{
+			}
+
+			explicit PxVec3Ex(PxVec3 point, PxU32 sourceTriangleIndex = 0xFFFFFFFF) : p(point), i(sourceTriangleIndex)
+			{
+			}
+		};
 
 		class MeshSimplificator
 		{
@@ -50,15 +64,20 @@ namespace physx
 
 			MeshSimplificator();
 
-			void init(const PxSimpleTriangleMesh& inputMesh, PxReal edgeLengthCostWeight_ = 1e-1f, PxReal flatnessDetectionThreshold_ = 1e-2f);
-			void init(const PxArray<PxVec3> &vertices, const PxArray<PxU32> &triIds, PxReal edgeLengthCostWeight_ = 1e-1f, PxReal flatnessDetectionThreshold_ = 1e-2f);
+			void init(const PxSimpleTriangleMesh& inputMesh, PxReal edgeLengthCostWeight_ = 1e-1f, PxReal flatnessDetectionThreshold_ = 1e-2f, bool projectSimplifiedPointsOnInputMeshSurface = false);
+			void init(const PxArray<PxVec3> &vertices, const PxArray<PxU32> &triIds, PxReal edgeLengthCostWeight_ = 1e-1f, PxReal flatnessDetectionThreshold_ = 1e-2f, bool projectSimplifiedPointsOnInputMeshSurface = false);
 			void decimateByRatio(PxF32 relativeOutputMeshSize = 0.5f, PxF32 maximalEdgeLength = 0.0f);
 			void decimateBySize(PxI32 targetTriangleCount, PxF32 maximalEdgeLength = 0.0f);
-			void readBack(PxArray<PxVec3>& vertices, PxArray<PxU32>& triIds, PxArray<PxU32> *vertexMap = NULL);
+			void readBack(PxArray<PxVec3>& vertices, PxArray<PxU32>& triIds, PxArray<PxU32> *vertexMap = NULL, PxArray<PxU32> *outputVertexToInputTriangle = NULL);
+			
+			~MeshSimplificator();
 
 		private:
-			PxArray<PxVec3> vertices;
+			PxArray<PxVec3Ex> vertices;
 			PxArray<PxI32> triIds;
+			PxArray<PxVec3> scaledOriginalVertices;
+			PxArray<PxU32> originalTriIds;
+			Gu::PxPointOntoTriangleMeshProjector* projector;
 
 			void init();
 			bool step(PxF32 maximalEdgeLength);
@@ -69,10 +88,11 @@ namespace physx
 			void replaceNeighbor(PxI32 triNr, PxI32 oldNeighbor, PxI32 newNeighbor);
 			PxI32 getEdgeId(PxI32 triNr, PxI32 edgeNr);
 			bool collapseEdge(PxI32 triNr, PxI32 edgeNr);
-			void evalEdgeCost(PxI32 triNr, PxI32 edgeNr, float& cost, float& ratio);
+			PxVec3Ex evalEdgeCost(PxI32 triNr, PxI32 edgeNr, PxReal& costt);
+			PxVec3Ex projectPoint(const PxVec3& p);
 			void findTriNeighbors();
 
-			void transformPointsToUnitBox(PxArray<PxVec3>& points);
+			void transformPointsToUnitBox(PxArray<PxVec3Ex>& points);
 			void transformPointsToOriginalPosition(PxArray<PxVec3>& points);
 
 			PxI32 numMeshTris;

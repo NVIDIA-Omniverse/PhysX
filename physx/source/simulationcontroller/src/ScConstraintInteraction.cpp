@@ -40,7 +40,10 @@ ConstraintInteraction::ConstraintInteraction(ConstraintSim* constraint, RigidSim
 	Interaction	(r0, r1, InteractionType::eCONSTRAINTSHADER, InteractionFlag::eCONSTRAINT),
 	mConstraint	(constraint)
 {
-	registerInActors();
+	{
+		onActivate(NULL);
+		registerInActors();
+	}
 
 	BodySim* b0 = mConstraint->getBody(0);
 	BodySim* b1 = mConstraint->getBody(1);
@@ -103,15 +106,15 @@ void ConstraintInteraction::updateState()
 	// -> need to check whether to activate the constraint and whether constraint break testing
 	//    is now necessary
 	//
-	// the transition from dynamic to kinematic will always trigger an onDeactivate_() (because the body gets deactivated)
+	// the transition from dynamic to kinematic will always trigger an onDeactivate() (because the body gets deactivated)
 	// and thus there is no need to consider that case here.
 	//
 
-	onActivate_(NULL);	// note: this will not activate if the necessary conditions are not met, so it can be called even if the pair has been deactivated again before the
-					//       simulation step started
+	onActivate(NULL);	// note: this will not activate if the necessary conditions are not met, so it can be called even if the pair has been deactivated again before the
+						//       simulation step started
 }
 
-bool ConstraintInteraction::onActivate_(void*)
+bool ConstraintInteraction::onActivate(void*)
 {
 	PX_ASSERT(!mConstraint->isBroken());
 
@@ -140,7 +143,7 @@ bool ConstraintInteraction::onActivate_(void*)
 		return false;
 }
 
-bool ConstraintInteraction::onDeactivate_()
+bool ConstraintInteraction::onDeactivate()
 {
 	const BodySim* b0 = mConstraint->getBody(0);
 	const BodySim* b1 = mConstraint->getBody(1);

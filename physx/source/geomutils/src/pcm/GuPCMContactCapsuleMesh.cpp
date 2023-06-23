@@ -103,9 +103,7 @@ bool physx::Gu::pcmContactCapsuleMesh(GU_CONTACT_METHOD_ARGS)
 
 		// Capsule data
 		const PxVec3 tmp = getCapsuleHalfHeightVector(transform0, shapeCapsule);
-		Segment worldCapsule;
-		worldCapsule.p0 = transform0.p + tmp;
-		worldCapsule.p1 = transform0.p - tmp;
+		const Segment worldCapsule(transform0.p + tmp, transform0.p - tmp);
 
 		const Segment meshCapsule(	// Capsule in mesh space
 			transform1.transformInv(worldCapsule.p0),
@@ -181,12 +179,14 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const aos::Vec3VArg p, co
 	const FloatV signP = FSub(np, d);
 	const FloatV signQ = FSub(nq, d);
 	const FloatV temp = FMul(signP, signQ);
-	if(FAllGrtr(temp, zero)) return;//If both points in the same side as the plane, no intersect points
+	if(FAllGrtr(temp, zero))
+		return;//If both points in the same side as the plane, no intersect points
 	
 	// if colliding edge (p3,p4) and plane are parallel return no collision
 	const Vec3V pq = V3Sub(q, p);
 	const FloatV npq= V3Dot(n, pq); 
-	if(FAllEq(npq, zero))	return;
+	if(FAllEq(npq, zero))
+		return;
 
 	const FloatV one = FOne();
 	//calculate the intersect point in the segment pq
@@ -205,7 +205,7 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const aos::Vec3VArg p, co
 	if(BAllEqFFFF(con))
 		return;
 
-	//const Vec3V localPointB = V3ScaleAdd(ab, tValue, a); v = V3Sub(localPointA, localPointB); v =  V3NegScaleSub(ab, tValue, tap)
+	//const Vec3V localPointB = V3ScaleAdd(ab, tValue, a); v = V3Sub(localPointA, localPointB); v = V3NegScaleSub(ab, tValue, tap)
 	const Vec3V v = V3NegScaleSub(ab, tValue, ap);
 	const FloatV sqDist = V3Dot(v, v);
 	
@@ -220,8 +220,6 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const aos::Vec3VArg p, co
 		manifoldContacts[numContacts++].mFaceIndex = triangleIndex;
 	}
 }
-
-
 
 void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,
 															   const aos::Vec3VArg c, const aos::Vec3VArg normal,
@@ -238,9 +236,9 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContacts(const aos::Vec3VA
 		generateEE(p, q, sqInflatedRadius, normal, triangleIndex, a, c, manifoldContacts, numContacts);
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
-																const aos::Vec3VArg normal, const PxU32 triangleIndex, const aos::Vec3VArg a, const aos::Vec3VArg b,
-																Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(	const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
+															const aos::Vec3VArg normal, const PxU32 triangleIndex, const aos::Vec3VArg a, const aos::Vec3VArg b,
+															Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
 	const FloatV zero = FZero();
 	const Vec3V ab = V3Sub(b, a);
@@ -251,12 +249,14 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(const aos::Vec3VArg p,
 	const FloatV signP = FSub(np, d);
 	const FloatV signQ = FSub(nq, d);
 	const FloatV temp = FMul(signP, signQ);
-	if(FAllGrtr(temp, zero)) return;//If both points in the same side as the plane, no intersect points
+	if(FAllGrtr(temp, zero))
+		return;//If both points in the same side as the plane, no intersect points
 	
 	// if colliding edge (p3,p4) and plane are parallel return no collision
 	const Vec3V pq = V3Sub(q, p);
 	const FloatV npq= V3Dot(n, pq); 
-	if(FAllEq(npq, zero))	return;
+	if(FAllEq(npq, zero))
+		return;
 
 	//calculate the intersect point in the segment pq
 	const FloatV segTValue = FDiv(FSub(d, np), npq);
@@ -283,12 +283,11 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(const aos::Vec3VArg p,
 	}
 }
 
-
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContactsMTD(const aos::Vec3VArg a, const aos::Vec3VArg b,
-															   const aos::Vec3VArg c, const aos::Vec3VArg normal,
-															   const PxU32 triangleIndex, const aos::Vec3VArg p, 
-															   const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
-															   Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContactsMTD(	const aos::Vec3VArg a, const aos::Vec3VArg b,
+																	const aos::Vec3VArg c, const aos::Vec3VArg normal,
+																	const PxU32 triangleIndex, const aos::Vec3VArg p, 
+																	const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
+																	Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {	
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, a, b, manifoldContacts, numContacts);
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, b, c, manifoldContacts, numContacts);
@@ -311,13 +310,17 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateContacts(const aos::Vec3VArg
 	const FloatV d00 = V3Dot(ab, ab);
 	const FloatV d01 = V3Dot(ab, ac);
 	const FloatV d11 = V3Dot(ac, ac);
-	const FloatV bdenom = FRecip(FSub(FMul(d00,d11), FMul(d01, d01)));
+
+	const FloatV zero = FZero();
+	const FloatV largeValue = FLoad(1e+20f);
+	const FloatV tDenom = FSub(FMul(d00, d11), FMul(d01, d01));
+	const FloatV bdenom = FSel(FIsGrtr(tDenom, zero), FRecip(tDenom), largeValue);
 
 	//compute the intersect point of p and triangle plane abc
 	const FloatV inomp = V3Dot(planeNormal, V3Neg(ap));
 	const FloatV ideom = V3Dot(planeNormal, normal);
 
-	const FloatV ipt = FSel(FIsGrtr(ideom, FZero()), FNeg(FDiv(inomp, ideom)), FLoad(1e+20f));
+	const FloatV ipt = FSel(FIsGrtr(ideom, zero), FNeg(FDiv(inomp, ideom)), largeValue);
 
 	const Vec3V closestP31 = V3NegScaleSub(normal, ipt, p);
 	const Vec3V closestP30 = p;
@@ -465,11 +468,9 @@ static PX_FORCE_INLINE aos::Vec4V pcmDistanceSegmentSegmentSquared4(const aos::V
 	return vd;
 }
 
-/*
-	t is the barycenteric coordinate of a segment
-	u is the barycenteric coordinate of a triangle
-	v is the barycenteric coordinate of a triangle
-*/
+//	t is the barycenteric coordinate of a segment
+//	u is the barycenteric coordinate of a triangle
+//	v is the barycenteric coordinate of a triangle
 static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos::Vec3VArg q,
 														const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
 														aos::FloatV& t, aos::FloatV& u, aos::FloatV& v)
@@ -484,7 +485,7 @@ static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, con
 	const Vec3V ap = V3Sub(p, a);
 	const Vec3V aq = V3Sub(q, a);
 
-	const Vec3V n =V3Normalize(V3Cross(ab, ac)); // normalize vector
+	const Vec3V n = V3Normalize(V3Cross(ab, ac)); // normalize vector
 
 	const Vec4V combinedDot = V3Dot4(ab, ab, ab, ac, ac, ac, ap, n);
 	const FloatV d00 = V4GetX(combinedDot);
@@ -492,8 +493,10 @@ static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, con
 	const FloatV d11 = V4GetZ(combinedDot);
 	const FloatV dist3 = V4GetW(combinedDot);
 
-	const FloatV bdenom = FRecip(FSub(FMul(d00,d11), FMul(d01, d01)));
-	
+	// PT: the new version is copied from Gu::distanceSegmentTriangleSquared
+	const FloatV tDenom = FSub(FMul(d00, d11), FMul(d01, d01));
+	const FloatV bdenom = FSel(FIsGrtr(tDenom, zero), FRecip(tDenom), zero);
+
 	const FloatV sqDist3 = FMul(dist3, dist3);
 
 	//compute the closest point of q and triangle plane abc
@@ -555,9 +558,7 @@ static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, con
 
 	if(BAllEqTTTT(cond2))
 	{
-		/*
-			both p and q project points are interior point 
-		*/
+		//	both p and q project points are interior point 
 		const BoolV d2 = FIsGrtr(sqDist4, sqDist3);
 		t = FSel(d2, zero, one);
 		u = FSel(d2, v0, v1);
@@ -693,7 +694,6 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 
 bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const PxVec3* verts, const PxU32 triangleIndex, PxU8 triFlags, const PxU32* vertInds)
 {
-	PX_UNUSED(triangleIndex);
 	PX_UNUSED(vertInds);
 
 	const FloatV zero = FZero();
@@ -840,4 +840,13 @@ bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const TriangleV& tri
 		generateEEContactsMTD(p0, p1, p2, patchNormalInTriangle, triangleIndex, capsule.p0, capsule.p1, inflatedRadius, manifoldContacts, numContacts);
 	}
 	return true;
+}
+
+
+// PT: below is just for internal testing
+PX_PHYSX_COMMON_API aos::FloatV pcmDistanceSegmentTriangleSquaredExported(	const aos::Vec3VArg p, const aos::Vec3VArg q,
+																			const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
+																			aos::FloatV& t, aos::FloatV& u, aos::FloatV& v)
+{
+	return pcmDistanceSegmentTriangleSquared(p, q, a, b, c, t, u, v);
 }

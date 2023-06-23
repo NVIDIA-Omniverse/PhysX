@@ -164,7 +164,7 @@ struct PointConvexV : ConvexV
 	Vec3V zero;
 	PointConvexV() : ConvexV(Gu::ConvexType::eCUSTOM)
 	{
-		zero = V3LoadU(PxVec3(0));
+		zero = V3Zero();
 		setMinMargin(FLoad(0.001f));
 		setSweepMargin(FLoad(0.001f));
 	}

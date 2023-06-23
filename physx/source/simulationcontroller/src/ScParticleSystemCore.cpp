@@ -148,15 +148,6 @@ void Sc::ParticleSystemCore::setParticleSystemCallback(PxParticleSystemCallback*
 	mShapeCore.getLLCore().mCallback = callback;
 }
 
-PxCustomParticleSystemSolverCallback* Sc::ParticleSystemCore::getParticleSystemSolverCallback() const
-{
-	return mShapeCore.getLLCore().mSolverCallback;
-}
-void Sc::ParticleSystemCore::setParticleSystemSolverCallback(PxCustomParticleSystemSolverCallback* callback)
-{
-	mShapeCore.getLLCore().mSolverCallback = callback;
-}
-
 PxReal Sc::ParticleSystemCore::getFluidBoundaryDensityScale() const
 {
 	return mShapeCore.getLLCore().fluidBoundaryDensityScale;

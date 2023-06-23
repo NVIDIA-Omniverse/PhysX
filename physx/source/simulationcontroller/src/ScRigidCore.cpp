@@ -37,10 +37,9 @@ using namespace Sc;
 
 static ShapeSim& getSimForShape(const ShapeCore& core, const ActorSim& actorSim)
 {
-	if(core.getSim())
+	if(core.getExclusiveSim())
 	{
-		//Exclusive shape.
-		return *core.getSim();
+		return *core.getExclusiveSim();
 	}
 
 	//Must be a shared shape.
@@ -58,8 +57,7 @@ static ShapeSim& getSimForShape(const ShapeCore& core, const ActorSim& actorSim)
 	return *reinterpret_cast<ShapeSim*>(1);
 }
 
-RigidCore::RigidCore(const PxActorType::Enum type) 
-: ActorCore(type, PxActorFlag::eVISUALIZATION, PX_DEFAULT_CLIENT, 0)
+RigidCore::RigidCore(const PxActorType::Enum type) : ActorCore(type, PxActorFlag::eVISUALIZATION, PX_DEFAULT_CLIENT, 0)
 {
 }
 

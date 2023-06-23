@@ -60,6 +60,7 @@ namespace Ext
 										GearJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 		// PxGearJoint
 		virtual	bool					setHinges(const PxBase* hinge0, const PxBase* hinge1)	PX_OVERRIDE;
+		virtual	void					getHinges(const PxBase*& hinge0, const PxBase*& hinge1)	const	PX_OVERRIDE;
 		virtual	void					setGearRatio(float ratio)	PX_OVERRIDE;
 		virtual	float					getGearRatio()	const	PX_OVERRIDE;
 		//~PxGearJoint

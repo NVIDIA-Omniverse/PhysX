@@ -36,6 +36,7 @@
 #include "ScInteractionFlags.h"
 #include "ScActorCore.h"
 #include "PxsSimpleIslandManager.h"
+#include "PxFiltering.h"
 
 namespace physx
 {
@@ -48,10 +49,27 @@ namespace Sc
 #define SC_NOT_IN_SCENE_INDEX		0xffffffff  // the body is not in the scene yet
 #define SC_NOT_IN_ACTIVE_LIST_INDEX	0xfffffffe  // the body is in the scene but not in the active list
 
+	struct PxFilterObjectFlagEx : PxFilterObjectFlag
+	{
+		enum Enum
+		{
+			eRIGID_STATIC		= eNEXT_FREE,
+			eRIGID_DYNAMIC		= eNEXT_FREE<<1,
+			eNON_RIGID			= eNEXT_FREE<<2,
+			eSOFTBODY			= eNEXT_FREE<<3,
+			eFEMCLOTH			= eNEXT_FREE<<4,
+			ePARTICLESYSTEM		= eNEXT_FREE<<5,
+			eHAIRSYSTEM			= eNEXT_FREE<<6,
+
+			eLAST				= eHAIRSYSTEM
+		};
+	};
+
 	static const PxReal ScInternalWakeCounterResetValue = 20.0f*0.02f;
 
 	class Interaction;
 	class ElementSim;
+	class Scene;
 
 	class ShapeManager : public PxUserAllocated
 	{
@@ -78,7 +96,6 @@ namespace Sc
 		Cm::PtrTable	mShapes;
 	};
 
-
 	class ActorSim : public ShapeManager
 	{
 		friend class Scene;  // the scene is allowed to set the scene array index
@@ -86,11 +103,6 @@ namespace Sc
 		PX_NOCOPY(ActorSim)
 
 	public:
-		enum ActivityChangeInfoFlag
-		{
-			AS_PART_OF_CREATION				= (1 << 0),
-			AS_PART_OF_ISLAND_GEN			= (1 << 1)
-		};
 
 		enum InternalFlags
 		{
@@ -110,7 +122,7 @@ namespace Sc
 			BF_KINEMATIC_SETTLING			= 1 << 9,	// Set when the body was moved kinematically last frame
 			BF_KINEMATIC_SETTLING_2			= 1 << 10,
 			BF_KINEMATIC_MOVE_FLAGS			= BF_KINEMATIC_MOVED | BF_KINEMATIC_SETTLING | BF_KINEMATIC_SETTLING_2, //Used to clear kinematic masks in 1 call
-			BF_KINEMATIC_SURFACE_VELOCITY	= 1 << 11, //Set when the application calls setKinematicVelocity. Actor remains awake until application calls clearKinematicVelocity. 
+			BF_KINEMATIC_SURFACE_VELOCITY	= 1 << 11,	//Set when the application calls setKinematicVelocity. Actor remains awake until application calls clearKinematicVelocity. 
 			BF_IS_COMPOUND_RIGID			= 1 << 12,	// Set when the body is a compound actor, we dont want to set the sq bounds
 
 											// PT: WARNING: flags stored on 16-bits now.
@@ -132,13 +144,13 @@ namespace Sc
 		PX_FORCE_INLINE	PxActorType::Enum	getActorType()				const	{ return mCore.getActorCoreType();	}
 
 		// Returns true if the actor is a dynamic rigid body (including articulation links)
-		PX_FORCE_INLINE	bool				isDynamicRigid()			const	{ const PxActorType::Enum type = getActorType(); return type == PxActorType::eRIGID_DYNAMIC || type == PxActorType::eARTICULATION_LINK; }
-		PX_FORCE_INLINE	bool				isSoftBody()				const	{ const PxActorType::Enum type = getActorType(); return type == PxActorType::eSOFTBODY; }
-		PX_FORCE_INLINE	bool				isFEMCloth()				const   { const PxActorType::Enum type = getActorType(); return type == PxActorType::eFEMCLOTH; }
-		PX_FORCE_INLINE bool				isParticleSystem()			const	{ const PxActorType::Enum type = getActorType(); return type == PxActorType::ePBD_PARTICLESYSTEM || type == PxActorType::eFLIP_PARTICLESYSTEM || type == PxActorType::eMPM_PARTICLESYSTEM || type == PxActorType::eCUSTOM_PARTICLESYSTEM; }
-		PX_FORCE_INLINE	bool				isHairSystem()				const	{ const PxActorType::Enum type = getActorType(); return type == PxActorType::eHAIRSYSTEM; }
-		PX_FORCE_INLINE bool				isNonRigid()				const	{ const PxActorType::Enum type = getActorType(); return type!=PxActorType::eRIGID_STATIC && type!=PxActorType::eRIGID_DYNAMIC && type!=PxActorType::eARTICULATION_LINK; }
-		PX_FORCE_INLINE	bool				isStaticRigid()				const   { const PxActorType::Enum type = getActorType(); return type == PxActorType::eRIGID_STATIC; }
+		PX_FORCE_INLINE	PxU16				isDynamicRigid()			const	{ return mFilterFlags & PxFilterObjectFlagEx::eRIGID_DYNAMIC;	}
+		PX_FORCE_INLINE	PxU16				isSoftBody()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eSOFTBODY;		}
+		PX_FORCE_INLINE	PxU16				isFEMCloth()				const   { return mFilterFlags & PxFilterObjectFlagEx::eFEMCLOTH;		}
+		PX_FORCE_INLINE PxU16				isParticleSystem()			const	{ return mFilterFlags & PxFilterObjectFlagEx::ePARTICLESYSTEM;	}
+		PX_FORCE_INLINE	PxU16				isHairSystem()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eHAIRSYSTEM;		}
+		PX_FORCE_INLINE PxU16				isNonRigid()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eNON_RIGID;		}
+		PX_FORCE_INLINE	PxU16				isStaticRigid()				const   { return mFilterFlags & PxFilterObjectFlagEx::eRIGID_STATIC;	}
 
 		virtual			void				postActorFlagChange(PxU32, PxU32) {}
 
@@ -147,7 +159,6 @@ namespace Sc
 		PX_FORCE_INLINE	ActorCore&			getActorCore()							const	{ return mCore;							}
 
 		PX_FORCE_INLINE	bool				isActive()								const	{ return (mActiveListIndex < SC_NOT_IN_ACTIVE_LIST_INDEX);	}
-		void								setActive(bool active, PxU32 infoFlag = 0);  // see ActivityChangeInfoFlag
 
 		PX_FORCE_INLINE PxU32				getActiveListIndex()					const	{ return mActiveListIndex;				}  // if the body is active, the index is smaller than SC_NOT_IN_ACTIVE_LIST_INDEX
 		PX_FORCE_INLINE void				setActiveListIndex(PxU32 index)					{ mActiveListIndex = index;				}
@@ -164,6 +175,8 @@ namespace Sc
 		PX_FORCE_INLINE void				raiseInternalFlag(InternalFlags flag)			{ mInternalFlags |= flag;				}
 		PX_FORCE_INLINE void				clearInternalFlag(InternalFlags flag)			{ mInternalFlags &= ~flag;				}
 
+		PX_FORCE_INLINE	PxFilterObjectAttributes	getFilterAttributes()			const	{ return PxFilterObjectAttributes(mFilterFlags);	}
+
 		virtual			PxActor*			getPxActor() const = 0;
 
 		//This can all be removed and functionality can be subsumed by the island system, removing the need for this 
@@ -172,15 +185,12 @@ namespace Sc
 		virtual			void				unregisterCountedInteraction() {}
 		virtual			PxU32				getNumCountedInteractions()	const { return 0;  }
 
-		virtual			void				activate() {}
-		virtual			void				deactivate() {}
 		virtual			void				internalWakeUp(PxReal wakeCounterValue = ScInternalWakeCounterResetValue) { PX_UNUSED(wakeCounterValue); }
 
 	private:
 		//These are called from interaction creation/destruction
 						void				registerInteractionInActor(Interaction* interaction);
 						void				unregisterInteractionFromActor(Interaction* interaction);
-
 						void				reallocInteractions(Sc::Interaction**& mem, PxU32& capacity, PxU32 size, PxU32 requiredMinCapacity);
 	protected:
 		// dsequeira: interaction arrays are a major cause of small allocations, so we don't want to delegate them to the heap allocator
@@ -193,23 +203,19 @@ namespace Sc
 											mInteractions;
 
 						Scene&				mScene;
-
 						ActorCore&			mCore;
-
-						//---------------------------------------------------------------------------------
-						// Sleeping
-						//---------------------------------------------------------------------------------
-						PxU32				mActiveListIndex;	// Used by Scene to track active bodies
+		// Sleeping
+						PxU32				mActiveListIndex;			// Used by Scene to track active bodies
 						PxU32				mActiveCompoundListIndex;	// Used by Scene to track active compound bodies
 
-						//---------------------------------------------------------------------------------
-						// Island manager
-						//---------------------------------------------------------------------------------
+		// Island manager
 						PxNodeIndex			mNodeIndex;
 
-						PxU32				mId;
+						PxU32				mId;	// PT: ID provided by Sc::Scene::mActorIDTracker
 
 						PxU16				mInternalFlags;
+						PxU16				mFilterFlags;	// PT: PxFilterObjectAttributes. Capturing the type information in local flags here is redundant
+															// but avoids reading the Core memory from the Sim object, and is also faster to test multiple types at once.
 	};
 
 } // namespace Sc

@@ -47,8 +47,6 @@ AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PxFl
 	mRemovedHandles			(allocator),
 	mBroadPhase				(bp),
 	mBoundsArray			(boundsArray),
-	mOutOfBoundsObjects		("AABBManager::mOutOfBoundsObjects"),
-	mOutOfBoundsAggregates	("AABBManager::mOutOfBoundsAggregates"),
 	mUsedSize				(0),
 	mNbAggregates			(0),
 #ifdef BP_USE_AGGREGATE_GROUP_TAIL

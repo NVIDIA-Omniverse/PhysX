@@ -186,15 +186,11 @@ public:
 	/**
 	\brief Retrieves max amount of actors that can be contained in the aggregate.
 
-	\note PxAggregate now supports an arbitrary number of actors. This method return PX_MAX_U32 and will be
-	removed in a future release.
-
 	\return Max actor size. 
 
 	@see PxPhysics::createAggregate()
-	@deprecated
 	*/
-	PX_DEPRECATED virtual	PxU32	getMaxNbActors() const = 0;
+	virtual	PxU32	getMaxNbActors() const = 0;
 
 	/**
 	\brief Retrieves max amount of shapes that can be contained in the aggregate.

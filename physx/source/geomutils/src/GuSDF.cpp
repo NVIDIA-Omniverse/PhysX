@@ -36,7 +36,6 @@
 #include "GuAABBTreeNode.h"
 #include "GuDistancePointBox.h"
 #include "GuDistancePointTriangle.h"
-#include "GuDistancePointTriangleSIMD.h"
 #include "GuAABBTreeQuery.h"
 #include "GuIntersectionRayTriangle.h"
 #include "GuIntersectionRayBox.h"
@@ -44,6 +43,7 @@
 #include "foundation/PxAtomic.h"
 #include "foundation/PxThread.h"
 #include "common/GuMeshAnalysis.h"
+#include "GuMeshAnalysis.h"
 
 namespace physx
 {
@@ -203,9 +203,22 @@ namespace Gu
 		PxI32 mClosestTriId;
 
 	public:
-		PX_FORCE_INLINE ClosestDistanceToTrimeshTraversalController(const PxU32* triangles, const PxVec3* points, Gu::BVHNode* nodes, const PxVec3& queryPoint) :
-			mTriangles(triangles), mPoints(points), mNodes(nodes), mQueryPoint(queryPoint), mClosestPoint(0.0f), mClosestTriId(-1)
+		PX_FORCE_INLINE ClosestDistanceToTrimeshTraversalController(){}
+
+		PX_FORCE_INLINE ClosestDistanceToTrimeshTraversalController(const PxU32* triangles, const PxVec3* points, Gu::BVHNode* nodes) :
+			mTriangles(triangles), mPoints(points), mNodes(nodes), mQueryPoint(0.0f), mClosestPoint(0.0f), mClosestTriId(-1)
 		{
+			initialize(triangles, points, nodes);
+		}
+
+		void initialize(const PxU32* triangles, const PxVec3* points, Gu::BVHNode* nodes)
+		{
+			mTriangles = triangles;
+			mPoints = points;
+			mNodes = nodes;
+			mQueryPoint = PxVec3(0.0f);
+			mClosestPoint = PxVec3(0.0f);
+			mClosestTriId = -1;
 			mClosestDistanceSquared = PX_MAX_F32;
 		}
 
@@ -217,7 +230,7 @@ namespace Gu
 			mClosestTriId = -1;
 		}
 
-		PX_FORCE_INLINE const PxVec3& closestPoint() const
+		PX_FORCE_INLINE const PxVec3& getClosestPoint() const
 		{
 			return mClosestPoint;
 		}
@@ -294,6 +307,46 @@ namespace Gu
 	private:
 		PX_NOCOPY(ClosestDistanceToTrimeshTraversalController)
 	};
+
+	class PointOntoTriangleMeshProjector : public PxPointOntoTriangleMeshProjector, public PxUserAllocated
+	{
+		PxArray<Gu::BVHNode> mNodes;
+		ClosestDistanceToTrimeshTraversalController mEvaluator;
+	public:
+		PointOntoTriangleMeshProjector(const PxVec3* vertices, const PxU32* indices, PxU32 numTriangles)
+		{
+			buildTree(indices, numTriangles, vertices, mNodes);
+			mEvaluator.initialize(indices, vertices, mNodes.begin());
+		}
+
+		virtual PxVec3 projectPoint(const PxVec3& point) PX_OVERRIDE
+		{
+			mEvaluator.setQueryPoint(point);
+			Gu::traverseBVH(mNodes.begin(), mEvaluator);
+			PxVec3 closestPoint = mEvaluator.getClosestPoint();
+			return closestPoint;
+		}
+
+		virtual PxVec3 projectPoint(const PxVec3& point, PxU32& closetTriangleIndex) PX_OVERRIDE
+		{
+			mEvaluator.setQueryPoint(point);
+			Gu::traverseBVH(mNodes.begin(), mEvaluator);
+			PxVec3 closestPoint = mEvaluator.getClosestPoint();
+			closetTriangleIndex = mEvaluator.getClosestTriId();
+			return closestPoint;
+		}
+
+		virtual void release() PX_OVERRIDE
+		{
+			mNodes.reset();
+			PX_FREE_THIS;
+		}
+	};
+
+	PxPointOntoTriangleMeshProjector* PxCreatePointOntoTriangleMeshProjector(const PxVec3* vertices, const PxU32* indices, PxU32 numTriangleIndices)
+	{
+		return PX_NEW(PointOntoTriangleMeshProjector)(vertices, indices, numTriangleIndices);
+	}
 
 	void windingNumbers(const PxVec3* vertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth, 
 		PxReal* windingNumbers, PxVec3 min, PxVec3 max, PxVec3* sampleLocations)
@@ -611,11 +664,11 @@ namespace Gu
 				{
 					for (PxU32 x = 0; x < d.width; ++x)
 					{
-						const PxI32 index = z * d.width * d.height + y * d.width + x;
+						const PxU32 index = z * d.width * d.height + y * d.width + x;
 
 						PxVec3 queryPoint = d.pointSampler->getPoint(x, y, z);
 
-						ClosestDistanceToTrimeshTraversalController cd(d.indices, d.vertices, d.tree->begin(), PxVec3(0.0f));
+						ClosestDistanceToTrimeshTraversalController cd(d.indices, d.vertices, d.tree->begin());
 						cd.setQueryPoint(queryPoint);
 
 						if (lastTriangle != -1)
@@ -635,7 +688,7 @@ namespace Gu
 						}
 
 						Gu::traverseBVH(d.tree->begin(), cd);
-						PxVec3 closestPoint = cd.closestPoint();
+						PxVec3 closestPoint = cd.getClosestPoint();
 						PxReal closestDistance = (closestPoint - queryPoint).magnitude();
 
 						lastTriangle = cd.getClosestTriId();
@@ -965,12 +1018,180 @@ namespace Gu
 		if (!isWatertight)
 			fixSdfForNonClosedGeometry(width, height, depth, sdf, sampler.getActiveCellSize());
 	}
+	//Helper class to extract surface triangles from a tetmesh
+	struct SortedTriangle
+	{
+	public:
+		PxI32 mA;
+		PxI32 mB;
+		PxI32 mC;
+		bool mFlipped;
+		PX_FORCE_INLINE SortedTriangle(PxI32 a, PxI32 b, PxI32 c)
+		{
+			mA = a; mB = b; mC = c; mFlipped = false;
+			if (mA > mB) { PxSwap(mA, mB); mFlipped = !mFlipped; }
+			if (mB > mC) { PxSwap(mB, mC); mFlipped = !mFlipped; }
+			if (mA > mB) { PxSwap(mA, mB); mFlipped = !mFlipped; }
+		}
+	};
+	struct TriangleHash
+	{
+		PX_FORCE_INLINE std::size_t operator()(const SortedTriangle& k) const
+		{
+			return k.mA ^ k.mB ^ k.mC;
+		}
+		PX_FORCE_INLINE bool equal(const SortedTriangle& first, const SortedTriangle& second) const
+		{
+			return first.mA == second.mA && first.mB == second.mB && first.mC == second.mC;
+		}
+	};
+	PxReal signedVolume(const PxVec3* points, const PxU32* triangles, PxU32 numTriangles, const PxU32* triangleSubset = NULL, PxU32 setLength = 0)
+	{
+		PxReal signedVolume = 0;
+		const PxU32 l = triangleSubset ? setLength : numTriangles;
+		for (PxU32 j = 0; j < l; ++j)
+		{
+			const PxU32 i = triangleSubset ? triangleSubset[j] : j;
+			const PxU32* tri = &triangles[3 * i];
+			PxVec3 a = points[tri[0]];
+			PxVec3 b = points[tri[1]];
+			PxVec3 c = points[tri[2]];
 
+			PxReal y = a.dot(b.cross(c));
+			signedVolume += y;
+		}
+		signedVolume *= (1.0f / 6.0f);
+		return signedVolume;
+	}
 
+	void analyzeAndFixMesh(const PxVec3* vertices, const PxU32* indicesOrig, PxU32 numTriangleIndices, PxArray<PxU32>& repairedIndices)
+	{
+		const PxU32* indices = indicesOrig;
+		PxI32 numVertices = -1;
+		for (PxU32 i = 0; i < numTriangleIndices; ++i)
+			numVertices = PxMax(numVertices, PxI32(indices[i]));
+		++numVertices;
+		//Check for duplicate vertices
+		PxArray<PxI32> map;
+		MeshAnalyzer::mapDuplicatePoints<PxVec3, PxReal>(vertices, PxU32(numVertices), map, 0.0f);
+		bool hasDuplicateVertices = false;
+		for (PxU32 i = 0; i < map.size(); ++i)
+		{
+			if (map[i] != PxI32(i))
+			{
+				hasDuplicateVertices = true;
+				break;
+			}
+		}
+		if (hasDuplicateVertices)
+		{
+			repairedIndices.resize(numTriangleIndices);
+			for (PxU32 i = 0; i < numTriangleIndices; ++i)
+				repairedIndices[i] = map[indices[i]];
+			indices = repairedIndices.begin();
+		}
+		//Check for duplicate triangles
+		PxHashMap<SortedTriangle, PxI32, TriangleHash> tris;
+		bool hasDuplicateTriangles = false;
+		for (PxU32 i = 0; i < numTriangleIndices; i += 3)
+		{
+			SortedTriangle tri(indices[i], indices[i + 1], indices[i + 2]);
+			if (const PxPair<const SortedTriangle, PxI32>* ptr = tris.find(tri))
+			{
+				tris[tri] = ptr->second + 1;
+				hasDuplicateTriangles = true;
+			}
+			else
+				tris.insert(tri, 1);
+		}
+		if (hasDuplicateTriangles)
+		{
+			repairedIndices.clear();
+			for (PxHashMap<SortedTriangle, PxI32, TriangleHash>::Iterator iter = tris.getIterator(); !iter.done(); ++iter)
+			{
+				repairedIndices.pushBack(iter->first.mA);
+				if (iter->first.mFlipped)
+				{
+					repairedIndices.pushBack(iter->first.mC);
+					repairedIndices.pushBack(iter->first.mB);
+				}
+				else
+				{
+					repairedIndices.pushBack(iter->first.mB);
+					repairedIndices.pushBack(iter->first.mC);
+				}
+			}
+		}
+		else
+		{
+			if (!hasDuplicateVertices) //reqairedIndices is already initialized if hasDuplicateVertices is true
+			{
+				repairedIndices.resize(numTriangleIndices);
+				for (PxU32 i = 0; i < numTriangleIndices; ++i)
+					repairedIndices[i] = indices[i];
+			}
+		}
+		PxHashMap<PxU64, PxI32> edges;
+		PxArray<bool> flipTriangle;
+		PxArray<PxArray<PxU32>> connectedTriangleGroups;
+		Triangle* triangles = reinterpret_cast<Triangle*>(repairedIndices.begin());
+		bool success = MeshAnalyzer::buildConsistentTriangleOrientationMap(triangles, repairedIndices.size() / 3, flipTriangle, edges, connectedTriangleGroups);
+		bool meshIsWatertight = true;
+		for (PxHashMap<PxU64, PxI32>::Iterator iter = edges.getIterator(); !iter.done(); ++iter)
+		{
+			if (iter->second != -1)
+			{
+				meshIsWatertight = false;
+				break;
+			}
+		}
+		if (success)
+		{
+			if (hasDuplicateTriangles && meshIsWatertight && connectedTriangleGroups.size() == 1)
+			{
+				for (PxU32 i = 0; i < flipTriangle.size(); ++i)
+				{
+					Triangle& t = triangles[i];
+					if (flipTriangle[i])
+						PxSwap(t[0], t[1]);
+				}
 
-	void SDFUsingWindingNumbers(const PxVec3* vertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
+				if (signedVolume(vertices, repairedIndices.begin(), repairedIndices.size() / 3) < 0.0f)
+				{
+					PxU32 numTriangles = repairedIndices.size() / 3;
+					for (PxU32 j = 0; j < numTriangles; ++j)
+					{
+						PxU32* tri = &repairedIndices[j * 3];
+						PxSwap(tri[1], tri[2]);
+					}
+				}
+			}
+		}
+		else
+		{
+			//Here it is not possible to guarantee that the mesh fixing can succeed
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "SDF creation: Fixing of the input mesh topology not possible. The computed SDF might not work as expected. Please try to improve the mesh structure by e. g. applying remeshing.");
+			//connectedTriangleGroups won't have any elements, so return
+			return;
+		}
+
+		if (!meshIsWatertight)
+		{
+			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "SDF creation: Input mesh is not watertight. The SDF will try to close the holes to its best knowledge.");
+		}
+	}
+
+	void SDFUsingWindingNumbers(const PxVec3* vertices, const PxU32* indicesOrig, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		PxReal* sdf, PxVec3 minExtents, PxVec3 maxExtents, PxVec3* sampleLocations, bool cellCenteredSamples, PxU32 numThreads)
 	{
+		PxArray<PxU32> repairedIndices;
+		//Analyze the mesh to catch and fix some special cases
+		//There are meshes where every triangle is present once with cw and once with ccw orientation. Try to filter out only one set
+		analyzeAndFixMesh(vertices, indicesOrig, numTriangleIndices, repairedIndices);
+		const PxU32* indices = repairedIndices.size() > 0 ? repairedIndices.begin() : indicesOrig;
+		if (repairedIndices.size() > 0)
+			numTriangleIndices = repairedIndices.size();
+
 		PxArray<Gu::BVHNode> tree;
 		buildTree(indices, numTriangleIndices / 3, vertices, tree);
 
@@ -1090,6 +1311,7 @@ namespace Gu
 								numSubgridsX * (cellsPerSubgrid + 1), numSubgridsY * (cellsPerSubgrid + 1));
 							PX_ASSERT(subgrids3DTexFormat[index] == placeholder);
 							subgrids3DTexFormat[index] = sdfValue;
+							PX_ASSERT(PxIsFinite(sdfValue));
 						}
 					}
 				}

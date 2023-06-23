@@ -34,8 +34,8 @@
 #include "foundation/PxPinnedArray.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "PxSceneDesc.h"
-#include "PxBuffer.h"
 #include "cudamanager/PxCudaContextManager.h"
+#include "PxSparseGridParams.h"
 
 namespace physx
 {
@@ -56,6 +56,15 @@ class PxParticleBuffer;
 class PxParticleAndDiffuseBuffer;
 class PxParticleClothBuffer;
 class PxParticleRigidBuffer;
+
+class PxIsosurfaceExtractor;
+class PxSparseGridIsosurfaceExtractor;
+struct PxIsosurfaceParams;
+
+class PxAnisotropyGenerator;
+class PxSmoothedPositionGenerator;
+class PxParticleNeighborhoodProvider;
+class PxPhysicsGpu;
 
 struct PxvSimStats;
 
@@ -100,25 +109,11 @@ public:
 	*/
 	virtual		void					release() = 0;
 
-	/**
-	Create GPU user buffers.
-	*/
-	virtual PxBuffer* createBuffer(PxU64 byteSize, PxBufferType::Enum bufferType, PxCudaContextManager* cudaContexManager, PxU64* memStat) = 0;
-	virtual	PxBuffer* createBuffer(PxU64 byteSyte, PxBufferType::Enum type, PxCudaContextManager* contextManager, PxU64* memStat, PxsHeapMemoryAllocatorManager* heapMemoryManager, void* stream) = 0;
-
 	virtual PxParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
 	virtual PxParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
 	virtual PxParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
 	virtual PxParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
 	
-	virtual void resizeBuffer(PxBuffer* buffer, PxU64 byteSize) = 0;
-
-	/**
-	Queue user buffer copy command.
-	*/
-	virtual void addCopyCommand(PxBuffer& dst, PxBuffer& src, bool flush) = 0;
-	virtual void addCopyCommand(PxBuffer& dst, PxBuffer& src, PxU32 srcOffset, PxU32 dstOffset, PxU32 size, bool flush) = 0;
-
 	/**
 	Create GPU memory manager.
 	*/
@@ -129,13 +124,12 @@ public:
 		PxsMemoryManager* memoryManager,
 		const PxU32 gpuComputeVersion) = 0;
 
-	/**
-	Create GPU kernel wrangler manager.
+	/** 
+	Create GPU kernel wrangler manager. If a kernel wrangler manager already exists, then that one will be returned.
+	The kernel wrangler manager should not be deleted. It will automatically be deleted when the PxPhysXGpu singleton gets released.
 	*/
-	virtual PxsKernelWranglerManager* createGpuKernelWranglerManager(
-		PxCudaContextManager* cudaContextManager, 
-		PxErrorCallback& errorCallback, 
-		const PxU32 gpuComputeVersion) = 0;
+	virtual PxsKernelWranglerManager* getGpuKernelWranglerManager(
+		PxCudaContextManager* cudaContextManager) = 0;
 
 	/**
 	Create GPU broadphase.
@@ -195,8 +189,7 @@ public:
 		const PxgDynamicsMemoryConfig& config, IG::SimpleIslandManager* islandManager, const PxU32 maxNumPartitions, const PxU32 maxNumStaticPartitions,
 		const bool enableStabilization, const bool useEnhancedDeterminism, const PxReal maxBiasCoefficient,
 		const PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		const bool frictionEveryIteration, PxSolverType::Enum solverType, const PxReal lengthScale) = 0;
-
+		const bool frictionEveryIteration, PxSolverType::Enum solverType, const PxReal lengthScale, bool enableDirectGPUAPI) = 0;
 };
 
 }
@@ -229,6 +222,8 @@ PX_C_EXPORT PX_PHYSX_GPU_API physx::PxKernelIndex* PX_CALL_CONV PxGpuGetCudaFunc
 PX_C_EXPORT PX_PHYSX_GPU_API physx::PxU32 PX_CALL_CONV PxGpuGetCudaFunctionTableSize();
 PX_C_EXPORT PX_PHYSX_GPU_API void** PX_CALL_CONV PxGpuGetCudaModuleTable();
 PX_C_EXPORT PX_PHYSX_GPU_API physx::PxU32 PX_CALL_CONV PxGpuGetCudaModuleTableSize();
+PX_C_EXPORT PX_PHYSX_GPU_API physx::PxPhysicsGpu* PX_CALL_CONV PxGpuCreatePhysicsGpu();
+
 #endif
 
 #endif // PX_PHYSX_GPU_H

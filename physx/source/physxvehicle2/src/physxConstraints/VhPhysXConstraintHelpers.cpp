@@ -48,7 +48,6 @@ namespace vehicle2
 PxConstraintShaderTable gVehicleConstraintTable =
 {
 	vehicleConstraintSolverPrep,
-	0,
 	visualiseVehicleConstraint,
 	PxConstraintFlag::Enum(0)
 };

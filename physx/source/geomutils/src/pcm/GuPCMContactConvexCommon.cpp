@@ -38,7 +38,7 @@ using namespace aos;
 /*
 	This function adds the newly created manifold contacts to a new patch or existing patches 
 */
-void PCMConvexVsMeshContactGeneration::addContactsToPatch(const aos::Vec3VArg patchNormal, const PxU32 previousNumContacts)
+void PCMConvexVsMeshContactGeneration::addContactsToPatch(const aos::Vec3VArg patchNormal, PxU32 previousNumContacts)
 {
 	const Vec3V patchNormalInTriangle = mMeshToConvex.rotateInv(patchNormal);
 	
@@ -117,7 +117,7 @@ void PCMConvexVsMeshContactGeneration::generateLastContacts()
 			
 			if(needsProcessing)
 			{
-				Gu::TriangleV localTriangle(currentContact.mVerts);
+				const Gu::TriangleV localTriangle(currentContact.mVerts);
 				Vec3V patchNormal;
 				const PxU32 previousNumContacts = mNumContacts;
 				//the localTriangle is in the convex space
@@ -177,7 +177,7 @@ void PCMConvexVsMeshContactGeneration::generateLastContacts()
 
 bool PCMConvexVsMeshContactGeneration::processTriangle(const PxVec3* verts, PxU32 triangleIndex, PxU8 triFlags, const PxU32* vertInds)
 {
-	const Mat33V identity =  M33Identity();
+	const Mat33V identity = M33Identity();
 	const FloatV zero = FZero();
 
 	const Vec3V v0 = V3LoadU(verts[0]);
@@ -201,7 +201,7 @@ bool PCMConvexVsMeshContactGeneration::processTriangle(const PxVec3* verts, PxU3
 	const Vec3V locV1 = mMeshToConvex.transform(v1);
 	const Vec3V locV2 = mMeshToConvex.transform(v2);
 
-	Gu::TriangleV localTriangle(locV0, locV1, locV2);
+	const Gu::TriangleV localTriangle(locV0, locV1, locV2);
 
 	{
 		SupportLocalImpl<Gu::TriangleV> localTriMap(localTriangle, mConvexTransform, identity, identity, true);
@@ -237,10 +237,10 @@ bool PCMConvexVsMeshContactGeneration::processTriangle(const PxVec3* verts, PxU3
 	return true;
 }
 
-bool PCMConvexVsMeshContactGeneration::processTriangle(const Gu::PolygonalData& polyData, SupportLocal* polyMap, const PxVec3* verts, const PxU32 triangleIndex, PxU8 triFlags,const aos::FloatVArg inflation, const bool isDoubleSided, 
+bool PCMConvexVsMeshContactGeneration::processTriangle(const Gu::PolygonalData& polyData, const SupportLocal* polyMap, const PxVec3* verts, PxU32 triangleIndex, PxU8 triFlags,const aos::FloatVArg inflation, bool isDoubleSided, 
 													   const aos::PxTransformV& convexTransform, const aos::PxMatTransformV& meshToConvex, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
-	const Mat33V identity =  M33Identity();
+	const Mat33V identity = M33Identity();
 	const FloatV zero = FZero();
 
 	const Vec3V v0 = V3LoadU(verts[0]);
@@ -265,7 +265,7 @@ bool PCMConvexVsMeshContactGeneration::processTriangle(const Gu::PolygonalData& 
 	if(culled)
 		return false;
 
-	Gu::TriangleV localTriangle(locV0, locV1, locV2);
+	const Gu::TriangleV localTriangle(locV0, locV1, locV2);
 
 	SupportLocalImpl<Gu::TriangleV> localTriMap(localTriangle, convexTransform, identity, identity, true);
 

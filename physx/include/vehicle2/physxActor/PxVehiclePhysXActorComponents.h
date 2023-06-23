@@ -172,6 +172,9 @@ public:
 	\param[out] wheelLocalPoses describes the local poses of the wheels in the rigid body frame.
 	\param[out] gearState The gear state. Can be set to NULL if the vehicle does
 	            not have gears.
+	\param[out] throttle The throttle command state (see #PxVehicleCommandState).
+                Can be set to NULL if the vehicle is not controlled through
+		        PxVehicleCommandState.
 	\param[out] physxActor is the PxRigidBody instance associated with the vehicle.
 	*/
 	virtual void getDataForPhysXActorEndComponent(
@@ -182,6 +185,7 @@ public:
 		PxVehicleArrayData<const PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates, 
 		PxVehicleArrayData<const PxVehicleWheelLocalPose>& wheelLocalPoses,
 		const PxVehicleGearboxState*& gearState,
+		const PxReal*& throttle,
 		PxVehiclePhysXActor*& physxActor) = 0;
 
 	virtual bool update(const PxReal dt, const PxVehicleSimulationContext& context)
@@ -197,10 +201,11 @@ public:
 		PxVehicleArrayData<const PxVehicleWheelRigidBody1dState> wheelRigidBody1dStates;
 		PxVehicleArrayData<const PxVehicleWheelLocalPose> wheelLocalPoses;
 		const PxVehicleGearboxState* gearState;
+		const PxReal* throttle;
 		PxVehiclePhysXActor* physxActor;
 
 		getDataForPhysXActorEndComponent(axleDescription, rigidBodyState,
-			wheelParams, wheelShapeLocalPoses, wheelRigidBody1dStates, wheelLocalPoses, gearState,
+			wheelParams, wheelShapeLocalPoses, wheelRigidBody1dStates, wheelLocalPoses, gearState, throttle,
 			physxActor);
 
 		for (PxU32 i = 0; i < axleDescription->nbWheels; i++)
@@ -218,7 +223,7 @@ public:
 			PxVehicleWriteRigidBodyStateToPhysXActor(physxContext.physxActorUpdateMode, *rigidBodyState, dt, *physxActor->rigidBody);
 
 			PxVehiclePhysxActorKeepAwakeCheck(*axleDescription, wheelParams, wheelRigidBody1dStates,
-				physxContext.physxActorWakeCounterThreshold, physxContext.physxActorWakeCounterResetValue, gearState,
+				physxContext.physxActorWakeCounterThreshold, physxContext.physxActorWakeCounterResetValue, gearState, throttle,
 				*physxActor->rigidBody);
 		}
 		else

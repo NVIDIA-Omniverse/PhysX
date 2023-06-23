@@ -42,7 +42,6 @@
 #include "foundation/PxVecMath.h"
 #include "GuInternal.h"
 #include "common/PxProfileZone.h"
-//#include <stdio.h>
 
 using namespace physx;
 using namespace Bp;
@@ -1033,12 +1032,14 @@ static void buildFreeBitmap(PxBitMap& bitmap, PxU32 currentFree, const PxArray<A
 AABBManager::AABBManager(	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinned& contactDistance,
 							PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
 							PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode) :
-	AABBManagerBase		(bp, boundsArray, contactDistance, maxNbAggregates, maxNbShapes, allocator, contextID, kineKineFilteringMode, staticKineFilteringMode),
-	mPostBroadPhase2	(contextID, *this),
-	mPostBroadPhase3	(contextID, this, "AABBManager::postBroadPhaseStage3"),
-	mPreBpUpdateTask	(contextID),
-	mTimestamp			(0),
-	mFirstFreeAggregate	(PX_INVALID_U32)
+	AABBManagerBase			(bp, boundsArray, contactDistance, maxNbAggregates, maxNbShapes, allocator, contextID, kineKineFilteringMode, staticKineFilteringMode),
+	mPostBroadPhase2		(contextID, *this),
+	mPostBroadPhase3		(contextID, this, "AABBManager::postBroadPhaseStage3"),
+	mPreBpUpdateTask		(contextID),
+	mTimestamp				(0),
+	mFirstFreeAggregate		(PX_INVALID_U32),
+	mOutOfBoundsObjects		("AABBManager::mOutOfBoundsObjects"),
+	mOutOfBoundsAggregates	("AABBManager::mOutOfBoundsAggregates")
 {
 }
 
@@ -1097,13 +1098,12 @@ static void removeAggregateFromDirtyArray(Aggregate* aggregate, PxArray<Aggregat
 	}
 }
 
-// PT: TODO: what is the "userData" here?
+// PT: userData = Sc::ElementSim
 bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userData, AggregateHandle aggregateHandle, ElementType::Enum volumeType)
 {
 //	PX_ASSERT(checkID(index));
 
-	initEntry(index, contactDistance, group, userData);
-	mVolumeData[index].setVolumeType(volumeType);
+	initEntry(index, contactDistance, group, userData, volumeType);
 
 	if(aggregateHandle==PX_INVALID_U32)
 	{
@@ -1154,6 +1154,7 @@ bool AABBManager::removeBounds(BoundsIndex index)
 {
 	// PT: TODO: shouldn't it be compared to mUsedSize?
 	PX_ASSERT(index < mVolumeData.size());
+
 	bool res = false;
 	if(mVolumeData[index].isSingleActor())
 	{
@@ -1184,10 +1185,9 @@ bool AABBManager::removeBounds(BoundsIndex index)
 }
 
 // PT: TODO: the userData is actually a PxAggregate pointer. Maybe we could expose/use that.
-AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint)
+AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 /*maxNumShapes*/, PxAggregateFilterHint filterHint)
 {
 //	PX_ASSERT(checkID(index));
-	PX_UNUSED(maxNumShapes);
 
 	Aggregate* aggregate = PX_NEW(Aggregate)(index, filterHint);
 
@@ -1533,7 +1533,7 @@ void AABBManager::updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool,
 }
 
 // PT: previously known as AABBManager::updateAABBsAndBP
-void AABBManager::updateBPSecondPass(PxU32 /*numCpuTasks*/, PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)
+void AABBManager::updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("AABBManager::updateBPSecondPass", mContextID);
 
@@ -1577,31 +1577,30 @@ void AABBManager::preBpUpdate_CPU(PxU32 numCpuTasks)
 	}
 }
 
-static PX_FORCE_INLINE void createOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
+static PX_FORCE_INLINE void outputOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
 {
 //	overlaps.pushBack(AABBOverlap(volumeData[id0].userData, volumeData[id1].userData, handle));
 	const ElementType::Enum volumeType = PxMax(volumeData[id0].getVolumeType(), volumeData[id1].getVolumeType());
 	//overlaps[volumeType].pushBack(AABBOverlap(reinterpret_cast<void*>(size_t(id0)), reinterpret_cast<void*>(size_t(id1))));
 
-	AABBOverlap* newPair = Cm::reserveContainerMemory(overlaps[volumeType], 1);
-	newPair->mUserData0 = reinterpret_cast<void*>(size_t(id0));
-	newPair->mUserData1 = reinterpret_cast<void*>(size_t(id1));
+	AABBOverlap* overlap = Cm::reserveContainerMemory(overlaps[volumeType], 1);
+	// PT: we don't convert to pointers right away because we need the IDs in postBpStage3
+	overlap->mUserData0 = reinterpret_cast<void*>(size_t(id0));
+	overlap->mUserData1 = reinterpret_cast<void*>(size_t(id1));
+	// PT: note that overlap->mPairUserData remains uninitialized here
+}
+
+static PX_FORCE_INLINE void createOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
+{
+	outputOverlap(overlaps, volumeData, id0, id1);
 }
 
 static PX_FORCE_INLINE void deleteOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
 {
-//	PX_ASSERT(volumeData[id0].userData);
-//	PX_ASSERT(volumeData[id1].userData);
+//	PX_ASSERT(volumeData[id0].getUserData());
+//	PX_ASSERT(volumeData[id1].getUserData());
 	if (volumeData[id0].getUserData() && volumeData[id1].getUserData())	// PT: TODO: no idea if this is the right thing to do or if it's normal to get null ptrs here
-	{
-		const ElementType::Enum volumeType = PxMax(volumeData[id0].getVolumeType(), volumeData[id1].getVolumeType());
-//		overlaps.pushBack(AABBOverlap(volumeData[id0].userData, volumeData[id1].userData, handle));
-//		overlaps[volumeType].pushBack(AABBOverlap(reinterpret_cast<void*>(size_t(id0)), reinterpret_cast<void*>(size_t(id1))));
-
-		AABBOverlap* deletedPair = Cm::reserveContainerMemory(overlaps[volumeType], 1);
-		deletedPair->mUserData0 = reinterpret_cast<void*>(size_t(id0));
-		deletedPair->mUserData1 = reinterpret_cast<void*>(size_t(id1));
-	}
+		outputOverlap(overlaps, volumeData, id0, id1);
 }
 
 void PersistentPairs::outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData)
@@ -1798,15 +1797,13 @@ void AABBManager::processBPDeletedPair(const BroadPhasePair& pair)
 	else
 		pairMap = &mActorAggregatePairs;		// PT: actor-aggregate pair
 
-	PersistentPairs* p;
+	const AggPairMap::Entry* e = pairMap->find(AggPair(volA, volB));
+	if(e)
 	{
-		const AggPairMap::Entry* e = pairMap->find(AggPair(volA, volB));
-		PX_ASSERT(e);
-		p = e->second;
+		PersistentPairs* p = e->second;
+		p->outputDeletedOverlaps(mDestroyedOverlaps, mVolumeData.begin());
+		p->mShouldBeDeleted = true;
 	}
-
-	p->outputDeletedOverlaps(mDestroyedOverlaps, mVolumeData.begin());
-	p->mShouldBeDeleted = true;
 }
 
 struct CreatedPairHandler
@@ -1823,18 +1820,24 @@ template<class FunctionT>
 static void processBPPairs(PxU32 nbPairs, const BroadPhasePair* pairs, AABBManager& manager)
 {
 	// PT: TODO: figure out this ShapeHandle/BpHandle thing. Is it ok to use "BP_INVALID_BP_HANDLE" for a "ShapeHandle"?
+#if PX_DEBUG
 	ShapeHandle previousA = BP_INVALID_BP_HANDLE;
 	ShapeHandle previousB = BP_INVALID_BP_HANDLE;
-
+#endif
 	while(nbPairs--)
 	{
 		PX_ASSERT(pairs->mVolA!=BP_INVALID_BP_HANDLE);
 		PX_ASSERT(pairs->mVolB!=BP_INVALID_BP_HANDLE);
+#if PX_DEBUG
 		// PT: TODO: why is that test needed now? GPU broadphase?
-		if(pairs->mVolA != previousA || pairs->mVolB != previousB)
+		PX_ASSERT(pairs->mVolA != previousA || pairs->mVolB != previousB);
+#endif
+		//if(pairs->mVolA != previousA || pairs->mVolB != previousB)
 		{
+#if PX_DEBUG
 			previousA = pairs->mVolA;
 			previousB = pairs->mVolB;
+#endif
 			FunctionT::processPair(manager, *pairs);
 		}
 		pairs++;
@@ -2186,41 +2189,39 @@ void AABBManager::postBpStage2(PxBaseTask* continuation, Cm::FlushPool& flushPoo
 void AABBManager::postBpStage3(PxBaseTask*)
 {
 	{
+		PX_PROFILE_ZONE("SimpleAABBManager::postBroadPhase - aggregate self-collisions", mContextID);
+		const PxU32 size = mDirtyAggregates.size();
+		for (PxU32 i = 0; i < size; i++)
 		{
-			PX_PROFILE_ZONE("SimpleAABBManager::postBroadPhase - aggregate self-collisions", mContextID);
-			const PxU32 size = mDirtyAggregates.size();
-			for (PxU32 i = 0; i < size; i++)
-			{
-				Aggregate* aggregate = mDirtyAggregates[i];
-				aggregate->resetDirtyState();
+			Aggregate* aggregate = mDirtyAggregates[i];
+			aggregate->resetDirtyState();
 
-			}
-			mDirtyAggregates.resetOrClear();
 		}
+		mDirtyAggregates.resetOrClear();
+	}
 
+	{
+		PX_PROFILE_ZONE("SimpleAABBManager::postBroadPhase - append pairs", mContextID);
+
+		for (PxU32 a = 0; a < mAggPairTasks.size(); ++a)
 		{
-			PX_PROFILE_ZONE("SimpleAABBManager::postBroadPhase - append pairs", mContextID);
-
-			for (PxU32 a = 0; a < mAggPairTasks.size(); ++a)
+			ProcessAggPairsBase* task = mAggPairTasks[a];
+			for (PxU32 t = 0; t < 2; t++)
 			{
-				ProcessAggPairsBase* task = mAggPairTasks[a];
-				for (PxU32 t = 0; t < 2; t++)
+				for (PxU32 i = 0, startIdx = task->mCreatedPairs[t].mStartIdx; i < task->mCreatedPairs[t].mCount; ++i)
 				{
-					for (PxU32 i = 0, startIdx = task->mCreatedPairs[t].mStartIdx; i < task->mCreatedPairs[t].mCount; ++i)
-					{
-						mCreatedOverlaps[t].pushBack((*task->mCreatedPairs[t].mArray)[i + startIdx]);
-					}
-					for (PxU32 i = 0, startIdx = task->mDestroyedPairs[t].mStartIdx; i < task->mDestroyedPairs[t].mCount; ++i)
-					{
-						mDestroyedOverlaps[t].pushBack((*task->mDestroyedPairs[t].mArray)[i + startIdx]);
-					}
+					mCreatedOverlaps[t].pushBack((*task->mCreatedPairs[t].mArray)[i + startIdx]);
+				}
+				for (PxU32 i = 0, startIdx = task->mDestroyedPairs[t].mStartIdx; i < task->mDestroyedPairs[t].mCount; ++i)
+				{
+					mDestroyedOverlaps[t].pushBack((*task->mDestroyedPairs[t].mArray)[i + startIdx]);
 				}
 			}
-
-			mAggPairTasks.forceSize_Unsafe(0);
-
-			resetBpCacheData();
 		}
+
+		mAggPairTasks.forceSize_Unsafe(0);
+
+		resetBpCacheData();
 	}
 
 	{
@@ -2243,37 +2244,51 @@ void AABBManager::postBpStage3(PxBaseTask*)
 		for (PxU32 idx=0; idx<ElementType::eCOUNT; idx++)
 			totalCreatedOverlaps += mCreatedOverlaps[idx].size();
 
-		mCreatedPairs.clear();
-		mCreatedPairs.reserve(totalCreatedOverlaps);
+		mCreatedPairsTmp.clear();
+		mCreatedPairsTmp.reserve(totalCreatedOverlaps);
 		
+		// PT: so this is where we convert the userData IDs to pointers
+		// I don't remember why we need the mCreatedPairs hashset / this filtering pass
+		// PT: TODO: why do we need to convert to ptrs at all anyway?
 		for(PxU32 idx=0; idx<ElementType::eCOUNT; idx++)
 		{
-			const PxU32 nbDestroyedOverlaps = mDestroyedOverlaps[idx].size();
 			{
-				const PxU32 size = mCreatedOverlaps[idx].size();
-				for (PxU32 i = 0; i < size; i++)
+				const PxU32 nbDestroyedOverlaps = mDestroyedOverlaps[idx].size();
+				PxU32 size = mCreatedOverlaps[idx].size();
+				AABBOverlap* overlaps = mCreatedOverlaps[idx].begin();
+				while(size--)
 				{
-					const PxU32 id0 = PxU32(size_t(mCreatedOverlaps[idx][i].mUserData0));
-					const PxU32 id1 = PxU32(size_t(mCreatedOverlaps[idx][i].mUserData1));
-					mCreatedOverlaps[idx][i].mUserData0 = mVolumeData[id0].getUserData();
-					mCreatedOverlaps[idx][i].mUserData1 = mVolumeData[id1].getUserData();
-					if (nbDestroyedOverlaps)
-						mCreatedPairs.insert(Pair(id0, id1));
+					const PxU32 id0 = PxU32(size_t(overlaps->mUserData0));
+					const PxU32 id1 = PxU32(size_t(overlaps->mUserData1));
+					overlaps->mUserData0 = mVolumeData[id0].getUserData();
+					overlaps->mUserData1 = mVolumeData[id1].getUserData();
+					overlaps++;
+					if(nbDestroyedOverlaps)
+						mCreatedPairsTmp.insert(Pair(id0, id1));
 				}
 			}
-			PxU32 newSize = 0;
-			for (PxU32 i = 0; i < nbDestroyedOverlaps; i++)
 			{
-				const PxU32 id0 = PxU32(size_t(mDestroyedOverlaps[idx][i].mUserData0));
-				const PxU32 id1 = PxU32(size_t(mDestroyedOverlaps[idx][i].mUserData1));
-				if (!mCreatedPairs.contains(Pair(id0, id1)))
+				AABBOverlap* overlapsSrc = mDestroyedOverlaps[idx].begin();
+				AABBOverlap* overlapsDst = overlapsSrc;
+
+				PxU32 size = mDestroyedOverlaps[idx].size();
+				PxU32 newSize = 0;
+				while(size--)
 				{
-					mDestroyedOverlaps[idx][newSize].mUserData0 = mVolumeData[id0].getUserData();
-					mDestroyedOverlaps[idx][newSize].mUserData1 = mVolumeData[id1].getUserData();
-					newSize++;
+					const PxU32 id0 = PxU32(size_t(overlapsSrc->mUserData0));
+					const PxU32 id1 = PxU32(size_t(overlapsSrc->mUserData1));
+					overlapsSrc++;
+
+					if(!mCreatedPairsTmp.contains(Pair(id0, id1)))
+					{
+						overlapsDst->mUserData0 = mVolumeData[id0].getUserData();
+						overlapsDst->mUserData1 = mVolumeData[id1].getUserData();
+						overlapsDst++;
+						newSize++;
+					}
 				}
+				mDestroyedOverlaps[idx].forceSize_Unsafe(newSize);
 			}
-			mDestroyedOverlaps[idx].forceSize_Unsafe(newSize);
 		}
 	}
 
@@ -2336,6 +2351,21 @@ void AABBManager::resetBpCacheData()
 	{
 		mBpThreadContextPool.push(*bpCache[i]);
 	}
+}
+
+bool AABBManager::getOutOfBoundsObjects(OutOfBoundsData& data)
+{
+	data.mNbOutOfBoundsObjects = mOutOfBoundsObjects.size();
+	data.mOutOfBoundsObjects = mOutOfBoundsObjects.begin();
+	data.mNbOutOfBoundsAggregates = mOutOfBoundsAggregates.size();
+	data.mOutOfBoundsAggregates = mOutOfBoundsAggregates.begin();
+	return data.mNbOutOfBoundsObjects || data.mNbOutOfBoundsAggregates;
+}
+
+void AABBManager::clearOutOfBoundsObjects()
+{
+	mOutOfBoundsObjects.clear();
+	mOutOfBoundsAggregates.clear();
 }
 
 // PT: disabled this by default, since it bypasses all per-shape/per-actor visualization flags

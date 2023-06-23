@@ -51,7 +51,8 @@ SET(PHYSX_COOKING_WINDOWS_SOURCE
 SOURCE_GROUP(src\\windows FILES ${PHYSX_COOKING_WINDOWS_SOURCE})
 
 SET(PHYSX_COOKING_RESOURCE
-	${PHYSX_SOURCE_DIR}/compiler/resource_${RESOURCE_LIBPATH_SUFFIX}/PhysXCooking.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/PhysXCooking.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
 )
 SOURCE_GROUP(resource FILES ${PHYSX_COOKING_RESOURCE})
 

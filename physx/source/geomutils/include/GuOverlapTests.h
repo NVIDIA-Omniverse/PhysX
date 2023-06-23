@@ -87,9 +87,6 @@ namespace Gu
 	// PT: retrieves the overlap function table (for access by external non-Gu modules)
 	PX_PHYSX_COMMON_API const GeomOverlapTable* getOverlapFuncTable();
 
-	// dynamic registration of height fields
-	PX_PHYSX_COMMON_API void registerHeightFields();
-
 	PX_FORCE_INLINE bool overlap(	const PxGeometry& geom0, const PxTransform& pose0,
 									const PxGeometry& geom1, const PxTransform& pose1,
 									const GeomOverlapTable* PX_RESTRICT overlapFuncs, PxOverlapThreadContext* threadContext)

@@ -37,6 +37,7 @@
 namespace physx
 {
 class PxShape;
+class PxsSimulationController;
 
 namespace Sc
 {
@@ -44,12 +45,6 @@ namespace Sc
 
 	class ShapeCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
 	public:
 // PX_SERIALIZATION
 													ShapeCore(const PxEMPTY);
@@ -108,27 +103,28 @@ namespace Sc
 			return *reinterpret_cast<ShapeCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
 		}	
 
-		PX_FORCE_INLINE ShapeSim*					getSim() const			
+		PX_FORCE_INLINE ShapeSim*					getExclusiveSim() const			
 		{
-			return reinterpret_cast<ShapeSim*>(size_t(mSimAndIsExclusive) & ~1);
+			return mExclusiveSim;
 		}
-		PX_FORCE_INLINE void						setSim(ShapeSim* sim)	
-		{ 
-			PX_ASSERT((NULL == mSimAndIsExclusive) || (1 == size_t(mSimAndIsExclusive)));
-			PX_ASSERT(0 == (size_t(sim) & 1));
-			mSimAndIsExclusive = mSimAndIsExclusive ? reinterpret_cast<ShapeSim*>(size_t(sim) | size_t(mSimAndIsExclusive)) : mSimAndIsExclusive;
-		}
-		PX_FORCE_INLINE void						clearSim()
+
+		PX_FORCE_INLINE void						setExclusiveSim(ShapeSim* sim)	
 		{
-			mSimAndIsExclusive = reinterpret_cast<ShapeSim*>(size_t(mSimAndIsExclusive) & 1);
+			if (!sim || mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE))
+			{
+				mExclusiveSim = sim;
+			}
 		}
+
+						PxU32						getInternalShapeIndex(PxsSimulationController& simulationController) const;
+
 
 #if PX_WINDOWS_FAMILY	// PT: to avoid "error: offset of on non-standard-layout type" on Linux
 	protected:
 #endif
 						PxFilterData				mSimulationFilterData;	// Simulation filter data
 						PxsShapeCore				PX_ALIGN(16, mCore);	
-						ShapeSim*					mSimAndIsExclusive;
+						ShapeSim*					mExclusiveSim;   //only set if shape is exclusive
 #if PX_WINDOWS_FAMILY	// PT: to avoid "error: offset of on non-standard-layout type" on Linux
 	public:
 #endif

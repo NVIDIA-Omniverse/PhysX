@@ -182,13 +182,6 @@ struct PxConstraintVisualizationFlag
 PX_ALIGN_PREFIX(16)
 struct PxConstraintInvMassScale
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
-
 	PxReal linear0;		//!< multiplier for inverse mass of body0
 	PxReal angular0;	//!< multiplier for inverse MoI of body0
 	PxReal linear1;		//!< multiplier for inverse mass of body1
@@ -232,24 +225,6 @@ typedef PxU32 (*PxConstraintSolverPrep)(Px1DConstraint* constraints,
 										PxVec3p& cBtW);
 
 /**
-\brief Solver constraint projection shader
-
-This function is called by the constraint post-solver framework. The function must be reentrant, since it may be called simultaneously
-from multiple threads and should access only the arguments passed into it.
-
-\param[in] constantBlock	The constant data block
-\param[out] bodyAToWorld	The center of mass frame of the first constrained body (the identity if the actor is static or a NULL pointer was provided for it)
-\param[out] bodyBToWorld	The center of mass frame of the second constrained body (the identity if the actor is static or a NULL pointer was provided for it)
-\param[in] projectToA		True if the constraint should be projected by moving the second body towards the first, false if the converse
-
-@deprecated
-*/
-typedef PX_DEPRECATED void (*PxConstraintProject)(const void* constantBlock,
-									PxTransform& bodyAToWorld,
-									PxTransform& bodyBToWorld,
-									bool projectToA);
-
-/**
 \brief API used to visualize details about a constraint.
 */
 class PxConstraintVisualizer
@@ -266,38 +241,34 @@ public:
 
 	/** \brief Visualize joint linear limit
 
-	\param[in] t0	Base transformation
-	\param[in] t1	End transformation
+	\param[in] t0		Base transformation
+	\param[in] t1		End transformation
 	\param[in] value	Distance
-	\param[in] active	State of the joint - active/inactive
 	*/
-	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, PxReal value, bool active) = 0;
+	virtual void visualizeLinearLimit(const PxTransform& t0, const PxTransform& t1, PxReal value) = 0;
 
 	/** \brief Visualize joint angular limit
 
-	\param[in] t0	Transformation for the visualization
-	\param[in] lower Lower limit angle
-	\param[in] upper Upper limit angle
-	\param[in] active	State of the joint - active/inactive
+	\param[in] t0		Transformation for the visualization
+	\param[in] lower	Lower limit angle
+	\param[in] upper	Upper limit angle
 	*/
-	virtual void visualizeAngularLimit(const PxTransform& t0, PxReal lower, PxReal upper, bool active) = 0;
+	virtual void visualizeAngularLimit(const PxTransform& t0, PxReal lower, PxReal upper) = 0;
 
 	/** \brief Visualize limit cone
 
-	\param[in] t	Transformation for the visualization
+	\param[in] t			Transformation for the visualization
 	\param[in] tanQSwingY	Tangent of the quarter Y angle 
 	\param[in] tanQSwingZ	Tangent of the quarter Z angle 
-	\param[in] active	State of the joint - active/inactive
 	*/
-	virtual void visualizeLimitCone(const PxTransform& t, PxReal tanQSwingY, PxReal tanQSwingZ, bool active) = 0;
+	virtual void visualizeLimitCone(const PxTransform& t, PxReal tanQSwingY, PxReal tanQSwingZ) = 0;
 
 	/** \brief Visualize joint double cone
 
-	\param[in] t	Transformation for the visualization
-	\param[in] angle Limit angle
-	\param[in] active	State of the joint - active/inactive
+	\param[in] t		Transformation for the visualization
+	\param[in] angle	Limit angle
 	*/
-	virtual void visualizeDoubleCone(const PxTransform& t, PxReal angle, bool active) = 0;
+	virtual void visualizeDoubleCone(const PxTransform& t, PxReal angle) = 0;
 
 	/** \brief Visualize line
 

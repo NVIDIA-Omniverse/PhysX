@@ -84,6 +84,14 @@ namespace physx
 		virtual	bool		setJoints(const PxBase* hinge, const PxBase* prismatic)	= 0;
 
 		/**
+		\brief Get the hinge & prismatic joints connected by the rack & pinion joint.
+
+		\param[out]	hinge		The hinge joint (pinion)
+		\param[out]	prismatic	The prismatic joint (rack)
+		*/
+		virtual	void		getJoints(const PxBase*& hinge, const PxBase*& prismatic)	const	= 0;
+
+		/**
 		\brief Set the desired ratio directly.
 
 		\note	You may need to use a negative gear ratio if the joint frames of involved actors are not oriented in the same direction.

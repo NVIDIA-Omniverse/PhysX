@@ -27,6 +27,8 @@
 #ifndef SC_HAIR_SYSTEM_SIM_H
 #define SC_HAIR_SYSTEM_SIM_H
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "DyHairSystem.h"
 #include "ScHairSystemCore.h"
 #include "ScHairSystemShapeSim.h"
@@ -40,6 +42,7 @@ namespace physx
 
 		class HairSystemSim : public ActorSim
 		{
+			PX_NOCOPY(HairSystemSim)
 		public:
 			HairSystemSim(HairSystemCore& core, Scene& scene);
 			~HairSystemSim();
@@ -56,29 +59,23 @@ namespace physx
 			bool isSleeping() const;
 			bool isActive() const { return !isSleeping(); }
 
-			void setActive(const bool b, const PxU32 infoFlag = 0);
+			void setActive(bool active, bool asPartOfCreation=false);
 
 			void onSetWakeCounter();
-
-			virtual			void			registerCountedInteraction() { mNumCountedInteractions++; }
-			virtual			void			unregisterCountedInteraction() { mNumCountedInteractions--; }
-			virtual			PxU32			getNumCountedInteractions()	const { return mNumCountedInteractions;  }
-
-			virtual void activate();
-			virtual void deactivate();
 
 			HairSystemShapeSim& getShapeSim() { return mShapeSim; }
 
 		private:
-			//HairSystemSim& operator=(const HairSystemSim&);
-
 			Dy::HairSystem*		mLLHairSystem;
 			HairSystemShapeSim	mShapeSim;
 
-			PxU32				mNumCountedInteractions;
+// PT: as far as I can tell these are never actually called
+//						void activate();
+//						void deactivate();
 		};
 	} // namespace Sc
 } // namespace physx
+#endif
 
 #endif
 

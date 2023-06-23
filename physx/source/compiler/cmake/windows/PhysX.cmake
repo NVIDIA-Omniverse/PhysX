@@ -40,6 +40,7 @@ SET(PHYSX_PLATFORM_INCLUDES
 
 SET(PHYSX_GPU_HEADERS
 	${PHYSX_ROOT_DIR}/include/gpu/PxGpu.h
+    ${PHYSX_ROOT_DIR}/include/gpu/PxPhysicsGpu.h
 )
 SOURCE_GROUP(include\\gpu FILES ${PHYSX_GPU_HEADERS})
 
@@ -56,8 +57,8 @@ SET(PHYSX_COMMON_WINDOWS_HEADERS
 SOURCE_GROUP(include\\common\\windows FILES ${PHYSX_COMMON_WINDOWS_HEADERS})
 
 SET(PHYSX_RESOURCE
-	${PHYSX_SOURCE_DIR}/compiler/resource_${RESOURCE_LIBPATH_SUFFIX}/PhysX.rc
-	${PHYSX_SOURCE_DIR}/compiler/resource_${RESOURCE_LIBPATH_SUFFIX}/resource.h
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/PhysX.rc
+	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
 )
 SOURCE_GROUP(resource FILES ${PHYSX_RESOURCE})
 

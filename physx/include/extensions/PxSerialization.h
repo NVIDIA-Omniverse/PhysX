@@ -44,7 +44,7 @@
 PX_BINARY_SERIAL_VERSION is used to version the PhysX binary data and meta data. The global unique identifier of the PhysX SDK needs to match 
 the one in the data and meta data, otherwise they are considered incompatible. A 32 character wide GUID can be generated with https://www.guidgenerator.com/ for example. 
 */
-#define PX_BINARY_SERIAL_VERSION "0E16D844227B469DB23DA9C42CB4E624"
+#define PX_BINARY_SERIAL_VERSION "B82604A420D74E16931478583B38833D"
 
 
 #if !PX_DOXYGEN
@@ -65,11 +65,14 @@ public:
 	/**
 	\brief Additional PxScene and PxPhysics options stored in XML serialized data.
 
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
+
 	The PxXmlMiscParameter parameter can be serialized and deserialized along with PxCollection instances (XML only).
 	This is for application use only and has no impact on how objects are serialized or deserialized. 
+
 	@see PxSerialization::createCollectionFromXml, PxSerialization::serializeCollectionToXml
 	*/
-	struct PxXmlMiscParameter
+	struct PX_DEPRECATED PxXmlMiscParameter
 	{
 		/**
 		\brief Up vector for the scene reference coordinate system.
@@ -154,9 +157,11 @@ public:
 			
 	/**
 	\brief Creates a PxCollection from XML data.
+	
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 
 	\param inputData The input data containing the XML collection.
-	\param cooking PxCooking instance used for sdk object instantiation.
+	\param params Cooking parameters used for sdk object instantiation.
 	\param sr PxSerializationRegistry instance with information about registered classes.
 	\param externalRefs PxCollection used to resolve external references.
 	\param stringTable PxStringTable instance used for storing object names.
@@ -165,7 +170,7 @@ public:
 
 	@see PxCollection, PxSerializationRegistry, PxInputData, PxStringTable, PxCooking, PxSerialization::PxXmlMiscParameter
 	*/
-	static	PxCollection*	createCollectionFromXml(PxInputData& inputData, PxCooking& cooking, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL, PxStringTable* stringTable = NULL, PxXmlMiscParameter* outArgs = NULL);
+	PX_DEPRECATED static PxCollection* createCollectionFromXml(PxInputData& inputData, const PxCookingParams& params, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL, PxStringTable* stringTable = NULL, PxXmlMiscParameter* outArgs = NULL);
 	
 	/**
 	\brief Deserializes a PxCollection from memory.
@@ -189,6 +194,8 @@ public:
 	/**
 	\brief Serializes a physics collection to an XML output stream.
 
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
+
 	The collection to be serialized needs to be complete @see PxSerialization.complete.
 	Optionally the XML may contain meshes in binary cooked format for fast loading. It does this when providing a valid non-null PxCooking pointer.
 
@@ -197,14 +204,14 @@ public:
 	\param outputStream Stream to save collection to.
 	\param collection PxCollection instance which is serialized. The collection needs to be complete with respect to the externalRefs collection.
 	\param sr PxSerializationRegistry instance with information about registered classes.
-	\param cooking Optional pointer to cooking instance. If provided, cooked mesh data is cached for fast loading.
+	\param params Optional pointer to cooking params. If provided, cooked mesh data is cached for fast loading.
 	\param externalRefs Collection containing external references.
 	\param inArgs Optional parameters of physics and scene serialized to XML along with the collection. See #PxSerialization::PxXmlMiscParameter
 	\return true if the collection is successfully serialized.
 
 	@see PxCollection, PxOutputStream, PxSerializationRegistry, PxCooking, PxSerialization::PxXmlMiscParameter
 	*/
-	static	bool			serializeCollectionToXml(PxOutputStream& outputStream, PxCollection& collection,  PxSerializationRegistry& sr, PxCooking* cooking = NULL, const PxCollection* externalRefs = NULL, PxXmlMiscParameter* inArgs = NULL);
+	PX_DEPRECATED static bool serializeCollectionToXml(PxOutputStream& outputStream, PxCollection& collection,  PxSerializationRegistry& sr, const PxCookingParams* params = NULL, const PxCollection* externalRefs = NULL, PxXmlMiscParameter* inArgs = NULL);
 	
 	/**
 	\brief Serializes a collection to a binary stream.

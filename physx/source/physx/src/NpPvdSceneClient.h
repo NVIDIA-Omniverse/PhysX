@@ -75,7 +75,6 @@ class NpFEMCloth;
 class NpPBDParticleSystem;
 class NpFLIPParticleSystem;
 class NpMPMParticleSystem;
-class NpCustomParticleSystem;
 class NpHairSystem;
 #endif
 
@@ -198,10 +197,6 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void updatePvdProperties(const PxsMPMMaterialCore* materialCore);
 	void releasePvdInstance	(const PxsMPMMaterialCore* materialCore);
 
-	void createPvdInstance	(const PxsCustomMaterialCore* materialCore);
-	void updatePvdProperties(const PxsCustomMaterialCore* materialCore);
-	void releasePvdInstance	(const PxsCustomMaterialCore* materialCore);
-
 	///////////////////////////////////////////////////////////////////////////
 
 	void createPvdInstance			(const NpShape* shape, PxActor& owner);
@@ -248,12 +243,6 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void attachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor);
 	void detachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor);
 	void releasePvdInstance(const NpMPMParticleSystem* particleSystem);
-
-	void createPvdInstance(const NpCustomParticleSystem* particleSystem);
-	void updatePvdProperties(const NpCustomParticleSystem* particleSystem);
-	void attachAggregateActor(const NpCustomParticleSystem* particleSystem, NpActor* actor);
-	void detachAggregateActor(const NpCustomParticleSystem* particleSystem, NpActor* actor);
-	void releasePvdInstance(const NpCustomParticleSystem* particleSystem);
 
 	void createPvdInstance(const NpHairSystem* hairSystem);
 	void updatePvdProperties(const NpHairSystem* hairSystem);

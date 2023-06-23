@@ -29,126 +29,130 @@
 #if PX_SUPPORT_GPU_PHYSX
 
 #include "ScHairSystemCore.h"
+
 #include "ScHairSystemSim.h"
 #include "ScPhysics.h"
-#include "DyHairSystem.h"
 
 namespace physx
 {
-	namespace Sc
+namespace Sc
+{
+
+HairSystemCore::HairSystemCore()
+: ActorCore(PxActorType::eHAIRSYSTEM, PxActorFlag::eVISUALIZATION, PX_DEFAULT_CLIENT, 0)
+{
+}
+
+HairSystemCore::~HairSystemCore() {}
+
+void HairSystemCore::setMaterial(const PxU16 handle) { mShapeCore.getLLCore().setMaterial(handle); }
+
+void HairSystemCore::clearMaterials() { mShapeCore.getLLCore().clearMaterials(); }
+
+void HairSystemCore::setSleepThreshold(const PxReal v)
+{
+	mShapeCore.getLLCore().mSleepThreshold = v;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+}
+
+void HairSystemCore::setSolverIterationCounts(const PxU16 c)
+{
+	mShapeCore.getLLCore().mSolverIterationCounts = c;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+}
+
+void HairSystemCore::setWakeCounter(const PxReal v)
+{
+	mShapeCore.getLLCore().mWakeCounter = v;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+
+	HairSystemSim* sim = getSim();
+	if(sim)
 	{
-		HairSystemCore::HairSystemCore() :
-			ActorCore(PxActorType::eHAIRSYSTEM, PxActorFlag::eVISUALIZATION, PX_DEFAULT_CLIENT, 0)
-		{
-		}
+		sim->onSetWakeCounter();
+	}
+}
 
-		HairSystemCore::~HairSystemCore()
-		{
-		}
+bool HairSystemCore::isSleeping() const
+{
+	HairSystemSim* sim = getSim();
+	return sim ? sim->isSleeping() : (mShapeCore.getLLCore().mWakeCounter == 0.0f);
+}
 
-		void HairSystemCore::setMaterial(const PxU16 handle)
-		{
-			mShapeCore.getLLCore().setMaterial(handle);
-		}
+void HairSystemCore::wakeUp(PxReal wakeCounter)
+{
+	mShapeCore.getLLCore().mWakeCounter = wakeCounter;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+}
 
-		void HairSystemCore::clearMaterials()
-		{
-			mShapeCore.getLLCore().clearMaterials();
-		}
+void HairSystemCore::putToSleep()
+{
+	mShapeCore.getLLCore().mWakeCounter = 0.0f;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+}
 
-		void HairSystemCore::setSleepThreshold(const PxReal v)
-		{
-			mShapeCore.getLLCore().mSleepThreshold = v;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
-		}
+PxActor* HairSystemCore::getPxActor() const
+{
+	return PxPointerOffset<PxActor*>(const_cast<HairSystemCore*>(this), gOffsetTable.scCore2PxActor[getActorCoreType()]);
+}
 
-		void HairSystemCore::setSolverIterationCounts(const PxU16 c)
-		{
-			mShapeCore.getLLCore().mSolverIterationCounts = c;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
-		}
+HairSystemSim* HairSystemCore::getSim() const { return static_cast<HairSystemSim*>(ActorCore::getSim()); }
 
-		void HairSystemCore::setWakeCounter(const PxReal v)
-		{
-			mShapeCore.getLLCore().mWakeCounter = v;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+PxReal HairSystemCore::getContactOffset() const { return mShapeCore.getContactOffset(); }
 
-			HairSystemSim* sim = getSim();
-			if (sim)
-			{
-				sim->onSetWakeCounter();
-			}
-		}
+void HairSystemCore::setContactOffset(PxReal v)
+{
+	mShapeCore.setContactOffset(v);
+	HairSystemSim* sim = getSim();
+	if(sim)
+	{
+		sim->getScene().updateContactDistance(sim->getShapeSim().getElementID(), v);
+	}
+}
 
-		bool HairSystemCore::isSleeping() const
-		{
-			HairSystemSim* sim = getSim();
-			return sim ? sim->isSleeping() : (mShapeCore.getLLCore().mWakeCounter == 0.0f);
-		}
+void HairSystemCore::addAttachment(const BodySim& bodySim)
+{
+	const HairSystemSim* sim = getSim();
+	if(sim)
+	{
+		sim->getScene().addAttachment(bodySim, *sim);
+	}
+}
 
-		void HairSystemCore::wakeUp(PxReal wakeCounter)
-		{
-			mShapeCore.getLLCore().mWakeCounter = wakeCounter;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
-		}
+void HairSystemCore::removeAttachment(const BodySim& bodySim)
+{
+	const HairSystemSim* sim = getSim();
+	if(sim)
+	{
+		sim->getScene().removeAttachment(bodySim, *sim);
+	}
+}
 
-		void HairSystemCore::putToSleep()
-		{
-			mShapeCore.getLLCore().mWakeCounter = 0.0f;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
-		}
+void HairSystemCore::addAttachment(const SoftBodySim& sbSim)
+{
+	const Sc::HairSystemSim* sim = getSim();
+	if(sim)
+	{
+		sim->getScene().addAttachment(sbSim, *sim);
+	}
+}
 
-		PxActor* HairSystemCore::getPxActor() const
-		{
-			return PxPointerOffset<PxActor*>(const_cast<HairSystemCore*>(this), gOffsetTable.scCore2PxActor[getActorCoreType()]);
-		}
+void HairSystemCore::removeAttachment(const SoftBodySim& sbSim)
+{
+	const Sc::HairSystemSim* sim = getSim();
+	if(sim)
+	{
+		sim->getScene().removeAttachment(sbSim, *sim);
+	}
+}
 
-		HairSystemSim* HairSystemCore::getSim() const
-		{
-			return static_cast<HairSystemSim*>(ActorCore::getSim());
-		}
+void Sc::HairSystemCore::setFlags(PxHairSystemFlags flags)
+{
+	mShapeCore.getLLCore().mParams.mFlags = flags;
+	mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+}
 
-		PxReal Sc::HairSystemCore::getContactOffset() const
-		{
-			return mShapeCore.getContactOffset();
-		}
-
-		void Sc::HairSystemCore::setContactOffset(PxReal v)
-		{
-			mShapeCore.setContactOffset(v);
-			Sc::HairSystemSim* sim = getSim();
-			if (sim)
-			{
-				sim->getScene().updateContactDistance(sim->getShapeSim().getElementID(), v);
-			}
-		}
-
-		void Sc::HairSystemCore::addRigidAttachment(const Sc::BodyCore* core)
-		{
-			const Sc::HairSystemSim* sim = getSim();
-			if (sim)
-			{
-				sim->getScene().addRigidAttachment(core, *sim);
-			}
-		}
-
-		void Sc::HairSystemCore::removeRigidAttachment(const Sc::BodyCore* core)
-		{
-			const Sc::HairSystemSim* sim = getSim();
-			if (sim)
-			{
-				sim->getScene().removeRigidAttachment(core, *sim);
-			}
-		}
-
-		void Sc::HairSystemCore::setFlags(PxHairSystemFlags flags)
-		{
-			mShapeCore.getLLCore().mParams.mFlags = flags;
-			mShapeCore.getLLCore().mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
-		}
-
-
-	} // namespace Sc
+} // namespace Sc
 } // namespace physx
 
-#endif //PX_SUPPORT_GPU_PHYSX
+#endif // PX_SUPPORT_GPU_PHYSX

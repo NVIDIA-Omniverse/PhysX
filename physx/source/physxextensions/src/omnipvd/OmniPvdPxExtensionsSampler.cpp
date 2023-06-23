@@ -42,25 +42,23 @@ using namespace physx;
 static uint32_t sizeOfOmniPvdTypes[32];
 
 //create a class for each SDK type and attribute -- the primary thing is to allocate handle storage, the rest is just fluff.
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) OmniPvdClassHandle OmniPvdPxExtensionsSampler::classHandle_##c;
-#define OMNI_PVD_CLASS(c, classT) OmniPvdClassHandle OmniPvdPxExtensionsSampler::classHandle_##c;
-#define OMNI_PVD_ENUM(c, classT) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a;
+#define OMNI_PVD_CLASS(classT) OmniPvdClassHandle OmniPvdPxExtensionsSampler::classHandle_##classT;
+#define OMNI_PVD_ENUM(classT) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a;
 //enum values don't need to save their handle, since they are const/immutable:
-#define OMNI_PVD_ENUM_VALUE(c, a, v)	
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a;
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a;
+#define OMNI_PVD_ENUM_VALUE(classT, a)	
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a;
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) OmniPvdAttributeHandle OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a;
 
 #include "OmniPvdPxExtensionsTypes.h"
 
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 #undef OMNI_PVD_ATTRIBUTE_FLAG
 
 void OmniPvdPxExtensionsSampler::registerClasses()
@@ -68,81 +66,74 @@ void OmniPvdPxExtensionsSampler::registerClasses()
 	if (mWriter)
 	{
 //register all SDK classes and attributes:
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) OmniPvdPxExtensionsSampler::classHandle_##c = mWriter->registerClass(#classStr);
-#define OMNI_PVD_CLASS(c, classT) OmniPvdPxExtensionsSampler::classHandle_##c = mWriter->registerClass(#classT);
-#define OMNI_PVD_ENUM(c, classT) OMNI_PVD_CLASS(c, classT)
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OmniPvdPxExtensionsSampler::classHandle_##c = mWriter->registerClass(#classT, OmniPvdPxExtensionsSampler::classHandle_##baseClass);
-#define OMNI_PVD_ENUM_VALUE(c, a, v)				mWriter->registerEnumValue(OmniPvdPxExtensionsSampler::classHandle_##c, #a, v);
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT)	OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a = mWriter->registerSetAttribute(OmniPvdPxExtensionsSampler::classHandle_##c, #a, OmniPvdDataTypeEnum::eOBJECT_HANDLE);
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) PX_ASSERT((n == 0) || (sizeof(attrT) == sizeOfOmniPvdTypes[t] * n)); OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a = mWriter->registerAttribute(OmniPvdPxExtensionsSampler::classHandle_##c, #a, t, n);
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) OmniPvdPxExtensionsSampler::attributeHandle_##c##_##a = mWriter->registerFlagsAttribute(OmniPvdPxExtensionsSampler::classHandle_##c, OmniPvdPxExtensionsSampler::classHandle_##enumClass, #a);
+#define OMNI_PVD_CLASS(classT) OmniPvdPxExtensionsSampler::classHandle_##classT = mWriter->registerClass(#classT);
+#define OMNI_PVD_ENUM(classT) OMNI_PVD_CLASS(classT)
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OmniPvdPxExtensionsSampler::classHandle_##classT = mWriter->registerClass(#classT, OmniPvdPxExtensionsSampler::classHandle_##baseClass);
+#define OMNI_PVD_ENUM_VALUE(classT, a) mWriter->registerEnumValue(OmniPvdPxExtensionsSampler::classHandle_##classT, #a, classT::a);
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT)	OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a = mWriter->registerUniqueListAttribute(OmniPvdPxExtensionsSampler::classHandle_##classT, #a, OmniPvdDataType::eOBJECT_HANDLE);
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) PX_ASSERT((n == 0) || (sizeof(attrT) == sizeOfOmniPvdTypes[t] * n)); OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a = mWriter->registerAttribute(OmniPvdPxExtensionsSampler::classHandle_##classT, #a, t, n);
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClassT) OmniPvdPxExtensionsSampler::attributeHandle_##classT##_##a = mWriter->registerFlagsAttribute(OmniPvdPxExtensionsSampler::classHandle_##classT, #a, OmniPvdPxExtensionsSampler::classHandle_##enumClassT);
 
 #include "OmniPvdPxExtensionsTypes.h"
 
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 #undef OMNI_PVD_ATTRIBUTE_FLAG
 	}
 }
 
 //instance any templates that are not used in this compilation unit so that code gets generated anyways
 
-#define OMNI_PVD_FAKE_CLASS(c, classT, classStr) \
+#define OMNI_PVD_CLASS(classT) \
 template void OmniPvdPxExtensionsSampler::createObject <classT>(OmniPvdClassHandle, classT const &);\
 template void OmniPvdPxExtensionsSampler::destroyObject<classT>(classT const &);
 
-#define OMNI_PVD_CLASS(c, classT) \
-template void OmniPvdPxExtensionsSampler::createObject <classT>(OmniPvdClassHandle, classT const &);\
-template void OmniPvdPxExtensionsSampler::destroyObject<classT>(classT const &);
+#define OMNI_PVD_CLASS_DERIVED(classT, baseClass) OMNI_PVD_CLASS(classT)
 
-#define OMNI_PVD_CLASS_DERIVED(c, classT, baseClass) OMNI_PVD_CLASS(c, classT)
+#define OMNI_PVD_ATTRIBUTE_UNIQUE_LIST(classT, a, attrT) \
+template void OmniPvdPxExtensionsSampler::addToUniqueList<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );\
+template void OmniPvdPxExtensionsSampler::removeFromUniqueList<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );
 
-#define OMNI_PVD_ATTRIBUTE_SET(c, a, classT, attrT) \
-template void OmniPvdPxExtensionsSampler::addToSet<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );\
-template void OmniPvdPxExtensionsSampler::removeFromSet<classT, attrT>(OmniPvdAttributeHandle, classT const & , attrT const & );
-
-#define OMNI_PVD_ATTRIBUTE(c, a, classT, attrT, t, n) \
+#define OMNI_PVD_ATTRIBUTE(classT, a, attrT, t, n) \
 template void OmniPvdPxExtensionsSampler::setAttribute<classT, attrT>(OmniPvdAttributeHandle, const classT&, attrT const &); \
 template void OmniPvdPxExtensionsSampler::setAttributeBytes<classT, attrT>(OmniPvdAttributeHandle, const classT&, attrT const *, unsigned);
 
-#define OMNI_PVD_ATTRIBUTE_FLAG(c, a, classT, attrT, enumClass) \
+#define OMNI_PVD_ATTRIBUTE_FLAG(classT, a, attrT, enumClass) \
 template void OmniPvdPxExtensionsSampler::setAttribute<classT, attrT>(OmniPvdAttributeHandle, classT const &, attrT const &);
 
-#define OMNI_PVD_ENUM(c, enumT)
-#define OMNI_PVD_ENUM_VALUE(c, a, v)
+#define OMNI_PVD_ENUM(classT)
+#define OMNI_PVD_ENUM_VALUE(classT, a)
 
 #include "OmniPvdPxExtensionsTypes.h"
 
 #undef OMNI_PVD_ENUM
 #undef OMNI_PVD_ENUM_VALUE
-#undef OMNI_PVD_FAKE_CLASS
 #undef OMNI_PVD_CLASS
 #undef OMNI_PVD_CLASS_DERIVED
 #undef OMNI_PVD_ATTRIBUTE
-#undef OMNI_PVD_ATTRIBUTE_SET
+#undef OMNI_PVD_ATTRIBUTE_UNIQUE_LIST
 //end instance templates
 
 OmniPvdPxExtensionsSampler::OmniPvdPxExtensionsSampler() : mWriter(NULL)
 {
 
 	//TODO: this could be done better
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT8] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT16] = 2;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eINT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT8] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT16] = 2;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eUINT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eFLOAT32] = 4;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eFLOAT64] = 8;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eSTRING] = 1;
-	sizeOfOmniPvdTypes[OmniPvdDataTypeEnum::eOBJECT_HANDLE] = sizeof(uint64_t);
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT8] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT16] = 2;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eINT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT8] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT16] = 2;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eUINT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eFLOAT32] = 4;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eFLOAT64] = 8;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eSTRING] = 1;
+	sizeOfOmniPvdTypes[OmniPvdDataType::eOBJECT_HANDLE] = sizeof(uint64_t);
 }
 
 OmniPvdPxExtensionsSampler::~OmniPvdPxExtensionsSampler()
@@ -171,27 +162,27 @@ template <typename ClassType> void OmniPvdPxExtensionsSampler::destroyObject(Cla
 template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::setAttribute(OmniPvdAttributeHandle ah, const ClassType & objectId, const AttributeType & value)
 {
 	PX_ASSERT(mWriter);
-	mWriter->setAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&value, sizeof(AttributeType));
+	mWriter->setAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&value, sizeof(AttributeType));
 }
 
 template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::setAttributeBytes(OmniPvdAttributeHandle ah, ClassType const & objectId, const AttributeType * value, unsigned nBytes)
 {
 	PX_ASSERT(mWriter);
-	mWriter->setAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)value, nBytes);
+	mWriter->setAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)value, nBytes);
 }
 
-template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::addToSet(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
+template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::addToUniqueList(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
 {
 	PX_ASSERT(mWriter);
 	const AttributeType * atp = &value;
-	mWriter->addToSetAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp));
+	mWriter->addToUniqueListAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp));
 }
 
-template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::removeFromSet(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
+template <typename ClassType, typename AttributeType> void OmniPvdPxExtensionsSampler::removeFromUniqueList(OmniPvdAttributeHandle ah, ClassType const & objectId, AttributeType const & value)
 {
 	PX_ASSERT(mWriter);
 	const AttributeType * atp = &value;
-	mWriter->removeFromSetAttributeShallow(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp) );
+	mWriter->removeFromUniqueListAttribute(UNNECESSARY_SCENE_HANDLE, OmniPvdObjectHandle(&objectId), ah, (const unsigned char*)&atp, sizeof(atp) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

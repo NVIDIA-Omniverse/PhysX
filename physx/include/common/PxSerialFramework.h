@@ -350,32 +350,38 @@ public:
 	/**
 	\brief Register a RepX serializer for a concrete type
 
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
+
 	\param	type PxConcreteType corresponding to the RepX serializer
 	\param	serializer The PxRepXSerializer to be registered
 	
 	@see PxConcreteType, PxRepXSerializer
 	*/
-	virtual void						registerRepXSerializer(PxType type, PxRepXSerializer& serializer) = 0;
+	PX_DEPRECATED virtual void registerRepXSerializer(PxType type, PxRepXSerializer& serializer) = 0;
 
 	/**
 	\brief Unregister a RepX serializer for a concrete type, and retrieves the corresponding serializer object.
+
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 
 	\param	type PxConcreteType for which the RepX serializer should be unregistered
 	\return	Unregistered PxRepxSerializer corresponding to type, NULL for types for which no RepX serializer has been registered.
 	
 	@see PxConcreteType, PxSerializationRegistry::registerRepXSerializer, PxSerializationRegistry::release
 	*/
-	virtual PxRepXSerializer*			unregisterRepXSerializer(PxType type) = 0;
+	PX_DEPRECATED virtual PxRepXSerializer* unregisterRepXSerializer(PxType type) = 0;
 
 	/**
 	\brief Returns RepX serializer given the corresponding type name
+
+	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 
 	\param	typeName Name of the type
 	\return	Registered PxRepXSerializer object corresponding to type name
 
 	@see PxRepXSerializer, PxTypeInfo, PX_DEFINE_TYPEINFO
 	*/
-	virtual PxRepXSerializer*			getRepXSerializer(const char* typeName) const = 0;  
+	PX_DEPRECATED virtual PxRepXSerializer*	getRepXSerializer(const char* typeName) const = 0;  
 	
 	//@}
 	/************************************************************************************************/

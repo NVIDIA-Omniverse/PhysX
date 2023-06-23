@@ -78,15 +78,15 @@ void renderParticles()
 
 		PxScene* scene;
 		PxGetPhysics().getScenes(&scene, 1);
-		PxCudaContextManager* cudaContexManager = scene->getCudaContextManager();
+		PxCudaContextManager* cudaContextManager = scene->getCudaContextManager();
 
-		cudaContexManager->acquireContext();
+		cudaContextManager->acquireContext();
 
-		PxCudaContext* cudaContext = cudaContexManager->getCudaContext();
+		PxCudaContext* cudaContext = cudaContextManager->getCudaContext();
 		cudaContext->memcpyDtoH(sPosBuffer.map(), CUdeviceptr(positions), sizeof(PxVec4) * numParticles);
 		cudaContext->memcpyDtoH(sDiffusePosLifeBuffer.map(), CUdeviceptr(diffusePositions), sizeof(PxVec4) * numDiffuseParticles);
 
-		cudaContexManager->releaseContext();
+		cudaContextManager->releaseContext();
 
 #if SHOW_SOLID_SDF_SLICE
 		particleSystem->copySparseGridData(sSparseGridSolidSDFBufferD, PxSparseGridDataFlag::eGRIDCELL_SOLID_GRADIENT_AND_SDF);
@@ -117,17 +117,17 @@ void allocParticleBuffers()
 {
 	PxScene* scene;
 	PxGetPhysics().getScenes(&scene, 1);
-	PxCudaContextManager* cudaContexManager = scene->getCudaContextManager();
+	PxCudaContextManager* cudaContextManager = scene->getCudaContextManager();
 
 	PxParticleAndDiffuseBuffer* userBuffer = getParticleBuffer();
 
 	const PxU32 maxParticles = userBuffer->getMaxParticles();
 	const PxU32 maxDiffuseParticles = userBuffer->getMaxDiffuseParticles();
 
-	sDiffusePosLifeBuffer.initialize(cudaContexManager);
+	sDiffusePosLifeBuffer.initialize(cudaContextManager);
 	sDiffusePosLifeBuffer.allocate(maxDiffuseParticles * sizeof(PxVec4));
 	
-	sPosBuffer.initialize(cudaContexManager);
+	sPosBuffer.initialize(cudaContextManager);
 	sPosBuffer.allocate(maxParticles * sizeof(PxVec4));
 }
 
@@ -171,9 +171,6 @@ void cleanup()
 
 void exitCallback(void)
 {
-#if PX_WINDOWS
-	cleanup();
-#endif
 }
 }
 
@@ -190,8 +187,6 @@ void renderLoop()
 
 	glutMainLoop();
 
-#if PX_LINUX_FAMILY
 	cleanup();
-#endif
 }
 #endif

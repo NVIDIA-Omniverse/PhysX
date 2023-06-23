@@ -31,717 +31,16 @@
 #include "ScTriggerInteraction.h"
 #include "ScElementInteractionMarker.h"
 #include "ScConstraintInteraction.h"
-#include "ScConstraintSim.h"
-#include "ScConstraintCore.h"
 #include "ScSimStats.h"
-#include "ScObjectIDTracker.h"
-#include "ScSimStats.h"
-
-#include "foundation/PxThread.h"
-#include "BpBroadPhase.h"
-#include "common/PxProfileZone.h"
-#include "ScSoftBodyShapeSim.h"
-#include "ScParticleSystemShapeSim.h"
-#include "ScArticulationSim.h"
 
 using namespace physx;
 using namespace Sc;
-using namespace Gu;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 PX_IMPLEMENT_OUTPUT_ERROR
 
 ///////////////////////////////////////////////////////////////////////////////
-
-class Sc::FilterPairManager : public PxUserAllocated
-{
-	PX_NOCOPY(FilterPairManager)
-public:
-	FilterPairManager()
-	: mPairs("FilterPairManager Array")
-	, mFree(INVALID_FILTER_PAIR_INDEX)
-	{}
-
-	PxU32 acquireIndex()
-	{
-		PxU32 index;
-		if(mFree == INVALID_FILTER_PAIR_INDEX)
-		{
-			index = mPairs.size();
-			mPairs.pushBack(NULL);
-		}
-		else
-		{
-			index = PxU32(mFree);
-			mFree = reinterpret_cast<uintptr_t>(mPairs[index]);
-			mPairs[index] = NULL;
-		}
-		return index;
-	}
-
-	void releaseIndex(PxU32 index)
-	{		
-		mPairs[index] = reinterpret_cast<Sc::ElementSimInteraction*>(mFree);
-		mFree = index;
-	}
-
-	void setPair(PxU32 index, Sc::ElementSimInteraction* ptr)
-	{
-		mPairs[index] = ptr;
-	}
-
-	Sc::ElementSimInteraction*	operator[](PxU32 index)
-	{
-		return mPairs[index];
-	}
-
-	PxU32 findIndex(Sc::ElementSimInteraction* ptr)
-	{
-		return ptr->getFilterPairIndex();
-	}
-
-private:	
-	PxArray<Sc::ElementSimInteraction*> mPairs;	
-	uintptr_t mFree;
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static PX_FORCE_INLINE PxU32 hasTriggerFlags(PxShapeFlags flags)	{ return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE);	}
-static void getFilterInfo_ShapeSim(PxFilterObjectAttributes& filterAttr, PxFilterData& filterData, const Sc::ShapeSim& shape)
-{
-	filterAttr = hasTriggerFlags(shape.getCore().getFlags()) ? PxFilterObjectFlag::eTRIGGER : PxFilterObjectFlag::Enum(0);
-
-	BodySim* b = shape.getBodySim();
-	if(b)
-	{
-		if(!b->isArticulationLink())
-		{
-			if(b->isKinematic())
-				filterAttr |= PxFilterObjectFlag::eKINEMATIC;
-
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::eRIGID_DYNAMIC);
-		}
-		else
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::eARTICULATION);
-	}
-	else
-	{
-		// For softbody and particle system, the bodySim is set to null
-		if (shape.getActor().isSoftBody())
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::eSOFTBODY);
-		else if (shape.getActor().isParticleSystem())
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::ePARTICLESYSTEM);
-		else if (shape.getActor().isHairSystem())
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::eHAIRSYSTEM);
-		else
-			setFilterObjectAttributeType(filterAttr, PxFilterObjectType::eRIGID_STATIC);
-	}
-
-	filterData = shape.getCore().getSimulationFilterData();
-}
-
-static PX_FORCE_INLINE void getFilterInfo(PxFilterData& fd, PxFilterObjectAttributes& fa, const ElementSim& e)
-{
-	getFilterInfo_ShapeSim(fa, fd, static_cast<const ShapeSim&>(e));
-}
-
-static void getFilterInfo(PxFilterData& fd0, PxFilterData& fd1, PxFilterObjectAttributes& fa0, PxFilterObjectAttributes& fa1, const ElementSim& e0, const ElementSim& e1)
-{
-	getFilterInfo(fd0, fa0, e0);
-	getFilterInfo(fd1, fa1, e1);
-}
-
-static PX_INLINE void callPairLost(Scene& scene, const ElementSim& e0, const ElementSim& e1, PxU32 pairID, bool objVolumeRemoved)
-{
-	PxFilterData fd0(PxEmpty), fd1(PxEmpty);
-	PxFilterObjectAttributes fa0, fa1;
-	getFilterInfo(fd0, fd1, fa0, fa1, e0, e1);
-
-	scene.getFilterCallbackFast()->pairLost(pairID, fa0, fd0, fa1, fd1, objVolumeRemoved);
-}
-
-// Filtering
-
-static PX_INLINE void checkFilterFlags(PxFilterFlags& filterFlags)
-{
-	if((filterFlags & (PxFilterFlag::eKILL | PxFilterFlag::eSUPPRESS)) == (PxFilterFlag::eKILL | PxFilterFlag::eSUPPRESS))
-	{
-#if PX_CHECKED
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: eKILL and eSUPPRESS must not be set simultaneously. eSUPPRESS will be used.");
-#endif
-		filterFlags.clear(PxFilterFlag::eKILL);
-	}
-}
-
-static PX_FORCE_INLINE PxPairFlags checkRbPairFlags(const ShapeSimBase& s0, const ShapeSimBase& s1, PxPairFlags pairFlags)
-{
-#if PX_CHECKED
-	// we want to avoid to run contact generation for pairs that should not get resolved or have no contact/trigger reports
-	if (!(PxU32(pairFlags) & (PxPairFlag::eSOLVE_CONTACT | ShapeInteraction::CONTACT_REPORT_EVENTS)))
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Pair with no contact/trigger reports detected, nor is PxPairFlag::eSOLVE_CONTACT set. It is recommended to suppress/kill such pairs for performance reasons.");
-	else if(!(pairFlags & (PxPairFlag::eDETECT_DISCRETE_CONTACT | PxPairFlag::eDETECT_CCD_CONTACT)))
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Pair did not request either eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT. It is recommended to suppress/kill such pairs for performance reasons.");
-
-	if(((s0.getFlags() & PxShapeFlag::eTRIGGER_SHAPE)!=0 || (s1.getFlags() & PxShapeFlag::eTRIGGER_SHAPE)!=0) &&
-		(pairFlags & PxPairFlag::eTRIGGER_DEFAULT) && (pairFlags & PxPairFlag::eDETECT_CCD_CONTACT))
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: CCD isn't supported on Triggers yet");
-#else
-	PX_UNUSED(s0);
-	PX_UNUSED(s1);
-#endif
-	return pairFlags;
-}
-
-static PX_INLINE PxPairFlags checkRbPairFlags(	const ShapeSimBase& s0, const ShapeSimBase& s1,
-												const ActorSim& bs0, const ActorSim& bs1,
-												PxPairFlags pairFlags, PxFilterFlags filterFlags,
-												bool isNonRigid)
-{
-	if(filterFlags & (PxFilterFlag::eSUPPRESS | PxFilterFlag::eKILL))
-		return pairFlags;
-
-	if (bs0.isDynamicRigid() && static_cast<const BodySim&>(bs0).isKinematic() && 
-		bs1.isDynamicRigid() && static_cast<const BodySim&>(bs1).isKinematic() && 
-		(pairFlags & PxPairFlag::eSOLVE_CONTACT))
-	{
-#if PX_CHECKED
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Resolving contacts between two kinematic objects is invalid. Contacts will not get resolved.");
-#endif
-		pairFlags.clear(PxPairFlag::eSOLVE_CONTACT);
-	}
-
-	if (isNonRigid && (pairFlags & PxPairFlag::eDETECT_CCD_CONTACT))
-		pairFlags.clear(PxPairFlag::eDETECT_CCD_CONTACT);
-
-	return checkRbPairFlags(s0, s1, pairFlags);
-}
-
-// PT: version specialized for ShapeSim/ShapeSim
-static PX_INLINE PxPairFlags checkRbPairFlags(	const ShapeSimBase& s0, const ShapeSimBase& s1,
-												bool kine0, bool kine1,
-												PxPairFlags pairFlags, PxFilterFlags filterFlags,
-												bool isNonRigid)
-{
-	if(filterFlags & (PxFilterFlag::eSUPPRESS | PxFilterFlag::eKILL))
-		return pairFlags;
-
-	if(kine0 && kine1 && (pairFlags & PxPairFlag::eSOLVE_CONTACT))
-	{
-#if PX_CHECKED
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Resolving contacts between two kinematic objects is invalid. Contacts will not get resolved.");
-#endif
-		pairFlags.clear(PxPairFlag::eSOLVE_CONTACT);
-	}
-
-	if (pairFlags & PxPairFlag::eDETECT_CCD_CONTACT && isNonRigid)
-	{
-		pairFlags.clear(PxPairFlag::eDETECT_CCD_CONTACT);
-	}
-
-	return checkRbPairFlags(s0, s1, pairFlags);
-}
-
-static PX_FORCE_INLINE void fetchActorAndShape(const ElementSim& e, PxActor*& a, PxShape*& s)
-{
-	const ShapeSimBase& sim = static_cast<const ShapeSimBase&>(e);
-	a = sim.getActor().getPxActor();
-
-	PxActorType::Enum type = sim.getActor().getActorType();
-	if (type == PxActorType::ePBD_PARTICLESYSTEM ||
-		type == PxActorType::eFLIP_PARTICLESYSTEM ||
-		type == PxActorType::eMPM_PARTICLESYSTEM ||
-		type == PxActorType::eCUSTOM_PARTICLESYSTEM)
-		s = NULL;	// Particle system does not have a valid shape so set it to null
-	else
-		s = sim.getPxShape();
-}
-
-static void runFilter(PxFilterInfo& filterInfo, const FilteringContext& context, const ElementSim& e0, const ElementSim& e1, PxU32 filterPairIndex, bool doCallbacks)
-{
-	PxFilterData fd0(PxEmpty), fd1(PxEmpty);
-	PxFilterObjectAttributes fa0, fa1;
-	getFilterInfo(fd0, fd1, fa0, fa1, e0, e1);
-
-	// Run filter shader
-	filterInfo.filterFlags = context.mFilterShader(fa0, fd0, fa1, fd1, filterInfo.pairFlags, context.mFilterShaderData, context.mFilterShaderDataSize);
-
-	if(filterInfo.filterFlags & PxFilterFlag::eCALLBACK)
-	{
-		if(context.mFilterCallback)
-		{
-			if(!doCallbacks)
-			{
-				return;
-			}
-			else
-			{
-				if(filterPairIndex == INVALID_FILTER_PAIR_INDEX)
-					filterPairIndex = context.mFilterPairManager->acquireIndex();
-				// If a FilterPair is provided, then we use it, else we create a new one
-				// (A FilterPair is provided in the case for a pairLost()-pairFound() sequence after refiltering)
-
-				PxActor* a0, *a1;
-				PxShape* s0, *s1;
-				fetchActorAndShape(e0, a0, s0);
-				fetchActorAndShape(e1, a1, s1);
-
-				filterInfo.filterFlags = context.mFilterCallback->pairFound(filterPairIndex, fa0, fd0, a0, s0, fa1, fd1, a1, s1, filterInfo.pairFlags);
-				filterInfo.filterPairIndex = filterPairIndex;
-			}
-		}
-		else
-		{
-			filterInfo.filterFlags.clear(PxFilterFlag::eNOTIFY);
-			outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: eCALLBACK set but no filter callback defined.");
-		}
-	}
-
-	checkFilterFlags(filterInfo.filterFlags);
-
-	if(filterPairIndex!=INVALID_FILTER_PAIR_INDEX && ((filterInfo.filterFlags & PxFilterFlag::eKILL) || ((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) != PxFilterFlag::eNOTIFY)))
-	{
-		if((filterInfo.filterFlags & PxFilterFlag::eKILL) && ((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) == PxFilterFlag::eNOTIFY))
-			context.mFilterCallback->pairLost(filterPairIndex, fa0, fd0, fa1, fd1, false);
-
-		if((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) != PxFilterFlag::eNOTIFY)
-		{
-			// No notification, hence we don't need to treat it as a filter callback pair anymore.
-			// Make sure that eCALLBACK gets removed as well
-			filterInfo.filterFlags.clear(PxFilterFlag::eNOTIFY);
-		}
-
-		context.mFilterPairManager->releaseIndex(filterPairIndex);
-		filterInfo.filterPairIndex = INVALID_FILTER_PAIR_INDEX;
-	}
-
-	// Sanity checks
-	PX_ASSERT(	(filterInfo.filterFlags != PxFilterFlag::eKILL) ||
-				((filterInfo.filterFlags == PxFilterFlag::eKILL) && (filterInfo.filterPairIndex == INVALID_FILTER_PAIR_INDEX)) );
-	PX_ASSERT(	((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) != PxFilterFlag::eNOTIFY) ||
-				(((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) == PxFilterFlag::eNOTIFY) && filterInfo.filterPairIndex!=INVALID_FILTER_PAIR_INDEX) );
-}
-
-// PT: version specialized for ShapeSim/ShapeSim
-static PX_FORCE_INLINE void runFilterShapeSim(PxFilterInfo& filterInfo, const FilteringContext& context, const ShapeSimBase& e0, const ShapeSimBase& e1, const PxFilterObjectAttributes fa0, const PxFilterObjectAttributes fa1)
-{
-	// Run filter shader
-	{
-		const PxFilterData fd0 = e0.getCore().getSimulationFilterData();
-		const PxFilterData fd1 = e1.getCore().getSimulationFilterData();
-		filterInfo.filterFlags = context.mFilterShader(fa0, fd0, fa1, fd1, filterInfo.pairFlags, context.mFilterShaderData, context.mFilterShaderDataSize);
-	}
-
-	if(filterInfo.filterFlags & PxFilterFlag::eCALLBACK)
-	{
-		if(context.mFilterCallback)
-		{
-			return;
-		}
-		else
-		{
-			filterInfo.filterFlags.clear(PxFilterFlag::eNOTIFY);
-			outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: eCALLBACK set but no filter callback defined.");
-		}
-	}
-
-	checkFilterFlags(filterInfo.filterFlags);
-
-	// Sanity checks
-	PX_ASSERT(	(filterInfo.filterFlags != PxFilterFlag::eKILL) ||
-				((filterInfo.filterFlags == PxFilterFlag::eKILL) && (filterInfo.filterPairIndex == INVALID_FILTER_PAIR_INDEX)) );
-	PX_ASSERT(	((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) != PxFilterFlag::eNOTIFY) ||
-				(((filterInfo.filterFlags & PxFilterFlag::eNOTIFY) == PxFilterFlag::eNOTIFY) && filterInfo.filterPairIndex!=INVALID_FILTER_PAIR_INDEX) );
-}
-
-// helper method for some cleanup code that is used multiple times for early outs in case a rigid body collision pair gets filtered out due to some hardwired filter criteria
-static PX_FORCE_INLINE PxFilterInfo filterOutRbCollisionPair(FilterPairManager* filterPairManager, PxU32 filterPairIndex, const PxFilterFlags filterFlags)
-{
-	if(filterPairIndex!=INVALID_FILTER_PAIR_INDEX)
-		filterPairManager->releaseIndex(filterPairIndex);
-
-	return PxFilterInfo(filterFlags);
-}
-
-PxFilterInfo Sc::filterRbCollisionPairSecondStage(const FilteringContext& context, const ShapeSimBase& s0, const ShapeSimBase& s1, const ActorSim& b0, const ActorSim& b1, PxU32 filterPairIndex, bool runCallbacks,
-	bool isNonRigid)
-{
-	PxFilterInfo filterInfo;
-
-	runFilter(filterInfo, context, s0, s1, filterPairIndex, runCallbacks);
-
-	if(runCallbacks || (!(filterInfo.filterFlags & PxFilterFlag::eCALLBACK)))
-		filterInfo.pairFlags = checkRbPairFlags(s0, s1, b0, b1, filterInfo.pairFlags, filterInfo.filterFlags, isNonRigid);
-
-	return filterInfo;
-}
-
-// PT: version specialized for ShapeSim/ShapeSim
-static PX_FORCE_INLINE PxFilterInfo filterRbCollisionPairSecondStage(const FilteringContext& context, const ShapeSimBase& s0, const ShapeSimBase& s1, bool kine0, bool kine1, const PxFilterObjectAttributes fa0, const PxFilterObjectAttributes fa1,
-	bool isNonRigid)
-{
-	PxFilterInfo filterInfo;
-	runFilterShapeSim(filterInfo, context, s0, s1, fa0, fa1);
-
-	if(!(filterInfo.filterFlags & PxFilterFlag::eCALLBACK))
-		filterInfo.pairFlags = checkRbPairFlags(s0, s1, kine0, kine1, filterInfo.pairFlags, filterInfo.filterFlags, isNonRigid);
-
-	return filterInfo;
-}
-
-static bool filterArticulationLinks(const ActorSim& rbActor0, const ActorSim& rbActor1)
-{
-	{
-		//It's the same articulation, so we can filter based on flags...
-		const BodySim& bs0 = static_cast<const BodySim&>(rbActor0);
-		const BodySim& bs1 = static_cast<const BodySim&>(rbActor1);
-
-		const ArticulationSim* articulationSim0 = bs0.getArticulation();
-		const ArticulationSim* articulationSim1 = bs1.getArticulation();
-		if (articulationSim0 == articulationSim1)
-		{
-			if (articulationSim0->getCore().getArticulationFlags() & PxArticulationFlag::eDISABLE_SELF_COLLISION)
-				return true;
-
-			//check to see if one link is the parent of the other link, if so disable collision
-			PxU32 linkId0 = bs0.getNodeIndex().articulationLinkId();
-			PxU32 linkId1 = bs1.getNodeIndex().articulationLinkId();
-			
-
-			const Dy::ArticulationLink& link0 = articulationSim0->getLink(linkId0);
-			const Dy::ArticulationLink& link1 = articulationSim1->getLink(linkId1);
-
-			if (linkId1 < linkId0)
-				return link0.parent == linkId1;
-			
-			return link1.parent == linkId0;
-		}
-	}
-	
-	return false;
-}
-
-static bool filterJointedBodies2(const ActorSim& actor, const ActorSim& other)
-{
-	if(!actor.isDynamicRigid())
-		return false;
-
-	ConstraintCore* core = actor.getScene().findConstraintCore(&actor, &other);
-
-	if(core)
-		return !(core->getFlags() & PxConstraintFlag::eCOLLISION_ENABLED);
-	return false;
-
-	/*const Sc::ActorSim* actorToMatch;
-	PxU32 size;
-	Interaction** interactions;
-
-	if(actor.getActorInteractionCount() <= other.getActorInteractionCount())
-	{
-		size = actor.getActorInteractionCount();
-		interactions = actor.getActorInteractions();
-		actorToMatch = &other;
-	}
-	else
-	{
-		size = other.getActorInteractionCount();
-		interactions = other.getActorInteractions();
-		actorToMatch = &actor;
-	}
-
-	while(size--)
-	{
-		Interaction* interaction = *interactions++;
-		if(interaction->getType() == InteractionType::eCONSTRAINTSHADER)
-		{
-			ConstraintInteraction* csi = static_cast<ConstraintInteraction*>(interaction);
-			if((&csi->getActorSim0() == actorToMatch) || (&csi->getActorSim1() == actorToMatch))
-				return !(csi->getConstraint()->getCore().getFlags() & PxConstraintFlag::eCOLLISION_ENABLED);
-		}
-	}
-	return false;*/
-}
-
-static PX_FORCE_INLINE bool filterJointedBodies(const ActorSim& rbActor0, const ActorSim& rbActor1)
-{
-	// If the bodies of the shape pair are connected by a joint, we need to check whether this connection disables the collision.
-	// Note: As an optimization, the dynamic bodies have a flag which specifies whether they have any constraints at all. That works
-	//       because a constraint has at least one dynamic body and an interaction is tracked by both objects.
-
-	if(rbActor0.isDynamicRigid())
-		return filterJointedBodies2(rbActor0, rbActor1);
-	return filterJointedBodies2(rbActor1, rbActor0);
-}
-
-static PX_FORCE_INLINE bool hasForceNotifEnabled(const BodySim* bs, PxRigidBodyFlag::Enum flag)
-{
-	if(!bs)
-		return false;
-
-	const PxsRigidCore& core = bs->getBodyCore().getCore();
-	return core.mFlags.isSet(flag);
-}
-
-static PX_FORCE_INLINE bool validateSuppress(const BodySim* b0, const BodySim* b1, PxRigidBodyFlag::Enum flag)
-{
-	if(hasForceNotifEnabled(b0, flag))
-		return false;
-
-	if(hasForceNotifEnabled(b1, flag))
-		return false;
-
-	return true;
-}
-
-static PX_FORCE_INLINE bool filterKinematics(const BodySim* b0, const BodySim* b1, bool kine0, bool kine1,
-	const PxPairFilteringMode::Enum kineKineFilteringMode, const PxPairFilteringMode::Enum staticKineFilteringMode)
-{
-	const bool kinematicPair = kine0 | kine1;
-	if(kinematicPair)
-	{
-		if(staticKineFilteringMode != PxPairFilteringMode::eKEEP)
-		{
-			if(!b0 || !b1)
-				return validateSuppress(b0, b1, PxRigidBodyFlag::eFORCE_STATIC_KINE_NOTIFICATIONS);
-		}
-
-		if(kineKineFilteringMode != PxPairFilteringMode::eKEEP)
-		{
-			if(kine0 && kine1)
-				return validateSuppress(b0, b1, PxRigidBodyFlag::eFORCE_KINE_KINE_NOTIFICATIONS);
-		}
-	}
-	return false;
-}
-
-static const BodySim* isKinematic(const ActorSim& actorSim, bool& kine)
-{
-	if(actorSim.isDynamicRigid())
-	{
-		const BodySim* bs = static_cast<const BodySim*>(&actorSim);
-		kine = bs->isKinematic();
-		return bs;
-	}
-	else
-	{
-		kine = false;
-		return NULL;
-	}
-}
-
-static PxFilterInfo filterRbCollisionPair(const FilteringContext& context, const ShapeSimBase& s0, const ShapeSimBase& s1, PxU32 filterPairIndex, bool& isTriggerPair, bool runCallbacks)
-{
-	const ActorSim& b0 = s0.getActor();
-	const ActorSim& b1 = s1.getActor();
-
-	const PxU32 trigger0 = s0.getFlags() & PxShapeFlag::eTRIGGER_SHAPE;
-	const PxU32 trigger1 = s1.getFlags() & PxShapeFlag::eTRIGGER_SHAPE;
-	isTriggerPair = (trigger0 | trigger1)!=0;
-
-	bool isNonRigid = false;
-
-	if(isTriggerPair)
-	{
-		if(trigger0 && trigger1)	// trigger-trigger pairs are not supported
-			return filterOutRbCollisionPair(context.mFilterPairManager, filterPairIndex, PxFilterFlag::eKILL);
-	}
-	else
-	{
-		bool kine0, kine1;
-		const BodySim* bs0 = isKinematic(b0, kine0);
-		const BodySim* bs1 = isKinematic(b1, kine1);
-
-		isNonRigid = b0.isNonRigid() || b1.isNonRigid();
-
-		if(!isNonRigid && filterKinematics(bs0, bs1, kine0, kine1, context.mKineKineFilteringMode, context.mStaticKineFilteringMode))
-			return filterOutRbCollisionPair(context.mFilterPairManager, filterPairIndex, PxFilterFlag::eSUPPRESS);
-
-		if(filterJointedBodies(b0, b1))
-			return filterOutRbCollisionPair(context.mFilterPairManager, filterPairIndex, PxFilterFlag::eSUPPRESS);
-
-		if((b0.getActorType() == PxActorType::eARTICULATION_LINK) && (b1.getActorType() == PxActorType::eARTICULATION_LINK))
-		{
-			if(filterArticulationLinks(b0, b1))
-				return filterOutRbCollisionPair(context.mFilterPairManager, filterPairIndex, PxFilterFlag::eKILL);
-		}
-	}
-	return filterRbCollisionPairSecondStage(context, s0, s1, b0, b1, filterPairIndex, runCallbacks, isNonRigid);
-}
-
-// PT: indexed by PxActorType
-static const PxU32 gTypeData[] = {
-	PxFilterObjectType::eRIGID_STATIC<<1,
-	(PxFilterObjectType::eRIGID_DYNAMIC<<1)|1,
-	(PxFilterObjectType::eARTICULATION<<1)|1,
-	(PxFilterObjectType::eSOFTBODY<<1)|1,
-	(PxFilterObjectType::eFEMCLOTH << 1) | 1,
-	(PxFilterObjectType::ePARTICLESYSTEM<<1)|1, //PBD
-	(PxFilterObjectType::ePARTICLESYSTEM<<1)|1, //FLIP
-	(PxFilterObjectType::ePARTICLESYSTEM<<1)|1, //MPM
-	(PxFilterObjectType::ePARTICLESYSTEM<<1)|1, //Custom
-	(PxFilterObjectType::eHAIRSYSTEM<<1)|1,
-};
-
-static PX_FORCE_INLINE bool isParticleSystem(const PxActorType::Enum actorType)
-{
-	return actorType == PxActorType::ePBD_PARTICLESYSTEM || actorType == PxActorType::eFLIP_PARTICLESYSTEM
-		|| actorType == PxActorType::eMPM_PARTICLESYSTEM || actorType == PxActorType::eCUSTOM_PARTICLESYSTEM;
-}
-
-// PT: version specialized for ShapeSim/ShapeSim (no triggers)
-static PX_FORCE_INLINE PxFilterInfo filterRbCollisionPair(const FilteringContext& context, const ShapeSimBase& s0, const ShapeSimBase& s1)
-{
-	const ActorSim& rbActor0 = s0.getActor();
-	const PxActorType::Enum actorType0 = rbActor0.getActorType();
-	const PxU32 typeData0 = gTypeData[actorType0];
-	PxFilterObjectAttributes filterAttr0 = typeData0>>1;
-	bool kine0 = false;
-	bool isNonRigid = false;
-	const BodySim* bs0 = NULL;
-	if (rbActor0.isDynamicRigid())
-	{
-		bs0 = static_cast<const BodySim*>(&rbActor0);
-		kine0 = bs0->isKinematic();
-		filterAttr0 |= kine0 ? PxFilterObjectFlag::eKINEMATIC : 0;
-	}
-	else if (rbActor0.isNonRigid())
-	{
-		isNonRigid = true;
-	}
-
-	const ActorSim& rbActor1 = s1.getActor();
-	const PxActorType::Enum actorType1 = rbActor1.getActorType();
-	const PxU32 typeData1 = gTypeData[actorType1];
-	PxFilterObjectAttributes filterAttr1 = typeData1 >> 1;
-	bool kine1 = false;
-	const BodySim* bs1 = NULL;
-	if (rbActor1.isDynamicRigid())
-	{
-		bs1 = static_cast<const BodySim*>(&rbActor1);
-		kine1 = bs1->isKinematic();
-		filterAttr0 |= kine1 ? PxFilterObjectFlag::eKINEMATIC : 0;
-	}
-	else if (rbActor1.isNonRigid())
-	{
-		isNonRigid = true;
-	}
-
-	PX_ASSERT(!(s0.getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-	PX_ASSERT(!(s1.getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-
-	if (!isNonRigid && filterKinematics(bs0, bs1, kine0, kine1, context.mKineKineFilteringMode, context.mStaticKineFilteringMode))
-		return PxFilterInfo(PxFilterFlag::eSUPPRESS);
-
-	if(filterJointedBodies(rbActor0, rbActor1))
-		return PxFilterInfo(PxFilterFlag::eSUPPRESS);
-
-	if(isParticleSystem(actorType0) && isParticleSystem(actorType1))
-		return PxFilterInfo(PxFilterFlag::eKILL);
-
-	if(actorType0 == PxActorType::eHAIRSYSTEM && actorType1 == PxActorType::eHAIRSYSTEM)
-		return PxFilterInfo(PxFilterFlag::eKILL);
-
-
-	if ((actorType0 == PxActorType::eARTICULATION_LINK) ^ (actorType1 == PxActorType::eARTICULATION_LINK))
-	{
-		if(actorType0 == PxActorType::eARTICULATION_LINK)
-		{
-			const BodySim& b0 = static_cast<const BodySim&>(rbActor0);
-			const PxU8 kinematicLink = b0.getLowLevelBody().mCore->kinematicLink;
-			const bool isStaticOrKinematic = (actorType1 == PxActorType::eRIGID_STATIC) || kine1;
-			if (kinematicLink && isStaticOrKinematic)
-				return PxFilterInfo(PxFilterFlag::eSUPPRESS);
-		}
-		
-		if (actorType1 == PxActorType::eARTICULATION_LINK)
-		{
-			const BodySim& b1 = static_cast<const BodySim&>(rbActor1);
-			const PxU8 kinematicLink = b1.getLowLevelBody().mCore->kinematicLink;
-			const bool isStaticOrKinematic = (actorType0 == PxActorType::eRIGID_STATIC) || kine0;
-			if (kinematicLink && isStaticOrKinematic)
-				return PxFilterInfo(PxFilterFlag::eSUPPRESS);
-		}	
-	}
-
-	if((actorType0 == PxActorType::eARTICULATION_LINK) && (actorType1 == PxActorType::eARTICULATION_LINK))
-	{
-		const BodySim& b0 = static_cast<const BodySim&>(rbActor0);
-		const BodySim& b1 = static_cast<const BodySim&>(rbActor1);
-		const PxU8 kinematicLink0 = b0.getLowLevelBody().mCore->kinematicLink;
-		const PxU8 kinematicLink1 = b1.getLowLevelBody().mCore->kinematicLink;
-		if (kinematicLink0 && kinematicLink1)
-			return PxFilterInfo(PxFilterFlag::eSUPPRESS);
-
-		if(filterArticulationLinks(rbActor0, rbActor1))
-			return PxFilterInfo(PxFilterFlag::eKILL);
-	}
-
-	return filterRbCollisionPairSecondStage(context, s0, s1, kine0, kine1, filterAttr0, filterAttr1, isNonRigid);
-}
-
-void NPhaseCore::runOverlapFilters(	PxU32 nbToProcess, const Bp::AABBOverlap* PX_RESTRICT pairs, PxFilterInfo* PX_RESTRICT filterInfo,
-									PxU32& nbToKeep_, PxU32& nbToSuppress_, PxU32& nbToCallback_, PxU32* PX_RESTRICT keepMap, PxU32* PX_RESTRICT callbackMap)
-{
-	PxU32 nbToKeep = 0;
-	PxU32 nbToSuppress = 0;
-	PxU32 nbToCallback = 0;
-
-	const FilteringContext context(mOwnerScene, mFilterPairManager);
-
-	for(PxU32 i=0; i<nbToProcess; i++)
-	{
-		const Bp::AABBOverlap& pair = pairs[i];
-
-		ElementSim* e0 = reinterpret_cast<ElementSim*>(pair.mUserData0);
-		ElementSim* e1 = reinterpret_cast<ElementSim*>(pair.mUserData1);
-
-		PX_ASSERT(e0);
-		PX_ASSERT(e1);
-
-		// PT: a bit of defensive coding added for OM-74224. In theory this should not be needed, as the broadphase is not
-		// supposed to return null pointers here. But there seems to be an issue somewhere, most probably in the GPU BP kernels,
-		// and this is an attempt at preventing a crash. We could/should remove this eventually.
-		if(!e0 || !e1)
-		{
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "NPhaseCore::runOverlapFilters: found null elements!");
-			continue;
-		}
-
-		PX_ASSERT(!findInteraction(e0, e1));
-
-		ShapeSimBase* s0 = static_cast<ShapeSimBase*>(e0);
-		ShapeSimBase* s1 = static_cast<ShapeSimBase*>(e1);
-		PX_ASSERT(&s0->getActor() != &s1->getActor());	// No actor internal interactions
-
-		filterInfo[i] = filterRbCollisionPair(context, *s0, *s1);
-
-		const PxFilterFlags filterFlags = filterInfo[i].filterFlags;
-
-		if(!(filterFlags & PxFilterFlag::eKILL))
-		{
-			if(filterFlags & PxFilterFlag::eCALLBACK)
-			{
-				nbToCallback++;
-				callbackMap[i / 32] |= (1 << (i & 31));
-			}
-			else
-			{
-				if(!(filterFlags & PxFilterFlag::eSUPPRESS))
-					nbToKeep++;
-				else
-					nbToSuppress++;
-				keepMap[i / 32] |= (1 << (i & 31));
-			}
-		}
-	}
-
-	nbToKeep_ = nbToKeep;
-	nbToSuppress_ = nbToSuppress;
-	nbToCallback_ = nbToCallback;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 NPhaseCore::NPhaseCore(Scene& scene, const PxSceneDesc& sceneDesc) :
 	mOwnerScene									(scene),
@@ -755,19 +54,17 @@ NPhaseCore::NPhaseCore(Scene& scene, const PxSceneDesc& sceneDesc) :
 	mShapeInteractionPool						(PxAllocatorTraits<ShapeInteraction>::Type("shapeInteractionPool"), 4096),
 	mTriggerInteractionPool						("triggerInteractionPool"),
 	mActorPairContactReportDataPool				("actorPairContactReportPool"),
-	mInteractionMarkerPool						("interactionMarkerPool")
-	,mMergeProcessedTriggerInteractions			(scene.getContextId(), this, "ScNPhaseCore.mergeProcessedTriggerInteractions")
-	,mTmpTriggerProcessingBlock					(NULL)
-	,mTriggerPairsToDeactivateCount				(0)
+	mInteractionMarkerPool						("interactionMarkerPool"),
+	mMergeProcessedTriggerInteractions			(scene.getContextId(), this, "ScNPhaseCore.mergeProcessedTriggerInteractions"),
+	mTmpTriggerProcessingBlock					(NULL),
+	mTriggerPairsToDeactivateCount				(0)
 {
-	mFilterPairManager = PX_NEW(FilterPairManager);
 }
 
 NPhaseCore::~NPhaseCore()
 {
 	// Clear pending actor pairs (waiting on contact report callback)
 	clearContactReportActorPairs(false);
-	PX_DELETE(mFilterPairManager);
 }
 
 PxU32 NPhaseCore::getDefaultContactReportStreamBufferSize() const
@@ -775,59 +72,23 @@ PxU32 NPhaseCore::getDefaultContactReportStreamBufferSize() const
 	return mContactReportBuffer.getDefaultBufferSize();
 }
 
-ElementSimInteraction* NPhaseCore::findInteraction(ElementSim* _element0, ElementSim* _element1)
+ElementSimInteraction* NPhaseCore::findInteraction(const ElementSim* element0, const ElementSim* element1)
 {
-	const PxHashMap<ElementSimKey, ElementSimInteraction*>::Entry* pair = mElementSimMap.find(ElementSimKey(_element0, _element1));
+	const PxHashMap<ElementSimKey, ElementSimInteraction*>::Entry* pair = mElementSimMap.find(ElementSimKey(element0->getElementID(), element1->getElementID()));
 	return pair ? pair->second : NULL;
-}
-
-void NPhaseCore::onTriggerOverlapCreated(const Bp::AABBOverlap* PX_RESTRICT pairs, PxU32 pairCount)
-{
-	for(PxU32 i=0; i<pairCount; i++)
-	{
-		ElementSim* volume0 = reinterpret_cast<ElementSim*>(pairs[i].mUserData0);
-		ElementSim* volume1 = reinterpret_cast<ElementSim*>(pairs[i].mUserData1);
-		PX_ASSERT(!findInteraction(volume0, volume1));
-
-		ShapeSimBase* shapeHi = static_cast<ShapeSimBase*>(volume1);
-		ShapeSimBase* shapeLo = static_cast<ShapeSimBase*>(volume0);
-
-		// No actor internal interactions
-		PX_ASSERT(&shapeHi->getActor() != &shapeLo->getActor());
-
-		// PT: this case is only for triggers these days
-		PX_ASSERT((shapeLo->getFlags() & PxShapeFlag::eTRIGGER_SHAPE) || (shapeHi->getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-
-		createTriggerElementInteraction(*shapeHi, *shapeLo);
-	}
-}
-
-void NPhaseCore::reserveInteraction(PxU32 nbNewInteractions)
-{
-	if ((mElementSimMap.size() + nbNewInteractions) > mElementSimMap.capacity())
-	{
-		PX_PROFILE_ZONE("Reserve", 0);
-		PxU32 newSize = PxMax(mElementSimMap.size() + nbNewInteractions, mElementSimMap.capacity());
-		mElementSimMap.reserve(newSize);
-	}
 }
 
 void NPhaseCore::registerInteraction(ElementSimInteraction* interaction)
 {
-	mElementSimMap.insert(ElementSimKey(&interaction->getElement0(), &interaction->getElement1()), interaction);
+	mElementSimMap.insert(ElementSimKey(interaction->getElement0().getElementID(), interaction->getElement1().getElementID()), interaction);
 }
 
 void NPhaseCore::unregisterInteraction(ElementSimInteraction* interaction)
 {
-	mElementSimMap.erase(ElementSimKey(&interaction->getElement0(), &interaction->getElement1()));
+	mElementSimMap.erase(ElementSimKey(interaction->getElement0().getElementID(), interaction->getElement1().getElementID()));
 }
 
-ElementSimInteraction* NPhaseCore::onOverlapRemovedStage1(ElementSim* volume0, ElementSim* volume1)
-{
-	return findInteraction(volume0, volume1);
-}
-
-void NPhaseCore::onOverlapRemoved(ElementSim* volume0, ElementSim* volume1, const PxU32 ccdPass, void* elemSim, PxsContactManagerOutputIterator& outputs)
+void NPhaseCore::onOverlapRemoved(ElementSim* volume0, ElementSim* volume1, PxU32 ccdPass, void* elemSim, PxsContactManagerOutputIterator& outputs)
 {
 	ElementSim* elementHi = volume1;
 	ElementSim* elementLo = volume0;
@@ -870,7 +131,7 @@ void NPhaseCore::onVolumeRemoved(ElementSim* volume, PxU32 flags, PxsContactMana
 	}
 }
 
-ElementSimInteraction* NPhaseCore::createRbElementInteraction(const PxFilterInfo& finfo, ShapeSimBase& s0, ShapeSimBase& s1, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction,
+ElementSimInteraction* NPhaseCore::createRbElementInteraction(const FilterInfo& finfo, ShapeSimBase& s0, ShapeSimBase& s1, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction,
 	ElementInteractionMarker* interactionMarker, bool isTriggerPair)
 {
 	ElementSimInteraction* pair = NULL;
@@ -891,36 +152,13 @@ ElementSimInteraction* NPhaseCore::createRbElementInteraction(const PxFilterInfo
 	else
 		pair = createElementInteractionMarker(s0, s1, interactionMarker);
 
-	if(finfo.filterPairIndex != INVALID_FILTER_PAIR_INDEX)
+	if(finfo.hasPairID)
 	{
 		// Mark the pair as a filter callback pair
 		pair->raiseInteractionFlag(InteractionFlag::eIS_FILTER_PAIR);
-
-		// Filter callback pair: Set the link to the interaction
-		mFilterPairManager->setPair(finfo.filterPairIndex, pair);
-		pair->setFilterPairIndex(finfo.filterPairIndex);
 	}
 
 	return pair;
-}
-
-ElementSimInteraction* NPhaseCore::createTriggerElementInteraction(ShapeSimBase& s0, ShapeSimBase& s1)
-{
-	PX_ASSERT((s0.getFlags() & PxShapeFlag::eTRIGGER_SHAPE) || (s1.getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-
-	const FilteringContext context(mOwnerScene, mFilterPairManager);
-
-	bool isTriggerPair;
-	const PxFilterInfo finfo = filterRbCollisionPair(context, s0, s1, INVALID_FILTER_PAIR_INDEX, isTriggerPair, false);
-	PX_ASSERT(isTriggerPair);
-
-	if(finfo.filterFlags & PxFilterFlag::eKILL)
-	{
-		PX_ASSERT(finfo.filterPairIndex == INVALID_FILTER_PAIR_INDEX);  // No filter callback pair info for killed pairs
-		return NULL;
-	}
-
-	return createRbElementInteraction(finfo, s0, s1, NULL, NULL, NULL, isTriggerPair);
 }
 
 void NPhaseCore::managerNewTouch(ShapeInteraction& interaction)
@@ -939,11 +177,8 @@ void NPhaseCore::managerNewTouch(ShapeInteraction& interaction)
 	}	
 }
 
-ShapeInteraction* NPhaseCore::createShapeInteraction(ShapeSimBase& s0, ShapeSimBase& s1, PxPairFlags pairFlags, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction)
+static bool shouldSwapBodies(const ShapeSimBase& s0, const ShapeSimBase& s1)
 {
-	ShapeSimBase* _s0 = &s0;
-	ShapeSimBase* _s1 = &s1;
-
 	/*
 	This tries to ensure that if one of the bodies is static or kinematic, it will be body B
 	There is a further optimization to force all pairs that share the same bodies to have
@@ -953,38 +188,80 @@ ShapeInteraction* NPhaseCore::createShapeInteraction(ShapeSimBase& s0, ShapeSimB
 	If bodyA is rigidDynamic and bodyB is articulation, swap
 	If bodyA is in an earlier BP group than bodyB, swap
 	*/
+	// PT: some of these swaps are here to fulfill requirements from the solver code, and we
+	// will get asserts and failures without them. Some others are only optimizations.
+
+	// PT: generally speaking we want the "static" actor to be second in the pair.
+	// "Static" can mean either:
+	// - a proper static body
+	// - a kinematic dynamic body
+	// - an articulation link with a fixed base
+	ActorSim& rs0 = s0.getActor();
+	const PxActorType::Enum actorType0 = rs0.getActorType();
+	if(actorType0 == PxActorType::eRIGID_STATIC)
+		return true;
+
+	ActorSim& rs1 = s1.getActor();
+	const PxActorType::Enum actorType1 = rs1.getActorType();
+
+	const bool isDyna0 = actorType0 == PxActorType::eRIGID_DYNAMIC;
+	const bool isDyna1 = actorType1 == PxActorType::eRIGID_DYNAMIC;
+
+	if(actorType0 == PxActorType::eARTICULATION_LINK)
 	{
-		ActorSim& rs0 = s0.getActor();
-		ActorSim& rs1 = s1.getActor();
-
-		const PxActorType::Enum actorType0 = rs0.getActorType();
-		const PxActorType::Enum actorType1 = rs1.getActorType();
-
-		bool articulationLinkSwap = false;
-		if (actorType0 == PxActorType::eARTICULATION_LINK && actorType1 == PxActorType::eARTICULATION_LINK)
+		if(isDyna1 || actorType1 == PxActorType::eARTICULATION_LINK)
 		{
-			BodySim& bodySim0 = static_cast<BodySim&>(rs0);
-
-			const PxU8 kinematicLink0 = bodySim0.getLowLevelBody().mCore->kinematicLink;
-
-			if (kinematicLink0)
-			{
-				articulationLinkSwap = true;
-			}
+			if(static_cast<BodySim&>(rs0).getLowLevelBody().mCore->fixedBaseLink)
+				return true;
 		}
-
-		bool actorAKinematic = actorType0 == PxActorType::eRIGID_DYNAMIC && static_cast<BodySim&>(rs0).isKinematic();
-		bool actorBKinematic = actorType1 == PxActorType::eRIGID_DYNAMIC && static_cast<BodySim&>(rs1).isKinematic();
-
-
-		if(	 actorType0 == PxActorType::eRIGID_STATIC
-			 || (actorType1 == PxActorType::eRIGID_DYNAMIC && actorType0 == PxActorType::eARTICULATION_LINK)
-			 || articulationLinkSwap
-			 || (isParticleSystem(actorType0) && actorType1 != PxActorType::eRIGID_STATIC)
-			 || ((actorType0 == PxActorType::eRIGID_DYNAMIC && actorType1 == PxActorType::eRIGID_DYNAMIC) && actorAKinematic)
-			 || (actorType0 == actorType1 && rs0.getActorID() < rs1.getActorID() && !actorBKinematic))
-			PxSwap(_s0, _s1);
 	}
+	else if(isDyna0)
+	{
+		// PT: this tries to implement this requirement: "If bodyA is rigidDynamic and bodyB is articulation, swap"
+		// But we do NOT do that if bodyB has a fixed base. It is unclear whether this particular swap is really needed.
+		if(actorType1 == PxActorType::eARTICULATION_LINK)
+		{
+			if(!static_cast<BodySim&>(rs1).getLowLevelBody().mCore->fixedBaseLink)
+				return true;
+		}
+	}
+
+	// PT: initial code was:
+	// if((actorType0 == PxActorType::eRIGID_DYNAMIC && actorType1 == PxActorType::eRIGID_DYNAMIC) && actorAKinematic)
+	// But actorAKinematic true implies isDyna0 true, so this is equivalent to
+	// if(isDyna1 && actorAKinematic)
+	// And we only need actorAKinematic in this expression so it's faster to move its computation inside the if:
+	// if(isDyna1 && isDyna0 && static_cast<BodySim&>(rs0).isKinematic())
+	if(isDyna1 && isDyna0 && static_cast<BodySim&>(rs0).isKinematic())
+		return true;
+
+	// PT: initial code was:
+	// if(actorType0 == actorType1 && rs0.getActorID() < rs1.getActorID() && !actorBKinematic)
+	// We refactor the code a bit to avoid computing actorBKinematic. We could also test actorBKinematic
+	// first and avoid reading actor IDs. Unclear what's best, arbitrary choice for now.
+	if((actorType0 == actorType1) && (rs0.getActorID() < rs1.getActorID()))
+	{
+		const bool actorBKinematic = isDyna1 && static_cast<BodySim&>(rs1).isKinematic();
+		if(!actorBKinematic)
+			return true;
+	}
+
+#if PX_SUPPORT_GPU_PHYSX
+	// PT: using rs0.isParticleSystem() instead of isParticleSystem(actorType0) is faster.
+	if(actorType1 != PxActorType::eRIGID_STATIC && rs0.isParticleSystem())
+		return true;
+#endif
+
+	return false;
+}
+
+ShapeInteraction* NPhaseCore::createShapeInteraction(ShapeSimBase& s0, ShapeSimBase& s1, PxPairFlags pairFlags, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction)
+{
+	ShapeSimBase* _s0 = &s0;
+	ShapeSimBase* _s1 = &s1;
+
+	if(shouldSwapBodies(s0, s1))
+		PxSwap(_s0, _s1);
 
 	ShapeInteraction* si = shapeInteraction ? shapeInteraction : mShapeInteractionPool.allocate();
 	PX_PLACEMENT_NEW(si, ShapeInteraction)(*_s0, *_s1, pairFlags, contactManager);
@@ -1019,171 +296,6 @@ ElementInteractionMarker* NPhaseCore::createElementInteractionMarker(ElementSim&
 	ElementInteractionMarker* pair = interactionMarker ? interactionMarker : mInteractionMarkerPool.allocate();
 	PX_PLACEMENT_NEW(pair, ElementInteractionMarker)(e0, e1, interactionMarker != NULL);
 	return pair;
-}
-
-ElementSimInteraction* NPhaseCore::refilterInteraction(ElementSimInteraction* pair, const PxFilterInfo* filterInfo, bool removeFromDirtyList, PxsContactManagerOutputIterator& outputs)
-{
-	const InteractionType::Enum oldType = pair->getType();
-
-	switch (oldType)
-	{
-		case InteractionType::eTRIGGER:
-		case InteractionType::eMARKER:
-		case InteractionType::eOVERLAP:
-			{
-				ShapeSimBase& s0 = static_cast<ShapeSimBase&>(pair->getElement0());
-				ShapeSimBase& s1 = static_cast<ShapeSimBase&>(pair->getElement1());
-
-				PxFilterInfo finfo;
-				if(filterInfo)
-				{
-					// The filter changes are provided by an outside source (the user filter callback)
-
-					finfo = *filterInfo;
-					PX_ASSERT(finfo.filterPairIndex!=INVALID_FILTER_PAIR_INDEX);
-
-					if((finfo.filterFlags & PxFilterFlag::eKILL) &&
-						((finfo.filterFlags & PxFilterFlag::eNOTIFY) == PxFilterFlag::eNOTIFY) )
-					{
-						callPairLost(mOwnerScene, pair->getElement0(), pair->getElement1(), finfo.filterPairIndex, false);
-						mFilterPairManager->releaseIndex(finfo.filterPairIndex);
-						finfo.filterPairIndex = INVALID_FILTER_PAIR_INDEX;
-					}
-
-					ActorSim& bs0 = s0.getActor();
-					ActorSim& bs1 = s1.getActor();
-					finfo.pairFlags = checkRbPairFlags(s0, s1, bs0, bs1, finfo.pairFlags, finfo.filterFlags, s0.getActor().isNonRigid() || s1.getActor().isNonRigid());
-				}
-				else
-				{
-					PxU32 filterPairIndex =  INVALID_FILTER_PAIR_INDEX;
-					if(pair->readInteractionFlag(InteractionFlag::eIS_FILTER_PAIR))
-					{
-						filterPairIndex = mFilterPairManager->findIndex(pair);
-						PX_ASSERT(filterPairIndex!=INVALID_FILTER_PAIR_INDEX);
-
-						callPairLost(mOwnerScene, pair->getElement0(), pair->getElement1(), filterPairIndex, false);
-					}
-
-					const FilteringContext context(mOwnerScene, mFilterPairManager);
-
-					bool isTriggerPair;
-					finfo = filterRbCollisionPair(context, s0, s1, filterPairIndex, isTriggerPair, true);
-					PX_UNUSED(isTriggerPair);
-				}
-
-				if(pair->readInteractionFlag(InteractionFlag::eIS_FILTER_PAIR) &&
-					((finfo.filterFlags & PxFilterFlag::eNOTIFY) != PxFilterFlag::eNOTIFY) )
-				{
-					// The pair was a filter callback pair but not any longer
-					pair->clearInteractionFlag(InteractionFlag::eIS_FILTER_PAIR);
-
-					if(finfo.filterPairIndex!=INVALID_FILTER_PAIR_INDEX)
-					{
-						mFilterPairManager->releaseIndex(finfo.filterPairIndex);
-						finfo.filterPairIndex = INVALID_FILTER_PAIR_INDEX;
-					}
-				}
-
-				struct Local
-				{
-					static InteractionType::Enum getRbElementInteractionType(const ShapeSimBase* primitive0, const ShapeSimBase* primitive1, PxFilterFlags filterFlag)
-					{
-						if(filterFlag & PxFilterFlag::eKILL)
-							return InteractionType::eINVALID;
-
-						if(filterFlag & PxFilterFlag::eSUPPRESS)
-							return InteractionType::eMARKER;
-
-						if(primitive0->getFlags() & PxShapeFlag::eTRIGGER_SHAPE
-						|| primitive1->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
-							return InteractionType::eTRIGGER;
-
-						PX_ASSERT(	(primitive0->getGeometryType() != PxGeometryType::eTRIANGLEMESH) ||
-									(primitive1->getGeometryType() != PxGeometryType::eTRIANGLEMESH));
-
-						return InteractionType::eOVERLAP;
-					}
-				};
-
-				const InteractionType::Enum newType = Local::getRbElementInteractionType(&s0, &s1, finfo.filterFlags);
-				if(pair->getType() != newType)  //Only convert interaction type if the type has changed
-				{
-					return convert(pair, newType, finfo, removeFromDirtyList, outputs);
-				}
-				else
-				{
-					//The pair flags might have changed, we need to forward the new ones
-					if(oldType == InteractionType::eOVERLAP)
-					{
-						ShapeInteraction* si = static_cast<ShapeInteraction*>(pair);
-
-						const PxU32 newPairFlags = finfo.pairFlags;
-						const PxU32 oldPairFlags = si->getPairFlags();
-						PX_ASSERT((newPairFlags & ShapeInteraction::PAIR_FLAGS_MASK) == newPairFlags);
-						PX_ASSERT((oldPairFlags & ShapeInteraction::PAIR_FLAGS_MASK) == oldPairFlags);
-
-						if(newPairFlags != oldPairFlags)
-						{
-							if(!(oldPairFlags & ShapeInteraction::CONTACT_REPORT_EVENTS) && (newPairFlags & ShapeInteraction::CONTACT_REPORT_EVENTS) && (si->getActorPair() == NULL || !si->getActorPair()->isReportPair()))
-							{
-								// for this actor pair there was no shape pair that requested contact reports but now there is one
-								// -> all the existing shape pairs need to get re-adjusted to point to an ActorPairReport instance instead.
-								ActorPair* actorPair = findActorPair(&s0, &s1, PxIntTrue);
-								if (si->getActorPair() == NULL)
-								{
-									actorPair->incRefCount();
-									si->setActorPair(*actorPair);
-								}
-							}
-
-							if(si->readFlag(ShapeInteraction::IN_PERSISTENT_EVENT_LIST) && (!(newPairFlags & PxPairFlag::eNOTIFY_TOUCH_PERSISTS)))
-							{
-								// the new report pair flags don't require persistent checks anymore -> remove from persistent list
-								// Note: The pair might get added to the force threshold list later
-								if(si->readFlag(ShapeInteraction::IS_IN_PERSISTENT_EVENT_LIST))
-									removeFromPersistentContactEventPairs(si);
-								else
-									si->clearFlag(ShapeInteraction::WAS_IN_PERSISTENT_EVENT_LIST);
-							}
-
-							if(newPairFlags & ShapeInteraction::CONTACT_FORCE_THRESHOLD_PAIRS)
-							{
-								PX_ASSERT((si->mReportPairIndex == INVALID_REPORT_PAIR_ID) || (!si->readFlag(ShapeInteraction::WAS_IN_PERSISTENT_EVENT_LIST)));
-
-								if(si->mReportPairIndex == INVALID_REPORT_PAIR_ID && si->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
-								{
-									PX_ASSERT(!si->readFlag(ShapeInteraction::WAS_IN_PERSISTENT_EVENT_LIST));  // sanity check: an active pair should never have this flag set
-
-									if(si->hasTouch())
-										addToForceThresholdContactEventPairs(si);
-								}
-							}
-							else if((oldPairFlags & ShapeInteraction::CONTACT_FORCE_THRESHOLD_PAIRS))
-							{
-								// no force threshold events needed any longer -> clear flags
-								si->clearFlag(ShapeInteraction::FORCE_THRESHOLD_EXCEEDED_FLAGS);
-
-								if(si->readFlag(ShapeInteraction::IS_IN_FORCE_THRESHOLD_EVENT_LIST))
-									removeFromForceThresholdContactEventPairs(si);
-							}
-						}
-						si->setPairFlags(finfo.pairFlags);
-					}
-					else if(oldType == InteractionType::eTRIGGER)
-						static_cast<TriggerInteraction*>(pair)->setTriggerFlags(finfo.pairFlags);
-
-					return pair;
-				}
-			}
-			case InteractionType::eCONSTRAINTSHADER:
-			case InteractionType::eARTICULATION:
-			case InteractionType::eTRACKED_IN_SCENE_COUNT:
-			case InteractionType::eINVALID:
-			PX_ASSERT(0);
-			break;
-	}
-	return NULL;
 }
 
 ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBool isReportPair)
@@ -1254,7 +366,7 @@ PX_FORCE_INLINE void NPhaseCore::destroyActorPairReport(ActorPairReport& aPair)
 	mActorPairReportPool.destroy(&aPair);
 }
 
-ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, InteractionType::Enum newType, PxFilterInfo& filterInfo, bool removeFromDirtyList,
+ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, InteractionType::Enum newType, FilterInfo& filterInfo, bool removeFromDirtyList,
 	PxsContactManagerOutputIterator& outputs)
 {
 	PX_ASSERT(newType != pair->getType());
@@ -1306,7 +418,7 @@ ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, Interact
 			break;
 	};
 
-	if(filterInfo.filterPairIndex != INVALID_FILTER_PAIR_INDEX)
+	if(filterInfo.hasPairID)
 	{
 		PX_ASSERT(result);
 		// If a filter callback pair is going to get killed, then the FilterPair struct should already have
@@ -1314,9 +426,6 @@ ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, Interact
 
 		// Mark the new interaction as a filter callback pair
 		result->raiseInteractionFlag(InteractionFlag::eIS_FILTER_PAIR);
-
-		mFilterPairManager->setPair(filterInfo.filterPairIndex, result);
-		result->setFilterPairIndex(filterInfo.filterPairIndex);
 	}
 	return result;
 }
@@ -1436,21 +545,19 @@ static bool findTriggerContacts(TriggerInteraction* tri, bool toBeDeleted, bool 
 
 class TriggerContactTask : public Cm::Task
 {
-private:
-	TriggerContactTask& operator = (const TriggerContactTask&);
-
+	PX_NOCOPY(TriggerContactTask)
 public:
-	TriggerContactTask(Interaction* const* triggerPairs, PxU32 triggerPairCount, PxMutex& lock,
+	TriggerContactTask(ElementSimInteraction* const* triggerPairs, PxU32 triggerPairCount, PxMutex& lock,
 		TriggerInteraction** pairsToDeactivate, volatile PxI32& pairsToDeactivateCount,
-		Scene& scene, PxsTransformCache& transformCache):
-		Cm::Task(scene.getContextId()),
-		mTriggerPairs(triggerPairs),
-		mTriggerPairCount(triggerPairCount),
-		mLock(lock),
-		mPairsToDeactivate(pairsToDeactivate),
-		mPairsToDeactivateCount(pairsToDeactivateCount),
-		mScene(scene),
-		mTransformCache(transformCache)
+		Scene& scene, PxsTransformCache& transformCache) :
+		Cm::Task				(scene.getContextId()),
+		mTriggerPairs			(triggerPairs),
+		mTriggerPairCount		(triggerPairCount),
+		mLock					(lock),
+		mPairsToDeactivate		(pairsToDeactivate),
+		mPairsToDeactivateCount	(pairsToDeactivateCount),
+		mScene					(scene),
+		mTransformCache			(transformCache)
 	{
 	}
 
@@ -1468,7 +575,6 @@ public:
 
 		TriggerInteraction* deactivatePairs[sTriggerPairsPerTask];
 		PxI32 deactivatePairCount = 0;
-
 
 		for(PxU32 i=0; i < mTriggerPairCount; i++)
 		{
@@ -1492,7 +598,7 @@ public:
 
 				// explicitly scheduled overlap test is done (after object creation, teleport, ...). Check if trigger pair should remain active or not.
 
-				if(!tri->onActivate_(0))
+				if(!tri->onActivate(0))
 				{
 					PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
 					// Why is the assert enough?
@@ -1550,13 +656,13 @@ public:
 	static const PxU32 sTriggerPairsPerTask = 64;
 
 private:
-	Interaction* const* mTriggerPairs;
-	const PxU32 mTriggerPairCount;
-	PxMutex& mLock;
-	TriggerInteraction** mPairsToDeactivate;
-	volatile PxI32& mPairsToDeactivateCount;
-	Scene& mScene;
-	PxsTransformCache& mTransformCache;
+	ElementSimInteraction* const*	mTriggerPairs;
+	const PxU32						mTriggerPairCount;
+	PxMutex&						mLock;
+	TriggerInteraction**			mPairsToDeactivate;
+	volatile PxI32&					mPairsToDeactivateCount;
+	Scene&							mScene;
+	PxsTransformCache&				mTransformCache;
 };
 
 }  // namespace Sc
@@ -1570,9 +676,10 @@ void NPhaseCore::processTriggerInteractions(PxBaseTask* continuation)
 	Scene& scene = mOwnerScene;
 
 	// Triggers
-	Interaction** triggerInteractions = mOwnerScene.getActiveInteractions(InteractionType::eTRIGGER);
+	ElementSimInteraction** triggerInteractions = mOwnerScene.getActiveInteractions(InteractionType::eTRIGGER);
 	const PxU32 pairCount = mOwnerScene.getNbActiveInteractions(InteractionType::eTRIGGER);
 
+	// PT: TASK-CREATION TAG
 	if(pairCount > 0)
 	{
 		const PxU32 taskCountWithoutRemainder = pairCount / TriggerContactTask::sTriggerPairsPerTask;
@@ -1582,7 +689,7 @@ void NPhaseCore::processTriggerInteractions(PxBaseTask* continuation)
 		void* triggerProcessingBlock = scene.getLowLevelContext()->getScratchAllocator().alloc(memBlockSize, true);
 		if(triggerProcessingBlock)
 		{
-			const bool hasMultipleThreads = scene.getTaskManager().getCpuDispatcher()->getWorkerCount() > 1;
+			const bool hasMultipleThreads = continuation && scene.getTaskManager().getCpuDispatcher()->getWorkerCount() > 1;
 			const bool moreThanOneBatch = pairCount > TriggerContactTask::sTriggerPairsPerTask;
 			const bool scheduleTasks = hasMultipleThreads && moreThanOneBatch;
 			// when running on a single thread, the task system seems to cause the main overhead (locking and atomic operations
@@ -1644,29 +751,6 @@ void NPhaseCore::mergeProcessedTriggerInteractions(PxBaseTask*)
 		mOwnerScene.getLowLevelContext()->getScratchAllocator().free(mTmpTriggerProcessingBlock);
 		mTmpTriggerProcessingBlock = NULL;
 	}
-}
-
-void NPhaseCore::visualize(PxRenderOutput& renderOut, PxsContactManagerOutputIterator& outputs)
-{
-	// PT: put common reads here to avoid doing them for each interaction
-
-	const PxReal scale = mOwnerScene.getVisualizationScale();
-	if(scale == 0.0f)
-		return;
-
-	const PxReal param_contactForce = mOwnerScene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_FORCE);
-	const PxReal param_contactNormal = mOwnerScene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL);
-	const PxReal param_contactError = mOwnerScene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_ERROR);
-	const PxReal param_contactPoint = mOwnerScene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT);
-
-	if(param_contactForce==0.0f && param_contactNormal==0.0f && param_contactError==0.0f && param_contactPoint==0.0f)
-		return;
-
-	Interaction** interactions = mOwnerScene.getActiveInteractions(InteractionType::eOVERLAP);
-	PxU32 nbActiveInteractions = mOwnerScene.getNbActiveInteractions(InteractionType::eOVERLAP);
-	while(nbActiveInteractions--)
-		static_cast<ShapeInteraction*>(*interactions++)->visualize(	renderOut, outputs,
-																	scale, param_contactForce, param_contactNormal, param_contactError, param_contactPoint);
 }
 
 #ifdef REMOVED
@@ -1744,10 +828,8 @@ public:
 };
 #endif
 
-void NPhaseCore::processPersistentContactEvents(PxsContactManagerOutputIterator& outputs, PxBaseTask* continuation)
+void NPhaseCore::processPersistentContactEvents(PxsContactManagerOutputIterator& outputs)
 {
-	PX_UNUSED(continuation);
-	PX_UNUSED(outputs);
 	PX_PROFILE_ZONE("Sc::NPhaseCore::processPersistentContactEvents", mOwnerScene.getContextId());
 	
 	// Go through ShapeInteractions which requested persistent contact event reports. This is necessary since there are no low level events for persistent contact.
@@ -1784,46 +866,6 @@ void NPhaseCore::processPersistentContactEvents(PxsContactManagerOutputIterator&
 	}
 }
 
-void NPhaseCore::fireCustomFilteringCallbacks(PxsContactManagerOutputIterator& outputs)
-{
-	PX_PROFILE_ZONE("Sim.fireCustomFilteringCallbacks", mOwnerScene.getContextId());
-
-	PxSimulationFilterCallback* callback = mOwnerScene.getFilterCallbackFast();
-
-	if(callback)
-	{
-		// Ask user for pair filter status changes
-		PxU32 pairID;
-		PxFilterFlags filterFlags;
-		PxPairFlags pairFlags;
-		while(callback->statusChange(pairID, pairFlags, filterFlags))
-		{
-			ElementSimInteraction* ei = (*mFilterPairManager)[pairID];
-
-			PX_ASSERT(ei);
-			// Check if the user tries to update a pair even though he deleted it earlier in the same frame
-
-			checkFilterFlags(filterFlags);
-
-			PX_ASSERT(ei->readInteractionFlag(InteractionFlag::eIS_FILTER_PAIR));
-
-			PxFilterInfo finfo;
-			finfo.filterFlags = filterFlags;
-			finfo.pairFlags = pairFlags;
-			finfo.filterPairIndex = pairID;
-
-			ElementSimInteraction* refInt = refilterInteraction(ei, &finfo, true, outputs);
-
-			// this gets called at the end of the simulation -> there should be no dirty interactions around
-			PX_ASSERT(!refInt->readInteractionFlag(InteractionFlag::eIN_DIRTY_LIST));
-			PX_ASSERT(!refInt->getDirtyFlags());
-
-			if((refInt == ei) && (refInt->getType() == InteractionType::eOVERLAP))  // No interaction conversion happened, the pairFlags were just updated
-				static_cast<ShapeInteraction*>(refInt)->updateState(InteractionDirtyFlag::eFILTER_STATE);
-		}
-	}
-}
-
 void NPhaseCore::addToDirtyInteractionList(Interaction* pair)
 {
 	mDirtyInteractions.insert(pair);
@@ -1840,19 +882,19 @@ void NPhaseCore::updateDirtyInteractions(PxsContactManagerOutputIterator& output
 {
 	// The sleeping SIs will be updated on activation
 	// clow: Sleeping SIs are not awaken for visualization updates
-	const bool dirtyDominance = mOwnerScene.readFlag(SceneInternalFlag::eSCENE_SIP_STATES_DIRTY_DOMINANCE);
-	const bool dirtyVisualization = mOwnerScene.readFlag(SceneInternalFlag::eSCENE_SIP_STATES_DIRTY_VISUALIZATION);
+	const bool dirtyDominance = mOwnerScene.readInternalFlag(SceneInternalFlag::eSCENE_SIP_STATES_DIRTY_DOMINANCE);
+	const bool dirtyVisualization = mOwnerScene.readInternalFlag(SceneInternalFlag::eSCENE_SIP_STATES_DIRTY_VISUALIZATION);
 	if(dirtyDominance || dirtyVisualization)
 	{
 		// Update all interactions.
 
 		const PxU8 mask = PxTo8((dirtyDominance ? InteractionDirtyFlag::eDOMINANCE : 0) | (dirtyVisualization ? InteractionDirtyFlag::eVISUALIZATION : 0));
 
-		Interaction** it = mOwnerScene.getInteractions(InteractionType::eOVERLAP);
+		ElementSimInteraction** it = mOwnerScene.getInteractions(InteractionType::eOVERLAP);
 		PxU32 size = mOwnerScene.getNbInteractions(InteractionType::eOVERLAP);
 		while(size--)
 		{
-			Interaction* pair = *it++;
+			ElementSimInteraction* pair = *it++;
 
 			PX_ASSERT(pair->getType() == InteractionType::eOVERLAP);
 
@@ -1896,20 +938,17 @@ void NPhaseCore::updateDirtyInteractions(PxsContactManagerOutputIterator& output
 	mDirtyInteractions.clear();
 }
 
-void NPhaseCore::releaseElementPair(ElementSimInteraction* pair, PxU32 flags, ElementSim* removedElement, const PxU32 ccdPass, bool removeFromDirtyList,
-	PxsContactManagerOutputIterator& outputs)
+void NPhaseCore::releaseElementPair(ElementSimInteraction* pair, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, bool removeFromDirtyList, PxsContactManagerOutputIterator& outputs)
 {
 	pair->setClean(removeFromDirtyList);  // Removes the pair from the dirty interaction list etc.
 
 	if(pair->readInteractionFlag(InteractionFlag::eIS_FILTER_PAIR))
 	{
 		// Check if this is a filter callback pair
-		const PxU32 filterPairIndex = mFilterPairManager->findIndex(pair);
-		PX_ASSERT(filterPairIndex!=INVALID_FILTER_PAIR_INDEX);
+		ShapeSimBase& s0 = static_cast<ShapeSimBase&>(pair->getElement0());
+		ShapeSimBase& s1 = static_cast<ShapeSimBase&>(pair->getElement1());
 
-		callPairLost(mOwnerScene, pair->getElement0(), pair->getElement1(), filterPairIndex, (removedElement != NULL));
-
-		mFilterPairManager->releaseIndex(filterPairIndex);
+		callPairLost(s0, s1, removedElement != NULL);
 	}
 
 	switch(pair->getType())
@@ -1956,8 +995,7 @@ void NPhaseCore::releaseElementPair(ElementSimInteraction* pair, PxU32 flags, El
 	}
 }
 
-void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, 
-	PxsContactManagerOutputIterator& outputs)
+void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
 {
 	if(si->hasTouch())
 	{

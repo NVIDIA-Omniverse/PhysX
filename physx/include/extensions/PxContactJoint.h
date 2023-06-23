@@ -39,7 +39,7 @@ namespace physx
 	class PxContactJoint;
 
 	/**
-	\brief Create a distance Joint.
+	\brief Create a contact Joint.
 
 	\param[in] physics		The physics SDK
 	\param[in] actor0		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
@@ -49,15 +49,9 @@ namespace physx
 
 	@see PxContactJoint
 	*/
-	PxContactJoint*	PxContactJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
+	PX_DEPRECATED PxContactJoint*	PxContactJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
-	/**
-	\brief a joint that maintains an upper or lower bound (or both) on the distance between two points on different objects
-
-	@see PxContactJointCreate PxJoint
-	*/
-
-	struct PxJacobianRow
+	struct PX_DEPRECATED PxJacobianRow
 	{
 		PxVec3 linear0;
 		PxVec3 linear1;
@@ -87,11 +81,12 @@ namespace physx
 	};
 
 	/**
-	\brief a joint that maintains an upper or lower bound (or both) on the distance between two points on different objects
+	\brief PxContactJoint is best viewed as a helper function for the inverse dynamics of articulations. The expected use case 
+	is to use PxContactJoint::getConstraint() in conjunction with PxArticulationReducedCoordinate::addLoopJoint().
 
 	@see PxContactJointCreate PxJoint
 	*/
-	class PxContactJoint : public PxJoint
+	PX_DEPRECATED class PxContactJoint : public PxJoint
 	{
 	public:
 

@@ -31,13 +31,17 @@
 // ****************************************************************************
 
 #include "PxImmediateMode.h"
+#include "PxMaterial.h"
 #include "geometry/PxGeometryQuery.h"
+#include "geometry/PxConvexMesh.h"
 #include "foundation/PxPhysicsVersion.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxHashSet.h"
 #include "foundation/PxHashMap.h"
 #include "foundation/PxMathUtils.h"
 #include "foundation/PxFPU.h"
+#include "cooking/PxCooking.h"
+#include "cooking/PxConvexMeshDesc.h"
 #include "ExtConstraintHelper.h"
 #include "extensions/PxMassProperties.h"
 #include "extensions/PxDefaultAllocator.h"
@@ -93,6 +97,7 @@ static bool			gPause						= false;
 static bool			gOneFrame					= false;
 static bool			gDrawBounds					= false;
 static PxU32		gSceneIndex					= 2;
+static float		gTime						= 0.0f;
 
 #if WITH_PERSISTENCY
 struct PersistentContactPair
@@ -359,6 +364,7 @@ void ImmediateScene::reset()
 	mNbStaticActors = mNbArticulationLinks = 0;
 	mMotorLinkCookie = PxCreateArticulationLinkCookie();
 	mMotorLink = PxArticulationLinkHandle();
+	gTime = 0.0f;
 }
 
 PxU32 ImmediateScene::createActor(const PxGeometry& geometry, const PxTransform& pose, const MassProps* massProps, PxArticulationLinkCookie* linkCookie)
@@ -1124,11 +1130,68 @@ void ImmediateScene::createScene()
 			}
 		}
 
-
 		endCreateImmediateArticulation(immArt);
 
 		allocateTempBuffer(mMaxNumArticulationsLinks);
 
+		createGroundPlane();
+	}
+	else if(index==6)
+	{
+		//const float scaleFactor = 0.25f;
+		const float scaleFactor = 1.0f;
+		const float halfHeight = 1.0f*scaleFactor;
+		const float radius = 1.0f*scaleFactor;
+		const PxU32 nbCirclePts = 20;
+		const PxU32 totalNbVerts = nbCirclePts*2;
+		PxVec3 verts[totalNbVerts];
+		const float step = 3.14159f*2.0f/float(nbCirclePts);
+		for(PxU32 i=0;i<nbCirclePts;i++)
+		{
+			verts[i].x = sinf(float(i) * step) * radius;
+			verts[i].y = cosf(float(i) * step) * radius;
+			verts[i].z = 0.0f;
+		}
+
+		const PxVec3 offset(0.0f, 0.0f, halfHeight);
+		PxVec3* verts2 = verts + nbCirclePts;
+		for(PxU32 i=0;i<nbCirclePts;i++)
+		{
+			const PxVec3 P = verts[i];
+			verts[i] = P - offset;
+			verts2[i] = P + offset;
+		}
+
+		const PxTolerancesScale scale;
+		PxCookingParams params(scale);
+
+		PxConvexMeshDesc convexDesc;
+		convexDesc.points.count		= totalNbVerts;
+		convexDesc.points.stride	= sizeof(PxVec3);
+		convexDesc.points.data		= verts;
+		convexDesc.flags			= PxConvexFlag::eCOMPUTE_CONVEX;
+		PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexDesc);
+
+		const PxConvexMeshGeometry convexGeom(convexMesh);
+
+		MassProps massProps;
+		computeMassProps(massProps, convexGeom, 1.0f);
+
+		const PxQuat rot = PxShortestRotation(PxVec3(0.0f, 0.0f, 1.0f), PxVec3(0.0f, 1.0f, 0.0f));
+
+		PxU32 Nb = 14;
+		float altitude = radius;
+		float offsetX = 0.0f;
+		while(Nb)
+		{
+			for(PxU32 i=0;i<Nb;i++)
+			{
+				createActor(convexGeom, PxTransform(PxVec3(offsetX + float(i)*radius*2.2f, altitude, 0.0f), rot), &massProps);
+			}
+			Nb--;
+			altitude += halfHeight*2.0f+0.01f;
+			offsetX += radius*1.1f;
+		}
 		createGroundPlane();
 	}
 }
@@ -1148,7 +1211,7 @@ void ImmediateScene::updateArticulations(float dt)
 #if USE_TGS
 		PxComputeUnconstrainedVelocitiesTGS(articulation, gGravity, stepDt, dt, stepInvDt, invTotalDt, 1.0f);
 #else
-		PxComputeUnconstrainedVelocities(articulation, gGravity, dt, 1.f);
+		PxComputeUnconstrainedVelocities(articulation, gGravity, dt, 1.0f);
 #endif
 	}
 }
@@ -1195,13 +1258,8 @@ void ImmediateScene::broadPhase()
 #if WITH_PERSISTENCY
 			else
 			{
-				const PxHashMap<IDS, PersistentContactPair>::Entry* e = mPersistentPairs.find(IDS(i, j));
-				if(e)
-				{
-					PersistentContactPair& persistentData = const_cast<PersistentContactPair&>(e->second);
-					//No collision detection performed at all so clear contact cache and friction data
-					persistentData.reset();
-				}
+				//No collision detection performed at all so clear contact cache and friction data
+				mPersistentPairs.erase(IDS(i, j));
 			}
 #endif
 		}
@@ -1215,7 +1273,7 @@ void ImmediateScene::narrowPhase()
 		public:
 						ContactRecorder(ImmediateScene* scene, PxU32 id0, PxU32 id1) : mScene(scene), mID0(id0), mID1(id1), mHasContacts(false)	{}
 
-		virtual	bool	recordContacts(const PxContactPoint* contactPoints, const PxU32 nbContacts, const PxU32 /*index*/)
+		virtual	bool	recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/)
 		{
 			{
 				ImmediateScene::ContactPair pair;
@@ -1236,7 +1294,7 @@ void ImmediateScene::narrowPhase()
 				point.staticFriction	= gStaticFriction;
 				point.dynamicFriction	= gDynamicFriction;
 				point.restitution		= gRestitution;
-				point.materialFlags		= 0;
+				point.materialFlags		= PxMaterialFlag::eIMPROVED_PATCH_FRICTION;
 				mScene->mContactPoints.pushBack(point);
 			}
 			return true;
@@ -1431,11 +1489,10 @@ static PxU32 SphericalJointSolverPrep(Px1DConstraint* constraints,
 {
 	const MyJointData& data = *reinterpret_cast<const MyJointData*>(constantBlock);
 
-	PxTransform cA2w, cB2w;
+	PxTransform32 cA2w, cB2w;
 	Ext::joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
-	if(cB2w.q.dot(cA2w.q)<0.0f)
-		cB2w.q = -cB2w.q;
+	Ext::joint::applyNeighborhoodOperator(cA2w, cB2w);
 
 /*	if(data.jointFlags & PxSphericalJointFlag::eLIMIT_ENABLED)
 	{
@@ -1882,7 +1939,6 @@ void ImmediateScene::solveAndIntegrate(float dt)
 		mActors[i].mLinearVelocity = data.linearVelocity;
 		mActors[i].mAngularVelocity = data.angularVelocity;
 	}
-
 #else
 	PxIntegrateSolverBodies(mSolverBodyData.begin(), mSolverBodies.begin(), mMotionLinearVelocity.begin(), mMotionAngularVelocity.begin(), nbDynamicActors, dt);
 	for (PxU32 i = 0; i<nbArticulations; i++)
@@ -1992,8 +2048,6 @@ void initPhysics(bool /*interactive*/)
 {
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 
-	PxRegisterImmediateArticulations();
-
 	gScene = new ImmediateScene;
 	gScene->createScene();
 }
@@ -2093,9 +2147,8 @@ void stepPhysics(bool /*interactive*/)
 
 	if(gScene->mMotorLink.articulation)
 	{
-		static float time = 0.0f;
-		time += 0.1f;
-		const float target = sinf(time) * 4.0f;
+		gTime += 0.1f;
+		const float target = sinf(gTime) * 4.0f;
 //		printf("target: %f\n", target);
 
 		PxArticulationJointDataRC data;
@@ -2105,7 +2158,7 @@ void stepPhysics(bool /*interactive*/)
 		data.targetVel[PxArticulationAxis::eTWIST] = target;
 
 		const PxVec3 boxExtents(0.5f, 0.1f, 0.5f);
-		const float s = boxExtents.x*1.1f + fabsf(sinf(time))*0.5f;
+		const float s = boxExtents.x*1.1f + fabsf(sinf(gTime))*0.5f;
 
 		data.parentPose	= PxTransform(PxVec3(0.0f, 0.0f, s));
 		data.childPose	= PxTransform(PxVec3(0.0f, 0.0f, -s));
@@ -2141,7 +2194,7 @@ void keyPress(unsigned char key, const PxTransform& /*camera*/)
 
 	if(gScene)
 	{
-		if(key>=1 && key<=6)
+		if(key>=1 && key<=7)
 		{
 			gSceneIndex = key-1;
 			gScene->reset();
@@ -2159,7 +2212,7 @@ void keyPress(unsigned char key, const PxTransform& /*camera*/)
 void renderText()
 {
 #ifdef RENDER_SNIPPET
-	Snippets::print("Press F1 to F6 to select a scene.");
+	Snippets::print("Press F1 to F7 to select a scene.");
 #endif
 }
 

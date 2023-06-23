@@ -113,8 +113,6 @@ public:
 */
 struct PxGpuParticleData
 {
-	PxVec3	mPeriod;                        //!< Size of the unit cell for periodic boundary conditions. If 0, the size of the simulation domain is specified by the mGridSize * mParticleContactDistance.
-
 	PxU32	mGridSizeX;                     //!< Size of the x-dimension of the background simulation grid. Translates to an absolute size of mGridSizeX * mParticleContactDistance. 
 	PxU32	mGridSizeY;                     //!< Size of the y-dimension of the background simulation grid. Translates to an absolute size of mGridSizeY * mParticleContactDistance.
 	PxU32	mGridSizeZ;                     //!< Size of the z-dimension of the background simulation grid. Translates to an absolute size of mGridSizeZ * mParticleContactDistance.

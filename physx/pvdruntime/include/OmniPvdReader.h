@@ -38,7 +38,7 @@
  *
  * Using the getNextCommand function in a while loop for example one can traverse the stream one command after another. Given the command, different functions below will be available.
  *
- * Using the OmniPvdCommandEnum one can determine the type of command and like that use the appropriate get functions to extract the payload from the command.
+ * Using the OmniPvdCommand::Enum one can determine the type of command and like that use the appropriate get functions to extract the payload from the command.
  */
 
 class OmniPvdReader
@@ -60,31 +60,24 @@ public:
 	 *
 	 * @param stream The OmniPvdReadStream that holds the stream of API calls/notifications
 	 */
-	virtual void OMNI_PVD_CALL setReadStream(OmniPvdReadStream* stream) = 0;	
+	virtual void OMNI_PVD_CALL setReadStream(OmniPvdReadStream& stream) = 0;	
 
 	/**
-	 * @brief Extracts the versions from the binary file ro read and tests if the file is older or equal to that of the reader.
+	 * @brief Extracts the versions from the binary file to read and tests if the file is older or equal to that of the reader.
 	 *
 	 * @param majorVersion The major versions of the stream
 	 * @param minorVersion The minor versions of the stream
 	 * @param patch The patch number of the stream
 	 * @return If the reading was possible to start or not
 	 */
-	virtual bool OMNI_PVD_CALL startReading(OmniPvdVersionType* majorVersion, OmniPvdVersionType* minorVersion, OmniPvdVersionType* patch) = 0;
+	virtual bool OMNI_PVD_CALL startReading(OmniPvdVersionType& majorVersion, OmniPvdVersionType& minorVersion, OmniPvdVersionType& patch) = 0;
 	
 	/**
-	 * @brief The heartbeat function of the reader class. As long as the command that is returned is not equal to OmniPvdCommandEnum::eOmniPvdInvalid, then one can safely extract the data fields from the command.
+	 * @brief The heartbeat function of the reader class. As long as the command that is returned is not equal to OmniPvdCommand::eINVALID, then one can safely extract the data fields from the command.
 	 *
 	 * @return The command enum type
 	 */
-	virtual OmniPvdCommandEnum::Enum OMNI_PVD_CALL getNextCommand() = 0;
-	
-	/**
-	 * @brief Returns the command type as an enumerator of the latest command
-	 *
-	 * @return The latest command enum type
-	 */
-	virtual OmniPvdCommandEnum::Enum OMNI_PVD_CALL getCommandType() = 0;
+	virtual OmniPvdCommand::Enum OMNI_PVD_CALL getNextCommand() = 0;
 
 	/**
 	 * @brief Returns the major version of the stream
@@ -147,35 +140,35 @@ public:
 	 *
 	 * @return The string containing the class name
 	 */
-	virtual char* OMNI_PVD_CALL getClassName() = 0;
+	virtual const char* OMNI_PVD_CALL getClassName() = 0;
 	
 	/**
 	 * @brief Returns the attribute name of the latest commmnd, if it had one, else a null terminated string of length 0
 	 *
 	 * @return The string containing the attribute name
 	 */
-	virtual char* OMNI_PVD_CALL getAttributeName() = 0;
+	virtual const char* OMNI_PVD_CALL getAttributeName() = 0;
 	
 	/**
 	 * @brief Returns the object name of the latest commmnd, if it had one, else a null terminated string of length 0
 	 *
 	 * @return The string containing the object name
 	 */
-	virtual char* OMNI_PVD_CALL getObjectName() = 0;
+	virtual const char* OMNI_PVD_CALL getObjectName() = 0;
 
 	/**
 	 * @brief Returns the attribute data pointer, the data is undefined if the last command did not contain attribute data
 	 *
 	 * @return The array containing the attribute data
 	 */
-	virtual uint8_t* OMNI_PVD_CALL getAttributeDataPointer() = 0;
+	virtual const uint8_t* OMNI_PVD_CALL getAttributeDataPointer() = 0;
 	
 	/**
 	 * @brief Returns the attribute data type, the data is undefined if the last command did not contain attribute data
 	 *
 	 * @return The attribute data type
 	 */
-	virtual OmniPvdAttributeDataType OMNI_PVD_CALL getAttributeDataType() = 0;
+	virtual OmniPvdDataType::Enum OMNI_PVD_CALL getAttributeDataType() = 0;
 	
 	/**
 	 * @brief Returns the attribute data length, the data length of the last command

@@ -36,7 +36,6 @@
 #include "DyArticulationContactPrep.h"
 namespace physx
 {
-
 namespace Dy
 {
 
@@ -220,14 +219,12 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 		const Vec4V invMassScale1 = V4LoadXYZW(constraintDescs[0].invMassScales.linear1, constraintDescs[1].invMassScales.linear1, 
 			constraintDescs[2].invMassScales.linear1, constraintDescs[3].invMassScales.linear1);
 
-
 		const Vec4V iMass0 = V4LoadXYZW(bd00.invMass, bd01.invMass, bd02.invMass, bd03.invMass);
 
 		const Vec4V iMass1 = V4LoadXYZW(bd10.invMass, bd11.invMass, bd12.invMass, bd13.invMass);
 
 		const Vec4V invMass0 = V4Mul(iMass0, invMassScale0);
 		const Vec4V invMass1 = V4Mul(iMass1, invMassScale1);
-
 
 		const Vec4V invInertiaScale0 = V4LoadXYZW(constraintDescs[0].invMassScales.angular0, constraintDescs[1].invMassScales.angular0, 
 			constraintDescs[2].invMassScales.angular0, constraintDescs[3].invMassScales.angular0);
@@ -255,19 +252,15 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 		Vec4V angVel30 = V4LoadA(&bd03.angularVelocity.x);
 		Vec4V angVel31 = V4LoadA(&bd13.angularVelocity.x);
 
-
 		Vec4V linVel0T0, linVel0T1, linVel0T2;
 		Vec4V linVel1T0, linVel1T1, linVel1T2;
 		Vec4V angVel0T0, angVel0T1, angVel0T2;
 		Vec4V angVel1T0, angVel1T1, angVel1T2;
 
-
 		PX_TRANSPOSE_44_34(linVel00, linVel10, linVel20, linVel30, linVel0T0, linVel0T1, linVel0T2);
 		PX_TRANSPOSE_44_34(linVel01, linVel11, linVel21, linVel31, linVel1T0, linVel1T1, linVel1T2);
 		PX_TRANSPOSE_44_34(angVel00, angVel10, angVel20, angVel30, angVel0T0, angVel0T1, angVel0T2);
 		PX_TRANSPOSE_44_34(angVel01, angVel11, angVel21, angVel31, angVel1T0, angVel1T1, angVel1T2);
-
-
 
 		//body world offsets
 		Vec4V workOffset0 = Vec4V_From_Vec3V(V3LoadU(constraintDescs[0].body0WorldOffset));
@@ -280,17 +273,15 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 		PX_TRANSPOSE_44_34(workOffset0, workOffset1, workOffset2, workOffset3, workOffsetX, workOffsetY, workOffsetZ);
 
 		const FloatV dtV = FLoad(dt);
-		Vec4V linBreakForce = V4LoadXYZW(constraintDescs[0].linBreakForce, constraintDescs[1].linBreakForce,
+		const Vec4V linBreakForce = V4LoadXYZW(constraintDescs[0].linBreakForce, constraintDescs[1].linBreakForce,
 			constraintDescs[2].linBreakForce, constraintDescs[3].linBreakForce);
-		Vec4V angBreakForce = V4LoadXYZW(constraintDescs[0].angBreakForce, constraintDescs[1].angBreakForce,
+		const Vec4V angBreakForce = V4LoadXYZW(constraintDescs[0].angBreakForce, constraintDescs[1].angBreakForce,
 			constraintDescs[2].angBreakForce, constraintDescs[3].angBreakForce);
 
-		
 		header->break0 = PxU8((constraintDescs[0].linBreakForce != PX_MAX_F32) || (constraintDescs[0].angBreakForce != PX_MAX_F32));
 		header->break1 = PxU8((constraintDescs[1].linBreakForce != PX_MAX_F32) || (constraintDescs[1].angBreakForce != PX_MAX_F32));
 		header->break2 = PxU8((constraintDescs[2].linBreakForce != PX_MAX_F32) || (constraintDescs[2].angBreakForce != PX_MAX_F32));
 		header->break3 = PxU8((constraintDescs[3].linBreakForce != PX_MAX_F32) || (constraintDescs[3].angBreakForce != PX_MAX_F32));
-
 
 		//OK, I think that's everything loaded in
 
@@ -358,7 +349,6 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 				driveScale = V4SetZ(driveScale, FMin(one, dtV));
 			if (con3->flags&Px1DConstraintFlag::eHAS_DRIVE_LIMIT && constraintDescs[3].driveLimitsAreForces)
 				driveScale = V4SetW(driveScale, FMin(one, dtV));
-
 
 			Vec4V clin00 = V4LoadA(&con0->linear0.x);
 			Vec4V clin01 = V4LoadA(&con1->linear0.x);
@@ -462,7 +452,6 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 			const Vec4V projectVel1 = V4Add(linProj1, angProj1);
 			
 			const Vec4V normalVel = V4Sub(projectVel0, projectVel1);
-
 
 			{
 				const PxVec4& ur				= reinterpret_cast<const PxVec4&>(unitResponse);

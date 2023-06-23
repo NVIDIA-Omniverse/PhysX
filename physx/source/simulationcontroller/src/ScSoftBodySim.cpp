@@ -24,7 +24,6 @@
 //
 // Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 
-
 #include "foundation/PxPreprocessor.h"
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -37,13 +36,10 @@
 using namespace physx;
 using namespace physx::Dy; 
 
-
 Sc::SoftBodySim::SoftBodySim(SoftBodyCore& core, Scene& scene) :
 	ActorSim(scene, core),
-	mShapeSim(*this),
-	mNumCountedInteractions(0)
+	mShapeSim(*this)
 {
-	
 	mLLSoftBody = scene.createLLSoftBody(this);
 
 	mNodeIndex = scene.getSimpleIslandManager()->addSoftBody(mLLSoftBody, false);
@@ -84,16 +80,6 @@ bool Sc::SoftBodySim::isSleeping() const
 {
 	IG::IslandSim& sim = mScene.getSimpleIslandManager()->getAccurateIslandSim();
 	return sim.getActiveNodeIndex(mNodeIndex) == PX_INVALID_NODE;
-}
-
-
-void Sc::SoftBodySim::setActive(const bool b, const PxU32 infoFlag)
-{
-	PX_UNUSED(infoFlag);
-	if (b)
-		getScene().getSimulationController()->activateSoftbody(mLLSoftBody);
-	else
-		getScene().getSimulationController()->deactivateSoftbody(mLLSoftBody);
 }
 
 void Sc::SoftBodySim::onSetWakeCounter()
@@ -141,7 +127,6 @@ void Sc::SoftBodySim::enableSelfCollision()
 	}
 }
 
-
 void Sc::SoftBodySim::disableSelfCollision()
 {
 	if (isActive())
@@ -150,7 +135,7 @@ void Sc::SoftBodySim::disableSelfCollision()
 	}
 }
 
-void Sc::SoftBodySim::activate()
+/*void Sc::SoftBodySim::activate()
 {
 	// Activate body
 	//{
@@ -206,9 +191,9 @@ void Sc::SoftBodySim::deactivate()
 	//	}
 	//	destroySqBounds();
 	//}
-}
+}*/
 
-PxU32 Sc::SoftBodySim::getGpuSoftBodyIndex()
+PxU32 Sc::SoftBodySim::getGpuSoftBodyIndex() const
 {
 	return mLLSoftBody->getGpuSoftBodyIndex();
 }

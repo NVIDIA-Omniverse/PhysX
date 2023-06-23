@@ -43,7 +43,6 @@ namespace physx
 {
 namespace Dy
 {
-
 bool createFinalizeSolverContactsCoulomb(PxSolverContactDesc& contactDesc,
 		PxsContactManagerOutput& output,
 		ThreadContext& threadContext,
@@ -56,8 +55,7 @@ bool createFinalizeSolverContactsCoulomb(PxSolverContactDesc& contactDesc,
 		PxFrictionType::Enum frictionType,
 		Cm::SpatialVectorF* Z);
 
-static bool setupFinalizeSolverConstraintsCoulomb(
-												  Sc::ShapeInteraction* shapeInteraction,
+static bool setupFinalizeSolverConstraintsCoulomb(Sc::ShapeInteraction* shapeInteraction,
 						    const PxContactBuffer& buffer,
 							const CorrelationBuffer& c,
 							const PxTransform& bodyFrame0,
@@ -99,12 +97,10 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 	const PxU8 pointHeaderType = PxTo8(staticBody ? DY_SC_TYPE_STATIC_CONTACT : DY_SC_TYPE_RB_CONTACT);
 	const PxU8 frictionHeaderType = PxTo8(staticBody ? DY_SC_TYPE_STATIC_FRICTION : DY_SC_TYPE_FRICTION);
 
-
 	const Vec3V linVel0 = V3LoadU(data0.linearVelocity);
 	const Vec3V linVel1 = V3LoadU(data1.linearVelocity);
 	const Vec3V angVel0 = V3LoadU(data0.angularVelocity);
 	const Vec3V angVel1 = V3LoadU(data1.angularVelocity);
-
 
 	const FloatV invMass0 = FLoad(data0.invMass);
 	const FloatV invMass1 = FLoad(data1.invMass);
@@ -145,7 +141,6 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 	const FloatV invMass0_dom0fV = FMul(d0, invMass0);
 	const FloatV invMass1_dom1fV = FMul(nDom1fV, invMass1);
 
-
 	for(PxU32 i=0;i< frictionPatchCount;i++)
 	{
 		const PxU32 contactCount = c.frictionPatchContactCounts[i];
@@ -170,14 +165,12 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 		const FloatV invMassNorLenSq0 = FMul(invMass0_dom0fV, normalLenSq);
 		const FloatV invMassNorLenSq1 = FMul(invMass1_dom1fV, normalLenSq);
 	
-		
 		SolverContactCoulombHeader* PX_RESTRICT header = reinterpret_cast<SolverContactCoulombHeader*>(ptr);
 		ptr += sizeof(SolverContactCoulombHeader);
 
 		PxPrefetchLine(ptr, 128);
 		PxPrefetchLine(ptr, 256);
 		PxPrefetchLine(ptr, 384);
-
 
 		header->numNormalConstr		= PxU8(contactCount);
 		header->type				= pointHeaderType;
@@ -192,15 +185,13 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 		header->flags = flags;
 		header->shapeInteraction = shapeInteraction;
 
-		
 		for(PxU32 patch=c.correlationListHeads[i]; 
 			patch!=CorrelationBuffer::LIST_END; 
 			patch = c.contactPatches[patch].next)
 		{
 			const PxU32 count = c.contactPatches[patch].count;
 			const PxContactPoint* contactBase = buffer.contacts + c.contactPatches[patch].start;
-
-				
+			
 			PxU8* p = ptr;
 			for(PxU32 j=0;j<count;j++)
 			{
@@ -267,7 +258,7 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 		const Vec3V t0_ = V3Sub(linVrel, V3Scale(normal, V3Dot(normal, linVrel)));
 		const FloatV sqDist = V3Dot(t0_,t0_);
 		const BoolV con1 = FIsGrtr(sqDist, eps);
-		const Vec3V tDir0 =V3Normalize(V3Sel(con1, t0_, tFallback1));
+		const Vec3V tDir0 = V3Normalize(V3Sel(con1, t0_, tFallback1));
 		const Vec3V tDir1 = V3Cross(tDir0, normal);
 
 		Vec3V tFallback = tDir0;
@@ -329,7 +320,6 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 						const FloatV vrel2 = FAdd(V3Dot(t0, linVel1), V3Dot(rbXn, angVel1));
 						const FloatV vrel = FSub(vrel1, vrel2);
 
-
 						f0->normalXYZ_appliedForceW = V4SetW(Vec4V_From_Vec3V(t0), zero);
 						f0->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(delAngVel0), velMultiplier);
 						//f0->rbXnXYZ_targetVelocityW = V4SetW(Vec4V_From_Vec3V(delAngVel1), FSub(V3Dot(targetVel, t0), vrel));
@@ -346,12 +336,9 @@ static bool setupFinalizeSolverConstraintsCoulomb(
 	return hasFriction;
 }
 
-
-
-static void computeBlockStreamByteSizesCoulomb(const CorrelationBuffer& c,
-													 const PxU32 frictionCountPerPoint, PxU32& _solverConstraintByteSize,
-													 PxU32& _axisConstraintCount,
-													 bool useExtContacts)
+static void computeBlockStreamByteSizesCoulomb(	const CorrelationBuffer& c,
+												 const PxU32 frictionCountPerPoint, PxU32& _solverConstraintByteSize,
+												 PxU32& _axisConstraintCount, bool useExtContacts)
 {
 	PX_ASSERT(0 == _solverConstraintByteSize);
 	PX_ASSERT(0 == _axisConstraintCount);
@@ -366,7 +353,6 @@ static void computeBlockStreamByteSizesCoulomb(const CorrelationBuffer& c,
 		//Friction patches.
 		if(c.correlationListHeads[i] != CorrelationBuffer::LIST_END)
 			numFrictionPatches++;
-
 
 		const FrictionPatch& frictionPatch = c.frictionPatches[i];
 		const bool haveFriction = (frictionPatch.materialFlags & PxMaterialFlag::eDISABLE_FRICTION) == 0;
@@ -406,7 +392,7 @@ static void computeBlockStreamByteSizesCoulomb(const CorrelationBuffer& c,
 	_axisConstraintCount = axisConstraintCount;
 
 	//16-byte alignment.
-	_solverConstraintByteSize =  ((solverConstraintByteSize + 0x0f) & ~0x0f);
+	_solverConstraintByteSize = ((solverConstraintByteSize + 0x0f) & ~0x0f);
 	PX_ASSERT(0 == (_solverConstraintByteSize & 0x0f));
 }
 
@@ -420,7 +406,6 @@ static bool reserveBlockStreamsCoulomb(const CorrelationBuffer& c,
 	PX_ASSERT(0 == solverConstraintByteSize);
 	PX_ASSERT(0 == axisConstraintCount);
 	
-
 	//From constraintBlockStream we need to reserve contact points, contact forces, and a char buffer for the solver constraint data (already have a variable for this).
 	//From frictionPatchStream we just need to reserve a single buffer.
 
@@ -496,7 +481,6 @@ bool createFinalizeSolverContactsCoulomb2D(PxSolverContactDesc& contactDesc,
 	PxReal correlationDistance,
 	PxConstraintAllocator& constraintAllocator,
 	Cm::SpatialVectorF* Z)
-
 {
 	return createFinalizeSolverContactsCoulomb(contactDesc, output, threadContext, invDtF32, dtF32, bounceThresholdF32, frictionOffsetThreshold, correlationDistance,
 		constraintAllocator, PxFrictionType::eTWO_DIRECTIONAL, Z);
@@ -565,12 +549,8 @@ bool createFinalizeSolverContactsCoulomb(PxSolverContactDesc& contactDesc,
 	PX_UNUSED(overflow);
 #if PX_CHECKED
 	if(overflow)
-	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
-					"Dropping contacts in solver because we exceeded limit of 32 friction patches.");
-	}
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, "Dropping contacts in solver because we exceeded limit of 32 friction patches.");
 #endif
-
 
 	//PX_ASSERT(patchCount == c.frictionPatchCount);
 

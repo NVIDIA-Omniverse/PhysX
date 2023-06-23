@@ -31,18 +31,17 @@
 #include "PxsMaterialManager.h"
 #include "foundation/PxUtilities.h"
 #include "foundation/PxBounds3.h"
+#include "foundation/PxVecMath.h"
+#include "GuBounds.h"
 
 using namespace physx;
+using namespace aos;
 
 namespace physx
 {
-
 namespace Dy
 {
-
-namespace 
-{
-PX_FORCE_INLINE void initContactPatch(CorrelationBuffer::ContactPatchData& patch, PxU16 index, PxReal restitution, PxReal staticFriction, PxReal dynamicFriction,
+static PX_FORCE_INLINE void initContactPatch(CorrelationBuffer::ContactPatchData& patch, PxU16 index, PxReal restitution, PxReal staticFriction, PxReal dynamicFriction,
 	PxU8 flags)
 {
 	patch.start = index;
@@ -54,22 +53,6 @@ PX_FORCE_INLINE void initContactPatch(CorrelationBuffer::ContactPatchData& patch
 	patch.dynamicFriction = dynamicFriction;
 }
 
-PX_FORCE_INLINE void initFrictionPatch(FrictionPatch& p, const PxVec3& worldNormal, const PxTransform& body0Pose, const PxTransform& body1Pose, 
-	PxReal restitution, PxReal staticFriction, PxReal dynamicFriction, PxU8 materialFlags)
-{
-	p.body0Normal = body0Pose.rotateInv(worldNormal);
-	p.body1Normal = body1Pose.rotateInv(worldNormal);
-	p.relativeQuat = body0Pose.q.getConjugate() * body1Pose.q;
-	p.anchorCount = 0;
-	p.broken = 0;
-	p.staticFriction = staticFriction;
-	p.dynamicFriction = dynamicFriction;
-	p.restitution = restitution;
-	p.materialFlags = materialFlags;
-}
-}
-
-
 bool createContactPatches(CorrelationBuffer& fb, const PxContactPoint* cb, PxU32 contactCount, PxReal normalTolerance)
 {
 	// PT: this rewritten version below doesn't have LHS
@@ -79,17 +62,17 @@ bool createContactPatches(CorrelationBuffer& fb, const PxContactPoint* cb, PxU32
 		return false;
 	if(contactCount>0)
 	{
-		CorrelationBuffer::ContactPatchData* currentPatchData = fb.contactPatches + contactPatchCount;
+		CorrelationBuffer::ContactPatchData* PX_RESTRICT currentPatchData = fb.contactPatches + contactPatchCount;
 		const PxContactPoint* PX_RESTRICT contacts = cb;
-
-		PxU8 count=1;
 
 		initContactPatch(fb.contactPatches[contactPatchCount++], PxTo16(0), contacts[0].restitution, 
 			contacts[0].staticFriction, contacts[0].dynamicFriction, PxU8(contacts[0].materialFlags));
 
-		PxBounds3 bounds(contacts[0].point, contacts[0].point);
+		Vec4V minV = V4LoadA(&contacts[0].point.x);
+		Vec4V maxV = minV;
 
 		PxU32 patchIndex = 0;
+		PxU8 count = 1;
 
 		for (PxU32 i = 1; i<contactCount; i++)
 		{
@@ -101,7 +84,10 @@ bool createContactPatches(CorrelationBuffer& fb, const PxContactPoint* cb, PxU32
 				&& curContact.restitution == preContact.restitution
 				&& curContact.normal.dot(preContact.normal)>=normalTolerance)
 			{
-				bounds.include(curContact.point);
+				const Vec4V ptV = V4LoadA(&curContact.point.x);
+				minV = V4Min(minV, ptV);
+				maxV = V4Max(maxV, ptV);
+
 				count++;
 			}
 			else
@@ -111,22 +97,37 @@ bool createContactPatches(CorrelationBuffer& fb, const PxContactPoint* cb, PxU32
 				patchIndex = i;
 				currentPatchData->count = count;
 				count = 1;
-				currentPatchData->patchBounds = bounds;
+				StoreBounds(currentPatchData->patchBounds, minV, maxV);
 				currentPatchData = fb.contactPatches + contactPatchCount;
 
 				initContactPatch(fb.contactPatches[contactPatchCount++], PxTo16(i), curContact.restitution,
 					curContact.staticFriction, curContact.dynamicFriction, PxU8(curContact.materialFlags));
 
-				bounds = PxBounds3(curContact.point, curContact.point);
+				minV = V4LoadA(&curContact.point.x);
+				maxV = minV;
 			}
 		}
 		if(count!=1)
 			currentPatchData->count = count;
 
-		currentPatchData->patchBounds = bounds;
+		StoreBounds(currentPatchData->patchBounds, minV, maxV);
 	}
 	fb.contactPatchCount = contactPatchCount;
 	return true;
+}
+
+static PX_FORCE_INLINE void initFrictionPatch(FrictionPatch& p, const PxVec3& worldNormal, const PxTransform& body0Pose, const PxTransform& body1Pose, 
+	PxReal restitution, PxReal staticFriction, PxReal dynamicFriction, PxU8 materialFlags)
+{
+	p.body0Normal = body0Pose.rotateInv(worldNormal);
+	p.body1Normal = body1Pose.rotateInv(worldNormal);
+	p.relativeQuat = body0Pose.q.getConjugate() * body1Pose.q;
+	p.anchorCount = 0;
+	p.broken = 0;
+	p.staticFriction = staticFriction;
+	p.dynamicFriction = dynamicFriction;
+	p.restitution = restitution;
+	p.materialFlags = materialFlags;
 }
 
 bool correlatePatches(CorrelationBuffer& fb, 
@@ -230,7 +231,6 @@ void growPatches(CorrelationBuffer& fb,
 
 				if(cb[cp.start+j].separation < frictionOffsetThreshold)
 				{
-
 					switch(anchorCount)
 					{
 					case 0:

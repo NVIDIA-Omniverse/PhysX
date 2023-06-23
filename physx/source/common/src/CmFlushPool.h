@@ -104,10 +104,8 @@ namespace Cm
 
 		void clearNotThreadSafe(PxU32 spareChunkCount = sSpareChunkCount)
 		{
-			PX_UNUSED(spareChunkCount);
-
 			//release memory not used previously
-			PxU32 targetSize = mChunkIndex+sSpareChunkCount;
+			PxU32 targetSize = mChunkIndex+spareChunkCount;
 			while (mChunks.size() > targetSize)
 			{
 				PxU8* ptr = mChunks.popBack();

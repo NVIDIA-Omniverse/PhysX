@@ -99,6 +99,7 @@ inline void SolveBlockParallel	(PxSolverConstraintDesc* PX_RESTRICT constraintLi
 	const PxI32 endIndex = indA + batchCount;
 	for(PxI32 i = indA; i < endIndex; ++i)
 	{
+		PX_ASSERT(i < PxI32(iterator.mSize));
 		const PxConstraintBatchHeader& header = headers[i];
 
 		const PxI32 numToGrab = header.stride;
@@ -123,10 +124,10 @@ public:
 	bool frictionEveryIteration;
 	static SolverCoreGeneral* create(bool fricEveryIteration);
 
-	// Implements SolverCore
+	// SolverCore
 	virtual void destroyV();
 
-	virtual PxI32 solveVParallelAndWriteBack
+	virtual void solveVParallelAndWriteBack
 		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const;
 
 	virtual void solveV_Blocks
@@ -136,20 +137,11 @@ public:
 		(const PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxU32 constraintListSize, PxConstraintBatchHeader* contactConstraintBatches, const PxU32 numBatches,
 		 ThresholdStreamElement* PX_RESTRICT thresholdStream, const PxU32 thresholdStreamLength, PxU32& outThresholdPairs,
 		 PxSolverBodyData* atomListData, WriteBackBlockMethod writeBackTable[]) const;
-
-private:
-
-	//~Implements SolverCore
+	//~SolverCore
 };
 
-#define SOLVEV_BLOCK_METHOD_ARGS	SolverCore*	solverCore, SolverIslandParams& params
-
-void solveVBlock(SOLVEV_BLOCK_METHOD_ARGS);
-
 SolveBlockMethod* getSolveBlockTable();
-
 SolveBlockMethod* getSolverConcludeBlockTable();
-
 SolveWriteBackBlockMethod* getSolveWritebackBlockTable();
 
 }

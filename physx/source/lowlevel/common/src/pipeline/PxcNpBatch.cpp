@@ -46,6 +46,8 @@
 using namespace physx;
 using namespace Gu;
 
+PX_COMPILE_TIME_ASSERT(sizeof(PxsCachedTransform)==sizeof(PxTransform32));
+
 static void startContacts(PxsContactManagerOutput& output, PxcNpThreadContext& context)
 {
 	context.mContactBuffer.reset();
@@ -372,8 +374,8 @@ static PX_FORCE_INLINE void discreteNarrowPhase(PxcNpThreadContext& context, con
 
 	startContacts(output, context);
 
-	const PxTransform* tm0 = &cachedTransform0->transform;
-	const PxTransform* tm1 = &cachedTransform1->transform;
+	const PxTransform32* tm0 = reinterpret_cast<const PxTransform32*>(cachedTransform0);
+	const PxTransform32* tm1 = reinterpret_cast<const PxTransform32*>(cachedTransform1);
 	PX_ASSERT(tm0->isSane() && tm1->isSane());
 
 	const PxGeometry& contactShape0 = shape0->mGeometry.getGeometry();
@@ -415,17 +417,20 @@ static PX_FORCE_INLINE void discreteNarrowPhase(PxcNpThreadContext& context, con
 		conMethod(contactShape0, contactShape1, *tm0, *tm1, context.mNarrowPhaseParams, cache, context.mContactBuffer, &context.mRenderOutput);
 	}
 
-	const PxcGetMaterialMethod materialMethod = g_GetMaterialMethodTable[type0][type1];
-	if(materialMethod)
+	if(context.mContactBuffer.count)
 	{
-		LOCAL_PROFILE_ZONE("materialMethod", contextID);
-		materialMethod(shape0, shape1, context,  materialInfo);
-	}
+		const PxcGetMaterialMethod materialMethod = g_GetMaterialMethodTable[type0][type1];
+		if(materialMethod)
+		{
+			LOCAL_PROFILE_ZONE("materialMethod", contextID);
+			materialMethod(shape0, shape1, context,  materialInfo);
+		}
 
-	if(flip)
-	{
-		LOCAL_PROFILE_ZONE("flipContacts", contextID);
-		flipContacts(context, materialInfo);
+		if(flip)
+		{
+			LOCAL_PROFILE_ZONE("flipContacts", contextID);
+			flipContacts(context, materialInfo);
+		}
 	}
 
 	if(!useLegacyCodepath)

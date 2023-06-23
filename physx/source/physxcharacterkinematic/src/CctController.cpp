@@ -106,7 +106,7 @@ void Controller::onRelease(const PxBase& observed)
 
 void Controller::onOriginShift(const PxVec3& shift)
 {
-	mPosition -= shift;
+	sub(mPosition, shift);
 	
 	if(mManager && mManager->mLockingEnabled)
 		mWriteLock.lock();

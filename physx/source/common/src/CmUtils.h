@@ -219,16 +219,15 @@ PX_INLINE void deletePxBase(T* object)
 #define PX_PADDING_16 0xcdcd
 #define PX_PADDING_32 0xcdcdcdcd
 
+/**
+Macro to instantiate a type for serialization testing. 
+Note: Only use PX_NEW_SERIALIZED once in a scope.
+*/
 #if PX_CHECKED
-	/**
-	Macro to instantiate a type for serialization testing. 
-	Note: Only use PX_NEW_SERIALIZED once in a scope.
-	*/
-	#define PX_NEW_SERIALIZED(v,T)																\
-		void* _buf = physx::PxReflectionAllocator<T>().allocate(sizeof(T),__FILE__,__LINE__);	\
-		PxMarkSerializedMemory(_buf, sizeof(T));													\
+	#define PX_NEW_SERIALIZED(v,T)													\
+		void* _buf = physx::PxReflectionAllocator<T>().allocate(sizeof(T), PX_FL);	\
+		PxMarkSerializedMemory(_buf, sizeof(T));									\
 		v = PX_PLACEMENT_NEW(_buf, T)
-
 #else
 	#define PX_NEW_SERIALIZED(v,T)  v = PX_NEW(T)
 #endif

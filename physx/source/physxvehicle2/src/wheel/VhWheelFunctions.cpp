@@ -64,14 +64,15 @@ void PxVehicleWheelRotationAngleUpdate
 	const bool isBrakeApplied = actState.isBrakeApplied;
 	const bool isDriveApplied = actState.isDriveApplied;
 	const PxF32 lngSpeed = trSpeedState.speedStates[PxVehicleTireDirectionModes::eLONGITUDINAL];
+	const PxF32 absLngSpeed = PxAbs(lngSpeed);
 	PxF32 wheelOmega = whlRigidBody1dState.rotationSpeed;
 	if (jounce > 0 &&																	//(i)   wheel touching ground
 		!isBrakeApplied &&																//(ii)  no brake applied
 		!isDriveApplied &&																//(iii) no drive torque applied
-		PxAbs(lngSpeed < thresholdForwardSpeedForWheelAngleIntegration))				//(iv)  low speed
+		(absLngSpeed < thresholdForwardSpeedForWheelAngleIntegration))					//(iv)  low speed
 	{
 		const PxF32 wheelRadius = whlParams.radius;
-		const PxF32 alpha = PxAbs(lngSpeed) / thresholdForwardSpeedForWheelAngleIntegration;
+		const PxF32 alpha = absLngSpeed / thresholdForwardSpeedForWheelAngleIntegration;
 		wheelOmega = (lngSpeed/wheelRadius)*(1.0f - alpha) + wheelOmega * alpha;
 	}
 

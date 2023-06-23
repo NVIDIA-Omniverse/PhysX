@@ -52,9 +52,9 @@ namespace Gu
 				mMeshContactMargin(meshContactMargin),
 				mToleranceLength(toleranceLength)	{}
 
-		PxReal	mContactDistance;
-		PxReal	mMeshContactMargin;	// PT: Margin used to generate mesh contacts. Temp & unclear, should be removed once GJK is default path.
-		PxReal	mToleranceLength;	// PT: copy of PxTolerancesScale::length
+		PxReal			mContactDistance;
+		const PxReal	mMeshContactMargin;	// PT: Margin used to generate mesh contacts. Temp & unclear, should be removed once GJK is default path.
+		const PxReal	mToleranceLength;	// PT: copy of PxTolerancesScale::length
 	};
 
 	enum ManifoldFlags
@@ -120,8 +120,8 @@ template<class Geom> PX_CUDA_CALLABLE PX_FORCE_INLINE const Geom& checkedCast(co
 #define GU_CONTACT_METHOD_ARGS				\
 	const PxGeometry& shape0,				\
 	const PxGeometry& shape1,				\
-	const PxTransform& transform0,			\
-	const PxTransform& transform1,			\
+	const PxTransform32& transform0,		\
+	const PxTransform32& transform1,		\
 	const Gu::NarrowPhaseParams& params,	\
 	Gu::Cache& cache,						\
 	PxContactBuffer& contactBuffer,			\
@@ -130,8 +130,8 @@ template<class Geom> PX_CUDA_CALLABLE PX_FORCE_INLINE const Geom& checkedCast(co
 #define GU_CONTACT_METHOD_ARGS_UNUSED	\
 	const PxGeometry&,					\
 	const PxGeometry&,					\
-	const PxTransform&,					\
-	const PxTransform&,					\
+	const PxTransform32&,				\
+	const PxTransform32&,				\
 	const Gu::NarrowPhaseParams&,		\
 	Gu::Cache&,							\
 	PxContactBuffer&,					\

@@ -39,17 +39,15 @@ namespace physx
 	class NpScene;
 	class NpShape;
 
-	Sc::BodyCore* getBodyCore(PxRigidActor* actor);
+	const Sc::BodyCore* getBodyCore(const PxRigidActor* actor);
+	PX_FORCE_INLINE Sc::BodyCore* getBodyCore(PxRigidActor* actor)
+	{
+		const Sc::BodyCore* core = getBodyCore(static_cast<const PxRigidActor*>(actor));
+		return const_cast<Sc::BodyCore*>(core);
+	}
 
 class NpActor : public NpBase
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
-
 public:
 // PX_SERIALIZATION
 											NpActor(const PxEMPTY) : NpBase(PxEmpty)	{}				

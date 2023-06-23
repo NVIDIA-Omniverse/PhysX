@@ -40,18 +40,9 @@ namespace physx
 struct PxcNpWorkUnit;
 struct PxsContactManagerOutput;
 
-namespace Cm
-{
-	class SpatialVector;
-}
-
-struct PxSolverBody;
-struct PxSolverBodyData;
-
 namespace Dy
 {
 class FeatherstoneArticulation;
-struct FsData;
 
 // dsequeira: moved this articulation stuff here to sever a build dep on Articulation.h through DyThreadContext.h and onward
 

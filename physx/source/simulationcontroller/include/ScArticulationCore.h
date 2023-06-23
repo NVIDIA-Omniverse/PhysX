@@ -34,29 +34,14 @@
 
 namespace physx
 {
-
-class PxvArticulation;
-
 class PxNodeIndex;
 
 namespace Sc
 {
-	//typedef Dy::FsData ArticulationDriveCache;
-
 	class ArticulationSim;
-	class BodyCore;
-	class BodySim;
-	class ArticulationJointCore;
 
 	class ArticulationCore
 	{
-	//= ATTENTION! =====================================================================================
-	// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-	// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-	// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-	// accordingly.
-	//==================================================================================================
-
 		//---------------------------------------------------------------------------------
 		// Construction, destruction & initialization
 		//---------------------------------------------------------------------------------
@@ -111,7 +96,8 @@ namespace Sc
 
 						bool						applyCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag)const;
 		
-						void						copyInternalStateToCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag) const;
+						void						copyInternalStateToCache
+														(PxArticulationCache& cache, const PxArticulationCacheFlags flag, const bool isGpuSimEnabled) const;
 
 						void						packJointData(const PxReal* maximum, PxReal* reduced) const;
 
@@ -129,7 +115,6 @@ namespace Sc
 
 						void						computeJointForce(PxArticulationCache& cache) const;
 
-
 						void						computeDenseJacobian(PxArticulationCache& cache, PxU32& nRows, PxU32& nCols) const;
 
 						void						computeCoefficientMatrix(PxArticulationCache& cache) const;
@@ -140,7 +125,7 @@ namespace Sc
 
 						PxU32						getCoefficientMatrixSize() const;
 
-						PxSpatialVelocity			getLinkAcceleration(const PxU32 linkId) const;
+						PxSpatialVelocity			getLinkAcceleration(const PxU32 linkId, const bool isGpuSimEnabled) const;
 
 						PxU32						getGpuArticulationIndex() const;				
 
@@ -164,7 +149,7 @@ namespace Sc
 														return *reinterpret_cast<ArticulationCore*>(reinterpret_cast<PxU8*>(&core) - offset);
 													}
 
-						PxNodeIndex				getIslandNodeIndex() const;
+						PxNodeIndex					getIslandNodeIndex() const;
 
 						void						setGlobalPose();
 

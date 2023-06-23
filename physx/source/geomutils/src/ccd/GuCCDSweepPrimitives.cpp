@@ -65,7 +65,7 @@ static bool virtualGjkRaycastPenetration(const GjkConvex& a, const GjkConvex& b,
 #endif
 
 template<class ConvexA, class ConvexB>
-static PX_FORCE_INLINE PxReal CCDSweep(	ConvexA& a, ConvexB& b, const PxTransform& transform0, const PxTransform& transform1, const PxTransform& lastTm0, const PxTransform& lastTm1,
+static PX_FORCE_INLINE PxReal CCDSweep(	ConvexA& a, ConvexB& b, const PxTransform32& transform0, const PxTransform32& transform1, const PxTransform32& lastTm0, const PxTransform32& lastTm1,
 										const aos::FloatV& toiEstimate, PxVec3& worldPoint, PxVec3& worldNormal, PxReal inflation = 0.0f)
 {
 	PX_UNUSED(toiEstimate); //KS - TODO - can we use this again?
@@ -81,9 +81,9 @@ static PX_FORCE_INLINE PxReal CCDSweep(	ConvexA& a, ConvexB& b, const PxTransfor
 	const PxTransformV tr1(p1, q1);
 
 	const PxMatTransformV aToB(tr1.transformInv(tr0));
-
-	const Vec3V trans0p = V3LoadU(transform0.p);
-	const Vec3V trans1p = V3LoadU(transform1.p);
+	
+	const Vec3V trans0p = V3LoadA(transform0.p);
+	const Vec3V trans1p = V3LoadA(transform1.p);
 	const Vec3V trA = V3Sub(trans0p, p0);
 	const Vec3V trB = V3Sub(trans1p, p1);
 	const Vec3V relTr = tr1.rotateInv(V3Sub(trB, trA));

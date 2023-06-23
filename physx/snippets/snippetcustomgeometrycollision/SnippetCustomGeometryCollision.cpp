@@ -67,7 +67,7 @@ struct CheckerBoard : PxCustomGeometry::Callbacks
 	{
 		PxContactBuffer* contactBuffer;
 		ContactRecorder(PxContactBuffer& _contactBuffer) : contactBuffer(&_contactBuffer) {}
-		virtual bool recordContacts(const PxContactPoint* contactPoints, const PxU32 nbContacts, const PxU32 /*index*/)
+		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/)
 		{
 			for (PxU32 i = 0; i < nbContacts; ++i)
 				if (!contactBuffer->contact(contactPoints[i]))

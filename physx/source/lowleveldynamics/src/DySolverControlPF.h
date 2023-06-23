@@ -46,7 +46,7 @@ public:
 	// Implements SolverCore
 	virtual void destroyV();
 
-	virtual PxI32 solveVParallelAndWriteBack
+	virtual void solveVParallelAndWriteBack
 		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const;
 
 	virtual void solveV_Blocks

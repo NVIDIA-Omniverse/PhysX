@@ -303,8 +303,6 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 		PxJointLimitPyramid PyramidSwingLimit;
 		PxD6JointDrive Drive[physx::PxD6Drive::eCOUNT];
 		PxTransform DrivePosition;
-		PxReal ProjectionLinearTolerance;
-		PxReal ProjectionAngularTolerance;
 		const char * ConcreteTypeName;
 		  PxD6JointGeneratedValues( const PxD6Joint* inSource );
 	};
@@ -320,8 +318,6 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, PyramidSwingLimit, PxD6JointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, Drive, PxD6JointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, DrivePosition, PxD6JointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, ProjectionLinearTolerance, PxD6JointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, ProjectionAngularTolerance, PxD6JointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxD6Joint, ConcreteTypeName, PxD6JointGeneratedValues)
 	struct PxD6JointGeneratedInfo
 		: PxJointGeneratedInfo
@@ -339,8 +335,6 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_PyramidSwingLimit, PxD6Joint, const PxJointLimitPyramid &, PxJointLimitPyramid > PyramidSwingLimit;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_Drive, PxD6Joint, PxD6Drive::Enum, PxD6JointDrive > Drive;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_DrivePosition, PxD6Joint, const PxTransform &, PxTransform > DrivePosition;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_ProjectionLinearTolerance, PxD6Joint, PxReal, PxReal > ProjectionLinearTolerance;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_ProjectionAngularTolerance, PxD6Joint, PxReal, PxReal > ProjectionAngularTolerance;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxD6Joint_ConcreteTypeName, PxD6Joint, const char * > ConcreteTypeName;
 
 		 PxD6JointGeneratedInfo();
@@ -364,7 +358,7 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 15; }
+		static PxU32 instancePropertyCount() { return 13; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -384,10 +378,8 @@ template<> struct PxEnumTraits< physx::PxD6Drive::Enum > { PxEnumTraits() : Name
 			inOperator( PyramidSwingLimit, inStartIndex + 9 );; 
 			inOperator( Drive, inStartIndex + 10 );; 
 			inOperator( DrivePosition, inStartIndex + 11 );; 
-			inOperator( ProjectionLinearTolerance, inStartIndex + 12 );; 
-			inOperator( ProjectionAngularTolerance, inStartIndex + 13 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 14 );; 
-			return 15 + inStartIndex;
+			inOperator( ConcreteTypeName, inStartIndex + 12 );; 
+			return 13 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxD6Joint>
@@ -413,7 +405,6 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 		PxReal Tolerance;
 		PxReal Stiffness;
 		PxReal Damping;
-		PxReal ContactDistance;
 		PxDistanceJointFlags DistanceJointFlags;
 		const char * ConcreteTypeName;
 		  PxDistanceJointGeneratedValues( const PxDistanceJoint* inSource );
@@ -424,7 +415,6 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, Tolerance, PxDistanceJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, Stiffness, PxDistanceJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, Damping, PxDistanceJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, ContactDistance, PxDistanceJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, DistanceJointFlags, PxDistanceJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxDistanceJoint, ConcreteTypeName, PxDistanceJointGeneratedValues)
 	struct PxDistanceJointGeneratedInfo
@@ -437,7 +427,6 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_Tolerance, PxDistanceJoint, PxReal, PxReal > Tolerance;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_Stiffness, PxDistanceJoint, PxReal, PxReal > Stiffness;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_Damping, PxDistanceJoint, PxReal, PxReal > Damping;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_ContactDistance, PxDistanceJoint, PxReal, PxReal > ContactDistance;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_DistanceJointFlags, PxDistanceJoint, PxDistanceJointFlags, PxDistanceJointFlags > DistanceJointFlags;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxDistanceJoint_ConcreteTypeName, PxDistanceJoint, const char * > ConcreteTypeName;
 
@@ -462,7 +451,7 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 9; }
+		static PxU32 instancePropertyCount() { return 8; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -476,10 +465,9 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 			inOperator( Tolerance, inStartIndex + 3 );; 
 			inOperator( Stiffness, inStartIndex + 4 );; 
 			inOperator( Damping, inStartIndex + 5 );; 
-			inOperator( ContactDistance, inStartIndex + 6 );; 
-			inOperator( DistanceJointFlags, inStartIndex + 7 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 8 );; 
-			return 9 + inStartIndex;
+			inOperator( DistanceJointFlags, inStartIndex + 6 );; 
+			inOperator( ConcreteTypeName, inStartIndex + 7 );; 
+			return 8 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxDistanceJoint>
@@ -563,20 +551,14 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 	class PxFixedJoint;
 	struct PxFixedJointGeneratedValues
 		: PxJointGeneratedValues	{
-		PxReal ProjectionLinearTolerance;
-		PxReal ProjectionAngularTolerance;
 		const char * ConcreteTypeName;
 		  PxFixedJointGeneratedValues( const PxFixedJoint* inSource );
 	};
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFixedJoint, ProjectionLinearTolerance, PxFixedJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFixedJoint, ProjectionAngularTolerance, PxFixedJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxFixedJoint, ConcreteTypeName, PxFixedJointGeneratedValues)
 	struct PxFixedJointGeneratedInfo
 		: PxJointGeneratedInfo
 	{
 		static const char* getClassName() { return "PxFixedJoint"; }
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxFixedJoint_ProjectionLinearTolerance, PxFixedJoint, PxReal, PxReal > ProjectionLinearTolerance;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxFixedJoint_ProjectionAngularTolerance, PxFixedJoint, PxReal, PxReal > ProjectionAngularTolerance;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxFixedJoint_ConcreteTypeName, PxFixedJoint, const char * > ConcreteTypeName;
 
 		 PxFixedJointGeneratedInfo();
@@ -600,7 +582,7 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 3; }
+		static PxU32 instancePropertyCount() { return 1; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -608,10 +590,8 @@ template<> struct PxEnumTraits< physx::PxDistanceJointFlag::Enum > { PxEnumTrait
 		{
 			PX_UNUSED(inOperator);
 			PX_UNUSED(inStartIndex);
-			inOperator( ProjectionLinearTolerance, inStartIndex + 0 );; 
-			inOperator( ProjectionAngularTolerance, inStartIndex + 1 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 2 );; 
-			return 3 + inStartIndex;
+			inOperator( ConcreteTypeName, inStartIndex + 0 );; 
+			return 1 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxFixedJoint>
@@ -633,8 +613,6 @@ template<> struct PxEnumTraits< physx::PxPrismaticJointFlag::Enum > { PxEnumTrai
 		PxReal Velocity;
 		PxJointLinearLimitPair Limit;
 		PxPrismaticJointFlags PrismaticJointFlags;
-		PxReal ProjectionLinearTolerance;
-		PxReal ProjectionAngularTolerance;
 		const char * ConcreteTypeName;
 		  PxPrismaticJointGeneratedValues( const PxPrismaticJoint* inSource );
 	};
@@ -642,8 +620,6 @@ template<> struct PxEnumTraits< physx::PxPrismaticJointFlag::Enum > { PxEnumTrai
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, Velocity, PxPrismaticJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, Limit, PxPrismaticJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, PrismaticJointFlags, PxPrismaticJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, ProjectionLinearTolerance, PxPrismaticJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, ProjectionAngularTolerance, PxPrismaticJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxPrismaticJoint, ConcreteTypeName, PxPrismaticJointGeneratedValues)
 	struct PxPrismaticJointGeneratedInfo
 		: PxJointGeneratedInfo
@@ -653,8 +629,6 @@ template<> struct PxEnumTraits< physx::PxPrismaticJointFlag::Enum > { PxEnumTrai
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_Velocity, PxPrismaticJoint, PxReal > Velocity;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_Limit, PxPrismaticJoint, const PxJointLinearLimitPair &, PxJointLinearLimitPair > Limit;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_PrismaticJointFlags, PxPrismaticJoint, PxPrismaticJointFlags, PxPrismaticJointFlags > PrismaticJointFlags;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_ProjectionLinearTolerance, PxPrismaticJoint, PxReal, PxReal > ProjectionLinearTolerance;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_ProjectionAngularTolerance, PxPrismaticJoint, PxReal, PxReal > ProjectionAngularTolerance;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxPrismaticJoint_ConcreteTypeName, PxPrismaticJoint, const char * > ConcreteTypeName;
 
 		 PxPrismaticJointGeneratedInfo();
@@ -678,7 +652,7 @@ template<> struct PxEnumTraits< physx::PxPrismaticJointFlag::Enum > { PxEnumTrai
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 7; }
+		static PxU32 instancePropertyCount() { return 5; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -690,10 +664,8 @@ template<> struct PxEnumTraits< physx::PxPrismaticJointFlag::Enum > { PxEnumTrai
 			inOperator( Velocity, inStartIndex + 1 );; 
 			inOperator( Limit, inStartIndex + 2 );; 
 			inOperator( PrismaticJointFlags, inStartIndex + 3 );; 
-			inOperator( ProjectionLinearTolerance, inStartIndex + 4 );; 
-			inOperator( ProjectionAngularTolerance, inStartIndex + 5 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 6 );; 
-			return 7 + inStartIndex;
+			inOperator( ConcreteTypeName, inStartIndex + 4 );; 
+			return 5 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxPrismaticJoint>
@@ -720,8 +692,6 @@ template<> struct PxEnumTraits< physx::PxRevoluteJointFlag::Enum > { PxEnumTrait
 		PxReal DriveForceLimit;
 		PxReal DriveGearRatio;
 		PxRevoluteJointFlags RevoluteJointFlags;
-		PxReal ProjectionLinearTolerance;
-		PxReal ProjectionAngularTolerance;
 		const char * ConcreteTypeName;
 		  PxRevoluteJointGeneratedValues( const PxRevoluteJoint* inSource );
 	};
@@ -732,8 +702,6 @@ template<> struct PxEnumTraits< physx::PxRevoluteJointFlag::Enum > { PxEnumTrait
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, DriveForceLimit, PxRevoluteJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, DriveGearRatio, PxRevoluteJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, RevoluteJointFlags, PxRevoluteJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, ProjectionLinearTolerance, PxRevoluteJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, ProjectionAngularTolerance, PxRevoluteJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxRevoluteJoint, ConcreteTypeName, PxRevoluteJointGeneratedValues)
 	struct PxRevoluteJointGeneratedInfo
 		: PxJointGeneratedInfo
@@ -746,8 +714,6 @@ template<> struct PxEnumTraits< physx::PxRevoluteJointFlag::Enum > { PxEnumTrait
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_DriveForceLimit, PxRevoluteJoint, PxReal, PxReal > DriveForceLimit;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_DriveGearRatio, PxRevoluteJoint, PxReal, PxReal > DriveGearRatio;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_RevoluteJointFlags, PxRevoluteJoint, PxRevoluteJointFlags, PxRevoluteJointFlags > RevoluteJointFlags;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_ProjectionLinearTolerance, PxRevoluteJoint, PxReal, PxReal > ProjectionLinearTolerance;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_ProjectionAngularTolerance, PxRevoluteJoint, PxReal, PxReal > ProjectionAngularTolerance;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxRevoluteJoint_ConcreteTypeName, PxRevoluteJoint, const char * > ConcreteTypeName;
 
 		 PxRevoluteJointGeneratedInfo();
@@ -771,7 +737,7 @@ template<> struct PxEnumTraits< physx::PxRevoluteJointFlag::Enum > { PxEnumTrait
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 10; }
+		static PxU32 instancePropertyCount() { return 8; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -786,10 +752,8 @@ template<> struct PxEnumTraits< physx::PxRevoluteJointFlag::Enum > { PxEnumTrait
 			inOperator( DriveForceLimit, inStartIndex + 4 );; 
 			inOperator( DriveGearRatio, inStartIndex + 5 );; 
 			inOperator( RevoluteJointFlags, inStartIndex + 6 );; 
-			inOperator( ProjectionLinearTolerance, inStartIndex + 7 );; 
-			inOperator( ProjectionAngularTolerance, inStartIndex + 8 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 9 );; 
-			return 10 + inStartIndex;
+			inOperator( ConcreteTypeName, inStartIndex + 7 );; 
+			return 8 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxRevoluteJoint>
@@ -811,7 +775,6 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 		PxReal SwingYAngle;
 		PxReal SwingZAngle;
 		PxSphericalJointFlags SphericalJointFlags;
-		PxReal ProjectionLinearTolerance;
 		const char * ConcreteTypeName;
 		  PxSphericalJointGeneratedValues( const PxSphericalJoint* inSource );
 	};
@@ -819,7 +782,6 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSphericalJoint, SwingYAngle, PxSphericalJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSphericalJoint, SwingZAngle, PxSphericalJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSphericalJoint, SphericalJointFlags, PxSphericalJointGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSphericalJoint, ProjectionLinearTolerance, PxSphericalJointGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSphericalJoint, ConcreteTypeName, PxSphericalJointGeneratedValues)
 	struct PxSphericalJointGeneratedInfo
 		: PxJointGeneratedInfo
@@ -829,7 +791,6 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxSphericalJoint_SwingYAngle, PxSphericalJoint, PxReal > SwingYAngle;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxSphericalJoint_SwingZAngle, PxSphericalJoint, PxReal > SwingZAngle;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSphericalJoint_SphericalJointFlags, PxSphericalJoint, PxSphericalJointFlags, PxSphericalJointFlags > SphericalJointFlags;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSphericalJoint_ProjectionLinearTolerance, PxSphericalJoint, PxReal, PxReal > ProjectionLinearTolerance;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxSphericalJoint_ConcreteTypeName, PxSphericalJoint, const char * > ConcreteTypeName;
 
 		 PxSphericalJointGeneratedInfo();
@@ -853,7 +814,7 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 			inStartIndex = PxJointGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 6; }
+		static PxU32 instancePropertyCount() { return 5; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxJointGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -865,9 +826,8 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 			inOperator( SwingYAngle, inStartIndex + 1 );; 
 			inOperator( SwingZAngle, inStartIndex + 2 );; 
 			inOperator( SphericalJointFlags, inStartIndex + 3 );; 
-			inOperator( ProjectionLinearTolerance, inStartIndex + 4 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 5 );; 
-			return 6 + inStartIndex;
+			inOperator( ConcreteTypeName, inStartIndex + 4 );; 
+			return 5 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxSphericalJoint>
@@ -883,14 +843,12 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 		PxReal BounceThreshold;
 		PxReal Stiffness;
 		PxReal Damping;
-		PxReal ContactDistance_deprecated;
 		  PxJointLimitParametersGeneratedValues( const PxJointLimitParameters* inSource );
 	};
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxJointLimitParameters, Restitution, PxJointLimitParametersGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxJointLimitParameters, BounceThreshold, PxJointLimitParametersGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxJointLimitParameters, Stiffness, PxJointLimitParametersGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxJointLimitParameters, Damping, PxJointLimitParametersGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxJointLimitParameters, ContactDistance_deprecated, PxJointLimitParametersGeneratedValues)
 	struct PxJointLimitParametersGeneratedInfo
 
 	{
@@ -899,7 +857,6 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxJointLimitParameters_BounceThreshold, PxJointLimitParameters, PxReal, PxReal > BounceThreshold;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxJointLimitParameters_Stiffness, PxJointLimitParameters, PxReal, PxReal > Stiffness;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxJointLimitParameters_Damping, PxJointLimitParameters, PxReal, PxReal > Damping;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxJointLimitParameters_ContactDistance_deprecated, PxJointLimitParameters, PxReal, PxReal > ContactDistance_deprecated;
 
 		 PxJointLimitParametersGeneratedInfo();
 		template<typename TReturnType, typename TOperator>
@@ -919,7 +876,7 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 5; }
+		static PxU32 instancePropertyCount() { return 4; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -930,8 +887,7 @@ template<> struct PxEnumTraits< physx::PxSphericalJointFlag::Enum > { PxEnumTrai
 			inOperator( BounceThreshold, inStartIndex + 1 );; 
 			inOperator( Stiffness, inStartIndex + 2 );; 
 			inOperator( Damping, inStartIndex + 3 );; 
-			inOperator( ContactDistance_deprecated, inStartIndex + 4 );; 
-			return 5 + inStartIndex;
+			return 4 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxJointLimitParameters>

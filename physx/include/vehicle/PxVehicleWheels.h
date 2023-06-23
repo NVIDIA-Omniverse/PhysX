@@ -127,12 +127,6 @@ PX_FLAGS_OPERATORS(PxVehicleWheelsSimFlag::Enum, PxU32)
 
 class PX_DEPRECATED PxVehicleWheelsSimData
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 
 	friend class PxVehicleWheels;
@@ -639,12 +633,6 @@ struct PX_DEPRECATED PxTireContactIntersectionMethod
 */
 class PX_DEPRECATED PxVehicleWheelsDynData
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 
 	friend class PxVehicleWheels;
@@ -825,12 +813,6 @@ PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleWheelsDynData) & 15));
 */
 class PX_DEPRECATED PxVehicleWheels : public PxBase
 {
-//= ATTENTION! =====================================================================================
-// Changing the data layout of this class breaks the binary serialization format.  See comments for 
-// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
-// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
-// accordingly.
-//==================================================================================================
 public:
 
 	friend class PxVehicleUpdate;

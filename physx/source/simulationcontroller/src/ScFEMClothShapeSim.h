@@ -27,11 +27,12 @@
 #ifndef PX_PHYSICS_FEMCLOTH_SHAPE_SIM
 #define PX_PHYSICS_FEMCLOTH_SHAPE_SIM
 
+#include "foundation/PxPreprocessor.h"
+#if PX_SUPPORT_GPU_PHYSX
 #include "PxPhysXConfig.h"
 
 #include "ScElementSim.h"
 #include "ScShapeSimBase.h"
-
 
 namespace physx
 {
@@ -78,5 +79,6 @@ namespace physx
 		};
 	} // namespace Sc
 }
+#endif
 
 #endif

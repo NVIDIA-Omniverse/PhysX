@@ -91,17 +91,6 @@ static PxU32 solverPrep(Px1DConstraint* constraints,
 	return 1;
 }
 
-static void project(const void* constantBlock,
-					PxTransform& bodyAToWorld,
-					PxTransform& bodyBToWorld,
-					bool projectToA)
-{
-	PX_UNUSED(constantBlock);
-	PX_UNUSED(bodyAToWorld);
-	PX_UNUSED(bodyBToWorld);
-	PX_UNUSED(projectToA);
-}
-
 static void visualize(	PxConstraintVisualizer&	viz,
 						const void*				constantBlock,
 						const PxTransform&		body0Transform,
@@ -117,7 +106,7 @@ static void visualize(	PxConstraintVisualizer&	viz,
 	viz.visualizeJointFrames(PxTransform(data.attachment0), PxTransform(data.attachment1));
 }
 
-static PxConstraintShaderTable sShaderTable = { solverPrep, project, visualize, PxConstraintFlag::Enum(0) };
+static PxConstraintShaderTable sShaderTable = { solverPrep, visualize, PxConstraintFlag::Enum(0) };
 
 PxConstraintSolverPrep PulleyJoint::getPrep() const { return solverPrep; }
 

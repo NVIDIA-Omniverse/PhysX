@@ -28,11 +28,8 @@
 
 #include "foundation/PxIntrinsics.h"
 #include "GuDistanceSegmentTriangle.h"
-#include "GuDistanceSegmentTriangleSIMD.h"
 #include "GuDistancePointTriangle.h"
-#include "GuDistancePointTriangleSIMD.h"
 #include "GuDistanceSegmentSegment.h"
-#include "GuDistanceSegmentSegmentSIMD.h"
 #include "GuBarycentricCoordinates.h"
 
 using namespace physx;
@@ -377,14 +374,11 @@ PxReal Gu::distanceSegmentTriangleSquared(	const PxVec3& origin, const PxVec3& d
 	return physx::intrinsics::selectMax(0.0f, fSqrDist);
 }
 
-
-/*
-	closest0 is the closest point on segment pq
-	closest1 is the closest point on triangle abc
-*/
+//	closest0 is the closest point on segment pq
+//	closest1 is the closest point on triangle abc
 aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos::Vec3VArg q,
-													const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
-													aos::Vec3V& closest0, aos::Vec3V& closest1)
+												const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
+												aos::Vec3V& closest0, aos::Vec3V& closest1)
 {
 	using namespace aos;
 	const FloatV zero = FZero();
@@ -406,19 +400,17 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 	
 	const FloatV bdenom = FSel(FIsGrtr(tDenom, zero), FRecip(tDenom), zero);
 
-	const Vec3V n =V3Normalize(V3Cross(ab, ac)); // normalize vector
+	const Vec3V n = V3Normalize(V3Cross(ab, ac)); // normalize vector
 
 	//compute the closest point of p and triangle plane abc
 	const FloatV dist3 = V3Dot(ap, n);
 	const FloatV sqDist3 = FMul(dist3, dist3);
-
 
 	//compute the closest point of q and triangle plane abc
 	const FloatV dist4 = V3Dot(aq, n);
 	const FloatV sqDist4 = FMul(dist4, dist4);
 	const FloatV dMul = FMul(dist3, dist4);
 	const BoolV con = FIsGrtr(zero, dMul);
-
 
 	// intersect with the plane
 	if(BAllEqTTTT(con))
@@ -440,7 +432,6 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 			return zero;
 		}
 	}
-	
 
 	Vec4V t40, t41;
 	const Vec4V sqDist44 = distanceSegmentSegmentSquared4(p,pq,a,ab, b,bc, a,ac, a,ab, t40, t41);  
@@ -466,7 +457,6 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 	const Vec3V closestP20 = V3ScaleAdd(pq, t20, p);
 	const Vec3V closestP21 = V3ScaleAdd(ac, t21, a);
 
-
 	//Get the closest point of all edges
 	const BoolV con20 = FIsGrtr(sqDist1, sqDist0);
 	const BoolV con21 = FIsGrtr(sqDist2, sqDist0);
@@ -476,9 +466,8 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 	const BoolV con3 = BAnd(con30, con31);
 	const FloatV sqDistPE = FSel(con2, sqDist0, FSel(con3, sqDist1, sqDist2));
 	//const FloatV tValue = FSel(con2, t00, FSel(con3, t10, t20));
-	const Vec3V closestPE0 =  V3Sel(con2, closestP00, V3Sel(con3, closestP10, closestP20)); // closestP on segment
-	const Vec3V closestPE1 =  V3Sel(con2, closestP01, V3Sel(con3, closestP11, closestP21)); // closestP on triangle
-
+	const Vec3V closestPE0 = V3Sel(con2, closestP00, V3Sel(con3, closestP10, closestP20)); // closestP on segment
+	const Vec3V closestPE1 = V3Sel(con2, closestP01, V3Sel(con3, closestP11, closestP21)); // closestP on triangle
 
 	const Vec3V closestP31 = V3NegScaleSub(n, dist3, p);//V3Sub(p, V3Scale(n, dist3));
 	const Vec3V closestP30 = p;
@@ -493,8 +482,6 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 	//check closestP3 is inside the triangle
 	const BoolV con0 = isValidTriangleBarycentricCoord(v0, w0);
 
-
-	
 	const Vec3V closestP41 = V3NegScaleSub(n, dist4, q);// V3Sub(q, V3Scale(n, dist4));
 	const Vec3V closestP40 = q;
 
@@ -507,23 +494,17 @@ aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos
 
 	const BoolV con1 = isValidTriangleBarycentricCoord(v1, w1);
 
-	/*
-		p is interior point but not q
-	*/
+	//	p is interior point but not q
 	const BoolV d0 = FIsGrtr(sqDistPE, sqDist3);
 	const Vec3V c00 = V3Sel(d0, closestP30, closestPE0);
 	const Vec3V c01 = V3Sel(d0, closestP31, closestPE1);
 
-	/*
-		q is interior point but not p
-	*/
+	//	q is interior point but not p
 	const BoolV d1 = FIsGrtr(sqDistPE, sqDist4);
 	const Vec3V c10 = V3Sel(d1, closestP40, closestPE0);
 	const Vec3V c11 = V3Sel(d1, closestP41, closestPE1);
 
-	/*
-		p and q are interior point 
-	*/
+	//	p and q are interior point 
 	const BoolV d2 = FIsGrtr(sqDist4, sqDist3);
 	const Vec3V c20 = V3Sel(d2, closestP30, closestP40);
 	const Vec3V c21 = V3Sel(d2, closestP31, closestP41);

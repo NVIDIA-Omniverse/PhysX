@@ -119,11 +119,13 @@ struct PxConvexFlag
 		eFAST_INERTIA_COMPUTATION = (1 << 6),
 
 		/**
-		\brief Convex hulls are created with respect to GPU simulation limitations. Vertex limit and polygon limit
+		\brief Convex hulls are created with respect to GPU simulation limitations. Vertex limit and polygon limit 
 		is set to 64 and vertex limit per face is internally set to 32.
 		\note Can be used only with eCOMPUTE_CONVEX flag.
+
+		@deprecated since PhysX 5.2. Setting #PxCookingParams::buildGPUData to true always cooks GPU-compatible meshes.
 		*/
-		eGPU_COMPATIBLE = (1 << 7),
+		eGPU_COMPATIBLE PX_DEPRECATED = (1 << 7),
 
 		/**
 		\brief Convex hull input vertices are shifted to be around origin to provide better computation stability.
@@ -197,7 +199,6 @@ public:
 	and minimum limit is 4 if PxConvexFlag::ePLANE_SHIFTING is used, otherwise the minimum
 	limit is 8.
 
-	\note Vertex limit is only used when PxConvexFlag::eCOMPUTE_CONVEX is specified.
 	\note The please see PxConvexFlag::ePLANE_SHIFTING for algorithm explanation
 	\note The maximum limit for GPU compatible convex meshes is 64.
 
@@ -207,7 +208,7 @@ public:
 	<b>Default:</b> 255
 	*/
 	PxU16 vertexLimit;
-	
+
 	/**
 	\brief Limits the number of polygons of the result convex mesh. Hard maximum limit is 255
 	and minimum limit is 4.

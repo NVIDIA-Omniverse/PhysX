@@ -289,7 +289,7 @@ static void GuGenerateVFContacts2(PxContactBuffer& contactBuffer,
 	{
 		const PxVec3& rayOrigin = points[i];
 
-		const PxVec3 vrayOrig = world2vertexSkew.transform( rayOrigin );
+		const PxVec3 vrayOrig = world2vertexSkew.transform(rayOrigin);
 		PxF32 t;
 		if(raycast_convexMesh2(polyData, vrayOrig, vrayDir, maxDist, t))
 		{

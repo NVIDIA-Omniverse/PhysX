@@ -210,19 +210,6 @@ namespace physx
 		virtual				~PxPBDMaterial() {}
 		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxPBDMaterial", name) || PxParticleMaterial::isKindOf(name); }
 	};
-
-	class PxCustomMaterial : public PxParticleMaterial
-	{
-	public:
-
-		virtual		const char*		getConcreteTypeName() const { return "PxCustomMaterial"; }
-
-	protected:
-		PX_INLINE			PxCustomMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxParticleMaterial(concreteType, baseFlags) {}
-		PX_INLINE			PxCustomMaterial(PxBaseFlags baseFlags) : PxParticleMaterial(baseFlags) {}
-		virtual				~PxCustomMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxCustomMaterial", name) || PxParticleMaterial::isKindOf(name); }
-	};
 #if !PX_DOXYGEN
 } // namespace physx
 #endif

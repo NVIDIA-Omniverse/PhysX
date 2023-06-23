@@ -33,16 +33,6 @@ namespace physx
 	{
 		/////
 
-		void	setRotX(PxMat33& m, PxReal angle);
-		void	setRotY(PxMat33& m, PxReal angle);
-		void	setRotZ(PxMat33& m, PxReal angle);
-
-		PxQuat	getRotXQuat(float angle);
-		PxQuat	getRotYQuat(float angle);
-		PxQuat	getRotZQuat(float angle);
-
-		/////
-
 		class BasicRandom
 		{
 			public:

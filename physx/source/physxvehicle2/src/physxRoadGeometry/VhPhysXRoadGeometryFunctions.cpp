@@ -87,14 +87,16 @@ PX_FORCE_INLINE void copyHitInfo(const THitBuffer& hitBuffer, PxMaterial* hitMat
 
 void PxVehiclePhysXRoadGeometryQueryUpdate
 (const PxVehicleWheelParams& wheelParams, const PxVehicleSuspensionParams& suspParams,
- const PxVehiclePhysXRoadGeometryQueryParams& roadGeomParams, const PxVehiclePhysXMaterialFrictionParams& materialFrictionParams,
+ const PxVehiclePhysXRoadGeometryQueryType::Enum queryType, 
+ PxQueryFilterCallback* filterCallback, const PxQueryFilterData& filterData,
+ const PxVehiclePhysXMaterialFrictionParams& materialFrictionParams,
  const PxF32 steerAngle, const PxVehicleRigidBodyState& rigidBodyState, 
  const PxScene& scene, const PxConvexMesh* unitCylinderSweepMesh, 
  const PxVehicleFrame& frame,
  PxVehicleRoadGeometryState& roadGeomState,
  PxVehiclePhysXRoadGeometryQueryState* physxRoadGeometryState)
 {
-	if(PxVehiclePhysXRoadGeometryQueryType::eRAYCAST == roadGeomParams.roadGeometryQueryType)
+	if(PxVehiclePhysXRoadGeometryQueryType::eRAYCAST == queryType)
 	{
 		//Assume no hits until we know otherwise.
 		roadGeomState.setToDefault();
@@ -106,7 +108,7 @@ void PxVehiclePhysXRoadGeometryQueryUpdate
 
 		//Perform the raycast.
 		PxRaycastBuffer buff;
-		scene.raycast(v, w, dist, buff, PxHitFlag::eDEFAULT, roadGeomParams.filterData, roadGeomParams.filterCallback);
+		scene.raycast(v, w, dist, buff, PxHitFlag::eDEFAULT, filterData, filterCallback);
 
 		//Process the raycast result.
 		if(buff.hasBlock && buff.block.distance != 0.0f)
@@ -130,7 +132,7 @@ void PxVehiclePhysXRoadGeometryQueryUpdate
 				physxRoadGeometryState->setToDefault();
 		}
 	}
-	else if(PxVehiclePhysXRoadGeometryQueryType::eSWEEP == roadGeomParams.roadGeometryQueryType)
+	else if(PxVehiclePhysXRoadGeometryQueryType::eSWEEP == queryType)
 	{
 		PX_ASSERT(unitCylinderSweepMesh);
 
@@ -150,10 +152,10 @@ void PxVehiclePhysXRoadGeometryQueryUpdate
 
 		//Perform the sweep.
 		PxSweepBuffer buff;
-		scene.sweep(convMeshGeom, T,  w,  dist, buff, PxHitFlag::eDEFAULT | PxHitFlag::eMTD, roadGeomParams.filterData, roadGeomParams.filterCallback);
+		scene.sweep(convMeshGeom, T,  w,  dist, buff, PxHitFlag::eDEFAULT | PxHitFlag::eMTD, filterData, filterCallback);
 
 		//Process the sweep result.
-		if (buff.hasBlock && buff.block.distance > 0.0f)
+		if (buff.hasBlock && buff.block.distance >= 0.0f)
 		{
 			//Sweep started outside scene geometry.
 			const PxPlane hitPlane(buff.block.position, buff.block.normal);

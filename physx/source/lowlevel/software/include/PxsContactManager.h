@@ -141,10 +141,8 @@ private:
 
 	friend class Dy::DynamicsContext;
 	friend struct PxsCCDPair;
-	friend class PxsIslandManager;
 	friend class PxsCCDContext;
 	friend class Sc::ShapeInteraction;
-	//friend class Sc::SoftBodyShapeInteraction;
 };
 
 }

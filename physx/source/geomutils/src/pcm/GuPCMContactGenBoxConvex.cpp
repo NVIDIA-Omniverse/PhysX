@@ -55,18 +55,16 @@ using namespace aos;
 
 namespace physx
 {
-
 namespace Gu
-{
-	
-	static bool testFaceNormal(const PolygonalData& polyData0, const PolygonalData& polyData1, SupportLocal* map0, SupportLocal* map1, const PxMatTransformV& transform0To1, const PxMatTransformV& transform1To0, const FloatVArg contactDist, 
-		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, const FeatureStatus faceStatus, FeatureStatus& status)
+{	
+	static bool testFaceNormal(const PolygonalData& polyData0, const PolygonalData& polyData1, const SupportLocal* map0, const SupportLocal* map1, const PxMatTransformV& transform0To1, const PxMatTransformV& transform1To0, const FloatVArg contactDist, 
+		FloatV& minOverlap, PxU32& feature, Vec3V& faceNormal, FeatureStatus faceStatus, FeatureStatus& status)
 	{
 		PX_UNUSED(polyData1);
 		
 		FloatV _minOverlap = FMax();//minOverlap;
-		PxU32  _feature = 0;
-		Vec3V  _faceNormal = faceNormal;
+		PxU32 _feature = 0;
+		Vec3V _faceNormal = faceNormal;
 		FloatV min0, max0;
 		FloatV min1, max1;
 	
@@ -106,9 +104,7 @@ namespace Gu
 			//rotate polygon's normal into the local space of polyData1
 			const Vec3V n1 = transform0To1.rotate(n0);
 
-
 #if PCM_USE_INTERNAL_OBJECT
-			
 			//test internal object	
 			//ML: we don't need to transform the normal into the vertex space. If polyData1 don't have scale,
 			//the vertex2Shape matrix will be identity, shape space normal will be the same as vertex space's normal.
@@ -129,12 +125,8 @@ namespace Gu
 			//Internal object overlaps more than current min, so can skip it
 			//because (a) it isn't a separating axis and (b) it isn't the smallest axis
 			if(FAllGrtr(_tempOverlap, _minOverlap))
-			{
 				continue;
-			}
-
 #endif
-
 			const FloatV translate = V3Dot(center1To0, n0);
 			map1->doSupport(n1, min1, max1);
 
@@ -163,17 +155,13 @@ namespace Gu
 			status = faceStatus;
 		}
 
-		
-
 		feature = _feature;
 
 		return true;
-
 	}
 
-
 	//plane is in the shape space of polyData
-	void buildPartialHull(const PolygonalData& polyData, SupportLocal* map, SeparatingAxes& validAxes, const Vec3VArg planeP, const Vec3VArg planeDir)
+	void buildPartialHull(const PolygonalData& polyData, const SupportLocal* map, SeparatingAxes& validAxes, const Vec3VArg planeP, const Vec3VArg planeDir)
 	{		
 		const FloatV zero = FZero();
 		const Vec3V dir = V3Normalize(planeDir);
@@ -209,11 +197,9 @@ namespace Gu
 		}
 	}
 
-
-	static bool testEdgeNormal(const PolygonalData& polyData0, const PolygonalData& polyData1, SupportLocal* map0, SupportLocal* map1, const PxMatTransformV& transform0To1, const PxMatTransformV& transform1To0, const FloatVArg contactDist,
-		FloatV& minOverlap, Vec3V& edgeNormalIn0, const FeatureStatus edgeStatus, FeatureStatus& status)
+	static bool testEdgeNormal(const PolygonalData& polyData0, const PolygonalData& polyData1, const SupportLocal* map0, const SupportLocal* map1, const PxMatTransformV& transform0To1, const PxMatTransformV& transform1To0, const FloatVArg contactDist,
+		FloatV& minOverlap, Vec3V& edgeNormalIn0, FeatureStatus edgeStatus, FeatureStatus& status)
 	{
-		
 		FloatV overlap = minOverlap;
 		FloatV min0, max0;
 		FloatV min1, max1;
@@ -303,7 +289,6 @@ namespace Gu
 				PX_ASSERT(FAllGrtrOrEq(_max0, _min0));
 				PX_ASSERT(FAllGrtrOrEq(_max1, _min1));
 
-
 				const FloatV _min = FMax(_min0, _min1);
 				const FloatV _max = FMin(_max0, _max1);
 
@@ -312,10 +297,7 @@ namespace Gu
 				//Internal object overlaps more than current min, so can skip it
 				//because (a) it isn't a separating axis and (b) it isn't the smallest axis
 				if(FAllGrtr(_tempOverlap, overlap))
-				{
 					continue;
-				}
-
 #endif
 				//get polyData0's projection
 				map0->doSupport(n0, min0, max0);
@@ -337,7 +319,6 @@ namespace Gu
 #if PCM_USE_INTERNAL_OBJECT
 				PX_ASSERT(FAllGrtrOrEq(tempOverlap, _tempOverlap));
 #endif
-
 				if(FAllGrtr(overlap, tempOverlap))
 				{
 					overlap = tempOverlap;
@@ -350,16 +331,13 @@ namespace Gu
 		minOverlap = overlap;
 		
 		return true;
-
 	}
 
-
 	//contactNormal is in the space of polyData0
-	void generatedContacts(PolygonalData& polyData0, PolygonalData& polyData1, const HullPolygonData& referencePolygon, const HullPolygonData& incidentPolygon,  
-		SupportLocal* map0, SupportLocal* map1, const PxMatTransformV& transform0To1, PersistentContact* manifoldContacts, 
+	void generatedContacts(const PolygonalData& polyData0, const PolygonalData& polyData1, const HullPolygonData& referencePolygon, const HullPolygonData& incidentPolygon,  
+		const SupportLocal* map0, const SupportLocal* map1, const PxMatTransformV& transform0To1, PersistentContact* manifoldContacts, 
 		PxU32& numContacts, const FloatVArg contactDist, PxRenderOutput* renderOutput)
 	{
-
 		PX_UNUSED(renderOutput);
 		const FloatV zero = FZero();
 
@@ -372,7 +350,6 @@ namespace Gu
 		const Mat33V rot = findRotationMatrixFromZAxis(contactNormal);
 
 		const PxU8* inds1 = polyData1.mPolygonVertexRefs + incidentPolygon.mVRef8;
-
 
 		Vec3V* points0In0 = reinterpret_cast<Vec3V*>(PxAllocaAligned(sizeof(Vec3V)*referencePolygon.mNbVerts, 16));
 		Vec3V* points1In0 = reinterpret_cast<Vec3V*>(PxAllocaAligned(sizeof(Vec3V)*incidentPolygon.mNbVerts, 16));
@@ -416,7 +393,6 @@ namespace Gu
 		Vec3V iPolygonMin= max; 
 		Vec3V iPolygonMax = nmax;
 
-
 		PxU32 inside = 0;
 		for(PxU32 i=0; i<incidentPolygon.mNbVerts; ++i)
 		{
@@ -434,7 +410,6 @@ namespace Gu
 
 				if(contains(points0In0, referencePolygon.mNbVerts, points1In0[i], rPolygonMin, rPolygonMax))
 				{
-
 					inside++;
 
 					if (numContacts == PxContactBuffer::MAX_CONTACTS)
@@ -444,21 +419,16 @@ namespace Gu
 					manifoldContacts[numContacts].mLocalPointA = vert1;
 					manifoldContacts[numContacts].mLocalPointB = M33TrnspsMulV3(rot, points1In0[i]);
 					manifoldContacts[numContacts++].mLocalNormalPen = localNormalPen;
-				
 				}
 			}
 			else
 			{
 				points1In0Penetration[i] = false;
 			}
-			
 		}
-
 
 		if(inside == incidentPolygon.mNbVerts)
-		{
 			return;
-		}
 
 		inside = 0;
 		iPolygonMin = V3Sub(iPolygonMin, eps);
@@ -484,7 +454,6 @@ namespace Gu
 				if(FAllGrtr(t, contactDist))
 					continue;
 
-
 				inside++;
 
 				if (numContacts == PxContactBuffer::MAX_CONTACTS)
@@ -496,13 +465,11 @@ namespace Gu
 				manifoldContacts[numContacts].mLocalPointA = projPoint;
 				manifoldContacts[numContacts].mLocalPointB = vert0;
 				manifoldContacts[numContacts++].mLocalNormalPen = localNormalPen;
-		
 			}
 		}
 
 		if(inside == referencePolygon.mNbVerts)
 			return;
-
 
 		//(2) segment intesection
 		for (PxU32 iStart = 0, iEnd = PxU32(incidentPolygon.mNbVerts - 1); iStart < incidentPolygon.mNbVerts; iEnd = iStart++)
@@ -510,7 +477,6 @@ namespace Gu
 			if((!points1In0Penetration[iStart] && !points1In0Penetration[iEnd] ) )//|| (points1In0[i].status == POINT_OUTSIDE && points1In0[incidentIndex].status == POINT_OUTSIDE))
 				continue;
 
-	
 			const Vec3V ipA = points1In0[iStart];
 			const Vec3V ipB = points1In0[iEnd];
 
@@ -519,11 +485,9 @@ namespace Gu
 
 			const Vec3V iMin = V3Min(ipA, ipB);
 			const Vec3V iMax = V3Max(ipA, ipB);
-			
 
 			for (PxU32 rStart = 0, rEnd = PxU32(referencePolygon.mNbVerts - 1); rStart < referencePolygon.mNbVerts; rEnd = rStart++) 
 			{
-	
 				const Vec3V rpA = points0In0[rStart];
 				const Vec3V rpB = points0In0[rEnd];
 
@@ -535,11 +499,9 @@ namespace Gu
 		
 				if(BAllEqTTTT(con))
 					continue;
-			
 					
 				FloatV a1 = signed2DTriArea(rpA, rpB, ipA);
 				FloatV a2 = signed2DTriArea(rpA, rpB, ipB);
-
 
 				if(FAllGrtr(zero, FMul(a1, a2)))
 				{
@@ -548,7 +510,6 @@ namespace Gu
 
 					if(FAllGrtr(zero, FMul(a3, a4)))
 					{
-					
 						//these two segment intersect
 
 						const FloatV t = FDiv(a1, FSub(a2, a1));
@@ -568,23 +529,18 @@ namespace Gu
 						manifoldContacts[numContacts].mLocalPointA = pB;
 						manifoldContacts[numContacts].mLocalPointB = pA;
 						manifoldContacts[numContacts++].mLocalNormalPen = localNormalPen;
-						
 					}
 				}
 			}
-
 		}
 	}
 
-
-	bool generateFullContactManifold(PolygonalData& polyData0, PolygonalData& polyData1, SupportLocal* map0, SupportLocal* map1,  PersistentContact* manifoldContacts, PxU32& numContacts,
-		const FloatVArg contactDist, const Vec3VArg normal, const Vec3VArg closestA, const Vec3VArg closestB, const PxReal marginA, const PxReal marginB, const bool doOverlapTest, 
-		PxRenderOutput* renderOutput, const PxReal toleranceLength)
+	bool generateFullContactManifold(const PolygonalData& polyData0, const PolygonalData& polyData1, const SupportLocal* map0, const SupportLocal* map1, PersistentContact* manifoldContacts, PxU32& numContacts,
+		const FloatVArg contactDist, const Vec3VArg normal, const Vec3VArg closestA, const Vec3VArg closestB, PxReal marginA, PxReal marginB, bool doOverlapTest, 
+		PxRenderOutput* renderOutput, PxReal toleranceLength)
 	{
-	
 		const PxMatTransformV transform1To0V = map0->transform.transformInv(map1->transform);
 		const PxMatTransformV transform0To1V = map1->transform.transformInv(map0->transform);
-
 	
 		if(doOverlapTest)
 		{
@@ -603,7 +559,6 @@ namespace Gu
 			if(!testFaceNormal(polyData1, polyData0, map1, map0, transform1To0V, transform0To1V, contactDist, minOverlap, feature1, minNormal, POLYDATA1, status))
 				return false;
 
-		
 			bool doEdgeTest = false;
 			
 EdgeTest:
@@ -616,7 +571,6 @@ EdgeTest:
 				if(status != EDGE)
 					return true;
 			}
-
 			
 			if(status == POLYDATA0)
 			{
@@ -645,7 +599,7 @@ EdgeTest:
 			{
 				//minNormal is in the local space of polydata1
 				const HullPolygonData& referencePolygon = polyData1.mPolygons[feature1];
-				const HullPolygonData& incidentPolygon =  polyData0.mPolygons[getPolygonIndex(polyData0, map0, transform1To0V.rotate(minNormal))];
+				const HullPolygonData& incidentPolygon = polyData0.mPolygons[getPolygonIndex(polyData0, map0, transform1To0V.rotate(minNormal))];
 				
 				//reference face is polyData1
 				generatedContacts(polyData1, polyData0, referencePolygon,  incidentPolygon, map1, map0, transform1To0V, manifoldContacts, numContacts, contactDist, renderOutput);
@@ -665,7 +619,6 @@ EdgeTest:
 				doEdgeTest = true;
 				goto EdgeTest;
 			}
-
 		}
 		else
 		{
@@ -773,10 +726,8 @@ EdgeTest:
 		return doOverlapTest;
 	}
 
-
-	bool computeMTD(Gu::PolygonalData& polyData0, Gu::PolygonalData& polyData1,  SupportLocal* map0, SupportLocal* map1, aos::FloatV& penDepth, aos::Vec3V& normal)
+	bool computeMTD(const Gu::PolygonalData& polyData0, const Gu::PolygonalData& polyData1, const SupportLocal* map0, const SupportLocal* map1, aos::FloatV& penDepth, aos::Vec3V& normal)
 	{
-	
 		using namespace aos;
 
 		const PxMatTransformV transform1To0V = map0->transform.transformInv(map1->transform);

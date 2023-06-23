@@ -289,7 +289,7 @@ public:
 	PX_FORCE_INLINE		PxReal getInvMassScale0() const					
 	{ 
 		PxContactPatch* patch = getPatch();
-		return patch->mMassModification.mInvMassScale0;
+		return patch->mMassModification.linear0;
 	}
 
 	/**
@@ -301,7 +301,7 @@ public:
 	PX_FORCE_INLINE		PxReal getInvMassScale1() const					
 	{ 
 		PxContactPatch* patch = getPatch();
-		return patch->mMassModification.mInvMassScale1;
+		return patch->mMassModification.linear1;
 	}
 
 	/**
@@ -313,7 +313,7 @@ public:
 	PX_FORCE_INLINE		PxReal getInvInertiaScale0() const					
 	{ 
 		PxContactPatch* patch = getPatch();
-		return patch->mMassModification.mInvInertiaScale0;
+		return patch->mMassModification.angular0;
 	}
 
 	/**
@@ -325,7 +325,7 @@ public:
 	PX_FORCE_INLINE		PxReal getInvInertiaScale1() const					
 	{ 
 		PxContactPatch* patch = getPatch();
-		return patch->mMassModification.mInvInertiaScale1;
+		return patch->mMassModification.angular1;
 	}
 
 	/**
@@ -338,7 +338,7 @@ public:
 	PX_FORCE_INLINE		void setInvMassScale0(const PxReal scale)					
 	{ 
 		PxContactPatch* patch = getPatch();
-		patch->mMassModification.mInvMassScale0 = scale;
+		patch->mMassModification.linear0 = scale;
 		patch->internalFlags |= PxContactPatch::eHAS_MODIFIED_MASS_RATIOS;
 	}
 
@@ -352,7 +352,7 @@ public:
 	PX_FORCE_INLINE		void setInvMassScale1(const PxReal scale)					
 	{ 
 		PxContactPatch* patch = getPatch();
-		patch->mMassModification.mInvMassScale1 = scale;
+		patch->mMassModification.linear1 = scale;
 		patch->internalFlags |= PxContactPatch::eHAS_MODIFIED_MASS_RATIOS;
 	}
 
@@ -366,7 +366,7 @@ public:
 	PX_FORCE_INLINE		void setInvInertiaScale0(const PxReal scale)					
 	{ 
 		PxContactPatch* patch = getPatch();
-		patch->mMassModification.mInvInertiaScale0 = scale;
+		patch->mMassModification.angular0 = scale;
 		patch->internalFlags |= PxContactPatch::eHAS_MODIFIED_MASS_RATIOS;
 	}
 
@@ -380,7 +380,7 @@ public:
 	PX_FORCE_INLINE		void setInvInertiaScale1(const PxReal scale)					
 	{ 
 		PxContactPatch* patch = getPatch();
-		patch->mMassModification.mInvInertiaScale1 = scale;
+		patch->mMassModification.angular1 = scale;
 		patch->internalFlags |= PxContactPatch::eHAS_MODIFIED_MASS_RATIOS;
 	}
 

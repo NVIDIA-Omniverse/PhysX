@@ -35,6 +35,7 @@
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxAssert.h"
+#include "PxConstraintDesc.h"
 #include "PxNodeIndex.h"
 
 #if !PX_DOXYGEN
@@ -50,20 +51,6 @@ namespace physx
 #define PXC_CONTACT_NO_FACE_INDEX 0xffffffff
 
 class PxActor;
-
-/**
-\brief Struct for specifying mass modification for a pair of rigids
-\deprecated Use #PxConstraintInvMassScale instead. Deprecated since PhysX version 5.1.
-*/
-PX_ALIGN_PREFIX(16)
-struct PX_DEPRECATED PxMassModificationProps
-{
-	PxReal mInvMassScale0;
-	PxReal mInvInertiaScale0;
-	PxReal mInvMassScale1;
-	PxReal mInvInertiaScale1;
-}
-PX_ALIGN_SUFFIX(16);
 
 /**
 \brief Header for a contact patch where all points share same material and normal
@@ -86,7 +73,7 @@ struct PxContactPatch
 	/**
 	\brief Modifiers for scaling the inertia of the involved bodies
 	*/
-	PX_ALIGN(16, PxMassModificationProps mMassModification);			//16
+	PX_ALIGN(16, PxConstraintInvMassScale mMassModification);		//16
 
 	/**
 	\brief Contact normal
@@ -441,7 +428,7 @@ struct PxContactStreamIterator
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getInvMassScale0() const
 	{
-		return patch->mMassModification.mInvMassScale0;
+		return patch->mMassModification.linear0;
 	}
 
 	/**
@@ -450,7 +437,7 @@ struct PxContactStreamIterator
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getInvMassScale1() const
 	{
-		return patch->mMassModification.mInvMassScale1;
+		return patch->mMassModification.linear1;
 	}
 
 	/**
@@ -459,7 +446,7 @@ struct PxContactStreamIterator
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getInvInertiaScale0() const
 	{
-		return patch->mMassModification.mInvInertiaScale0;
+		return patch->mMassModification.angular0;
 	}
 
 	/**
@@ -468,7 +455,7 @@ struct PxContactStreamIterator
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getInvInertiaScale1() const
 	{
-		return patch->mMassModification.mInvInertiaScale1;
+		return patch->mMassModification.angular1;
 	}
 
 	/**

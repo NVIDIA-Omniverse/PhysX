@@ -38,7 +38,6 @@
 #include "foundation/PxTransform.h"
 #include "PxShape.h"
 #include "PxAggregate.h"
-#include "PxBuffer.h"
 #include "PxParticleSystem.h"
 #include "foundation/PxPreprocessor.h"
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
@@ -67,10 +66,6 @@ class PxFoundation;
 
 class PxPruningStructure;
 class PxBVH;
-/**
- * @deprecated
- */
-typedef PX_DEPRECATED PxBVH PxBVHStructure;
 
 class PxParticleClothBuffer;
 class PxParticleRigidBuffer;
@@ -83,9 +78,9 @@ class PxSoftBodyMesh;
 In addition you can use PxPhysics to set global parameters which will effect all scenes and create
 objects that can be shared across multiple scenes.
 
-You can get an instance of this class by calling PxCreateBasePhysics() or PxCreatePhysics() with pre-registered modules.
+You can get an instance of this class by calling PxCreatePhysics().
 
-@see PxCreatePhysics() PxCreateBasePhysics() PxScene
+@see PxCreatePhysics() PxScene
 */
 class PxPhysics
 {
@@ -147,30 +142,6 @@ public:
 	@see PxAggregate PxAggregateFilterHint PxAggregateType PxPairFilteringMode
 	*/
 	virtual	PxAggregate* createAggregate(PxU32 maxActor, PxU32 maxShape, PxAggregateFilterHint filterHint) = 0;
-
-	/**
-	\brief Creates an aggregate with the specified maximum size and filtering hint.
-
-	The previous API used "bool enableSelfCollision" which should now silently evaluates
-	to a PxAggregateType::eGENERIC aggregate with its self-collision bit.
-
-	Use PxAggregateType::eSTATIC or PxAggregateType::eKINEMATIC for aggregates that will
-	only contain static or kinematic actors. This provides faster filtering when used in
-	combination with PxPairFilteringMode.
-
-	\note This variation of the method is not compatible with GPU rigid bodies.
-
-	\param	[in] maxActor		The maximum number of actors that may be placed in the aggregate.
-	\param	[in] filterHint		The aggregate's filtering hint.
-	\return The new aggregate.
-
-	@see PxAggregate PxAggregateFilterHint PxAggregateType PxPairFilteringMode
-	@deprecated
-	*/
-	PX_FORCE_INLINE PX_DEPRECATED PxAggregate* createAggregate(PxU32 maxActor, PxAggregateFilterHint filterHint)
-	{
-		return createAggregate(maxActor, PX_MAX_U32, filterHint);
-	}
 
 	/**
 	\brief Returns the simulation tolerance parameters.
@@ -281,7 +252,7 @@ public:
 	\param	[in] stream	The heightfield mesh stream.
 	\return The new heightfield.
 
-	@see PxHeightField PxHeightField.release() PxInputStream PxRegisterHeightFields
+	@see PxHeightField PxHeightField.release() PxInputStream
 	*/
 	virtual PxHeightField* createHeightField(PxInputStream& stream) = 0;
 
@@ -358,14 +329,6 @@ public:
 	virtual PxBVH* createBVH(PxInputStream& stream) = 0;
 
 	/**
-	 * @deprecated
-	 */
-	PX_DEPRECATED PX_FORCE_INLINE PxBVH*	createBVHStructure(PxInputStream& stream)
-											{
-												return createBVH(stream);
-											}
-
-	/**
 	\brief Return the number of bounding volume hierarchies that currently exist.
 
 	\return Number of bounding volume hierarchies.
@@ -373,14 +336,6 @@ public:
 	@see PxBVH getBVHs()
 	*/
 	virtual PxU32 getNbBVHs() const = 0;
-
-	/**
-	 * @deprecated
-	 */
-	PX_DEPRECATED PX_FORCE_INLINE PxU32		getNbBVHStructures() const
-											{
-												return getNbBVHs();
-											}
 
 	/**
 	\brief Writes the array of bounding volume hierarchy pointers to a user buffer.
@@ -397,14 +352,6 @@ public:
 	@see getNbBVHs() PxBVH
 	*/
 	virtual	PxU32 getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	 * @deprecated
-	 */
-	PX_DEPRECATED PX_FORCE_INLINE PxU32	getBVHStructures(PxBVHStructure** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
-										{
-											return getBVHs(userBuffer, bufferSize, startIndex);
-										}
 
 	//@}
 	/** @name Scenes
@@ -656,7 +603,7 @@ public:
 
 	\return the new articulation
 
-	@see PxArticulationReducedCoordinate, PxRegisterArticulationsReducedCoordinate
+	@see PxArticulationReducedCoordinate
 	*/
 	virtual PxArticulationReducedCoordinate* createArticulationReducedCoordinate() = 0;
 
@@ -730,30 +677,6 @@ public:
 	@see PxMPMParticleSystem
 	*/
 	virtual PxMPMParticleSystem* createMPMParticleSystem(PxCudaContextManager& cudaContextManager) = 0;
-
-	/**
-	\brief Creates a customizable particle system to simulate effects that are not supported by PhysX natively (e.g. molecular dynamics).
-	\warning Feature under development, only for internal usage.
-
-	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\param[in] maxNeighborhood The maximum number of particles considered in neighborhood-based particle interaction calculations (e.g. fluid density constraints).
-	\return the new particle system
-
-	@see PxCustomParticleSystem
-	*/
-	virtual PxCustomParticleSystem* createCustomParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood) = 0;
-
-	/**
-	\brief Create a buffer for reading and writing data across host and device memory spaces.
-
-	\param[in] byteSize The size of the buffer in bytes.
-	\param[in] bufferType The memory space of the buffer.
-	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
-	\return PxBuffer instance.
-
-	@see PxBuffer
-	*/
-	virtual PxBuffer* createBuffer(PxU64 byteSize, PxBufferType::Enum bufferType, PxCudaContextManager* cudaContextManager) = 0;
 
 	/**
 	\brief Create particle buffer to simulate fluid/granular material.
@@ -1065,44 +988,7 @@ public:
 	@see getNbMPMMaterials() PxMPMMaterial
 	*/
 	virtual PxU32 getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	\brief Creates a new material for custom particle systems.
-	\warning Feature under development, only for internal usage.
-
-	\param[in] gpuBuffer A pointer to a GPU buffer containing material parameters.
-	\return the new material.
-	*/
-	virtual PxCustomMaterial* createCustomMaterial(void* gpuBuffer) = 0;
-
-	/**
-	\brief Return the number of custom materials that currently exist.
-	\warning Feature under development, only for internal usage.
-
-	\return Number of custom materials.
-
-	@see getCustomMaterials()
-	*/
-	virtual PxU32 getNbCustomMaterials() const = 0;
-
-	/**
-	\brief Writes the array of custom material pointers to a user buffer.
-	\warning Feature under development, only for internal usage.
-
-	Returns the number of pointers written.
-
-	The ordering of the materials in the array is not specified.
-
-	\param	[out] userBuffer	The buffer to receive material pointers.
-	\param	[in]  bufferSize	The number of material pointers which can be stored in the buffer.
-	\param	[in]  startIndex	Index of first material pointer to be retrieved.
-	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
-
-	@see getNbCustomMaterials() PxCustomMaterial
-	*/
-	virtual PxU32 getCustomMaterials(PxCustomMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-
+	
 	//@}
 	/** @name Deletion Listeners
 	*/
@@ -1188,70 +1074,6 @@ public:
 #endif
 
 /**
-\brief Enables the usage of the reduced coordinate articulations feature. This function is called automatically inside PxCreatePhysics().
-On resource constrained platforms, it is possible to call PxCreateBasePhysics() and then NOT call this function
-to save on code memory if your application does not use reduced coordinate articulations. In this case the linker should strip out
-the relevant implementation code from the library. If you need to use reduced coordinate articulations but not some other optional
-component, you shoud call PxCreateBasePhysics() followed by this call.
-
-@deprecated
-*/
-PX_DEPRECATED PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxRegisterArticulationsReducedCoordinate(physx::PxPhysics& physics);
-
-/**
-\brief Enables the usage of the heightfield feature.
-
-This call will link the default 'unified' implementation of heightfields which is identical to the narrow phase of triangle meshes.
-This function is called automatically inside PxCreatePhysics().
-
-On resource constrained platforms, it is possible to call PxCreateBasePhysics() and then NOT call this function
-to save on code memory if your application does not use heightfields. In this case the linker should strip out
-the relevant implementation code from the library. If you need to use heightfield but not some other optional
-component, you shoud call PxCreateBasePhysics() followed by this call.
-
-You must call this function at a time where no ::PxScene instance exists, typically before calling PxPhysics::createScene().
-This is to prevent a change to the heightfield implementation code at runtime which would have undefined results.
-
-Calling PxCreateBasePhysics() and then attempting to create a heightfield shape without first calling
-::PxRegisterHeightFields(), will result in an error.
-
-@deprecated
-*/
-PX_DEPRECATED PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxRegisterHeightFields(physx::PxPhysics& physics);
-
-/**
-\brief Creates an instance of the physics SDK with minimal additional components registered
-
-Creates an instance of this class. May not be a class member to avoid name mangling.
-Pass the constant #PX_PHYSICS_VERSION as the argument.
-There may be only one instance of this class per process. Calling this method after an instance
-has been created already will result in an error message and NULL will be returned.
-
-\param version Version number we are expecting (should be #PX_PHYSICS_VERSION)
-\param foundation Foundation instance (see PxFoundation)
-\param scale values used to determine default tolerances for objects at creation time
-\param trackOutstandingAllocations true if you want to track memory allocations
-			so a debugger connection partway through your physics simulation will get
-			an accurate map of everything that has been allocated so far. This could have a memory
-			and performance impact on your simulation hence it defaults to off.
-\param pvd When pvd points to a valid PxPvd instance (PhysX Visual Debugger), a connection to the specified PxPvd instance is created.
-			If pvd is NULL no connection will be attempted.
-\param omniPvd When omniPvd points to a valid PxOmniPvd instance PhysX will sample its internal structures to the defined OmniPvd output streams
-			set in the PxOmniPvd object.
-\return PxPhysics instance on success, NULL if operation failed
-
-@see PxPhysics, PxFoundation, PxTolerancesScale, PxPvd, PxOmniPvd
-
-@deprecated
-*/
-PX_DEPRECATED PX_C_EXPORT PX_PHYSX_CORE_API physx::PxPhysics* PX_CALL_CONV PxCreateBasePhysics(	physx::PxU32 version,
-																					physx::PxFoundation& foundation,
-																					const physx::PxTolerancesScale& scale,
-																					bool trackOutstandingAllocations = false,
-																					physx::PxPvd* pvd = NULL,
-																					physx::PxOmniPvd* omniPvd = NULL);
-
-/**
 \brief Creates an instance of the physics SDK.
 
 Creates an instance of this class. May not be a class member to avoid name mangling.
@@ -1259,10 +1081,6 @@ Pass the constant #PX_PHYSICS_VERSION as the argument.
 There may be only one instance of this class per process. Calling this method after an instance
 has been created already will result in an error message and NULL will be returned.
 
-Calling this will register all optional code modules (Articulations and HeightFields), preparing them for use.
-If you do not need some of these modules, consider calling PxCreateBasePhysics() instead and registering needed
-modules manually.
-
 \param version Version number we are expecting (should be #PX_PHYSICS_VERSION)
 \param foundation Foundation instance (see PxFoundation)
 \param scale values used to determine default tolerances for objects at creation time
@@ -1276,30 +1094,19 @@ modules manually.
 			set in the PxOmniPvd object.
 \return PxPhysics instance on success, NULL if operation failed
 
-@see PxPhysics, PxCreateBasePhysics, PxRegisterArticulationsReducedCoordinate, PxRegisterHeightFields
+@see PxPhysics
 */
-PX_INLINE physx::PxPhysics* PxCreatePhysics(physx::PxU32 version,
-											physx::PxFoundation& foundation,
-											const physx::PxTolerancesScale& scale,
-											bool trackOutstandingAllocations = false,
-											physx::PxPvd* pvd = NULL,
-											physx::PxOmniPvd* omniPvd = NULL)
-{
-	physx::PxPhysics* physics = PxCreateBasePhysics(version, foundation, scale, trackOutstandingAllocations, pvd, omniPvd);
-	if (!physics)
-		return NULL;
-
-	PxRegisterArticulationsReducedCoordinate(*physics);
-	PxRegisterHeightFields(*physics);
-
-	return physics;
-}
-
+PX_C_EXPORT PX_PHYSX_CORE_API  physx::PxPhysics* PxCreatePhysics(physx::PxU32 version,
+																physx::PxFoundation& foundation,
+																const physx::PxTolerancesScale& scale,
+																bool trackOutstandingAllocations = false,
+																physx::PxPvd* pvd = NULL,
+																physx::PxOmniPvd* omniPvd = NULL);
 
 /**
 \brief Retrieves the Physics SDK after it has been created.
 
-Before using this function the user must call #PxCreatePhysics() or #PxCreateBasePhysics().
+Before using this function the user must call #PxCreatePhysics().
 
 \note The behavior of this method is undefined if the Physics SDK instance has not been created already.
 */

@@ -267,6 +267,18 @@ namespace Cm
 		T* mObj;
 	};
 
+	PX_FORCE_INLINE void startTask(Cm::Task* task, PxBaseTask* continuation)
+	{
+		if(continuation)
+		{
+			// PT: TODO: just make this a PxBaseTask function?
+			task->setContinuation(continuation);
+			task->removeReference();
+		}
+		else
+			task->runInternal();
+	}
+
 } // namespace Cm
 
 }

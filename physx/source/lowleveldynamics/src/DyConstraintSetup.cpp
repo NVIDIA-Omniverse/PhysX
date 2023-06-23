@@ -35,6 +35,7 @@
 #include "DySolverConstraintDesc.h"
 #include "PxcConstraintBlockStream.h"
 #include "DyArticulationContactPrep.h"
+#include "foundation/PxSIMDHelpers.h"
 
 namespace physx
 {
@@ -117,7 +118,7 @@ PxQuat diagonalize(const PxMat33& m)	// jacobi rotation using quaternions
 	PxMat33 d;
 	for(PxU32 i=0; i < MAX_ITERS;i++)
 	{
-		const PxMat33 axes(q);
+		const PxMat33Padded axes(q);
 		d = axes.getTranspose() * m * axes;
 
 		const PxReal d0 = PxAbs(d[1][2]), d1 = PxAbs(d[0][2]), d2 = PxAbs(d[0][1]);

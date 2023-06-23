@@ -44,6 +44,7 @@ namespace Bp
 namespace Sc
 {
 	class BodySim;
+	class BodyCore;
 	class ArticulationJointSim;
 	class ArticulationSpatialTendonSim;
 	class ArticulationFixedTendonSim;
@@ -63,9 +64,9 @@ namespace Sc
 
 	typedef PxFlags<ArticulationSimDirtyFlag::Enum, PxU32> ArticulationSimDirtyFlags;
 
-
 	class ArticulationSim : public PxUserAllocated 
 	{
+		PX_NOCOPY(ArticulationSim)
 	public:
 											ArticulationSim(ArticulationCore& core, 
 												Scene& scene,
@@ -84,7 +85,6 @@ namespace Sc
 
 								void		removeBody(BodySim& body);
 					
-
 								//we don't need removeTendon method anymore because when the articulation is removed from the scene, the articulation sim will
 								//get completely distroy and when we re-add the articulation to the scene, all the data will get recomputed
 								void		addTendon(ArticulationSpatialTendonSim*);
@@ -109,17 +109,16 @@ namespace Sc
 								void		updateCCDLinks(PxArray<BodySim*>& sims);
 								void		updateCached(PxBitMapPinned* shapehapeChangedMap);
 								void		markShapesUpdated(PxBitMapPinned* shapeChangedMap);
-								void		updateContactDistance(PxReal* contactDistance, const PxReal dt, const Bp::BoundsArray& boundsArray);
+								void		updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray);
 
-								void		setActive(const bool b, const PxU32 infoFlag=0);
+								void		setActive(bool b, bool asPartOfCreation=false);
 
 								void		updateForces(PxReal dt, bool notify = true);
 								void		saveLastCCDTransform();
 
 								void		clearAcceleration(PxReal dt);
 
-
-					void					setKinematicLink(const bool value);
+					void					setFixedBaseLink(bool value);
 					//external reduced coordinate implementation
 					PxU32					getDofs() const;
 
@@ -130,13 +129,12 @@ namespace Sc
 
 					PxU32					getCacheDataSize() const;
 
-					PxU32					getScratchMemorySize() const;
-
 					void					zeroCache(PxArticulationCache&) const;
 
 					bool					applyCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag) const;
 
-					void					copyInternalStateToCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag) const;
+					void					copyInternalStateToCache
+												(PxArticulationCache& cache, const PxArticulationCacheFlags flag, const bool isGpuSimEnabled) const;
 
 					void					packJointData(const PxReal* maximum, PxReal* reduced) const;
 
@@ -170,9 +168,8 @@ namespace Sc
 					void					setRootAngularVelocity(const PxVec3& velocity);
 					PxSpatialVelocity		getLinkVelocity(const PxU32 linkId) const;
 
-					PxSpatialVelocity		getLinkAcceleration(const PxU32 linkId) const;
+					PxSpatialVelocity		getLinkAcceleration(const PxU32 linkId, const bool isGpuSimEnabled) const;
 
-	
 					//internal method implementation
 	PX_FORCE_INLINE PxNodeIndex		getIslandNodeIndex() const { return mIslandNodeIndex; }
 
@@ -197,17 +194,13 @@ namespace Sc
 					PxU32					getRootActorIndex() const;
 					const PxSpatialForce& getSensorForce(const PxU32 lowLevelIndex) const;
 					
-
-
 					void					updateKinematic(PxArticulationKinematicFlags flags);
 
 					void					copyJointStatus(const PxU32 linkIndex);
 
-	PX_FORCE_INLINE void					getLLArticulationInitialized(bool val) { mIsLLArticultionInitialized = val; }
-	PX_FORCE_INLINE	bool					getLLArticulationInitialized() { return mIsLLArticultionInitialized; }
+	PX_FORCE_INLINE void					getLLArticulationInitialized(bool val) { mIsLLArticulationInitialized = val; }
+	PX_FORCE_INLINE	bool					getLLArticulationInitialized() { return mIsLLArticulationInitialized; }
 	private:
-					ArticulationSim&		operator=(const ArticulationSim&);
-
 					Dy::FeatherstoneArticulation*					mLLArticulation;
 					Scene&											mScene;
 					ArticulationCore&								mCore;
@@ -219,13 +212,11 @@ namespace Sc
 					PxArray<Dy::ArticulationSensor*>				mSensors;
 					PxArray<PxSpatialForce>							mSensorForces;
 					
-
 					PxNodeIndex										mIslandNodeIndex;
 					PxArray <Dy::ArticulationLoopConstraint>		mLoopConstraints;
 					PxU32											mMaxDepth;
-					bool											mIsLLArticultionInitialized;
+					bool											mIsLLArticulationInitialized;
 					ArticulationSimDirtyFlags						mDirtyFlags;
-					
 	};
 
 } // namespace Sc

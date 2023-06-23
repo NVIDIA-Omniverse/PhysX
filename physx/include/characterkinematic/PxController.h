@@ -637,20 +637,6 @@ PX_INLINE bool PxControllerDesc::isValid() const
 class PxController
 {
 public:
-	//*********************************************************************
-	// DEPRECATED FUNCTIONS:
-	//
-	//	PX_DEPRECATED virtual	void						setInteraction(PxCCTInteractionMode::Enum flag)	= 0;
-	//	PX_DEPRECATED virtual	PxCCTInteractionMode::Enum	getInteraction()					const		= 0;
-	//	PX_DEPRECATED virtual	void						setGroupsBitmask(PxU32 bitmask)					= 0;
-	//	PX_DEPRECATED virtual	PxU32						getGroupsBitmask()					const		= 0;
-	//
-	//	=> replaced with:
-	//
-	//	PxControllerFilters::mCCTFilterCallback. Please define a PxControllerFilterCallback object and emulate the old interaction mode there.
-	//
-	//*********************************************************************
-
 	/**
 	\brief Return the type of controller
 

@@ -171,13 +171,6 @@ struct PxActorType
 		eMPM_PARTICLESYSTEM,
 
 		/**
-		\brief A CUSTOM ParticleSystem
-		\note In development
-		@see PxCUSTOMParticleSystem
-		*/
-		eCUSTOM_PARTICLESYSTEM,
-
-		/**
 		\brief A HairSystem
 		\note In development
 		@see PxHairSystem

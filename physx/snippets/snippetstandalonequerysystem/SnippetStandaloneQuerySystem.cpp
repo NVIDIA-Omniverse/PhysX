@@ -218,9 +218,9 @@ void CustomScene::updateObjects()
 			pose.p.y = sinf(time*1.17f)*cosf(time*1.17f+coeff)*2.0f;
 			pose.p.z = sinf(time*0.33f)*cosf(time*0.33f+coeff)*10.0f;
 
-			PxMat33 rotX;	SnippetUtils::setRotX(rotX, time+coeff);
-			PxMat33 rotY;	SnippetUtils::setRotY(rotY, time*1.17f+coeff);
-			PxMat33 rotZ;	SnippetUtils::setRotZ(rotZ, time*0.33f+coeff);
+			PxMat33 rotX;	PxSetRotX(rotX, time+coeff);
+			PxMat33 rotY;	PxSetRotY(rotY, time*1.17f+coeff);
+			PxMat33 rotZ;	PxSetRotZ(rotZ, time*0.33f+coeff);
 			PxMat33 rot = rotX * rotY * rotZ;
 			pose.q = PxQuat(rot);
 			pose.q.normalize();

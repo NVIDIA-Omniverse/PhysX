@@ -90,14 +90,19 @@ namespace physx
 
 		// -------------------------------------------------------------------------------------
 		void Remesher::remesh(const PxArray<PxVec3>& inputVerts, const PxArray<PxU32>& inputTriIds,
-			PxI32 resolution, PxArray<PxU32> *vertexMap)
+			PxU32 resolution, PxArray<PxU32> *vertexMap)
+		{
+			remesh(inputVerts.begin(), inputVerts.size(), inputTriIds.begin(), inputTriIds.size(), resolution, vertexMap);
+		}
+
+		void Remesher::remesh(const PxVec3* inputVerts, PxU32 nbVertices, const PxU32* inputTriIds, PxU32 nbTriangleIndices, PxU32 resolution, PxArray<PxU32> *vertexMap)
 		{
 			clear();
 
 			PxBounds3 meshBounds;
 			meshBounds.setEmpty();
 
-			for (PxI32 i = 0; i < PxI32(inputVerts.size()); i++)
+			for (PxU32 i = 0; i < nbVertices; i++)
 				meshBounds.include(inputVerts[i]);
 
 			PxVec3 dims = meshBounds.getDimensions();
@@ -106,7 +111,7 @@ namespace physx
 
 			meshBounds.fattenFast(3.0f * spacing);
 
-			PxI32 numTris = PxI32(inputTriIds.size()) / 3;
+			PxU32 numTris = nbTriangleIndices / 3;
 			PxBounds3 triBounds, cellBounds;
 			Gu::BoxPadded box;
 			box.rot = PxMat33(PxIdentity);
@@ -116,7 +121,7 @@ namespace physx
 
 			// create sparse overlapping cells
 
-			for (PxI32 i = 0; i < numTris; i++) 
+			for (PxU32 i = 0; i < numTris; i++) 
 			{
 				const PxVec3& p0 = inputVerts[inputTriIds[3 * i]];
 				const PxVec3& p1 = inputVerts[inputTriIds[3 * i + 1]];
@@ -244,10 +249,10 @@ namespace physx
 			removeDuplicateVertices();
 			pruneInternalSurfaces();
 
-			project(inputVerts, inputTriIds, 2.0f * spacing, 0.1f * spacing);
+			project(inputVerts, inputTriIds, nbTriangleIndices, 2.0f * spacing, 0.1f * spacing);
 
 			if (vertexMap)
-				createVertexMap(inputVerts, meshBounds.minimum, spacing, *vertexMap);
+				createVertexMap(inputVerts, nbVertices, meshBounds.minimum, spacing, *vertexMap);
 
 			computeNormals();
 		}
@@ -491,12 +496,12 @@ namespace physx
 		}
 
 		// -------------------------------------------------------------------------------------
-		void Remesher::project(const PxArray<PxVec3>& inputVerts, const PxArray<PxU32>& inputTriIds,
+		void Remesher::project(const PxVec3* inputVerts, const PxU32* inputTriIds, PxU32 nbTriangleIndices,
 			float searchDist, float surfaceDist)
 		{
 			// build a bvh for the input mesh
 
-			PxI32 numInputTris = PxI32(inputTriIds.size()) / 3;
+			PxI32 numInputTris = PxI32(nbTriangleIndices) / 3;
 
 			if (numInputTris == 0)
 				return;
@@ -518,7 +523,7 @@ namespace physx
 			// project vertices to closest point on surface
 
 			PxBounds3 pb;
-			for (PxI32 i = 0; i < PxI32(vertices.size()); i++)
+			for (PxU32 i = 0; i < vertices.size(); i++)
 			{
 				PxVec3& p = vertices[i];
 				pb.setEmpty();
@@ -529,7 +534,7 @@ namespace physx
 				float minDist2 = PX_MAX_F32;
 				PxVec3 closest(PxZero);
 
-				for (PxI32 j = 0; j < PxI32(bvhTris.size()); j++) 
+				for (PxU32 j = 0; j < bvhTris.size(); j++) 
 				{
 					PxI32 triNr = bvhTris[j];
 					const PxVec3& p0 = inputVerts[inputTriIds[3 * triNr]];
@@ -556,7 +561,7 @@ namespace physx
 		static const int cellNeighbors[6][3] = { { -1,0,0 }, {1,0,0},{0,-1,0},{0,1,0},{0,0,-1},{0,0,1} };
 
 		// -------------------------------------------------------------------------------------
-		void Remesher::createVertexMap(const PxArray<PxVec3>& inputVerts, const PxVec3 &gridOrigin, PxF32 &gridSpacing,
+		void Remesher::createVertexMap(const PxVec3* inputVerts, PxU32 nbVertices, const PxVec3 &gridOrigin, PxF32 &gridSpacing,
 			PxArray<PxU32> &vertexMap)
 		{
 			PxArray<PxI32> vertexOfCell(cells.size(), -1);
@@ -604,9 +609,9 @@ namespace physx
 			// create the map
 
 			vertexMap.clear();
-			vertexMap.resize(inputVerts.size(), 0);
+			vertexMap.resize(nbVertices, 0);
 
-			for (int i = 0; i < PxI32(inputVerts.size()); i++) 
+			for (PxU32 i = 0; i < nbVertices; i++)
 			{
 				const PxVec3& p = inputVerts[i];
 				PxI32 xi = PxI32(PxFloor((p.x - gridOrigin.x) / gridSpacing));
