@@ -195,7 +195,7 @@ static void PxcGenerateVFContacts(	const PxMat34& meshAbsPose, PxContactBuffer& 
 	{
 		const PxVec3& Pos = Ptr[i];
 		PxReal t,u,v;
-		if(intersectRayTriangleCulling(Pos, -normal, triVerts[0], triVerts[1], triVerts[2], t, u, v, 1e-3f) && t < radius + contactDistance)
+		if(intersectRayTriangleCulling(Pos, -normal, triVerts[0], triVerts[1], triVerts[2], t, u, v, 1e-3f) && physx::intrinsics::abs(t) < radius + contactDistance)
 		{
 			const PxVec3 Hit = meshAbsPose.transform(Pos - t * normal);
 			const PxVec3 wn = meshAbsPose.rotate(normal);
